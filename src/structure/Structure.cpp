@@ -282,6 +282,9 @@ void makeUnknownsFalse(PredInter* inter) {
 }
 
 void makeTwoValued(Function* function, FuncInter* inter){
+	if (not inter->isConsistent()) {
+		throw IdpException("Error, trying to make an inconsistent structure two-valued.");
+	}
 	if (inter->approxTwoValued()) {
 		return;
 	}
@@ -333,7 +336,7 @@ void makeTwoValued(Function* function, FuncInter* inter){
 			if (cf->contains(tuple)) {
 				continue;
 			}
-			inter->graphInter()->makeTrue(tuple);
+			inter->graphInter()->makeTrueExactly(tuple);
 			break;
 		}
 	}
@@ -341,6 +344,9 @@ void makeTwoValued(Function* function, FuncInter* inter){
 }
 
 void makeTwoValued(Predicate* p, PredInter* inter){
+	if (not inter->isConsistent()) {
+		throw IdpException("Error, trying to make an inconsistent structure two-valued.");
+	}
 	inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
 	clean(p,inter);
 }
@@ -754,7 +760,7 @@ void clean(Function* function, FuncInter* inter){
 				if (*cfvalue != *ctvalue) {
 					tuple.pop_back();
 					tuple.push_back(*sortit);
-					inter->graphInter()->makeFalse(tuple);
+					inter->graphInter()->makeFalseExactly(tuple);
 				}
 			}
 		}

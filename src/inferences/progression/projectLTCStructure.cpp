@@ -126,7 +126,7 @@ void LTCStructureProjector::projectAndSetInter(PFSymbol* symbol) {
 		auto tuple = *it;
 		if (tuple[timeindex] == _startDomElem) {
 			auto newtuple = projectTuple(tuple, timeindex);
-			newinter->makeTrue(newtuple);
+			newinter->makeTrueExactly(newtuple);
 		} else {
 			if (not warned) {
 				warned = true;
@@ -142,7 +142,7 @@ void LTCStructureProjector::projectAndSetInter(PFSymbol* symbol) {
 		auto tuple = *it;
 		if (tuple[timeindex] == _startDomElem) {
 			auto newtuple = projectTuple(tuple, timeindex);
-			newinter->makeFalse(newtuple);
+			newinter->makeFalseExactly(newtuple);
 		} else {
 			if (not warned) {
 				warned = true;

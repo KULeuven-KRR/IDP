@@ -3747,7 +3747,23 @@ bool PredInter::approxTwoValued() const {
 	return isConsistent() && _ct->approxEqual(_pt);
 }
 
-void PredInter::makeUnknown(const ElementTuple& tuple, bool ignoresortchecks) {
+void PredInter::makeTrueExactly(const ElementTuple& tuple, bool ignoresortchecks) {
+	if (_inconsistentElements.find(tuple) != _inconsistentElements.cend()) {
+		_inconsistentElements.erase(tuple);
+	}
+	moveTupleFromTo(tuple, _cf, _pt, ignoresortchecks);
+	moveTupleFromTo(tuple, _pf, _ct, ignoresortchecks);
+}
+
+void PredInter::makeFalseExactly(const ElementTuple& tuple, bool ignoresortchecks) {
+	if (_inconsistentElements.find(tuple) != _inconsistentElements.cend()) {
+		_inconsistentElements.erase(tuple);
+	}
+	moveTupleFromTo(tuple, _pt, _cf, ignoresortchecks);
+	moveTupleFromTo(tuple, _ct, _pf, ignoresortchecks);
+}
+
+void PredInter::makeUnknownExactly(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (_inconsistentElements.find(tuple) != _inconsistentElements.cend()) {
 		_inconsistentElements.erase(tuple);
 	}
@@ -3755,14 +3771,14 @@ void PredInter::makeUnknown(const ElementTuple& tuple, bool ignoresortchecks) {
 	moveTupleFromTo(tuple, _ct, _pf, ignoresortchecks);
 }
 
-void PredInter::makeTrue(const ElementTuple& tuple, bool ignoresortchecks) {
+void PredInter::makeTrueAtLeast(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (isFalse(tuple, ignoresortchecks)) {
 		_inconsistentElements.insert(tuple);
 	}
 	moveTupleFromTo(tuple, _pf, _ct, ignoresortchecks);
 }
 
-void PredInter::makeFalse(const ElementTuple& tuple, bool ignoresortchecks) {
+void PredInter::makeFalseAtLeast(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (isTrue(tuple, ignoresortchecks)) {
 		_inconsistentElements.insert(tuple);
 	}
@@ -4223,6 +4239,8 @@ bool needMoreModels(unsigned int found) {
 	return expected == 0 || (needFixedNumberOfModels() && found < (unsigned int) expected);
 }
 
+// @PRE: consistent structure
+// @POST: consistent, more precise, structure
 void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& domainElementWithoutValue, const SortTable* imageSort, Function* function,
 		vector<Structure*>& extensions, int prevcount) {
 // go over all saved structures and generate a new structure for each possible value for it
@@ -4247,13 +4265,13 @@ void generateMorePreciseStructures(const PredTable* cf, const ElementTuple& doma
 		for (auto j = extensions.begin(); j < extensions.end() && needMoreModels(partialfalsestructs.size()+newstructs.size()+prevcount); ++j) {
 			CHECKTERMINATION;
 			auto news = (*j)->clone();
-			news->inter(function)->graphInter()->makeTrue(tuple);
+			news->inter(function)->graphInter()->makeTrueExactly(tuple);
 			news->clean();
 			newstructs.push_back(news);
 		}
 		for (auto j = partialfalsestructs.begin(); j < partialfalsestructs.end(); ++j) {
 			CHECKTERMINATION;
-			(*j)->inter(function)->graphInter()->makeFalse(tuple);
+			(*j)->inter(function)->graphInter()->makeFalseExactly(tuple);
 		}
 	}
 	deleteList(extensions);
@@ -4382,13 +4400,13 @@ std::vector<Structure*> generateEnoughTwoValuedExtensions(Structure* original, i
 					break;
 				}
 				auto news = ext->clone();
-				news->inter(pred)->makeTrue(*ptIterator);
+				news->inter(pred)->makeTrueExactly(*ptIterator);
 				newstructs.push_back(news);
 				if (not needMoreModels(newstructs.size()+prevcount)) {
 					break;
 				}
 				news = ext->clone();
-				news->inter(pred)->makeFalse(*ptIterator);
+				news->inter(pred)->makeFalseExactly(*ptIterator);
 				newstructs.push_back(news);
 			}
 			deleteList(extensions);

@@ -2343,9 +2343,9 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 		}
 		auto inter = _currstructure->inter(p);
 		if (t) {
-			inter->makeTrue(tuple, true);
+			inter->makeTrueAtLeast(tuple, true);
 		} else {
-			inter->makeFalse(tuple, true);
+			inter->makeFalseAtLeast(tuple, true);
 		}
 		while (true) {
 			size_t n = 0;
@@ -2382,9 +2382,9 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 				break;
 			}
 			if (t) {
-				inter->makeTrue(tuple, true);
+				inter->makeTrueAtLeast(tuple, true);
 			} else {
-				inter->makeFalse(tuple, true);
+				inter->makeFalseAtLeast(tuple, true);
 			}
 		}
 	}

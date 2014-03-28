@@ -57,9 +57,9 @@ public:
 				auto symbol = translator->getSymbol(atomnr);
 				auto args = translator->getArgs(atomnr);
 				if (sign(*literal)) {
-					result->inter(symbol)->makeFalse(args);
+					result->inter(symbol)->makeFalseAtLeast(args);
 				} else {
-					result->inter(symbol)->makeTrue(args);
+					result->inter(symbol)->makeTrueAtLeast(args);
 				}
 			}
 		}

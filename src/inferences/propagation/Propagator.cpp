@@ -151,10 +151,10 @@ void TypedFOPropagator<Factory, Domain>::applyPropagationToStructure(Structure* 
 			// both reuse the original bddinter, so should not delete it!
 		} else {
 			for (auto trueEl = bddinter->ct()->begin(); not trueEl.isAtEnd(); ++trueEl) {
-				newinter->makeTrue(*trueEl);
+				newinter->makeTrueAtLeast(*trueEl);
 			}
 			for (auto falseEl = bddinter->cf()->begin(); not falseEl.isAtEnd(); ++falseEl) {
-				newinter->makeFalse(*falseEl);
+				newinter->makeFalseAtLeast(*falseEl);
 			}
 			delete(bddinter);
 		}

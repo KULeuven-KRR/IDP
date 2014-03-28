@@ -32,10 +32,10 @@ public:
 
 	void addToPredInter(PredInter* toAddTo, PredInter* toGetFrom) const {
 		for (auto it = toGetFrom->ct()->begin(); not it.isAtEnd(); ++it) {
-			toAddTo->makeTrue(*it);
+			toAddTo->makeTrueAtLeast(*it);
 		}
 		for (auto it = toGetFrom->cf()->begin(); not it.isAtEnd(); ++it) {
-			toAddTo->makeFalse(*it);
+			toAddTo->makeFalseAtLeast(*it);
 		}
 	}
 
