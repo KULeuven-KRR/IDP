@@ -28,7 +28,6 @@
 #include "information/CheckSorts.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
 #include "information/HasRecursionOverNegation.hpp"
-#include "information/HasRecursiveAggregate.hpp"
 #include "information/CountNbOfSubFormulas.hpp"
 #include "information/DeriveTermBounds.hpp"
 #include "transformations/CardConstrToFO.hpp"
@@ -193,7 +192,7 @@ std::set<PFSymbol*> defined(Definition* d) {
 bool approxTotal(Definition* def) {
 	auto total = true;
 	total &= not DefinitionUtils::hasRecursionOverNegation(def);
-	total &= not DefinitionUtils::containsRecDefAggTerms(def, def->defsymbols());
+	total &= not DefinitionUtils::approxContainsRecDefAggTerms(def);
 	for (auto ds : DefinitionUtils::defined(def)) {
 		total &= ds->isPredicate(); // TODO currently no way of knowing whether a function definition will be total!!! (e.g. f(x)=y <- true)
 	}
@@ -208,8 +207,8 @@ void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }
 
-bool hasRecursiveAggregate(Definition* d) {
-	return transform<HasRecursiveAggregate, bool>(d);
+bool approxContainsRecDefAggTerms(Definition* def) {
+	return transform<CheckApproxContainsRecDefAggTerms, bool>(def);
 }
 
 /** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
@@ -262,10 +261,6 @@ Rule* moveOnlyBodyQuantifiers(Rule* rule){
 		return rule;
 	}
 	return new Rule(occursinhead, rule->head(), new QuantForm(SIGN::POS, QUANT::EXIST, notinhead, rule->body(), rule->body()->pi()), rule->pi());
-}
-
-bool containsRecDefAggTerms(Definition* def, const std::set<PFSymbol*>& definedsymbols) {
-	return transform<CheckContainsRecDefAggTerms, bool>(def, definedsymbols);
 }
 
 Definition* eliminateUniversalQuantifications(Definition* d) {

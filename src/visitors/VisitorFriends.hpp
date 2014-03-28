@@ -63,7 +63,7 @@ class AddMarkers;
 		friend class ApproxCheckTwoValued; \
 		friend class CheckContainment; \
 		friend class CheckContainsAggTerms; \
-		friend class CheckContainsRecDefAggTerms; \
+		friend class CheckApproxContainsRecDefAggTerms; \
 		friend class CheckContainsFuncTerms; \
 		friend class CheckContainsDomainTerms; \
 		friend class CheckContainsFuncTermsOutsideOfSets; \
@@ -71,7 +71,6 @@ class AddMarkers;
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
 		friend class HasRecursionOverNegation; \
-		friend class HasRecursiveAggregate; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
 		friend class DeriveTermBounds; \
