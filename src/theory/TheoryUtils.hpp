@@ -365,7 +365,7 @@ bool hasRecursionOverNegation(Definition*);
 void splitDefinitions(Theory* t);
 
 /** Check whether the definition has a recursive aggregate */
-bool hasRecursiveAggregate(Definition*);
+bool approxContainsRecDefAggTerms(Definition*);
 
 /** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
 Definition* makeDefinitionCalculable(Definition*, Structure*);
@@ -388,8 +388,6 @@ Rule* unnestHeadTermsNotVarsOrDomElems(Rule* rule, const Structure* structure);
 
 // Move head quantifiers of variables only occurring in the body to the body.
 Rule* moveOnlyBodyQuantifiers(Rule* rule);
-
-bool containsRecDefAggTerms(Definition* def, const std::set<PFSymbol*>& definedsymbols);
 
 } /* namespace DefinitionUtils */
 

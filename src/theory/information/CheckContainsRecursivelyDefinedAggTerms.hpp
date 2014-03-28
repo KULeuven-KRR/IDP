@@ -16,24 +16,24 @@
 
 class PFSymbol;
 
-class CheckContainsRecDefAggTerms: public DefaultTraversingTheoryVisitor {
+class CheckApproxContainsRecDefAggTerms: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	std::set<PFSymbol*> _definedsymbols;
+	const Definition* _def;
 	bool _result;
 
 public:
-	bool execute(const Definition* f, const std::set<PFSymbol*>& definedsymbols) {
-		_definedsymbols = definedsymbols;
+	bool execute(const Definition* def) {
+		_def = def;
 		_result = false;
-		f->accept(this);
+		def->accept(this);
 		return _result;
 	}
 
 protected:
 	void visit(const AggTerm* at) {
 		auto as = FormulaUtils::collectSymbols(at->set());
-		for(auto s: _definedsymbols){
+		for(auto s: _def->defsymbols()){
 			if(contains(as, s)){
 				_result |= true;
 			}
