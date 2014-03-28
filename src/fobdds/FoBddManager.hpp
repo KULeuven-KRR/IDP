@@ -182,12 +182,13 @@ public:
 
 	//All of the "subsitute" methods substitute their first argument (or the first argument of the map) by the second.
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDVariable*>&);
-	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>&);
-	const FOBDDTerm* substitute(const FOBDDTerm*, const std::map<const FOBDDDeBruijnIndex*, const FOBDDVariable*>&);
-	const FOBDD* substitute(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const FOBDDVariable*, const FOBDDDeBruijnIndex*);
 	const FOBDDKernel* substitute(const FOBDDKernel*, const FOBDDDomainTerm*, const FOBDDVariable*);
 	const FOBDD* substitute(const FOBDD*, const std::map<const FOBDDVariable*, const FOBDDTerm*>&);
+
+	// The substituteIndex methods substitute the index with the variable and decrement all higher indices
+	const FOBDDTerm* substituteIndex(const FOBDDTerm*, const FOBDDDeBruijnIndex* index, const FOBDDVariable* variable);
+	const FOBDD* substituteIndex(const FOBDD*, const FOBDDDeBruijnIndex*, const FOBDDVariable*);
 
 	bool contains(const FOBDDKernel*, Variable*);
 	bool contains(const FOBDDKernel*, const FOBDDVariable*);

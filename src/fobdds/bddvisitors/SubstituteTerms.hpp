@@ -52,7 +52,9 @@ public:
 	const FOBDDTerm* change(const FOBDDDeBruijnIndex* i) {
 		if (i == _index) {
 			return _variable;
-		} else {
+		} else if(i->index()>_index->index()){
+			return _manager->getDeBruijnIndex(i->sort(), i->index()-1);
+		}else{
 			return i;
 		}
 	}
