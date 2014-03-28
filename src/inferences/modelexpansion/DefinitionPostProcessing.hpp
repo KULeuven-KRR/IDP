@@ -12,6 +12,14 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 		return {};
 	}
 
+	std::set<Definition*> nonTotalDefs;
+	for (auto def : theory->definitions()) {
+		//IMPORTANT: this check has to happen before setting bootstrapping options, since bootstrapping option assume all definitoins to be total.
+		if (not DefinitionUtils::approxTotal(def)) {
+			nonTotalDefs.insert(def);
+		}
+	}
+
 	auto orignbmodels = getOption(NBMODELS);
 	auto defverb = getOption(VERBOSE_DEFINITIONS);
 
@@ -37,21 +45,21 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 			insentence->ct()->add( { mapName(symb, uniquesymbnames) });
 		}
 	}
+	for (auto def : nonTotalDefs) {
+		for (auto symb : def->defsymbols()) {
+			insentence->ct()->add( { mapName(symb, uniquesymbnames) });
+		}
+	}
 	if (term != NULL) {
 		for (auto symb : FormulaUtils::collectSymbols(term)) {
 			insentence->ct()->add( { mapName(symb, uniquesymbnames) });
 		}
 	}
 	for (auto s : fullvoc->getNonBuiltinNonOverloadedSymbols()) {
-		if(isa<Function>(*s)){
-			insentence->ct()->add( { mapName(s, uniquesymbnames) });
-			continue;
-		}
 		if (not inputstructure->inter(s)->ct()->approxEmpty() || not inputstructure->inter(s)->cf()->approxEmpty()) {
 			insentence->ct()->add( { mapName(s, uniquesymbnames) });
 		}
 	}
-
 
 	for (auto s : outputvoc->getNonBuiltinNonOverloadedSymbols()) {
 		outsymbol->ct()->add( { mapName<PFSymbol*>(s, uniquesymbnames) });
