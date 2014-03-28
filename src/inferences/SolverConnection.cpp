@@ -170,9 +170,9 @@ void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, St
 			auto symbol = translator->getSymbol(atomnr);
 			const auto& args = translator->getArgs(atomnr);
 			if (literal->hasSign()) {
-				init->inter(symbol)->makeFalse(args);
+				init->inter(symbol)->makeFalseAtLeast(args);
 			} else {
-				init->inter(symbol)->makeTrue(args);
+				init->inter(symbol)->makeTrueAtLeast(args);
 			}
 #ifndef NDEBUG
 			if (not init->isConsistent()) {
@@ -221,7 +221,7 @@ void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Struc
 		}
 		tuple.push_back(createDomElem(cpvar->value));
 		//	cerr <<"Adding tuple " <<print(tuple) <<" to " <<print(getFunction) <<"\n";
-		init->inter(function)->graphInter()->makeTrue(tuple);
+		init->inter(function)->graphInter()->makeTrueAtLeast(tuple);
 	}
 }
 

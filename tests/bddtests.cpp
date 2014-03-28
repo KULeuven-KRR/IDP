@@ -55,9 +55,9 @@ TEST(BddGenerator, PredForm){
 		//P<ct> = {-2,1}
 		//P<cf> = {2}
 		//P<u>  = {-1,0}
-		predinter->makeTrue({createDomElem(1)});
-		predinter->makeFalse({createDomElem(2)});
-		predinter->makeTrue({createDomElem(-2)});
+		predinter->makeTrueExactly({createDomElem(1)});
+		predinter->makeFalseExactly({createDomElem(2)});
+		predinter->makeTrueExactly({createDomElem(-2)});
 
 		auto manager = FOBDDManager::createManager();
 		FOBDDFactory bddfactory(manager, NULL);
@@ -174,9 +174,9 @@ TEST(BddGenerator, PredForm){
 		auto structure = new Structure("S", ParseInfo());
 		structure->changeVocabulary(vocabulary);
 		auto predinter = structure->inter(symbol);
-		predinter->makeTrue({createDomElem(1)});
-		predinter->makeFalse({createDomElem(2)});
-		predinter->makeTrue({createDomElem(-2)});
+		predinter->makeTrueExactly({createDomElem(1)});
+		predinter->makeFalseExactly({createDomElem(2)});
+		predinter->makeTrueExactly({createDomElem(-2)});
 		data.pattern = {Pattern::OUTPUT};
 		data.vars = {var};
 		data.structure = structure;

@@ -48,13 +48,13 @@ public:
 		auto tuple = toTuple(get<1>(args), *printmonitor());
 		switch (value_) {
 		case SET_TRUE:
-			pri->makeTrue(tuple);
+			pri->makeTrueExactly(tuple);
 			break;
 		case SET_FALSE:
-			pri->makeFalse(tuple);
+			pri->makeFalseExactly(tuple);
 			break;
 		case SET_UNKNOWN:
-			pri->makeUnknown(tuple);
+			pri->makeUnknownExactly(tuple);
 			break;
 		default:
 			break;

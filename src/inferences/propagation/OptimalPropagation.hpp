@@ -80,9 +80,9 @@ public:
 				auto symbol = translator->getSymbol(atomnr);
 				const auto& args = translator->getArgs(atomnr);
 				if (*literal < 0) {
-					result->inter(symbol)->makeFalse(args);
+					result->inter(symbol)->makeFalseAtLeast(args);
 				} else {
-					result->inter(symbol)->makeTrue(args);
+					result->inter(symbol)->makeTrueAtLeast(args);
 				}
 			}
 		}

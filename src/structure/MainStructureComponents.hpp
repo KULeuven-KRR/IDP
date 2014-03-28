@@ -439,9 +439,17 @@ public:
 	void setTables(PredTable* ctpf, PredTable* cfpt, bool ct, bool cf); //Sets the tables if initialized with these values
 	void materialize(); //!< Replace symbolic tables by enumerated ones if possible
 
-	void makeTrue(const ElementTuple&, bool ignoresortchecks = false); //!< Make the given tuple true
-	void makeFalse(const ElementTuple&, bool ignoresortchecks = false); //!< Make the given tuple false
-	void makeUnknown(const ElementTuple&, bool ignoresortchecks = false); //!< Make the given tuple unknown
+	// Make the given tuple true, independent of its current value
+	void makeTrueExactly(const ElementTuple&, bool ignoresortchecks = false);
+	// Make the given tuple false, independent of its current value
+	void makeFalseExactly(const ElementTuple&, bool ignoresortchecks = false);
+	// Make the given tuple unknown, independent of its current value
+	void makeUnknownExactly(const ElementTuple&, bool ignoresortchecks = false);
+
+	// Make the given tuple true or inconsistent if it was already false
+	void makeTrueAtLeast(const ElementTuple&, bool ignoresortchecks = false);
+	// Make the given tuple false or inconsistent if it was already true
+	void makeFalseAtLeast(const ElementTuple&, bool ignoresortchecks = false);
 
 	// Inspectors
 	PredTable* ct() const {

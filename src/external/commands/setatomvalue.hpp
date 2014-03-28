@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef MAKEFALSE_HPP_
-#define MAKEFALSE_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
@@ -32,10 +31,10 @@ public:
 		return new SetAtomValueInference("maketrue", "Sets the interpretation of the given tuple to true.\nModifies the table-interpretation.", SET_TRUE);
 	}
 	static Inference* getMakeAtomFalseInference() {
-		return new SetAtomValueInference("makefalse", "Sets the interpretaion of the given tuple to false.\nModifies the table-interpretation.", SET_FALSE);
+		return new SetAtomValueInference("makefalse", "Sets the interpretation of the given tuple to false.\nModifies the table-interpretation.", SET_FALSE);
 	}
 	static Inference* getMakeAtomUnknownInference() {
-		return new SetAtomValueInference("makeunknown", "Sets the interpretaion of the given tuple to unknown.\nModifies the table-interpretation.", SET_UNKNOWN);
+		return new SetAtomValueInference("makeunknown", "Sets the interpretation of the given tuple to unknown.\nModifies the table-interpretation.", SET_UNKNOWN);
 	}
 
 	SetAtomValueInference(const char* command, const char* description, SETVALUE value)
@@ -48,13 +47,13 @@ public:
 		auto tuple = get<1>(args);
 		switch (value_) {
 		case SET_TRUE:
-			pri->makeTrue(*tuple);
+			pri->makeTrueExactly(*tuple);
 			break;
 		case SET_FALSE:
-			pri->makeFalse(*tuple);
+			pri->makeFalseExactly(*tuple);
 			break;
 		case SET_UNKNOWN:
-			pri->makeUnknown(*tuple);
+			pri->makeUnknownExactly(*tuple);
 			break;
 		default:
 			break;
@@ -62,5 +61,3 @@ public:
 		return nilarg();
 	}
 };
-
-#endif /* MAKEFALSE_HPP_ */

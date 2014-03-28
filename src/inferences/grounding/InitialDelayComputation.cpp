@@ -157,7 +157,7 @@ void DelayInitializer::findDelays() {
 	setOption(AUTOCOMPLETE, true);
 //		setOption(TIMEOUT, 10);
 
-	structure->inter(voc->func("sizeThreshold/0"))->graphInter()->makeTrue( { createDomElem(getOption(LAZYSIZETHRESHOLD)) });
+	structure->inter(voc->func("sizeThreshold/0"))->graphInter()->makeTrueExactly( { createDomElem(getOption(LAZYSIZETHRESHOLD)) });
 	makeUnknownsFalse(symbol->graphInter());
 	makeUnknownsFalse(candelayon);
 	makeUnknownsFalse(groundsize->graphInter());
