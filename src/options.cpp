@@ -142,6 +142,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_GEN_AND_CHECK, "generatorsandcheckers", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_GROUNDING, "grounding", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_GROUNDING_STATISTICS, "groundingstats", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_SOLVING_STATISTICS, "solvingstats", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_TRANSFORMATIONS, "transformations", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SOLVING, "solving", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_ENTAILMENT, "entails", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
