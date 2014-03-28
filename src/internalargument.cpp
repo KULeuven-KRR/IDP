@@ -95,6 +95,11 @@ SortIterator* InternalArgument::get<SortIterator*>() {
 }
 
 template<>
+const Compound* InternalArgument::get<const Compound*>() {
+	return _value._compound;
+}
+
+template<>
 TableIterator* InternalArgument::get<TableIterator*>() {
 	return _value._tableiterator;
 }

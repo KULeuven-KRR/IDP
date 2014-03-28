@@ -42,3 +42,17 @@ public:
 		return InternalArgument(new std::string(printToString(a)));
 	}
 };
+
+template<typename Base>
+class SimplePrintInference: public TypedInference<Base> {
+public:
+	SimplePrintInference()
+			: TypedInference<Base>("tostring", "Prints the given object.") {
+		TypedInference<Base>::setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto a = this-> template get<0>(args);
+		return InternalArgument(new std::string(toString(a)));
+	}
+};

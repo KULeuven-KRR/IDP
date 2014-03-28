@@ -94,6 +94,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintInference<LIST(Vocabulary*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<PrintInference<LIST(UserProcedure*)>>());
+	inferences.push_back(make_shared<SimplePrintInference<LIST(const Compound*)>>());
 	inferences.push_back(make_shared<PrintAsBDDInference>());
 	inferences.push_back(make_shared<ModelExpandInference>());
 	inferences.push_back(make_shared<ModelExpandWithOutputVocInference>());
