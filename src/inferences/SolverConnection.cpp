@@ -118,6 +118,7 @@ PCSolver* createsolver(int nbmodels) {
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
 	modes.verbosity = getOption(IntType::VERBOSE_SOLVING);
+	modes.solvingstats = getOption(IntType::VERBOSE_SOLVING_STATISTICS) > 0;
 
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
