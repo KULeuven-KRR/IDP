@@ -225,7 +225,7 @@ const DomainElement* evaluate(Term* term, const Structure* structure){
 	}
 
 	auto var = Gen::var(term->sort());
-	auto& pf = Gen::operator ==(*term, *new VarTerm(var,{}));
+	auto& pf = Gen::operator ==(*term->clone(), *new VarTerm(var,{}));
 
 	Query q("Eval", {var}, &pf, {});
 	auto result = Querying::doSolveQuery(&q, structure);
