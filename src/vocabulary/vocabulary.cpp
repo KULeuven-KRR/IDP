@@ -333,18 +333,18 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 }
 
 bool Sort::isConstructed() const {
-	return _constructors.size()!=0;
+	return _constructors.size() != 0;
 }
 
-bool Sort::hasFixedInterpretation() const{
+bool Sort::hasFixedInterpretation() const {
 	return _interpretation != NULL || isConstructed();
 }
 
-bool Sort::builtin() const{
+bool Sort::builtin() const {
 	return _interpretation != NULL;
 }
 
-void Sort::addConstructor(Function* func){
+void Sort::addConstructor(Function* func) {
 	_constructors.push_back(func);
 }
 
@@ -353,12 +353,12 @@ SortTable* Sort::interpretation() const {
 	return _interpretation;
 }
 const std::set<const Vocabulary*>& Sort::getVocabularies() const {
-        return _vocabularies;
+	return _vocabularies;
 }
 
 SortTable* getConstructedInterpretation(Sort* s, const Structure* struc) {
 	Assert(s->isConstructed());
-	return new SortTable(new ConstructedInternalSortTable(struc,s->getConstructors()));
+	return new SortTable(new ConstructedInternalSortTable(struc, s->getConstructors()));
 }
 ostream& Sort::put(ostream& output) const {
 	if (getOption(BoolType::LONGNAMES)) {
@@ -439,7 +439,7 @@ bool isSubsort(Sort* a, Sort* b, const Vocabulary* voc) {
 		return true;
 	}
 	for (auto parent : a->parents()) {
-		if (isSubsort(parent,b,NULL)) {
+		if (isSubsort(parent, b, NULL)) {
 			return true;
 		}
 	}
@@ -533,11 +533,11 @@ PFSymbol::PFSymbol(const string& name, const vector<Sort*>& sorts, const ParseIn
 			_infix(infix) {
 }
 
-bool PFSymbol::removeVocabulary(const Vocabulary* voc){
+bool PFSymbol::removeVocabulary(const Vocabulary* voc) {
 	auto nb = _vocabularies.erase(voc);
-	return nb!=0;
+	return nb != 0;
 }
-void PFSymbol::addVocabulary(const Vocabulary* voc){
+void PFSymbol::addVocabulary(const Vocabulary* voc) {
 	_vocabularies.insert(voc);
 }
 
@@ -546,7 +546,7 @@ const string& PFSymbol::name() const {
 }
 string PFSymbol::nameNoArity() const {
 	unsigned found = name().find_last_of("/");
-	return name().substr(0,found);
+	return name().substr(0, found);
 }
 std::string PFSymbol::fqn_name() const {
 	return toString(this);
@@ -675,7 +675,7 @@ unsigned int Predicate::arity() const {
 }
 
 bool Predicate::builtin() const {
-	return _interpretation!= 0;
+	return _interpretation != 0;
 }
 
 bool Predicate::overloaded() const {
@@ -702,7 +702,6 @@ PredInter* Predicate::interpretation(const Structure* structure) const {
 		return 0;
 	}
 }
-
 
 /**
  * \brief Returns true iff the predicate is equal to, or overloads a given predicate
@@ -774,12 +773,12 @@ Predicate* Predicate::disambiguate(const vector<Sort*>& ambigsorts, const Vocabu
  *		- vocabulary:	the vocabulary used for resolving the sorts. Defaults to 0.
  */
 Function* Function::disambiguate(const vector<Sort*>& ambigsorts, const Vocabulary* vocabulary) {
-	Assert(ambigsorts.size()==sorts().size());
+	Assert(ambigsorts.size() == sorts().size());
 	if (overloaded()) {
 		return _overfuncgenerator->disambiguate(ambigsorts, vocabulary);
 	} else {
 		for (size_t n = 0; n < sorts().size(); ++n) {
-			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary)&& ambigsorts[n] != NULL) {
+			if (sorts()[n] != NULL && not SortUtils::resolve(ambigsorts[n], sorts()[n], vocabulary) && ambigsorts[n] != NULL) {
 				return NULL;
 			}
 		}
@@ -812,19 +811,19 @@ ostream& Predicate::put(ostream& output) const {
 	output << name().substr(0, name().rfind('/'));
 	if (not overloaded()) { // It is a disambiguated symbol
 		auto confusionpossible = false;
-		for (auto voc : getVocabularies()){
+		for (auto voc : getVocabularies()) {
 			if (voc->pred(name())->overloaded()) {
 				confusionpossible = true;
 				break;
 			}
 
 			//Check if there is a function with the same name
-			if(VocabularyUtils::containsSymbol(name(),(arity()-1),Vocabulary::Symbol::FUNCTION,voc)){
+			if (VocabularyUtils::containsSymbol(name(), (arity() - 1), Vocabulary::Symbol::FUNCTION, voc)) {
 				confusionpossible = true;
 				break;
 			}
 		}
-		if (nrSorts() > 0 && (confusionpossible || getOption(BoolType::LONGNAMES)) ) {
+		if (nrSorts() > 0 && (confusionpossible || getOption(BoolType::LONGNAMES))) {
 			output << '[';
 			sort(0)->put(output);
 			for (size_t n = 1; n < nrSorts(); ++n) {
@@ -946,9 +945,9 @@ void EnumeratedPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
 void EnumeratedPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
 	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		auto removed = (*it)->removeVocabulary(vocabulary);
-		if(removed){
+		if (removed) {
 			it = _overpreds.erase(it);
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -1051,19 +1050,19 @@ set<Sort*> ComparisonPredGenerator::allsorts() const {
 }
 
 void ComparisonPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
-	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
+	/*for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		it->second->addVocabulary(vocabulary);
-	}
+	}*/
 }
 
-void ComparisonPredGenerator::removeVocabulary(const Vocabulary* ) {
-	for (auto it = _overpreds.begin(); it != _overpreds.end();) {
+void ComparisonPredGenerator::removeVocabulary(const Vocabulary*) {
+	/*for (auto it = _overpreds.begin(); it != _overpreds.end();) {
 		map<Sort*, Predicate*>::iterator jt = it;
 		++it;
-		/*if (jt->second->removeVocabulary(vocabulary)) {
+		if (jt->second->removeVocabulary(vocabulary)) {
 			_overpreds.erase(jt);
-		}*/
-	}
+		}
+	}*/
 }
 
 set<Predicate*> ComparisonPredGenerator::nonbuiltins() const {
@@ -1105,10 +1104,10 @@ Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* 
 			_interpretation(NULL),
 			_overfuncgenerator(NULL),
 			_binding(0),
-			_isConstructor(isConstructor){
+			_isConstructor(isConstructor) {
 	addSort(os);
-	if(isConstructor){
-		_interpretation= new ConstructorFuncInterGenerator(this);
+	if (isConstructor) {
+		_interpretation = new ConstructorFuncInterGenerator(this);
 	}
 }
 
@@ -1120,7 +1119,7 @@ Function::Function(const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, 
 			_interpretation(NULL),
 			_overfuncgenerator(NULL),
 			_binding(binding),
-			_isConstructor(false){
+			_isConstructor(false) {
 	addSort(os);
 	setName("_intern_func_" + convertToString(getGlobal()->getNewID()) + "/" + convertToString(is.size() + 1));
 }
@@ -1215,10 +1214,9 @@ bool Function::builtin() const {
 	return _interpretation != NULL || Vocabulary::std()->contains(this);
 }
 
-FuncGenerator* Function::overfuncgenerator() const{
+FuncGenerator* Function::overfuncgenerator() const {
 	return _overfuncgenerator;
 }
-
 
 bool Function::overloaded() const {
 	return (_overfuncgenerator != 0);
@@ -1315,20 +1313,20 @@ ostream& Function::put(ostream& output) const {
 	// We don't want to print for every overloaded built in function (like +) all the sorts
 	// However, we do need this for constants like MAX and MIN
 	// TODO: Can be dangerous if the user overloads these built in functions
-	if (not overloaded() && (not builtin() or arity()==0)) { // It is a disambiguated symbol
+	if (not overloaded() && (not builtin() or arity() == 0)) { // It is a disambiguated symbol
 		auto confusionpossible = false;
-		for (auto voc : getVocabularies()){
+		for (auto voc : getVocabularies()) {
 			if (voc->func(name())->overloaded()) {
 				confusionpossible = true;
 				break;
 			}
 			//Check if there is a predicate with the same name
-			if(VocabularyUtils::containsSymbol(name(),(arity()+1),Vocabulary::Symbol::PREDICATE,voc)){
+			if (VocabularyUtils::containsSymbol(name(), (arity() + 1), Vocabulary::Symbol::PREDICATE, voc)) {
 				confusionpossible = true;
 				break;
 			}
 		}
-		if(Vocabulary::std()->contains(this) &&  Vocabulary::std()->func(name())->overloaded()){
+		if (Vocabulary::std()->contains(this) && Vocabulary::std()->func(name())->overloaded()) {
 			confusionpossible = true;
 		}
 		if (confusionpossible || getOption(BoolType::LONGNAMES)) {
@@ -1433,11 +1431,11 @@ void EnumeratedFuncGenerator::addVocabulary(const Vocabulary* vocabulary) {
 }
 
 void EnumeratedFuncGenerator::removeVocabulary(const Vocabulary* vocabulary) {
-	for (auto it = _overfuncs.begin(); it != _overfuncs.end(); ) {
+	for (auto it = _overfuncs.begin(); it != _overfuncs.end();) {
 		auto removed = (*it)->removeVocabulary(vocabulary);
-		if(removed){
+		if (removed) {
 			it = _overfuncs.erase(it);
-		}else{
+		} else {
 			++it;
 		}
 	}
@@ -1593,8 +1591,8 @@ Function* OrderFuncGenerator::disambiguate(const vector<Sort*>& sorts, const Voc
 
 	Function* func = NULL;
 	if (funcSort != NULL) {
-			vector<Sort*> funcSorts(_arity + 1, funcSort);
-			func = new Function(_name, funcSorts, _interpretation->get(funcSorts), 0);
+		vector<Sort*> funcSorts(_arity + 1, funcSort);
+		func = new Function(_name, funcSorts, _interpretation->get(funcSorts), 0);
 	}
 	return func;
 }
@@ -1715,7 +1713,7 @@ void Vocabulary::add(Sort* s) {
 
 	_name2sort[s->name()] = s;
 	s->addVocabulary(this);
-	for(auto p: s->parents()){
+	for (auto p : s->parents()) {
 		add(p);
 	}
 	updateStructures(s, structures);
@@ -1866,7 +1864,7 @@ Sort* get(STDSORT type) {
 }
 
 Vocabulary* Vocabulary::std() {
-	if (_std!=NULL) {
+	if (_std != NULL) {
 		return _std;
 	}
 
@@ -2172,7 +2170,7 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 	}
 	// cv = childvoc, pv = parentvoc
 	std::map<Sort*, Sort*> cv2pvsort;
-	for (auto it = child->firstSort(); it!=child->lastSort(); ++it) {
+	for (auto it = child->firstSort(); it != child->lastSort(); ++it) {
 		auto childsort = it->second;
 		auto parentsort = parent->sort(childsort->name());
 		if (parentsort == NULL || parentsort->parents().size() != childsort->parents().size()) {
@@ -2257,17 +2255,16 @@ bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 	return true;
 }
 
-bool containsSymbol(string name,int arity,Vocabulary::Symbol sym, const Vocabulary* voc){
+bool containsSymbol(string name, int arity, Vocabulary::Symbol sym, const Vocabulary* voc) {
 	std::stringstream sstm;
-	sstm << name.substr(0, name.rfind('/'))<<"/" << arity;
-	auto newname= sstm.str();
-	return (VocabularyUtils::getSymbol(voc,sym,newname)!=NULL);
+	sstm << name.substr(0, name.rfind('/')) << "/" << arity;
+	auto newname = sstm.str();
+	return (VocabularyUtils::getSymbol(voc, sym, newname) != NULL);
 }
-PFSymbol* getSymbol(const Vocabulary* voc, Vocabulary::Symbol sym,string name){
-	if(sym==Vocabulary::Symbol::PREDICATE){
+PFSymbol* getSymbol(const Vocabulary* voc, Vocabulary::Symbol sym, string name) {
+	if (sym == Vocabulary::Symbol::PREDICATE) {
 		return voc->pred(name);
-	}
-	else{
+	} else {
 		return voc->func(name);
 	}
 }
