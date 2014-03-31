@@ -115,16 +115,16 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 		clog << "Query-Generator:" << "\n" << print(generator) << "\n";
 	}
 
-// Create an empty table
+	// Create an empty table
 	std::vector<SortTable*> vst;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		vst.push_back(structure->inter((*it)->sort()));
 	}
+
+	// Execute the query
 	Universe univ(vst);
 	auto result = TableUtils::createPredTable(univ);
-	// execute the query
 	ElementTuple currtuple(vars.size());
-	//clog <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < vars.size(); ++n) {
 			currtuple[n] = data.vars[n]->get();
@@ -149,7 +149,7 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 
 	Assert(bdd != NULL);
 
-	// create a generator
+	// Create a generator
 	BddGeneratorData data;
 	data.bdd = bdd;
 	data.structure = structure;
@@ -175,15 +175,16 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 		clog << "FOBDD-Query-Generator:" << "\n" << print(generator) << "\n";
 	}
 
-// Create an empty table
+	// Create an empty table
 	std::vector<SortTable*> vst;
 	for (auto it:bddvars) {
 		auto var = it->variable();
 		vst.push_back(structure->inter((var)->sort()));
 	}
+
+	// Execute the query
 	Universe univ(vst);
 	auto result = TableUtils::createPredTable(univ);
-	// execute the query
 	ElementTuple currtuple(bddvars.size());
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < bddvars.size(); ++n) {
