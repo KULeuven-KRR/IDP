@@ -217,11 +217,7 @@ MXResult ModelExpansion::expand() const {
 		if(mx->getNbModelsFound()>0){
 			logActionAndValue("state", "satisfiable");
 		}
-	//	if (_minimizeterm != NULL && mx->getBestSolutionsFound().size()>0){
-	//		logActionAndValue("bestvalue", mx->getBestValueFound());
-	//	}
 		std::clog.flush();
-		// TODO solving time
 	}
 
 	if (getGlobal()->terminateRequested()) {
@@ -265,7 +261,7 @@ MXResult ModelExpansion::expand() const {
 			Assert(bestvalue!=NULL && bestvalue->type()==DomainElementType::DET_INT);
 			result._optimalvalue = bestvalue->value()._int;
 			if (mxverbosity > 0) {
-				logActionAndValue("bestvalue", bestvalue);
+				logActionAndValue("bestvalue", result._optimalvalue);
 				logActionAndValue("nrmodels", list.size());
 				logActionAndTimeSince("total-solving-time", startTime);
 			}
