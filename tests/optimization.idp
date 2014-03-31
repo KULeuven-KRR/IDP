@@ -27,8 +27,14 @@ procedure run() {
 	
 	sols = minimize(T, S, t)
 	
-	if(getExpectedNbOfModels() ~= #sols) then
+	if(stdoptions.symmetrybreaking=="none" and getExpectedNbOfModels() ~= #sols) then
 		io.stderr:write("Found "..#sols..", expected "..getExpectedNbOfModels().." models.\n")
+		return 0
+	elseif(stdoptions.symmetrybreaking~="none" and getExpectedNbOfModels() < #sols) then
+		io.stderr:write("Found "..#sols..", expected at most "..getExpectedNbOfModels().." models.\n")
+		return 0
+	elseif(stdoptions.symmetrybreaking~="none" and #sols == 0) then
+		io.stderr:write("Expected models, found none.\n")
 		return 0
 	end
 	

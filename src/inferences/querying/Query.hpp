@@ -14,6 +14,9 @@
 #include <memory>
 #include <vector>
 
+class Formula;
+class Term;
+class DomainElement;
 class PredTable;
 class Query;
 class FOBDD;
@@ -45,3 +48,6 @@ private:
 	PredTable* solveBdd(const std::vector<Variable*>& vars, std::shared_ptr<FOBDDManager> manager, const FOBDD* bdd, Structure const * const structure) const;
 	PredTable* solveBDDQuery(const FOBDD* b, Structure const * const s) const;
 };
+
+bool evaluate(Formula* form, const Structure* structure);
+const DomainElement* evaluate(Term* term, const Structure* structure);

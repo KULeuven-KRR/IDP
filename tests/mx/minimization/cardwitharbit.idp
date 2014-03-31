@@ -1,0 +1,20 @@
+vocabulary V{
+	type X isa int
+	P(X,X)
+	Q(X)
+}
+theory T:V{
+	?x: P(x,x).
+}
+term t:V{
+	#{x y: P(x,y)}
+}
+structure S:V{
+	X = {1..3}
+}
+theory T2: V{
+	#{x y: P(x,y)}=1.
+}
+procedure getExpectedNbOfModels(){
+	return 24
+}

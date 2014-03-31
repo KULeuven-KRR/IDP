@@ -22,10 +22,17 @@
 #include "fobdds/FoBddFactory.hpp"
 #include "fobdds/FoBddVariable.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "creation/cppinterface.hpp"
 
 PredTable* Querying::solveQuery(Query* q, Structure const * const structure) const {
 	std::shared_ptr<GenerateBDDAccordingToBounds> symbolicstructure;
-	if(not structure->approxTwoValued()){
+	auto alltwoval = true;
+	for(auto s: FormulaUtils::collectSymbols(q->query())){
+		if(not structure->inter(s)->approxTwoValued()){
+			alltwoval = false;
+		}
+	}
+	if(not alltwoval){
 		symbolicstructure = generateNonLiftedBounds(new Theory("",structure->vocabulary(),ParseInfo()), structure);
 	}
 	return solveQuery(q,structure,symbolicstructure);
@@ -40,7 +47,13 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	const FOBDD* bdd = NULL;
 	auto newquery = q->query()->clone();
 	newquery = FormulaUtils::calculateArithmetic(newquery,structure);
-	if (not structure->approxTwoValued()) {
+	auto alltwoval = true;
+	for(auto s: FormulaUtils::collectSymbols(q->query())){
+		if(not structure->inter(s)->approxTwoValued()){
+			alltwoval = false;
+		}
+	}
+	if(not alltwoval){
 		// Note: first graph, because generateBounds is currently incorrect in case of three-valued function terms.
 		newquery = FormulaUtils::graphFuncsAndAggs(newquery,structure,{}, true,false);
 		bdd = symbolicstructure->evaluate(newquery, TruthType::CERTAIN_TRUE, structure);
@@ -102,16 +115,16 @@ PredTable* Querying::solveBdd(const std::vector<Variable*>& vars, std::shared_pt
 		clog << "Query-Generator:" << "\n" << print(generator) << "\n";
 	}
 
-// Create an empty table
+	// Create an empty table
 	std::vector<SortTable*> vst;
 	for (auto it = vars.cbegin(); it != vars.cend(); ++it) {
 		vst.push_back(structure->inter((*it)->sort()));
 	}
+
+	// Execute the query
 	Universe univ(vst);
 	auto result = TableUtils::createPredTable(univ);
-	// execute the query
 	ElementTuple currtuple(vars.size());
-	//cerr <<"Generator: " <<print(generator) <<"\n";
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < vars.size(); ++n) {
 			currtuple[n] = data.vars[n]->get();
@@ -136,7 +149,7 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 
 	Assert(bdd != NULL);
 
-	// create a generator
+	// Create a generator
 	BddGeneratorData data;
 	data.bdd = bdd;
 	data.structure = structure;
@@ -162,15 +175,16 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 		clog << "FOBDD-Query-Generator:" << "\n" << print(generator) << "\n";
 	}
 
-// Create an empty table
+	// Create an empty table
 	std::vector<SortTable*> vst;
 	for (auto it:bddvars) {
 		auto var = it->variable();
 		vst.push_back(structure->inter((var)->sort()));
 	}
+
+	// Execute the query
 	Universe univ(vst);
 	auto result = TableUtils::createPredTable(univ);
-	// execute the query
 	ElementTuple currtuple(bddvars.size());
 	for (generator->begin(); not generator->isAtEnd(); generator->operator ++()) {
 		for (unsigned int n = 0; n < bddvars.size(); ++n) {
@@ -180,4 +194,46 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 	}
 	delete generator;
 	return result;
+}
+
+bool evaluate(Formula* form, const Structure* structure){
+	for(auto s: FormulaUtils::collectSymbols(form)){
+		if(not structure->inter(s)->approxTwoValued()){
+			throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+		}
+	}
+	if(not form->freeVars().empty()){
+		throw IdpException("The input formula had free variables");
+	}
+
+	Query q("Eval", {}, form, {});
+	auto result = Querying::doSolveQuery(&q, structure);
+	if(result->empty()){ // No answers => false
+		return false;
+	}else{ // Empty tuple => true
+		return true;
+	}
+}
+
+const DomainElement* evaluate(Term* term, const Structure* structure){
+	for(auto s: FormulaUtils::collectSymbols(term)){
+		if(not structure->inter(s)->approxTwoValued()){
+			throw notyetimplemented("Cannot evaluate a term in a three-valued structure");
+		}
+	}
+	if(not term->freeVars().empty()){
+		throw IdpException("The input term had free variables");
+	}
+
+	auto var = Gen::var(term->sort());
+	auto& pf = Gen::operator ==(*term->clone(), *new VarTerm(var,{}));
+
+	Query q("Eval", {var}, &pf, {});
+	auto result = Querying::doSolveQuery(&q, structure);
+	pf.recursiveDelete();
+	if(result->empty()){
+		return NULL; // partial
+	}else{
+		return result->begin().operator *()[0];
+	}
 }
