@@ -284,7 +284,7 @@ bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 	}
 
-	auto has_recursive_aggregate = DefinitionUtils::hasRecursiveAggregate(definition);
+	auto has_recursive_aggregate = DefinitionUtils::approxContainsRecDefAggTerms(definition);
 	if(getOption(XSB) && has_recursive_aggregate) {
 		Warning::warning("Currently, no support for definitions that have recursive aggregates");
 	}

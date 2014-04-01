@@ -210,10 +210,10 @@ bool refineStructureWithDefinitions::postprocess(const DefinitionRefiningResult&
 	for (auto def : result._refined_definitions) {
 		for (auto symbol : def->defsymbols()) {
 			for (auto ct_iterator = s->inter(symbol)->ct()->begin(); not ct_iterator.isAtEnd(); ++ct_iterator) {
-				result._calculated_model->inter(symbol)->makeTrue(*ct_iterator);
+				result._calculated_model->inter(symbol)->makeTrueAtLeast(*ct_iterator);
 			}
 			for (auto cf_iterator = s->inter(symbol)->cf()->begin(); not cf_iterator.isAtEnd(); ++cf_iterator) {
-				result._calculated_model->inter(symbol)->makeFalse(*cf_iterator);
+				result._calculated_model->inter(symbol)->makeFalseAtLeast(*cf_iterator);
 			}
 		}
 	}
