@@ -70,15 +70,15 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 				structure->inter(symbol)->ct(predtable1);
 			}
 
-			if(not structure->inter(symbol)->isConsistent()){
+			if(not structure->inter(symbol)->isConsistent()) {
             	xsb_interface->reset();
             	result._hasModel=false;
             	return result;
 			}
-            if(isa<Function>(*symbol) and structure->inter(symbol)->approxTwoValued()) {
-            	// For two-valued predicate symbols that are actually functions, a totality check is needed
+            if(isa<Function>(*symbol)) {
+            	// for functions, check whether the interpretation satisfies function constraints
             	auto fun = dynamic_cast<Function*>(symbol);
-            	if(not structure->inter(fun)->approxTwoValued()){
+            	if(not structure->satisfiesFunctionConstraints(fun)) {
                 	xsb_interface->reset();
                 	result._hasModel=false;
                 	result._calculated_model=structure;
