@@ -163,6 +163,8 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 				for (auto it = result._refined_definitions.begin(); it != result._refined_definitions.end(); ) {
 					auto def = *(it++);
 					for (auto symbol : processDefResult._refined_symbols) {
+						// update the refined symbols (these never have to be removed)
+						result._refined_symbols.insert(symbol);
 						auto opensOfDefinition = DefinitionUtils::opens(def);
 						if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
 							result._refined_definitions.erase(def);
@@ -171,8 +173,6 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 				}
 				// add the current definition as "refined" - it has just been evaluated
 				result._refined_definitions.insert(definition);
-				// incrementally update the refined symbols (these never have to be removed)
-				result._refined_symbols.insert(processDefResult._refined_symbols.begin(),processDefResult._refined_symbols.end());
 				if (result._refined_definitions.size() != theory->definitions().size()) {
 					// there are definitions still to be calculated - put fixpoint to false
 					fixpoint = false;
