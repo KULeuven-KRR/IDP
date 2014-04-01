@@ -257,7 +257,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 }
 
 void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
-		std::set<PFSymbol*> > opens) {
+		std::set<PFSymbol*> >& opens) {
 	bool foundone = false;
 	auto def = opens.begin();
 	while (def != opens.end()) {

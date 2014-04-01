@@ -71,7 +71,7 @@ public:
 	}
 
 
-	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> > opens);
+	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
 
 #ifdef WITHXSB
 	static bool determineXSBUsage(Definition* definition);
