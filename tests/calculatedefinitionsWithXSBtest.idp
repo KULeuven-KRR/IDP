@@ -79,7 +79,7 @@ procedure checkDefinitionRefining(theory, structure) {
 			return 0
 		end
 	else
-		io.stderr:write("Both approaches have at least one model.\nDoing MX without XSB on top of the definition refinement...")
+		io.stderr:write("Doing MX without XSB on top of the definition refinement...")
 		NRMODELSONTOP=#modelexpand(T,REFINEDDEFS)
 		io.stderr:write(" found "..NRMODELSONTOP.." model(s)\n")
 		if (NRMODELSONTOP ~= NRMODELSNOXSB) then
