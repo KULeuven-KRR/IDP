@@ -58,17 +58,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 			// TODO: refactor this code, make it neat!
 			auto sortedTableTRUE = xsb_interface->queryDefinition(symbol);
             auto predtable1 = Gen::predtable(sortedTableTRUE, structure->universe(symbol));
-<<<<<<< HEAD
-            if(not isConsistentWith(predtable1, structure->inter(symbol))) {
-            	xsb_interface->reset();
-            	result._hasModel=false;
-            	return result;
-            }
 			auto sortedTableUNKN = xsb_interface->queryDefinition(symbol, TruthValue::Unknown);
-=======
-
-            auto sortedTableUNKN = xsb_interface->queryDefinition(symbol, TruthValue::Unknown);
->>>>>>> 4d13eff... Treevalued definition evaluation fixup
 			sortedTableUNKN.insert(sortedTableTRUE.begin(),sortedTableTRUE.end());
             auto predtable2 = Gen::predtable(sortedTableUNKN, structure->universe(symbol));
 
