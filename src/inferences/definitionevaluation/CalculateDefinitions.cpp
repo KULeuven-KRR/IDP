@@ -195,7 +195,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 			auto currentdefinition = it++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
 
 			// Remove opens that have a two-valued interpretation
-			auto toRemove = DefinitionUtils::twoValuedOpens(currentdefinition->first, structure);
+			auto toRemove = DefinitionUtils::approxTwoValuedOpens(currentdefinition->first, structure);
 			for (auto symbol : toRemove) {
 				if (currentdefinition->second.find(symbol) != currentdefinition->second.end()) {
 					currentdefinition->second.erase(symbol);

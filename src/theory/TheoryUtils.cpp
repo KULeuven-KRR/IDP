@@ -186,7 +186,7 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
-std::set<PFSymbol*> twoValuedOpens(Definition* d, Structure* s) {
+std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s) {
 	std::set<PFSymbol*> ret;
 	for (auto symbol : DefinitionUtils::opens(d)) {
 		if (s->inter(symbol)->approxTwoValued()) {
