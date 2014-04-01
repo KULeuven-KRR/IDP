@@ -1,0 +1,17 @@
+vocabulary V {
+  P
+  Q
+  R
+  S
+  T
+}
+
+theory T : V {
+  { T <- P. }
+  { P <- Q | S. }
+  { Q <- R. }
+}
+
+structure S : V {
+  Q=true
+}

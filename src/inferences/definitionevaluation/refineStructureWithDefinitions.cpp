@@ -118,8 +118,6 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 	}
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
 	auto opens = DefinitionUtils::opens(theory->definitions()); // Collect the open symbols of all definitions
-	Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
-	FormulaUtils::removeInterpretationOfDefinedSymbols(theory,structure);
 	DefinitionRefiningResult result(structure);
 	result._hasModel = true;
 
@@ -138,6 +136,8 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 				clog << "Using structure " << toString(structure) << "\n";
 			}
+			Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
+			FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
 			DefinitionRefiningResult processDefResult(structure);
 #ifdef WITHXSB
 			auto useXSB = CalculateDefinitions::determineXSBUsage(definition);
@@ -147,6 +147,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			processDefResult = processDefinition(definition, structure, satdelay,
 					false, symbolsToQuery);
 #endif
+			processDefResult._hasModel = postprocess(processDefResult,initialStructure);
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 				clog << "Resulting structure:\n" << toString(structure) << "\n";
 			}
@@ -155,9 +156,13 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
 				}
+				delete(structure);
+				structure = initialStructure;
 				result._hasModel = false;
 				return result;
 			} else { // If it did have a model, update result and continue
+				delete(initialStructure);
+
 				// Find definitions from the calculated definitions list if they have opens for which the
 				// interpretation has changed
 				for (auto it = result._refined_definitions.begin(); it != result._refined_definitions.end(); ) {
@@ -180,19 +185,18 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			}
 		}
 	}
-	result._hasModel = postprocess(result,initialStructure);
-	if (not result._hasModel) { // if no proper model was found, reset to inital interpretation
-		delete(structure);
-		structure = initialStructure;
-	} else {
-		delete(initialStructure);
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+		clog << "Done refining definitions\n";
+	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
+		clog << "Resulting structure:\n" << toString(result._calculated_model) << "\n";
 	}
 	return result;
 }
 
 // Separate procedure to decide whether the definition refinement is acceptable
 // Also contains some verbosity code
-bool refineStructureWithDefinitions::postprocess(const DefinitionRefiningResult& result,
+bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result,
 		const Structure* s) const {
 	if (not result._hasModel) {
 		return false;
@@ -209,13 +213,13 @@ bool refineStructureWithDefinitions::postprocess(const DefinitionRefiningResult&
 			if (not isConsistentWith(result._calculated_model->inter(symbol),s->inter(symbol))) {
 				return false;
 			}
+			// If the interpretation did not change, remove it from the list of refined symbols
+			if(s->inter(symbol)->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
+			   s->inter(symbol)->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) {
+				// The interpretation on this symbol has changed
+				result._refined_symbols.erase(symbol);
+			}
 		}
-	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-		clog << "Done refining definitions\n";
-	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
-		clog << "Resulting structure:\n" << toString(result._calculated_model) << "\n";
 	}
 	return true;
 }

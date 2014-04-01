@@ -73,6 +73,6 @@ private:
 	DefinitionRefiningResult processDefinition(Definition* definition,
 			Structure* structure, bool satdelay,
 			bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
-	bool postprocess(const DefinitionRefiningResult&, const Structure*) const;
+	bool postprocess(DefinitionRefiningResult&, const Structure*) const;
 };
 
