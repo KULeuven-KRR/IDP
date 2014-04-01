@@ -120,7 +120,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
 	auto opens = DefinitionUtils::opens(theory->definitions()); // Collect the open symbols of all definitions
 	if (getOption(BoolType::STABLESEMANTICS)) {
-		CalculateDefinitions::removeLoopsForStableSemantics(opens);
+		CalculateDefinitions::removeNonTotalDefnitions(opens);
 	}
 	Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
 	FormulaUtils::removeInterpretationOfDefinedSymbols(theory,structure);

@@ -180,7 +180,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	auto opens = DefinitionUtils::opens(theory->definitions());
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
-		CalculateDefinitions::removeLoopsForStableSemantics(opens);
+		CalculateDefinitions::removeNonTotalDefnitions(opens);
 	}
 
 	DefinitionCalculationResult result(structure);
@@ -256,7 +256,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	return result;
 }
 
-void CalculateDefinitions::removeLoopsForStableSemantics(std::map<Definition*,
+void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 		std::set<PFSymbol*> > opens) {
 	bool foundone = false;
 	auto def = opens.begin();
