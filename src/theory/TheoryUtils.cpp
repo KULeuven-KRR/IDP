@@ -390,15 +390,19 @@ Formula* removeEquivalences(Formula* f) {
 // Change the interpretation of defined symbols such that all elements are unknown
 void removeInterpretationOfDefinedSymbols(const Theory* t, Structure* s) {
 	for (auto def : t->definitions()) {
-		for (auto defsymbol : def->defsymbols()) {
-			auto emptytable1 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
-			s->inter(defsymbol)->ct(emptytable1);
-			auto emptytable2 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
-			s->inter(defsymbol)->cf(emptytable2);
-		}
+		removeInterpretationOfDefinedSymbols(def, s);
 	}
 }
 
+// Change the interpretation of defined symbols such that all elements are unknown
+void removeInterpretationOfDefinedSymbols(const Definition* d, Structure* s) {
+	for (auto defsymbol : d->defsymbols()) {
+		auto emptytable1 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
+		s->inter(defsymbol)->ct(emptytable1);
+		auto emptytable2 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
+		s->inter(defsymbol)->cf(emptytable2);
+	}
+}
 
 Theory* replaceWithNestedTseitins(Theory* theory) {
 	return transform<ReplaceNestedWithTseitinTerm, Theory*>(theory);

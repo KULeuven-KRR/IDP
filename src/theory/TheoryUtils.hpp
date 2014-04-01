@@ -148,6 +148,8 @@ Formula* removeEquivalences(Formula*);
 
 /** Remove the interpretation of all defined symbols in the theory (make them completely unknown) */
 void removeInterpretationOfDefinedSymbols(const Theory*, Structure*);
+/** Remove the interpretation of all defined symbols for the definition (make them completely unknown) */
+void removeInterpretationOfDefinedSymbols(const Definition*, Structure*);
 
 /** Replace atoms in which functions occur nested with new atoms without those arguments and add the correct equivalences.*/
 Theory* replaceWithNestedTseitins(Theory* theory);
