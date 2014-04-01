@@ -87,17 +87,16 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
             }
 		}
 
-    	xsb_interface->reset();
+		xsb_interface->reset();
 		if (not structure->isConsistent()) {
-        	result._hasModel=false;
-        	return result;
+			result._hasModel=false;
+			return result;
 		} else {
-	    	result._hasModel=true;
-	    	result._refined_definitions.insert(definition);
+			result._hasModel=true;
+			result._refined_definitions.insert(definition);
 		}
-    	return result;
-
-	}
+		return result;
+}
 #endif
 	// Not possible without XSB
 	Warning::warning("Tried to evaluate definitions for three-valued opens without XSB,\n"
