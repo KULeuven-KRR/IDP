@@ -194,14 +194,8 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 // Also contains some verbosity code
 bool refineStructureWithDefinitions::postprocess(const DefinitionRefiningResult& result,
 		const Structure* s) const {
-	if (not result._calculated_model->isConsistent() or not result._hasModel) {
+	if (not result._hasModel) {
 		return false;
-	}
-	for (auto symbol : result._refined_symbols) {
-		// Comparison with initially given interpretation of the refined symbol
-		if (not isConsistentWith(result._calculated_model->inter(symbol),s->inter(symbol))) {
-			return false;
-		}
 	}
 	// If no inconsistency is detected, "insert" the initial interpretation into every defined symbol
 	for (auto def : result._refined_definitions) {
@@ -211,6 +205,9 @@ bool refineStructureWithDefinitions::postprocess(const DefinitionRefiningResult&
 			}
 			for (auto cf_iterator = s->inter(symbol)->cf()->begin(); not cf_iterator.isAtEnd(); ++cf_iterator) {
 				result._calculated_model->inter(symbol)->makeFalseAtLeast(*cf_iterator);
+			}
+			if (not isConsistentWith(result._calculated_model->inter(symbol),s->inter(symbol))) {
+				return false;
 			}
 		}
 	}
@@ -223,7 +220,9 @@ bool refineStructureWithDefinitions::postprocess(const DefinitionRefiningResult&
 	return true;
 }
 
-// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
+// IMPORTANT: if you change the below interpretation, remember that this way (wrapping it into a theory)
+//            ensures that all necessary theory transformation have occurred and that the new
+//            implementation should ensure the same!
 DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Definition* definition,
 		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
 	auto theory = Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
