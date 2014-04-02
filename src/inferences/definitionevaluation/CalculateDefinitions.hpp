@@ -81,7 +81,7 @@ private:
 	DefinitionCalculationResult calculateKnownDefinition(Definition* definition, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
-	DefinitionCalculationResult calculateDefinition(Definition* definition, Structure* structure,
+	DefinitionCalculationResult calculateDefinition(const Definition* definition, Structure* structure,
 			bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const;
 
 	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
