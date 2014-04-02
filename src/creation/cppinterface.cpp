@@ -12,6 +12,7 @@
 #include "cppinterface.hpp"
 
 #include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
 
 namespace Gen {
 
@@ -142,6 +143,12 @@ PredForm& atom(PFSymbol* p, const ElementTuple& tuple) {
 		terms.push_back(new DomainTerm(sort, elem, TermParseInfo()));
 	}
 	return *new PredForm(SIGN::POS, p, terms, FormulaParseInfo());
+}
+
+
+PredTable* predtable(const SortedElementTable& table, const Universe& universe) {
+	auto internpredtable = new EnumeratedInternalPredTable(table);
+	return new PredTable(internpredtable, universe);
 }
 
 void add(Vocabulary* v, const std::vector<Sort*> symbols) {

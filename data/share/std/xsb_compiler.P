@@ -102,7 +102,36 @@ ixmax([X|Rest],Max,TmpMax) :-
 
 ixforall(CallA, CallB) :-
     tables:not_exists((call(CallA), tables:not_exists(CallB))).
-     
+
+% ixthreeval_findall(Var,Query,Ret)
+% Case to find all "true" answers -> only return if non-empty though
+ixthreeval_findall(Var,Query,Ret) :-
+  findall(Var,call_tv(Query,true),Ret),
+  Ret = [_|_].
+
+% ixthreeval_findall(Var,Query,Ret)
+% Case to find all "undefined" answers
+%   1: Gather all "true" answers
+%   2: Gather all "undefined" answers of the Query
+%   3: Append each possible subset of "undefined" answers list to the "true" 
+%      answers list
+%   4: Introduce loop to make return tuple undefined
+ixthreeval_findall(Var,Query,Ret) :-
+  findall(Var,call_tv(Query,true),L2),
+  findall(Var,call_tv(Query,undefined),L),
+  ixsubset(L,S),
+  append(S,L2,Ret),
+  undef.
+
+:- table undef/0.
+undef :- tnot(undef).
+
+ixsubset([],[]).
+ixsubset([E|Tail],[E|NTail]) :-
+  ixsubset(Tail,NTail).
+ixsubset([_|Tail],NTail) :-
+  ixsubset(Tail,NTail).
+
 ixint(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),

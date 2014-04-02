@@ -146,6 +146,11 @@ Formula* calculateArithmetic(Formula* f, const Structure* s) ;
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
 
+/** Remove the interpretation of all defined symbols in the theory (make them completely unknown) */
+void removeInterpretationOfDefinedSymbols(const Theory*, Structure*);
+/** Remove the interpretation of all defined symbols for the definition (make them completely unknown) */
+void removeInterpretationOfDefinedSymbols(const Definition*, Structure*);
+
 /** Replace atoms in which functions occur nested with new atoms without those arguments and add the correct equivalences.*/
 Theory* replaceWithNestedTseitins(Theory* theory);
 
@@ -353,6 +358,9 @@ void deriveSorts(Vocabulary* v, Rule* f);
 
 /** Compute the open symbols of a definition */
 std::set<PFSymbol*> opens(Definition*);
+std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s);
+/** Collect the open symbols of all definitions, put them in a map */
+std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*>);
 std::set<PFSymbol*> defined(Definition*);
 
 /** Approximate check whether the given definition is total */

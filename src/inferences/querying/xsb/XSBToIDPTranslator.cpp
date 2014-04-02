@@ -207,6 +207,26 @@ string XSBToIDPTranslator::to_prolog_term(AggFunction af) {
 	return str;
 }
 
+std::string XSBToIDPTranslator::to_xsb_truth_type(TruthValue tv) {
+	string str;
+	switch (tv) {
+	case TruthValue::True:
+		str = "true";
+		break;
+	case TruthValue::Unknown:
+		str = "undefined";
+		break;
+	case TruthValue::False:
+		str = "false";
+		break;
+	default:
+		throw IdpException("Invalid code path.");
+		break;
+	}
+	return str;
+}
+
+
 string XSBToIDPTranslator::to_simple_chars(string str) {
 	stringstream s;
 	for (auto i = str.begin(); i != str.end(); ++i) {
@@ -247,6 +267,18 @@ string XSBToIDPTranslator::get_idp_caps_prefix() {
 string XSBToIDPTranslator::get_forall_term_name() {
 	std::stringstream ss;
 	ss << IDPXSB_PREFIX << "forall";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::get_twovalued_findall_term_name() {
+	std::stringstream ss;
+	ss << "findall";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::get_threevalued_findall_term_name() {
+	std::stringstream ss;
+	ss << IDPXSB_PREFIX << "threeval_findall";
 	return ss.str();
 }
 

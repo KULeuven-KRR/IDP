@@ -37,12 +37,10 @@ struct DefinitionCalculationResult {
 	Structure* _calculated_model;
 	std::vector<Definition*> _calculated_definitions;
 
-	DefinitionCalculationResult() :
-		_calculated_definitions()
-	{
-		_hasModel = false;
-		_calculated_model = NULL;
-	}
+	DefinitionCalculationResult(Structure* structure) :
+		_hasModel(false),
+		_calculated_model(structure),
+		_calculated_definitions() {};
 
 
 };
@@ -72,16 +70,19 @@ public:
 		return c.calculateKnownDefinition(definition, structure, satdelay, symbolsToQuery);
 	}
 
+#ifdef WITHXSB
+	static bool determineXSBUsage(Definition* definition);
+#endif
+
 private:
 	DefinitionCalculationResult calculateKnownDefinitions(Theory* theory, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateKnownDefinition(Definition* definition, Structure* structure,
-			bool satdelay, std::set<PFSymbol*> symbolsToQuery);
+			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateDefinition(Definition* definition, Structure* structure,
-			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
+			bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const;
 
-	DefinitionCalculationResult processXSBResult(const bool success, Structure* structure,
-			Structure* oldStructure) const;
+	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
 };

@@ -539,74 +539,83 @@ void Structure::sortCheck() const {
 }
 
 void Structure::functionCheck() {
-//#warning check for partial interpretations!
 	for (auto func2inter : _funcinter) {
-		auto f = func2inter.first;
-		auto ft = func2inter.second;
-		if(f->builtin()){
-			continue;
-		}
-		if (not ft->universe().approxFinite()) {
-			Warning::warning("Consistency cannot be checked for functions over an infinite domain.");
-			continue;
-		}
-		auto pt = ft->graphInter();
-		auto ct = pt->ct();
-		// Check if the interpretation is indeed a function
-		auto isfunc = true;
-		FirstNElementsEqual eq(f->arity());
-		auto ctit = ct->begin();
-		if (not ctit.isAtEnd()) {
-			TableIterator jt = ct->begin();
-			++jt;
-			for (; not jt.isAtEnd(); ++ctit, ++jt) {
-				if (eq(*ctit, *jt)) {
+		functionCheck(func2inter.first, true);
+	}
+}
+bool Structure::satisfiesFunctionConstraints(const Function* f) {
+	return functionCheck(f, false);
+}
+
+bool Structure::functionCheck(const Function* f, bool throwErrors) {
+	auto fi = inter(f);
+//#warning check for partial interpretations!
+	if(f->builtin()){ // builtins are always valid function interpretations
+		return true;
+	}
+	if (not fi->universe().approxFinite()) {
+		Warning::warning("Consistency cannot be checked for functions over an infinite domain.");
+		return true;
+	}
+
+	// Check whether each input tuple maps to less than two output tuples
+	auto pt = fi->graphInter();
+	auto ct = pt->ct();
+	// Check if the interpretation is indeed a function
+	auto isfunc = true;
+	FirstNElementsEqual eq(f->arity());
+	auto ctit = ct->begin();
+	if (not ctit.isAtEnd()) {
+		auto jt = ct->begin();
+		++jt;
+		for (; not jt.isAtEnd(); ++ctit, ++jt) {
+			if (eq(*ctit, *jt)) { // Found a tuple that violates the constraint
+				if (throwErrors) {
 					const auto& tuple = *ctit;
 					vector<string> vstr;
 					for (size_t c = 0; c < f->arity(); ++c) {
 						vstr.push_back(toString(tuple[c]));
 					}
 					Error::notfunction(f->name(), name(), vstr);
-					do {
-						++ctit;
-						++jt;
-					} while (not jt.isAtEnd() && eq(*ctit, *jt));
-					isfunc = false;
-					break;
 				}
-			}
-		}
-
-
-		// Check if the interpretation is total
-		if (not isfunc || f->partial()) {
-			continue;
-		}
-		auto cf = pt->cf();
-		auto maxnbimages = inter(f->outsort())->size();
-		if(not cf->approxFinite() || maxnbimages._type==TST_INFINITE){
-			//TODO
-			Warning::warning("Checking total function too expensive.");
-		}
-		map<ElementTuple, int> domain2numberofimages;
-		for(auto cfit = cf->begin(); not cfit.isAtEnd(); ++cfit) {
-			auto domain = *cfit;
-			domain.pop_back();
-			auto domit = domain2numberofimages.find(domain);
-			int count = 0;
-			if(domit==domain2numberofimages.cend()){
-				domain2numberofimages[domain]=1;
-				count = 1;
-			}else{
-				domit->second++;
-				count = domit->second;
-			}
-			if (count==maxnbimages) {
-				Error::nottotal(f->name(), name());
-				break;
+				return false;
 			}
 		}
 	}
+
+	// For partial functions the totality check need not be done
+	if ( f->partial()) {
+		return true;
+	}
+
+	// Check if the interpretation is total
+	auto cf = pt->cf();
+	auto maxnbimages = inter(f->outsort())->size();
+	if(not cf->approxFinite() || maxnbimages._type==TST_INFINITE){
+		//TODO
+		Warning::warning("Checking total function too expensive.");
+	}
+	map<ElementTuple, int> domain2numberofimages;
+	for(auto cfit = cf->begin(); not cfit.isAtEnd(); ++cfit) {
+		auto domain = *cfit;
+		domain.pop_back();
+		auto domit = domain2numberofimages.find(domain);
+		int count = 0;
+		if(domit==domain2numberofimages.cend()){
+			domain2numberofimages[domain]=1;
+			count = 1;
+		}else{
+			domit->second++;
+			count = domit->second;
+		}
+		if (count==maxnbimages) {
+			if (throwErrors) {
+				Error::nottotal(f->name(), name());
+			}
+			return false;
+		}
+	}
+	return true;
 }
 
 bool Structure::hasInter(const Sort* s) const {

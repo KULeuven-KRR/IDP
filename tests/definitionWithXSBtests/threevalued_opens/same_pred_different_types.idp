@@ -1,0 +1,25 @@
+vocabulary V{
+       type T1
+       type T2
+       P(T1)
+       P(T2)
+       Q1
+       Q2
+       Q3
+       Q4
+}
+theory T:V{
+       define {
+               Q1 <- (?x: P[T1](x)) & (?x' : P[T2](x')).
+               Q2 <- (~?x: P[T1](x)) & (?x' : P[T2](x')).
+               Q3 <- (?x: P[T1](x)) & (~?x' : P[T2](x')).
+               Q4 <- (~?x: P[T1](x)) & (~?x' : P[T2](x')).
+       }
+}
+structure S:V{
+       T1 = {1..5}
+       T2 = {3..7}
+       P[T1]<ct> = {1}
+       P[T1]<cf> = {4..5}
+       P[T2]<cf> = {3..6}
+}

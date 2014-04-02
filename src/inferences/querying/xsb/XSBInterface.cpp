@@ -32,12 +32,6 @@ XSBInterface* XSBInterface::instance() {
 	return interface_instance;
 }
 
-void XSBInterface::setStructure(Structure* structure){
-	// TODO: delete possible previous PrologProgram?
-	_pp = new PrologProgram(structure,_translator);
-	_structure = structure;
-}
-
 std::list<string> split(std::string sentence) {
 	std::istringstream iss(sentence);
 	std::list<string> tokens;
@@ -95,7 +89,10 @@ XSBInterface::XSBInterface() {
 	commandCall(ss2.str());
 }
 
-void XSBInterface::loadDefinition(Definition* d) {
+void XSBInterface::load(Definition* d, Structure* structure) {
+	// TODO: delete possible previous PrologProgram?
+	_pp = new PrologProgram(structure,_translator);
+	_structure = structure;
 	auto cloned_definition = d->clone();
 	Theory theory("", _structure->vocabulary(), ParseInfo());
 	theory.add(cloned_definition);
@@ -105,18 +102,19 @@ void XSBInterface::loadDefinition(Definition* d) {
 	FormulaUtils::pushNegations(&theory);
 	FormulaUtils::flatten(&theory);
 	_pp->setDefinition(cloned_definition);
+	//TODO: Not really a reason anymore to generate code separate from facts and ranges, since "facts" now also possibly contain P :- tnot(P) rules
+	auto str2 = _pp->getFacts();
 	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
-	auto str2 = _pp->getFacts();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		clog << "The transformation to XSB resulted in the following code\n\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3 << "\n";
 	}
-	sendToXSB(str3, false);
-	sendToXSB(str2, true);
-	sendToXSB(str, false);
+	sendToXSB(str3);
+	sendToXSB(str2);
+	sendToXSB(str);
 }
 
-void XSBInterface::sendToXSB(string str, bool isFacts) {
+void XSBInterface::sendToXSB(string str) {
 	auto name = tmpnam(NULL);
 
 	ofstream tmp;
@@ -124,11 +122,7 @@ void XSBInterface::sendToXSB(string str, bool isFacts) {
 	tmp << str;
 	tmp.close();
 	stringstream ss;
-	if (isFacts) {
-		ss << "load_dync('" << name << "').\n";
-	} else {
-		ss << "load_dyn('" << name << "').\n";
-	}
+	ss << "load_dyn('" << name << "').\n";
 	commandCall(ss.str());
 	remove(name);
 }
@@ -154,12 +148,12 @@ void XSBInterface::exit() {
 	interface_instance = NULL;
 }
 
-SortedElementTable XSBInterface::queryDefinition(PFSymbol* s) {
+SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	auto term = symbol2term(s);
 	SortedElementTable result;
 	XSB_StrDefine (buff);
 	stringstream ss;
-	ss << "call_tv(" << *term << ",true).";
+	ss << "call_tv(" << *term << "," << _translator->to_xsb_truth_type(tv) << ").";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {

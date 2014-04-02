@@ -22,7 +22,6 @@ class PFSymbol;
 class PredForm;
 class XSBToIDPTranslator;
 
-using std::string;
 class XSBInterface {
 private:
 	PrologProgram* _pp;
@@ -32,18 +31,17 @@ private:
 	XSBInterface();
 	void loadOpenSymbols();
 	void loadInterpretation(PFSymbol*);
-	void sendToXSB(string, bool);
-	void commandCall(const string& command);
+	void sendToXSB(std::string);
+	void commandCall(const std::string& command);
 	void handleResult(int xsb_status);
 	PrologTerm* symbol2term(const PFSymbol*);
 
 public:
 	static XSBInterface* instance();
-	void setStructure(Structure* structure);
 	void reset();
 	void exit();
-	void loadDefinition(Definition*);
-	SortedElementTable queryDefinition(PFSymbol*);
+	void load(Definition*, Structure*);
+	SortedElementTable queryDefinition(PFSymbol*, TruthValue tv = TruthValue::True);
 	bool query(PFSymbol*, ElementTuple);
 	PrologTerm* atom2term(PredForm* pf);
 	PrologTerm* atom2term(PFSymbol* symbol, ElementTuple el);

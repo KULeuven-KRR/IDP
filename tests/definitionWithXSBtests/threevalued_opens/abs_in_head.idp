@@ -1,0 +1,20 @@
+vocabulary V {
+	type Values isa int
+
+	type PM
+	Plus : PM
+	Minus : PM
+	LV(PM,Values)
+
+	LVal(Values)
+}
+
+theory T:V{
+	{ LV(Plus,v) <- LVal(v) & v >= 0.
+	  LV(Minus,abs(v)) <- LVal(v) & v < 0.	}
+}
+structure S : V {
+  Values = { -2..2 }
+  Minus = "m"
+  Plus = "p"
+}

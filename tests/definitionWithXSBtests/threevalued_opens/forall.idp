@@ -1,0 +1,21 @@
+vocabulary V {
+  type T isa int
+  Q(T)
+  Q2(T)
+  P
+  P2
+}
+
+theory T : V {                                                                                                                                                                                                                          
+    {
+        P <- (! x : Q(x)).
+    }
+    {
+        P2 <- (! x : Q2(x)).
+    }
+}
+
+structure S : V {
+  T = { 1..4 }
+  Q2<cf> = {1}
+}

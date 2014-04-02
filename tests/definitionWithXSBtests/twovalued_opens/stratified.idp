@@ -1,0 +1,25 @@
+vocabulary V {
+  type node
+  type layer isa int
+  type num isa int
+  in_layer(layer,node)
+  edge(node,node)
+  unusedNode(layer,node)
+  nbUnusedNodes(layer):num
+}
+
+theory T : V {
+  
+  { unusedNode(l,n) <- in_layer(l,n) & (~?n2 : edge(n,n2) | edge(n2,n)). }
+  
+  { !nr[num] : nbUnusedNodes(l) = nr <- nr = #{x[node] : unusedNode(l,x)}. }
+  
+}
+
+structure S : V {
+  layer = { 0..1 }
+  node = { n01; n11; n12; n13; n02; n03 }
+  in_layer = { 0,n01; 0,n02; 0,n03; 1,n11; 1,n12; 1,n13 }
+  edge = {n01, n11; n02, n11}
+  num = {0..3}
+}

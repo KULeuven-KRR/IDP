@@ -12,6 +12,7 @@
 #include "TheoryUtils.hpp"
 
 #include "IncludeComponents.hpp"
+#include "creation/cppinterface.hpp"
 #include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
 #include "information/ApproxCheckTwoValued.hpp"
 #include "fobdds/FoBdd.hpp"
@@ -184,6 +185,22 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 
 std::set<PFSymbol*> opens(Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
+}
+std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s) {
+	std::set<PFSymbol*> ret;
+	for (auto symbol : DefinitionUtils::opens(d)) {
+		if (s->inter(symbol)->approxTwoValued()) {
+			ret.insert(symbol);
+		}
+	}
+	return ret;
+}
+std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*> defs) {
+	std::map<Definition*, std::set<PFSymbol*> > opens;
+	for (auto def : defs) {
+		opens[def] = DefinitionUtils::opens(def);
+	}
+	return opens;
 }
 std::set<PFSymbol*> defined(Definition* d) {
 	return d->defsymbols();
@@ -368,6 +385,23 @@ Formula* calculateArithmetic(Formula* f, const Structure* s) {
 
 Formula* removeEquivalences(Formula* f) {
 	return transform<RemoveEquivalences, Formula*>(f);
+}
+
+// Change the interpretation of defined symbols such that all elements are unknown
+void removeInterpretationOfDefinedSymbols(const Theory* t, Structure* s) {
+	for (auto def : t->definitions()) {
+		removeInterpretationOfDefinedSymbols(def, s);
+	}
+}
+
+// Change the interpretation of defined symbols such that all elements are unknown
+void removeInterpretationOfDefinedSymbols(const Definition* d, Structure* s) {
+	for (auto defsymbol : d->defsymbols()) {
+		auto emptytable1 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
+		s->inter(defsymbol)->ct(emptytable1);
+		auto emptytable2 = Gen::predtable(SortedElementTable(),s->universe(defsymbol));
+		s->inter(defsymbol)->cf(emptytable2);
+	}
 }
 
 Theory* replaceWithNestedTseitins(Theory* theory) {

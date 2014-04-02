@@ -51,8 +51,7 @@ public:
 
 	std::string to_prolog_term(CompType);
 	std::string to_prolog_term(AggFunction);
-
-
+	std::string to_xsb_truth_type(TruthValue);
 
 	std::string to_prolog_varname(std::string);
 	std::string to_prolog_sortname(const Sort*);
@@ -61,6 +60,8 @@ public:
 	static std::string get_idp_prefix();
 	static std::string get_idp_caps_prefix();
 	static std::string get_forall_term_name();
+	static std::string get_twovalued_findall_term_name();
+	static std::string get_threevalued_findall_term_name();
 	static std::string get_abs_term_name();
 
 private:

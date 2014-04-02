@@ -15,6 +15,7 @@
 #include "FormulaClause.hpp"
 #include "PrologProgram.hpp"
 #include "XSBToIDPTranslator.hpp"
+#include "theory/TheoryUtils.hpp"
 
 
 string FormulaClauseToPrologClauseConverter::generateGeneratorClauseName() {
@@ -111,8 +112,14 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateTerm* at) {
 		boundSort->addArgument(sortArg);
 		body.push_back(boundSort);
 	}
-
-	PrologTerm* findall = new PrologTerm("findall");
+	PrologTerm* findall;
+	if (at->set()->hasTwoValuedBody()) {
+		findall = new PrologTerm(XSBToIDPTranslator::get_twovalued_findall_term_name());
+	} else {
+		// shenanigans 'cause XSB is less than awesome when it comes to findall depending on undefined symbols
+		// because of this, a self-made predicate has to be used
+		findall = new PrologTerm(XSBToIDPTranslator::get_threevalued_findall_term_name());
+	}
 	findall->addArgument(at->set()->var());
 	findall->addArgument(at->set()->asTerm());
 	auto listvar = _translator->create("INTERNAL_LIST");

@@ -1,0 +1,14 @@
+vocabulary V{
+  type T
+  P(T)
+  Q(T)
+}
+
+theory T : V {
+  { P(x) <- false. }
+}
+
+structure S : V { 
+  T = {1..5}
+  P<cf> = {5}
+}

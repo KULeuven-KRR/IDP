@@ -1966,5 +1966,6 @@ public:
 
 bool intersectionEmpty(PredTable* left, PredTable* right);
 bool isConsistentWith(PredTable* table, PredInter* inter);
+bool isConsistentWith(PredInter* inter, PredInter* inter2);
 
 #endif

@@ -4561,6 +4561,20 @@ bool isConsistentWith(PredTable* table, PredInter* inter){
 	return true;
 }
 
+bool isConsistentWith(PredInter* inter, PredInter* inter2){
+	auto ct = inter->ct();
+	auto cf = inter->cf();
+	auto ct2 = inter2->ct();
+	auto cf2 = inter2->cf();
+
+	if(not (intersectionEmpty(ct, cf2) and
+			intersectionEmpty(ct2, cf))){
+		return false;
+	}
+
+	return true;
+}
+
 bool intersectionEmpty(PredTable* left, PredTable* right){
 	if(right->size()<left->size()){
 		auto temp = left;

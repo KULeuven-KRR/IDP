@@ -1,0 +1,22 @@
+vocabulary V {
+  type node
+  type layer isa int
+  type pos isa int
+  width(layer,pos)
+  in_layer(layer,node)
+  edge(node,node)
+  unusedNode(layer,node)
+  positionToBeGuessed(layer,pos)
+}
+
+theory T : V {
+  { unusedNode(l,n) <- in_layer(l,n) & (~?n2 : edge(n,n2) | edge(n2,n)). }
+  { ! p[pos] : positionToBeGuessed(l,p) <- width(l,w) & #{x[node] : unusedNode(l,x)} < p & p =< w. }
+}
+
+
+structure S : V {
+  layer = { 0..1 }
+  node = { 0..2 }
+  in_layer = { 0,0; 1,1; 1,2 }
+}

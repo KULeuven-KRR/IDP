@@ -77,8 +77,7 @@ Using them is at your own risk.
 The \code{inferences} namespace and all its procedures are included in the global namespace. Hence \code{inferences.xxx} should never be used. This namespace contains several inference methods:
 \begin{description}
 	\item[calculatedefinitions(theory,structure)]
-		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions).
-		
+		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or  nil if inconsistency is detected.
 	\item[ground(theory,structure)]
  		Create the reduced grounding of the given theory and structure. 
  	\item[groundeq(theory,structure,modeleq)]
@@ -118,6 +117,8 @@ The \code{inferences} namespace and all its procedures are included in the globa
 		Currently does not take constraints implied by the vocabulary (e.g., function constraints) or the structure (e.g., type interpretations) into account.
 	\item[query(query,structure)]
  		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
+	\item[refinedefinitions(theory,structure)]
+		Make the structure more precise than the given one by refining all defined symbols using the definitions until fixpoint. This procedure returns a new structure or nil if inconsistency is detected.
 	\item[sat(theory,structure)]
 		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
 	\item[value(formula/term,structure)]
