@@ -124,49 +124,51 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
 	bool fixpoint = false;
-	for (auto it = queue.begin(); it != queue.end();) {
-		auto definition = *(it++); // REASON: set erasure does only invalidate iterators pointing to the erased elements
+	while (not queue.empty()) {
+		for (auto it = queue.begin(); it != queue.end();) {
+			auto definition = *(it++); // REASON: set erasure does only invalidate iterators pointing to the erased elements
 
-		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-			clog << "Refining " << toString(definition) << "\n";
-		}
-		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
-			clog << "Using structure " << toString(structure) << "\n";
-		}
-		Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
-		FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
-		DefinitionRefiningResult processDefResult(structure);
-		processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
-		processDefResult._hasModel = postprocess(processDefResult, definition, initialStructure);
-		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-			clog << "Resulting structure:\n" << toString(structure) << "\n";
-		}
-
-		if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution (don't set fixpoint to false)
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-				clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
+				clog << "Refining " << toString(definition) << "\n";
 			}
-			delete(structure);
-			structure = initialStructure;
-			result._hasModel = false;
-			return result;
-		} else { // If it did have a model, update result and continue
-			delete(initialStructure);
+			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
+				clog << "Using structure " << toString(structure) << "\n";
+			}
+			Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
+			FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
+			DefinitionRefiningResult processDefResult(structure);
+			processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
+			processDefResult._hasModel = postprocess(processDefResult, definition, initialStructure);
+			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+				clog << "Resulting structure:\n" << toString(structure) << "\n";
+			}
 
-			// Find definitions from the calculated definitions list if they have opens for which the
-			// interpretation has changed
-			for (auto def : theory->definitions()) {
-				for (auto symbol : processDefResult._refined_symbols) {
-					// update the refined symbols (these never have to be removed)
-					result._refined_symbols.insert(symbol);
-					auto opensOfDefinition = DefinitionUtils::opens(def);
-					if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
-						queue.insert(def);
+			if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution (don't set fixpoint to false)
+				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+					clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
+				}
+				delete(structure);
+				structure = initialStructure;
+				result._hasModel = false;
+				return result;
+			} else { // If it did have a model, update result and continue
+				delete(initialStructure);
+
+				// Find definitions from the calculated definitions list if they have opens for which the
+				// interpretation has changed
+				for (auto def : theory->definitions()) {
+					for (auto symbol : processDefResult._refined_symbols) {
+						// update the refined symbols (these never have to be removed)
+						result._refined_symbols.insert(symbol);
+						auto opensOfDefinition = DefinitionUtils::opens(def);
+						if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
+							queue.insert(def);
+						}
 					}
 				}
+				// add the current definition as "refined" - it has just been evaluated
+				queue.erase(definition);
 			}
-			// add the current definition as "refined" - it has just been evaluated
-			queue.erase(definition);
 		}
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
