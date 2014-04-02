@@ -118,6 +118,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 	}
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
 	auto queue = std::set<Definition*>(theory->definitions().begin(), theory->definitions().end());
+	std::map<PFSymbol*, PredInter*> initial_interpretations;
 	DefinitionRefiningResult result(structure);
 	result._hasModel = true;
 
@@ -133,26 +134,24 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 				clog << "Using structure " << toString(structure) << "\n";
 			}
-			Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
+			for (auto defsymbol : definition->defsymbols()) {
+				initial_interpretations.insert(std::pair<PFSymbol*, PredInter*>(defsymbol, structure->inter(defsymbol)->clone()));
+			}
 			FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
 			DefinitionRefiningResult processDefResult(structure);
 			processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
-			processDefResult._hasModel = postprocess(processDefResult, definition, initialStructure);
+			processDefResult._hasModel = postprocess(processDefResult, definition, initial_interpretations);
+			initial_interpretations.clear(); // These are not needed anymore
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 				clog << "Resulting structure:\n" << toString(structure) << "\n";
 			}
-
 			if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
 				}
-				delete(structure);
-				structure = initialStructure;
 				result._hasModel = false;
 				return result;
 			} else { // If it did have a model, update result and continue
-				delete(initialStructure);
-
 				// Find definitions with opens for which the interpretation has changed
 				for (auto def : theory->definitions()) {
 					for (auto symbol : processDefResult._refined_symbols) {
@@ -181,16 +180,18 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 // Separate procedure to decide whether the definition refinement is acceptable
 // Also contains some verbosity code
 bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result,
-		const Definition* def, const Structure* s) const {
+		const Definition* def, std::map<PFSymbol*, PredInter*>& initial_inters) const {
 	if (not result._hasModel) {
 		return false;
 	}
-	for (auto symbol : def->defsymbols()) {
+	for (auto it : initial_inters) {
+		auto symbol = it.first;
+		auto inter = it.second;
 		// Insert the "old" interpretation into the refined one.
-		for (auto ct_iterator = s->inter(symbol)->ct()->begin(); not ct_iterator.isAtEnd(); ++ct_iterator) {
+		for (auto ct_iterator = inter->ct()->begin(); not ct_iterator.isAtEnd(); ++ct_iterator) {
 			result._calculated_model->inter(symbol)->makeTrueAtLeast(*ct_iterator);
 		}
-		for (auto cf_iterator = s->inter(symbol)->cf()->begin(); not cf_iterator.isAtEnd(); ++cf_iterator) {
+		for (auto cf_iterator = inter->cf()->begin(); not cf_iterator.isAtEnd(); ++cf_iterator) {
 			result._calculated_model->inter(symbol)->makeFalseAtLeast(*cf_iterator);
 		}
 		// If inconsistency is detected, return false
@@ -200,8 +201,8 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 		}
 		// If no inconsistency is detected, update the refined symbols
 		result._refined_symbols.clear();
-		if(not (s->inter(symbol)->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
-				s->inter(symbol)->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
+		if(not (inter->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
+				inter->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
 			// The interpretation on this symbol has changed
 			result._refined_symbols.insert(symbol);
 		}

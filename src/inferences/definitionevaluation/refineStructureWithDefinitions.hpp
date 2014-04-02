@@ -19,6 +19,7 @@ class Structure;
 class Theory;
 class Definition;
 class PFSymbol;
+class PredInter;
 
 struct DefinitionRefiningResult {
 	bool _hasModel;
@@ -71,6 +72,6 @@ private:
 	DefinitionRefiningResult processDefinition(Definition* definition,
 			Structure* structure, bool satdelay,
 			std::set<PFSymbol*> symbolsToQuery) const;
-	bool postprocess(DefinitionRefiningResult&, const Definition*,const Structure*) const;
+	bool postprocess(DefinitionRefiningResult&, const Definition*,std::map<PFSymbol*, PredInter*>&) const;
 };
 
