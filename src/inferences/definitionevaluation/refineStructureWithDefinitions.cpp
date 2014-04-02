@@ -125,47 +125,50 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
 	while (not queue.empty()) {
-		for (auto it = queue.begin(); it != queue.end();) {
-			auto definition = *(it++); // REASON: set erasure does only invalidate iterators pointing to the erased elements
+		auto it = queue.begin();
+		auto definition = *(it++);
+		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+			clog << "Refining " << toString(definition) << "\n";
+		}
+		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
+			clog << "Using structure " << toString(structure) << "\n";
+		}
+		for (auto defsymbol : definition->defsymbols()) {
+			initial_interpretations.insert(std::pair<PFSymbol*, PredInter*>(defsymbol, structure->inter(defsymbol)->clone()));
+		}
+		FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
+		DefinitionRefiningResult processDefResult(structure);
+		processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
+		processDefResult._hasModel = postprocess(processDefResult, definition, initial_interpretations);
+		initial_interpretations.clear(); // These are not needed anymore
+		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+			clog << "Resulting structure:\n" << toString(structure) << "\n";
+		}
+		if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution
+			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+				clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
+			}
+			result._hasModel = false;
+			return result;
+		} else { // If it did have a model, update result and queue and continue
+			// update the refined symbols
+			result._refined_symbols.insert(processDefResult._refined_symbols.begin(),
+					processDefResult._refined_symbols.end());
 
-			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-				clog << "Refining " << toString(definition) << "\n";
-			}
-			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
-				clog << "Using structure " << toString(structure) << "\n";
-			}
-			for (auto defsymbol : definition->defsymbols()) {
-				initial_interpretations.insert(std::pair<PFSymbol*, PredInter*>(defsymbol, structure->inter(defsymbol)->clone()));
-			}
-			FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
-			DefinitionRefiningResult processDefResult(structure);
-			processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
-			processDefResult._hasModel = postprocess(processDefResult, definition, initial_interpretations);
-			initial_interpretations.clear(); // These are not needed anymore
-			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-				clog << "Resulting structure:\n" << toString(structure) << "\n";
-			}
-			if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution
-				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
-					clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
-				}
-				result._hasModel = false;
-				return result;
-			} else { // If it did have a model, update result and continue
-				// Find definitions with opens for which the interpretation has changed
-				for (auto def : theory->definitions()) {
+			// Find definitions with opens for which the interpretation has changed
+			for (auto def : theory->definitions()) {
+				// Don't do anything for the definition if it is still in the queue
+				if (queue.find(def) != queue.end()) {
 					for (auto symbol : processDefResult._refined_symbols) {
-						// update the refined symbols while we're at it (these never have to be removed)
-						result._refined_symbols.insert(symbol);
 						auto opensOfDefinition = DefinitionUtils::opens(def);
 						if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
 							queue.insert(def);
 						}
 					}
 				}
-				// remove the current definition from the queue - it has just been evaluated
-				queue.erase(definition);
 			}
+			// remove the current definition from the queue - it has just been evaluated
+			queue.erase(definition);
 		}
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
