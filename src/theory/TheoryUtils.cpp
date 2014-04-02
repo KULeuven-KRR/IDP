@@ -533,6 +533,9 @@ T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool
 	if (skolemize && not nbmodelsequivalent) {
 		theory = FormulaUtils::skolemize(theory);
 	}
+	if (getOption(BoolType::SPLIT_DEFS)){
+		DefinitionUtils::splitDefinitions(theory);
+	}
 	return theory;
 }
 
