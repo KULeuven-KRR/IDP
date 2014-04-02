@@ -38,9 +38,8 @@ vector<string> generateListOfFailingDefXSBFiles() {
 }
 // All files with theories in them that depend on three- or twovalued opens
 vector<string> generateListOfThreevaluedDefsFiles() {
-	vector<string> testdirs {"definitionWithXSBtests/threevalued_opens/"};
-//	vector<string> testdirs {"definitionWithXSBtests/threevalued_opens",
-//		"definitionWithXSBtests/twovalued_opens", "definitiontests/"};
+	vector<string> testdirs {"definitionWithXSBtests/threevalued_opens/",
+		"definitionWithXSBtests/twovalued_opens/", "definitiontests/"};
 	return getAllFilesInDirs(getTestDirectory(), testdirs);
 }
 
