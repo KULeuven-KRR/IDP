@@ -24,13 +24,11 @@ struct DefinitionRefiningResult {
 	bool _hasModel;
 	Structure* _calculated_model;
 	std::set<PFSymbol*> _refined_symbols;
-	std::set<Definition*> _refined_definitions;
 
 	DefinitionRefiningResult(Structure* structure) :
 		_hasModel(false),
 		_calculated_model(structure),
-		_refined_symbols(),
-		_refined_definitions() {};
+		_refined_symbols() {};
 };
 
 class refineStructureWithDefinitions {
