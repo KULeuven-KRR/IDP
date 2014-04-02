@@ -262,7 +262,7 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 	bool foundone = false;
 	auto def = opens.begin();
 	while (def != opens.end()) {
-		auto hasrecursion = DefinitionUtils::hasRecursionOverNegation((*def).first);
+		auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation((*def).first);
 		//TODO in the future: put a smarter check here
 
 		auto currentdefinition = def++;
@@ -280,7 +280,7 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
-	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
+	auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation(definition);
 	if (getOption(XSB) && hasrecursion) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 	}
