@@ -158,6 +158,8 @@ private:
 		}
 		if (not defCalculatedResult._hasModel) {
 			// FIXME bugged: NULL as symstructure
+			// returnUnsat has to create an entirely new grounder because it's buggy when symstructure is NULL
+			// This is rather sloppy
 			return returnUnsat(GroundInfo { _theory, { _structure, generateBounds(_theory, _structure, false, false, _outputvocabulary) }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
 		}
 		Assert(defCalculatedResult._calculated_model->isConsistent());
@@ -168,7 +170,7 @@ private:
 		if(getOption(BoolType::XSB)) {
 			auto defRefinedResult = refineStructureWithDefinitions::doRefineStructureWithDefinitions(dynamic_cast<Theory*>(_theory), _structure, satdelay);
 			if (not defRefinedResult._hasModel) {
-				// FIXME bugged: NULL as symstructure
+				// FIXME bugged: NULL as symstructure (see above))
 				return returnUnsat(GroundInfo { _theory, { _structure, generateBounds(_theory, _structure, false, false, _outputvocabulary) }, _outputvocabulary, _nbmodelsequivalent, _minimizeterm }, _receiver);
 			}
 			Assert(defRefinedResult._calculated_model->isConsistent());
