@@ -16,6 +16,8 @@
 #include "insert.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "utils/LogAction.hpp"
+#include <cstring>
+
 
 extern void resetParser();
 
@@ -101,10 +103,16 @@ FILE* GlobalData::openFile(const char* filename, const char* mode) {
 	return f;
 }
 
+
 char* GlobalData::getTempFileName() {
-	auto name = tmpnam(NULL);
-	_temp_file_names.insert(name);
-	return f;
+	stringstream ss;
+	ss << "XXXXXX";
+	auto filename = new char[ss.str().size() + 1];
+	strcpy(filename, ss.str().c_str());
+	mkstemp(filename);		// Creates and opens a new temp file r/w.
+							// Xs are replaced with a unique number.
+	_temp_file_names.insert(filename);
+	return filename;
 }
 
 void GlobalData::closeFile(FILE* filepointer) {
@@ -113,7 +121,9 @@ void GlobalData::closeFile(FILE* filepointer) {
 	fclose(filepointer);
 }
 
+#include <unistd.h>
 void GlobalData::removeTempFile(char* name) {
+	Assert(name!=NULL);
 	_temp_file_names.erase(name);
 	remove(name);
 }
