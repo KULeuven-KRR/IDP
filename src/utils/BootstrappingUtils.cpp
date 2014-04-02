@@ -79,10 +79,10 @@ Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<P
 			for (auto open : opens) {
 				symbolName = mapName(open.first, uniqueSymbNames);
 				auto symbolOcc = open.second;
-				if (symbolOcc != Context::NEGATIVE) {
-					openInter->ct()->add( { ruleName, symbolName, neg });
+				if (symbolOcc != Context::NEGATIVE) { //Positive or both -> certainly positive
+					openInter->ct()->add( { ruleName, symbolName, pos });
 				}
-				if (symbolOcc != Context::POSITIVE) {
+				if (symbolOcc != Context::POSITIVE) { //Negative or both -> certainly negative
 					openInter->ct()->add( { ruleName, symbolName, neg });
 				}
 			}

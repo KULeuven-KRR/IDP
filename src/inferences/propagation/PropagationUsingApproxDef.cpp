@@ -41,7 +41,7 @@ ApproximatingDefinition::DerivationTypes* PropagationUsingApproxDef::getAllDeriv
 
 void PropagationUsingApproxDef::processApproxDef(Structure* structure, ApproximatingDefinition* approxdef) {
 
-	if (DefinitionUtils::hasRecursionOverNegation(approxdef->approximatingDefinition())) {
+	if (DefinitionUtils::approxHasRecursionOverNegation(approxdef->approximatingDefinition())) {
 		if (getOption(IntType::VERBOSE_APPROXDEF) >= 1) {
 			//TODO: either go back to normal method or FIX XSB to support recneg!
 			clog << "Approximating definition had recursion over negation, not calculating it\n";

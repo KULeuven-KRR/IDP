@@ -374,6 +374,11 @@ std::set<PFSymbol*> defined(Definition*);
 /** Approximate check whether the given definition is total */
 bool approxTotal(Definition*);
 
+/** Approximate Check whether the definition has recursion over negation
+ * Guaranteed to be complete in case definitions are split.*/
+bool approxHasRecursionOverNegation(Definition*);
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition*);
+
 /** Check whether the definition has recursion over negation */
 bool hasRecursionOverNegation(Definition*);
 std::set<PFSymbol*> recurionsOverNegationSymbols(Definition*);

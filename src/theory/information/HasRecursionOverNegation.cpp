@@ -25,6 +25,28 @@ bool HasRecursionOverNegation::execute(Definition* d) {
 	return not DefinitionUtils::recurionsOverNegationSymbols(d).empty();
 }
 
+bool ApproxHasRecursionOverNegation::execute(Definition* d) {
+	return not DefinitionUtils::approxRecurionsOverNegationSymbols(d).empty();
+}
+
+std::set<PFSymbol*> ApproxRecursionOverNegationSymbols::execute(Definition* d) {
+	if (getOption(GUARANTEE_NO_REC_NEG)) {
+		return {};
+	}
+	std::set<PFSymbol*> result;
+	auto defsymbols = d->defsymbols();
+	for (auto rule : d->rules()) {
+		auto occs = FormulaUtils::collectSymbolOccurences(rule->body());
+		for (auto occ : occs) {
+			if (occ.second != Context::POSITIVE) { //Negative or both
+				result.insert(occ.first);
+			}
+		}
+	}
+	return result;
+}
+
+
 std::set<PFSymbol*> RecursionOverNegationSymbols::execute(Definition* d) {
 	if(getOption(GUARANTEE_NO_REC_NEG)){
 		return {};

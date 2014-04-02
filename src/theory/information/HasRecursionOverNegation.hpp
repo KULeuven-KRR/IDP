@@ -45,3 +45,20 @@ private:
 	Predicate* recursivePredicates;
 
 };
+
+//Cheaper method with the same goal as hasrecursionovernegation. Might give too much "true" answers.
+//However, in case definitions are split, is guaranteed to be equal.
+class ApproxHasRecursionOverNegation {
+
+public:
+	bool execute(Definition* d);
+
+};
+
+//Cheaper method with the same goal as hasrecursionovernegation. Might give too much answers.
+//However, in case definitions are split, is guaranteed to be equal.
+class ApproxRecursionOverNegationSymbols {
+
+public:
+	std::set<PFSymbol*> execute(Definition* d);
+};
