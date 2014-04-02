@@ -238,7 +238,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 			}
 		}
 	}
-	if (not structure->isConsistent() or not result._hasModel) {
+	if (not result._hasModel or not result._calculated_model->isConsistent()) {
 		// When returning a result that has no model, the other arguments are as follows:
 		// _calculated_model:  the structure resulting from the last unsuccessful definition calculation
 		// _calculated_definitions: all definitions that have been successfully calculated
