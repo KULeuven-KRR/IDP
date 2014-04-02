@@ -45,7 +45,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 		xsb_interface->load(definition,structure);
 
 		auto symbols = definition->defsymbols();
-		if(not symbolsToQuery.empty()) {
+		if (not symbolsToQuery.empty()) {
 			for(auto it = symbols.begin(); it != symbols.end();) {
 				auto symbol = *(it++);
 				if(symbolsToQuery.find(symbol) == symbolsToQuery.end()) {
@@ -63,7 +63,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 			sortedTableUNKN.insert(sortedTableTRUE.begin(),sortedTableTRUE.end());
             auto predtable2 = Gen::predtable(sortedTableUNKN, structure->universe(symbol));
 
-			if(not (structure->inter(symbol)->ct()->size() == predtable1->size() and
+			if (not (structure->inter(symbol)->ct()->size() == predtable1->size() and
 					structure->inter(symbol)->pt()->size() == predtable2->size() )) {
 				// The interpretation on this symbol has changed
 				result._refined_symbols.insert(symbol);
@@ -71,12 +71,12 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 				structure->inter(symbol)->ct(predtable1);
 			}
 
-			if(not structure->inter(symbol)->isConsistent()) {
+			if (not structure->inter(symbol)->isConsistent()) {
             	xsb_interface->reset();
             	result._hasModel=false;
             	return result;
 			}
-            if(isa<Function>(*symbol)) {
+            if (isa<Function>(*symbol)) {
             	// for functions, check whether the interpretation satisfies function constraints
             	auto fun = dynamic_cast<Function*>(symbol);
             	if(not structure->satisfiesFunctionConstraints(fun)) {
