@@ -141,7 +141,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
 			DefinitionRefiningResult processDefResult(structure);
 			processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
-			processDefResult._hasModel = postprocess(processDefResult,initialStructure);
+			processDefResult._hasModel = postprocess(processDefResult, definition, initialStructure);
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 				clog << "Resulting structure:\n" << toString(structure) << "\n";
 			}
@@ -191,31 +191,29 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 // Separate procedure to decide whether the definition refinement is acceptable
 // Also contains some verbosity code
 bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result,
-		const Structure* s) const {
+		const Definition* def, const Structure* s) const {
 	if (not result._hasModel) {
 		return false;
 	}
-	for (auto def : result._refined_definitions) {
-		for (auto symbol : def->defsymbols()) {
-			// Insert the "old" interpretation into the refined one.
-			for (auto ct_iterator = s->inter(symbol)->ct()->begin(); not ct_iterator.isAtEnd(); ++ct_iterator) {
-				result._calculated_model->inter(symbol)->makeTrueAtLeast(*ct_iterator);
-			}
-			for (auto cf_iterator = s->inter(symbol)->cf()->begin(); not cf_iterator.isAtEnd(); ++cf_iterator) {
-				result._calculated_model->inter(symbol)->makeFalseAtLeast(*cf_iterator);
-			}
-			// If inconsistency is detected, return false
-			if (not isConsistentWith(result._calculated_model->inter(symbol),s->inter(symbol))) {
-				result._hasModel = false;
-				return false;
-			}
-			// If no inconsistency is detected, update the refined symbols
-			result._refined_symbols.clear();
-			if(not (s->inter(symbol)->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
-			        s->inter(symbol)->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
-				// The interpretation on this symbol has changed
-				result._refined_symbols.insert(symbol);
-			}
+	for (auto symbol : def->defsymbols()) {
+		// Insert the "old" interpretation into the refined one.
+		for (auto ct_iterator = s->inter(symbol)->ct()->begin(); not ct_iterator.isAtEnd(); ++ct_iterator) {
+			result._calculated_model->inter(symbol)->makeTrueAtLeast(*ct_iterator);
+		}
+		for (auto cf_iterator = s->inter(symbol)->cf()->begin(); not cf_iterator.isAtEnd(); ++cf_iterator) {
+			result._calculated_model->inter(symbol)->makeFalseAtLeast(*cf_iterator);
+		}
+		// If inconsistency is detected, return false
+		if (not result._calculated_model->inter(symbol)->isConsistent()) {
+			result._hasModel = false;
+			return false;
+		}
+		// If no inconsistency is detected, update the refined symbols
+		result._refined_symbols.clear();
+		if(not (s->inter(symbol)->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
+				s->inter(symbol)->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
+			// The interpretation on this symbol has changed
+			result._refined_symbols.insert(symbol);
 		}
 	}
 	return true;
