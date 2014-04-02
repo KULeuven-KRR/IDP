@@ -33,12 +33,13 @@
 
 using namespace std;
 DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure,
-		bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const {
+		bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
 	DefinitionCalculationResult result(structure);
 #ifdef WITHXSB
+	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
 			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
@@ -213,12 +214,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 					clog << "Using structure " << toString(structure) << "\n";
 				}
 				bool tooexpensive = false;
-#ifdef WITHXSB
-				auto useXSB = CalculateDefinitions::determineXSBUsage(definition);
-				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, useXSB, symbolsToQuery);
-#else
-				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, false, symbolsToQuery);
-#endif
+				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, symbolsToQuery);
 				if (tooexpensive) {
 					continue;
 				}

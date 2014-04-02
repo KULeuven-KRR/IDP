@@ -70,9 +70,6 @@ public:
 		return c.calculateKnownDefinition(definition, structure, satdelay, symbolsToQuery);
 	}
 
-
-	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
-
 #ifdef WITHXSB
 	static bool determineXSBUsage(Definition* definition);
 #endif
@@ -85,5 +82,7 @@ private:
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateDefinition(Definition* definition, Structure* structure,
-			bool satdelay, bool& tooExpensive, bool withxsb, std::set<PFSymbol*> symbolsToQuery) const;
+			bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const;
+
+	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
 };
