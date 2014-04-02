@@ -117,16 +117,16 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		clog << "Refining definitions\n";
 	}
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
-	auto queue = std::set<Definition*>(theory->definitions().begin(), theory->definitions().end());
+	auto definitions_to_process = std::set<Definition*>(theory->definitions().begin(), theory->definitions().end());
 	std::map<PFSymbol*, PredInter*> initial_interpretations;
 	DefinitionRefiningResult result(structure);
 	result._hasModel = true;
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
-	while (not queue.empty()) {
-		auto it = queue.begin();
-		auto definition = *(it++);
+	while (not definitions_to_process.empty()) {
+		auto definition = *(definitions_to_process.begin());
+		definitions_to_process.erase(definition);
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 			clog << "Refining " << toString(definition) << "\n";
 		}
@@ -150,25 +150,22 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			}
 			result._hasModel = false;
 			return result;
-		} else { // If it did have a model, update result and queue and continue
-			// update the refined symbols
-			result._refined_symbols.insert(processDefResult._refined_symbols.begin(),
-					processDefResult._refined_symbols.end());
+		}
+		// update the refined symbols
+		result._refined_symbols.insert(processDefResult._refined_symbols.begin(),
+				processDefResult._refined_symbols.end());
 
-			// Find definitions with opens for which the interpretation has changed
-			for (auto def : theory->definitions()) {
-				// Don't do anything for the definition if it is still in the queue
-				if (queue.find(def) != queue.end()) {
-					for (auto symbol : processDefResult._refined_symbols) {
-						auto opensOfDefinition = DefinitionUtils::opens(def);
-						if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
-							queue.insert(def);
-						}
+		// Find definitions with opens for which the interpretation has changed
+		for (auto def : theory->definitions()) {
+			// Don't do anything for the definition if it is still in the queue
+			if (definitions_to_process.find(def) != definitions_to_process.end()) {
+				for (auto symbol : processDefResult._refined_symbols) {
+					auto opensOfDefinition = DefinitionUtils::opens(def);
+					if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
+						definitions_to_process.insert(def);
 					}
 				}
 			}
-			// remove the current definition from the queue - it has just been evaluated
-			queue.erase(definition);
 		}
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
