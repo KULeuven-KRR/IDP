@@ -25,7 +25,7 @@
 using namespace std;
 DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 		Definition* definition, Structure* structure, bool satdelay,
-		bool withxsb, std::set<PFSymbol*> symbolsToQuery) const {
+		std::set<PFSymbol*> symbolsToQuery) const {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Refining definition: " << toString(definition) << "\n";
 	}
@@ -33,6 +33,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 	result._hasModel = true;
 
 #ifdef WITHXSB
+	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
 			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
@@ -96,7 +97,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 			result._refined_definitions.insert(definition);
 		}
 		return result;
-}
+	}
 #endif
 	// Not possible without XSB
 	Warning::warning("Tried to evaluate definitions for three-valued opens without XSB,\n"
@@ -139,14 +140,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			Structure* initialStructure = structure->clone(); // Used at the end to determine consistency
 			FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
 			DefinitionRefiningResult processDefResult(structure);
-#ifdef WITHXSB
-			auto useXSB = CalculateDefinitions::determineXSBUsage(definition);
-			processDefResult = processDefinition(definition, structure, satdelay,
-					useXSB, symbolsToQuery);
-#else
-			processDefResult = processDefinition(definition, structure, satdelay,
-					false, symbolsToQuery);
-#endif
+			processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
 			processDefResult._hasModel = postprocess(processDefResult,initialStructure);
 			if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 				clog << "Resulting structure:\n" << toString(structure) << "\n";
