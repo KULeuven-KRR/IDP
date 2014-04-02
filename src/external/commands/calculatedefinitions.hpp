@@ -34,7 +34,6 @@ public:
 			Error::error("Can only calculate definitions with a non-ground theory.");
 			return nilarg();
 		}
-		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
 		auto sols = CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args)->clone());
 		if(not sols._hasModel ){
 			return InternalArgument();
@@ -64,7 +63,6 @@ public:
 			Error::error("Can only calculate definitions with a non-ground theory.");
 			return nilarg();
 		}
-		// FIXME this should not return a new structure! (solve creating inconsistentstructure then)
 		auto sols = refineStructureWithDefinitions::doRefineStructureWithDefinitions(theory, get<1>(args)->clone());
 		if(not sols._hasModel ){
 			return InternalArgument();
