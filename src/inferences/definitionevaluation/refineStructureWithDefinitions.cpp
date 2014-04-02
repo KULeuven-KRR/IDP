@@ -123,7 +123,6 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
-	bool fixpoint = false;
 	while (not queue.empty()) {
 		for (auto it = queue.begin(); it != queue.end();) {
 			auto definition = *(it++); // REASON: set erasure does only invalidate iterators pointing to the erased elements
@@ -143,7 +142,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 				clog << "Resulting structure:\n" << toString(structure) << "\n";
 			}
 
-			if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution (don't set fixpoint to false)
+			if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "The given structure is not a model of the definition\n" << toString(definition) << "\n";
 				}
@@ -154,11 +153,10 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			} else { // If it did have a model, update result and continue
 				delete(initialStructure);
 
-				// Find definitions from the calculated definitions list if they have opens for which the
-				// interpretation has changed
+				// Find definitions with opens for which the interpretation has changed
 				for (auto def : theory->definitions()) {
 					for (auto symbol : processDefResult._refined_symbols) {
-						// update the refined symbols (these never have to be removed)
+						// update the refined symbols while we're at it (these never have to be removed)
 						result._refined_symbols.insert(symbol);
 						auto opensOfDefinition = DefinitionUtils::opens(def);
 						if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
@@ -166,7 +164,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 						}
 					}
 				}
-				// add the current definition as "refined" - it has just been evaluated
+				// remove the current definition from the queue - it has just been evaluated
 				queue.erase(definition);
 			}
 		}
