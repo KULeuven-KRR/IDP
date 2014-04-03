@@ -29,6 +29,7 @@ using namespace std;
 namespace Tests {
 
 Grounder* getGrounder(Theory& t, Structure* s) {
+	auto d=DataManager();
 	bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 	bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS); //OK TO GET OPTION HERE?
 	auto gddatb = generateBounds(&t, s, propagate, LUP);
