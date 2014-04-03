@@ -53,6 +53,7 @@ private:
 	std::set<std::string> _errors, _warnings;
 	std::set<std::string> _parsedfiles;
 	std::set<FILE*> _openfiles;
+	std::set<char*> _temp_file_names;
 
 	std::vector<TerminateMonitor*> _monitors;
 	std::vector<DeleteMe*> _deleteMes;
@@ -159,7 +160,9 @@ public:
 		return _parsedfiles.find(filename)!=_parsedfiles.cend();
 	}
 	FILE* openFile(const char* filename, const char* mode);
+	char* getTempFileName();
 	void closeFile(FILE* file);
+	void removeTempFile(char* file);
 
 	void setTabSize(size_t);
 	void resetTabSize();

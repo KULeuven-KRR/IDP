@@ -16,6 +16,8 @@
 #include "insert.hpp"
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "utils/LogAction.hpp"
+#include <cstring>
+
 
 extern void resetParser();
 
@@ -40,6 +42,9 @@ GlobalData::~GlobalData() {
 	delete (_domainelemFactory);
 	for (auto i = _openfiles.cbegin(); i != _openfiles.cend(); ++i) {
 		fclose(*i);
+	}
+	for (auto i = _temp_file_names.cbegin(); i != _temp_file_names.cend(); ++i) {
+		remove(*i);
 	}
 	for (auto m = _monitors.begin(); m != _monitors.end(); ++m) {
 		delete (*m);
@@ -98,10 +103,24 @@ FILE* GlobalData::openFile(const char* filename, const char* mode) {
 	return f;
 }
 
+
+char* GlobalData::getTempFileName() {
+	auto filename = tmpnam(NULL);
+	_temp_file_names.insert(filename);
+	return filename;
+}
+
 void GlobalData::closeFile(FILE* filepointer) {
 	Assert(filepointer!=NULL);
 	_openfiles.erase(filepointer);
 	fclose(filepointer);
+}
+
+#include <unistd.h>
+void GlobalData::removeTempFile(char* name) {
+	Assert(name!=NULL);
+	_temp_file_names.erase(name);
+	remove(name);
 }
 
 void GlobalData::setTabSize(size_t size) {
