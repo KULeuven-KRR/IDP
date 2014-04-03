@@ -14,6 +14,7 @@
 #include "creation/cppinterface.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "structure/StructureComponents.hpp"
+#include "structure/Structure.hpp"
 
 #ifdef WITHXSB
 #include "inferences/querying/xsb/XSBInterface.hpp"
@@ -199,7 +200,8 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 			result._hasModel = false;
 			return false;
 		}
-		// If no inconsistency is detected, update the refined symbols
+		result._calculated_model->clean();
+		// Update the refined symbols
 		result._refined_symbols.clear();
 		if(not (inter->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
 				inter->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
