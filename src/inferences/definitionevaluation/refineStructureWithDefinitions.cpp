@@ -200,7 +200,6 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 			result._hasModel = false;
 			return false;
 		}
-		result._calculated_model->clean();
 		// Update the refined symbols
 		result._refined_symbols.clear();
 		if(not (inter->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
@@ -209,6 +208,7 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 			result._refined_symbols.insert(symbol);
 		}
 	}
+	result._calculated_model->clean();
 	return true;
 }
 
