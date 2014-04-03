@@ -35,12 +35,10 @@ class Definition;
 struct DefinitionCalculationResult {
 	bool _hasModel;
 	Structure* _calculated_model;
-	std::vector<Definition*> _calculated_definitions;
 
 	DefinitionCalculationResult(Structure* structure) :
 		_hasModel(false),
-		_calculated_model(structure),
-		_calculated_definitions() {};
+		_calculated_model(structure) {};
 
 
 };
@@ -71,7 +69,7 @@ public:
 	}
 
 #ifdef WITHXSB
-	static bool determineXSBUsage(Definition* definition);
+	static bool determineXSBUsage(const Definition* definition);
 #endif
 
 private:

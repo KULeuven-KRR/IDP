@@ -388,7 +388,7 @@ std::set<PFSymbol*> recurionsOverNegationSymbols(Definition*);
 void splitDefinitions(Theory* t);
 
 /** Check whether the definition has a recursive aggregate */
-bool approxContainsRecDefAggTerms(Definition*);
+bool approxContainsRecDefAggTerms(const Definition*);
 
 /** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
 Definition* makeDefinitionCalculable(Definition*, Structure*);

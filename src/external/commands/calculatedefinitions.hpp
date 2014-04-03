@@ -39,9 +39,6 @@ public:
 			return InternalArgument();
 		}
 		Assert(sols._hasModel and sols._calculated_model != NULL);
-		for (auto def : sols._calculated_definitions) {
-			def->recursiveDelete();
-		}
 		return InternalArgument(sols._calculated_model);
 	}
 };

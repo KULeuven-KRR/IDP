@@ -21,7 +21,7 @@ extern void parsefile(const std::string&);
 
 using namespace std;
 
-bool HasRecursionOverNegation::execute(Definition* d) {
+bool HasRecursionOverNegation::execute(const Definition* d) {
 	return not DefinitionUtils::recurionsOverNegationSymbols(d).empty();
 }
 
@@ -40,8 +40,8 @@ std::set<PFSymbol*> ApproxRecursionOverNegationSymbols::execute(Definition* d) {
 		for (auto occ : occs) {
 			if (occ.second != Context::POSITIVE) { //Negative or both
 				result.insert(occ.first);
-			}
-		}
+	}
+	}
 	}
 	return result;
 }

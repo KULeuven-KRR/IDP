@@ -243,7 +243,7 @@ void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }
 
-bool approxContainsRecDefAggTerms(Definition* def) {
+bool approxContainsRecDefAggTerms(const Definition* def) {
 	return transform<CheckApproxContainsRecDefAggTerms, bool>(def);
 }
 

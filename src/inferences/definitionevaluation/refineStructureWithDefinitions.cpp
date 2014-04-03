@@ -25,8 +25,9 @@
 
 using namespace std;
 DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
-		Definition* definition, Structure* structure, bool satdelay,
+		const Definition* d, Structure* structure, bool satdelay,
 		std::set<PFSymbol*> symbolsToQuery) const {
+	auto definition = d->clone();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Refining definition: " << toString(definition) << "\n";
 	}

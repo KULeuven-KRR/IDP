@@ -97,7 +97,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
         	return result;
 		} else {
 	    	result._hasModel=true;
-	    	result._calculated_definitions.push_back(definition);
 		}
     	return result;
 	}
@@ -161,9 +160,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	delete (grounder);
 
 	result._hasModel=(not abstractsolutions.empty() && structure->isConsistent());
-	if(result._hasModel) {
-    	result._calculated_definitions.push_back(definition);
-	}
 	return result;
 }
 
@@ -240,7 +236,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 					fixpoint = false;
 					opens.erase(currentdefinition);
 					theory->remove(definition);
-					result._calculated_definitions.push_back(definition);
+					definition->recursiveDelete();
 				}
 			}
 		}
@@ -285,7 +281,7 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 }
 
 #ifdef WITHXSB
-bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
+bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
 	auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation(definition);
 	if (getOption(XSB) && hasrecursion) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");

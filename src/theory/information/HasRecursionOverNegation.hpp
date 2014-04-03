@@ -51,7 +51,7 @@ private:
 class ApproxHasRecursionOverNegation {
 
 public:
-	bool execute(Definition* d);
+	bool execute(const Definition* d);
 
 };
 
