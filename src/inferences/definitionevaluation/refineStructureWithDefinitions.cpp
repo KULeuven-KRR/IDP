@@ -159,7 +159,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		// Find definitions with opens for which the interpretation has changed
 		for (auto def : theory->definitions()) {
 			// Don't do anything for the definition if it is still in the queue
-			if (definitions_to_process.find(def) != definitions_to_process.end()) {
+			if (definitions_to_process.find(def) == definitions_to_process.end()) {
 				for (auto symbol : processDefResult._refined_symbols) {
 					auto opensOfDefinition = DefinitionUtils::opens(def);
 					if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
@@ -185,6 +185,7 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 	if (not result._hasModel) {
 		return false;
 	}
+	result._refined_symbols.clear();
 	for (auto it : initial_inters) {
 		auto symbol = it.first;
 		auto inter = it.second;
@@ -201,7 +202,6 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 			return false;
 		}
 		// Update the refined symbols
-		result._refined_symbols.clear();
 		if(not (inter->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
 				inter->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
 			// The interpretation on this symbol has changed
