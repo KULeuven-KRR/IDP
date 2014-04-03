@@ -17,7 +17,7 @@ procedure standardoptions(){
 procedure mxnobounds(){
 	stdoptions.groundwithbounds = false	
 	stdoptions.liftedunitpropagation = false
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -25,14 +25,14 @@ procedure mxnobounds(){
 // NOTE: never enable delaying here which depends on well-founded definitions!
 procedure mxlazy(){
 	stdoptions.tseitindelay = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
 procedure mxlazycp(){
 	stdoptions.cpsupport = true
 	stdoptions.tseitindelay = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -46,7 +46,7 @@ procedure mxverylazy(){
 	stdoptions.lazysizelimit=3
 	stdoptions.satdelay=true
 	stdoptions.tseitindelay=true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -60,7 +60,7 @@ procedure mxnoboundslong(){
 procedure mxwithbounds(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -68,7 +68,7 @@ procedure mxwithxsb(){
 	stdoptions.xsb=true
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -77,14 +77,14 @@ procedure mxwithapproxdefs(){
   	stdoptions.approxdef="cheap"
   	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
 procedure mxwithboundswithoutLUP(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = false
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -92,7 +92,7 @@ procedure mxnonreduced(){
 	stdoptions.reducedgrounding = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -102,7 +102,7 @@ procedure mxwithcp(){
 	stdoptions.cpgroundatoms = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -112,7 +112,7 @@ procedure mxwithcpgecode(){
 	stdoptions.cpgroundatoms = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -121,7 +121,7 @@ procedure mxwithfullcp(){
 	stdoptions.cpgroundatoms = true
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
@@ -130,12 +130,12 @@ procedure mxwithSharedTseitins(){
 	stdoptions.sharedtseitins = true
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	return run()
 }
 
 procedure mxwithsymm(){
-	stdoptions.timeout = 5
+	stdoptions.timeout = 7
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.symmetrybreaking = "static"
