@@ -105,12 +105,7 @@ FILE* GlobalData::openFile(const char* filename, const char* mode) {
 
 
 char* GlobalData::getTempFileName() {
-	stringstream ss;
-	ss << "XXXXXX";
-	auto filename = new char[ss.str().size() + 1];
-	strcpy(filename, ss.str().c_str());
-	mkstemp(filename);		// Creates and opens a new temp file r/w.
-							// Xs are replaced with a unique number.
+	auto filename = tmpnam(NULL);
 	_temp_file_names.insert(filename);
 	return filename;
 }
