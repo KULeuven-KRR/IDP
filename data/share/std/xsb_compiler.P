@@ -104,13 +104,6 @@ ixforall(CallA, CallB) :-
     tables:not_exists((call(CallA), tables:not_exists(CallB))).
 
 % ixthreeval_findall(Var,Query,Ret)
-% Case to find all "true" answers -> only return if non-empty though
-ixthreeval_findall(Var,Query,Ret) :-
-  findall(Var,call_tv(Query,true),Ret),
-  Ret = [_|_].
-
-% ixthreeval_findall(Var,Query,Ret)
-% Case to find all "undefined" answers
 %   1: Gather all "true" answers
 %   2: Gather all "undefined" answers of the Query
 %   3: Append each possible subset of "undefined" answers list to the "true" 

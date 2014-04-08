@@ -1,0 +1,17 @@
+vocabulary V {
+  type t isa int
+  P:t
+  Input(t)
+}
+
+theory T : V {  
+  {
+    P = prod{ x : Input(x) : x}.
+  }
+}
+
+structure S : V {
+  t = {1..4}
+  Input<ct> = {1}
+  Input<cf> = {4}
+}
