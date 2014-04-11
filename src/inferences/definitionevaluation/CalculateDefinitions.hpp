@@ -62,7 +62,7 @@ public:
 		return c.calculateKnownDefinitions(theory, structure, satdelay, symbolsToQuery);
 	}
 	static DefinitionCalculationResult doCalculateDefinitions(
-			Definition* definition, Structure* structure, bool satdelay = false,
+			const Definition* definition, Structure* structure, bool satdelay = false,
 			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
 		CalculateDefinitions c;
 		return c.calculateKnownDefinition(definition, structure, satdelay, symbolsToQuery);
@@ -76,7 +76,7 @@ private:
 	DefinitionCalculationResult calculateKnownDefinitions(Theory* theory, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
-	DefinitionCalculationResult calculateKnownDefinition(Definition* definition, Structure* structure,
+	DefinitionCalculationResult calculateKnownDefinition(const Definition* definition, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateDefinition(const Definition* definition, Structure* structure,

@@ -297,9 +297,12 @@ bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
 #endif
 
 // IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition,
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(const Definition* definition,
 		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
 	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
-	theory->add(definition);
-	return calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
+	auto newdef = definition->clone();
+	theory->add(newdef);
+	auto ret = calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
+	theory->recursiveDelete();
+	return  ret;
 }
