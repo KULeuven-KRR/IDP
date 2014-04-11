@@ -41,8 +41,14 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		SymbolicPropagation propagator;
-		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		vector<Structure*> sols;
+		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
+			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
+			sols = propagator->propagate(get<0>(args), get<1>(args));
+		} else {
+			SymbolicPropagation propagator;
+			sols = propagator.propagate(get<0>(args), get<1>(args));
+		}
 		return postProcess(sols);
 	}
 };
