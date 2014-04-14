@@ -37,6 +37,10 @@ using std::stringstream;
 #define IDPXSB_CAPS_PREFIX "IX"
 #endif
 
+#ifndef IDPXSB_SHORT_PREFIX
+#define IDPXSB_SHORT_PREFIX "x"
+#endif
+
 bool XSBToIDPTranslator::isoperator(int c) {
 	return c == '*' ||
 			c == '(' ||
@@ -106,9 +110,13 @@ string XSBToIDPTranslator::to_prolog_term(string str) {
 string XSBToIDPTranslator::transform_into_term_name(string str) {
 	if (isXSBBuiltIn(str)) {
 		return str;
+	} else if (getOption(BoolType::XSB_SHORT_NAMES)) {
+		stringstream ss;
+		ss << new_pred_name();
+		return ss.str();
 	} else {
 		stringstream ss;
-		ss << IDPXSB_PREFIX << "_" << getGlobal()->getNewID() << "_" << to_simple_chars(str);
+		ss << IDPXSB_PREFIX << "_" << getNewID() << "_" << to_simple_chars(str);
 		return ss.str();
 	}
 }
@@ -141,7 +149,7 @@ string XSBToIDPTranslator::to_prolog_term(const DomainElement* domelem) {
 	} else {
 		// filter the string
 		stringstream s;
-		s << IDPXSB_PREFIX << to_simple_chars(str);
+		s << to_prolog_term(to_simple_chars(str));
 		ret = s.str();
 		_domainels[ret] = domelem;
 	}
@@ -285,6 +293,36 @@ string XSBToIDPTranslator::get_threevalued_findall_term_name() {
 string XSBToIDPTranslator::get_abs_term_name() {
 	std::stringstream ss;
 	ss << IDPXSB_PREFIX << "abs";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::get_division_term_name() {
+	std::stringstream ss;
+	ss << IDPXSB_PREFIX << "division";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::get_exponential_term_name() {
+	std::stringstream ss;
+	ss << IDPXSB_PREFIX << "exponential";
+	return ss.str();
+}
+
+string XSBToIDPTranslator::new_pred_name_with_prefix(string str) {
+	if (getOption(BoolType::XSB_SHORT_NAMES)) {
+		stringstream ss;
+		ss << new_pred_name();
+		return ss.str();
+	} else {
+		stringstream ss;
+		ss << str << getNewID();
+		return ss.str();
+	}
+}
+
+string XSBToIDPTranslator::new_pred_name() {
+	stringstream ss;
+	ss << IDPXSB_SHORT_PREFIX << getNewID();
 	return ss.str();
 }
 

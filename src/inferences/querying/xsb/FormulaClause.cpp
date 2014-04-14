@@ -59,10 +59,10 @@ std::ostream& operator<<(std::ostream& output, const PrologTerm& pt) {
 				name = "mod";
 			}
 			if(pt._name == "/") {
-				output << XSBToIDPTranslator::get_idp_prefix() << "division(" << toString(**solution) << ", " <<
+				output << XSBToIDPTranslator::get_division_term_name() << "(" << toString(**solution) << ", " <<
 						toString(**first) << ", " << toString(**second) << ")";
 			} else if(pt._name == "^") {
-					output << XSBToIDPTranslator::get_idp_prefix() << "exponential(" << toString(**solution) << ", " <<
+					output << XSBToIDPTranslator::get_exponential_term_name() << "(" << toString(**solution) << ", " <<
 							toString(**first) << ", " << toString(**second) << ")";
 				} else {
 				output << toString(**solution) << " is " << toString(**first) << " " << name << " " << toString(**second);
