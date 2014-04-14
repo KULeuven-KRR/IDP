@@ -1,0 +1,16 @@
+vocabulary V{
+	type X constructed from {a,b}
+}
+theory T:V{
+}
+structure S:V{
+}
+procedure main(){
+	if equal(S[V::a](),S[V::b]()) then
+		return 0
+	end
+	if not equal(S[V::a](),S[V::a]()) then
+		return 0
+	end
+	return 1
+}

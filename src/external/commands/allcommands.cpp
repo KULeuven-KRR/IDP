@@ -49,6 +49,7 @@
 #include "unsatcore.hpp"
 #include "progress.hpp"
 #include "names.hpp"
+#include "equal.hpp"
 
 #include "answer.hpp" //easter egg
 
@@ -145,6 +146,12 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<getNameInference<Structure*> >());
 	inferences.push_back(make_shared<setNameInference<AbstractTheory*> >());
 	inferences.push_back(make_shared<getNameInference<AbstractTheory*> >());
+	inferences.push_back(make_shared<EqualInference<ElementTuple*> >());
+	inferences.push_back(make_shared<EqualInference<const Compound*> >());
+	inferences.push_back(make_shared<EqualInference<string*> >());
+	inferences.push_back(make_shared<EqualInference<bool> >());
+	inferences.push_back(make_shared<EqualInference<double> >());
+	inferences.push_back(make_shared<EqualInference<int> >());
 
 	inferences.push_back(make_shared<AnswerInference>());
 	return inferences;
