@@ -82,6 +82,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<DomainDerefAndIncrementInference<const Compound*>>());
 	inferences.push_back(make_shared<OptimalPropagateInference>());
 	inferences.push_back(make_shared<GroundPropagateInference>());
+	inferences.push_back(make_shared<PropagateDefinitionsInference>());
 	inferences.push_back(make_shared<PropagateInference>());
 	inferences.push_back(make_shared<PrintOptionInference>());
 	inferences.push_back(make_shared<PrintInference<LIST(const PredTable*)>>());

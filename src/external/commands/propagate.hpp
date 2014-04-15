@@ -13,6 +13,7 @@
 #define PROPAGATE_HPP_
 
 #include "commandinterface.hpp"
+#include "theory/TheoryUtils.hpp"
 
 #include "inferences/propagation/GroundingPropagation.hpp"
 #include "inferences/propagation/SymbolicPropagation.hpp"
@@ -48,6 +49,34 @@ public:
 		} else {
 			SymbolicPropagation propagator;
 			sols = propagator.propagate(get<0>(args), get<1>(args));
+		}
+		return postProcess(sols);
+	}
+};
+
+class PropagateDefinitionsInference : public TheoryStructureBase {
+public:
+	PropagateDefinitionsInference()
+			: TheoryStructureBase("propagatedefinitions",
+					"Return a structure, made more precise than the input by doing symbolic propagation on the completion of the definitions in the theory. Returns nil when propagation results in an inconsistent structure.") {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		vector<Structure*> sols;
+		Theory* inputTheory = dynamic_cast<Theory*>(get<0>(args));
+		auto newTheory = new Theory("", inputTheory->vocabulary(), ParseInfo());
+		auto structure = get<1>(args);
+		for (auto definition : inputTheory->definitions()) {
+			newTheory->add(definition->clone());
+		}
+		FormulaUtils::addCompletion(newTheory,structure);
+		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
+			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
+			sols = propagator->propagate(newTheory, structure);
+		} else {
+			SymbolicPropagation propagator;
+			sols = propagator.propagate(newTheory, structure);
 		}
 		return postProcess(sols);
 	}
