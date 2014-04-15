@@ -135,10 +135,8 @@ void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostr
 		if (not certainly_true->contains(tuple)) {
 			// If the tuple is not in the certainly true table, it is unknown
 			// Unknown symbols needs to be printed as follows:
-			//   symbol(arg1,..,argn) :- tnot(symbol(arg1,..,argn)).
-			ss << " :- tnot(" << symbol_name;
-			printTuple(tuple,ss);
-			ss << ")";
+			//   symbol(arg1,..,argn) :- undef.
+			ss << " :- undef";
 		}
 		ss << ".\n";
 	}
