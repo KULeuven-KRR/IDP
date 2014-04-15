@@ -471,6 +471,7 @@ public:
 	bool isConsistent() const;
 	const std::set<ElementTuple>& getInconsistentAtoms() const;
 	bool approxTwoValued() const;
+	tablesize nrTwoValuedAtoms() const;
 	const Universe& universe() const {
 		return _ct->universe();
 	}

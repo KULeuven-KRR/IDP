@@ -3747,6 +3747,14 @@ bool PredInter::approxTwoValued() const {
 	return isConsistent() && _ct->approxEqual(_pt);
 }
 
+tablesize PredInter::nrTwoValuedAtoms() const {
+	tablesize ret;
+	ret = ret + toDouble(_ct->size());
+	ret = ret + toDouble(_cf->size());
+	ret = ret - _inconsistentElements.size();
+	return ret;
+}
+
 void PredInter::makeTrueExactly(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (_inconsistentElements.find(tuple) != _inconsistentElements.cend()) {
 		_inconsistentElements.erase(tuple);

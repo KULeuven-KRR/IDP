@@ -131,6 +131,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<TwoValuedExtensionsOfStructureInference>());
 	inferences.push_back(make_shared<CalculateDefinitionInference>());
 	inferences.push_back(make_shared<RefineDefinitionsInference>());
+	inferences.push_back(make_shared<NrTwoValuedAtomsInference>());
 	inferences.push_back(make_shared<IsConsistentInference>());
 	inferences.push_back(make_shared<StructureEqualityInference>());
 	inferences.push_back(make_shared<SetOptionsInference>());
