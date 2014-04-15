@@ -29,7 +29,7 @@ extern "C"{
 
 using namespace std;
 
-const char* historyfilename = ".history";
+const char* historyfilename = ".idp_history";
 
 bool idp_terminateInteractive() {
 	return requestedInteractiveTermination();
