@@ -209,7 +209,11 @@ public:
 		return getSymbol(symbol).offset!=-1;
 	}
 
+	Tuple2AtomMap emptymap;
 	const Tuple2AtomMap& getIntroducedLiteralsFor(PFSymbol* symbol) const{
+		if(not hasSymbol(symbol)){
+			return emptymap;
+		}
 		auto offset = getSymbol(symbol);
 		Assert(offset.offset!=-1);
 		if(offset.functionlist){
