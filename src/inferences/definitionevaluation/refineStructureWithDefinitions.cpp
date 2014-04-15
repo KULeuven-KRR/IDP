@@ -143,7 +143,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
 		processDefResult._hasModel = postprocess(processDefResult, definition, initial_interpretations);
 		initial_interpretations.clear(); // These are not needed anymore
-		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 			clog << "Resulting structure:\n" << toString(structure) << "\n";
 		}
 		if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution
