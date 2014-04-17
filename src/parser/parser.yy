@@ -123,7 +123,7 @@ void yyerror(const char* s);
 %token PARTIAL
 %token EXTENDS
 %token EXTERN
-%token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM UNION
+%token P_MINAGG P_MAXAGG P_CARD P_PROD P_SOM
 %token FALSE
 %token USINGVOCABULARY
 %token EXTERNVOCABULARY

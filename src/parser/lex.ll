@@ -442,8 +442,6 @@ COMMENTLINE2	"--".*
 							  return P_MINAGG;			}
 <theory>"max"				{ parser.advancecol();
 							  return P_MAXAGG;			}
-<theory>"U"					{ parser.advancecol(); 
-							  return UNION;				}
 
 	/** Fixpoint definitions **/
 
