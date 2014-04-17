@@ -29,7 +29,8 @@ extern "C"{
 
 using namespace std;
 
-const char* historyfilename = ".idp_history";
+char* historyfilename;
+
 
 bool idp_terminateInteractive() {
 	return requestedInteractiveTermination();
@@ -92,7 +93,12 @@ void idp_rl_start() {
 
 	bool success = false;
 	/* Load the history at startup */
-
+#ifdef UNIX
+        auto temp = getenv ("HOME");
+        historyfilename = strcat(temp, "/.idp3/.history");
+#else
+        historyfilename = ".idp3_history";
+#endif
 	// Create it first if it does not yet exist
 	FILE* f = fopen(historyfilename, "r");
 	if(f==NULL) {
@@ -101,7 +107,7 @@ void idp_rl_start() {
 			fclose(f);
 		}
 	}
-	if(linenoiseHistoryLoad(".history")==0) {
+	if(linenoiseHistoryLoad(historyfilename)==0) {
 		success = true;
 	}
 
