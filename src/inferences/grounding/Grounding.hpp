@@ -161,7 +161,7 @@ private:
 		}
 		Assert(defCalculatedResult._calculated_model->isConsistent());
 		_structure = defCalculatedResult._calculated_model;
-		if(getOption(BoolType::XSB)) {
+		if(getOption(BoolType::XSB) && getOption(BoolType::REFINE_DEFS_WITH_XSB)) {
 			auto defRefinedResult = refineStructureWithDefinitions::doRefineStructureWithDefinitions(dynamic_cast<Theory*>(_theory), _structure, satdelay);
 			if (not defRefinedResult._hasModel) {
 				// FIXME bugged: NULL as symstructure (see above))
