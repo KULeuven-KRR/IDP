@@ -562,7 +562,6 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) {
 	auto pt = fi->graphInter();
 	auto ct = pt->ct();
 	// Check if the interpretation is indeed a function
-	auto isfunc = true;
 	FirstNElementsEqual eq(f->arity());
 	auto ctit = ct->begin();
 	if (not ctit.isAtEnd()) {

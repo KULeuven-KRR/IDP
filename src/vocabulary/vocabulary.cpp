@@ -1049,7 +1049,7 @@ set<Sort*> ComparisonPredGenerator::allsorts() const {
 	return ss;
 }
 
-void ComparisonPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
+void ComparisonPredGenerator::addVocabulary(const Vocabulary*) {
 	/*for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
 		it->second->addVocabulary(vocabulary);
 	}*/
