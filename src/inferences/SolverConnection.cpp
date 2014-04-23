@@ -194,14 +194,15 @@ VarId getVar(MinisatID::VarID id) {
 void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {
 	// Convert vector of variableassignments to a map
 	map<VarId, int> variable2valuemap;
-	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
+	for (auto cpvar : model.variableassignments) {
 		CHECKTERMINATION;
-		variable2valuemap[getVar(cpvar->variable)] = cpvar->value;
+		Assert(cpvar.hasValue()); // TODO as long as partial is not supported by the grounder
+		variable2valuemap[getVar(cpvar.getVariable())] = cpvar.getValue();
 	}
 	// Add terms to the output structure
-	for (auto cpvar = model.variableassignments.cbegin(); cpvar != model.variableassignments.cend(); ++cpvar) {
+	for (auto cpvar : model.variableassignments) {
 		CHECKTERMINATION;
-		auto var = getVar(cpvar->variable);
+		auto var = getVar(cpvar.getVariable());
 		if(not translator->hasVarIdMapping(var)){
 			continue;
 		}
@@ -220,7 +221,7 @@ void addTerms(const MinisatID::Model& model, GroundTranslator* translator, Struc
 				tuple.push_back(it->_domelement);
 			}
 		}
-		tuple.push_back(createDomElem(cpvar->value));
+		tuple.push_back(createDomElem(cpvar.getValue()));
 		//	cerr <<"Adding tuple " <<print(tuple) <<" to " <<print(getFunction) <<"\n";
 		init->inter(function)->graphInter()->makeTrueAtLeast(tuple);
 	}
