@@ -307,7 +307,11 @@ vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheor
 				break;
 			}
 			auto elem = core[i];
-			swap(core[i], core[maxsize - 1]);
+                        
+			//This serves to prevent self-swapping (Cf. Issue 739)
+			if (not(core[i].symbol==core[maxsize - 1].symbol && core[i].args==core[maxsize - 1].args)) {
+				swap(core[i], core[maxsize - 1]);
+			}
 			core.pop_back();
 			maxsize--;
 			auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { core, { } });
