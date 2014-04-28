@@ -18,6 +18,7 @@
 extern "C"{
 	#include "linenoise.h"
 }
+#include <sys/stat.h>
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
@@ -25,6 +26,7 @@ extern "C"{
 #include <set>
 #include <string>
 #include <cstring>
+
 #include "commands/allcommands.hpp"
 
 using namespace std;
@@ -94,8 +96,11 @@ void idp_rl_start() {
 	bool success = false;
 	/* Load the history at startup */
 #ifdef UNIX
-        auto temp = getenv ("HOME");
-        historyfilename = strcat(temp, "/.idp3/.history");
+		auto homedir = getenv ("HOME");
+		char temp[strlen(homedir)];
+		strcpy(temp,homedir );
+        mkdir(strcat(temp, "/.idp3"),S_IRWXO | S_IRWXG | S_IRWXU);
+        historyfilename = strcat(temp, "/.history");
 #else
         historyfilename = ".idp3_history";
 #endif
