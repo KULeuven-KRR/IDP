@@ -112,7 +112,7 @@ public:
 	}
 	void addOptimization(VarId varid) {
 		addFDVariable(varid);
-		execute(MinisatID::MinimizeVar(1, convert(varid)));
+		execute(MinisatID::OptimizeVar(1, convert(varid), true));
 	}
 
 	void add(Lit tseitin, TsType type, const GroundClause rhs, bool conjunctive) {
