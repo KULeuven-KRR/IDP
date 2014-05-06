@@ -294,8 +294,11 @@ public:
 		throw notyetimplemented("Printing queries in IDP2 format");
 	}
 	void visit(const FOBDD*) {
-			throw notyetimplemented("Printing fobdds in IDP2 format");
-		}
+		throw notyetimplemented("Printing fobdds in IDP2 format");
+	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Printing compounds in IDP2 format");
+	}
 	void visit(const Vocabulary*) {
 		throw notyetimplemented("Printing vocabularies in IDP2 format");
 	}

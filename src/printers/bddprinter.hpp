@@ -122,6 +122,9 @@ public:
 	virtual void visit(const FOBDD*) {
 		throw IdpException("FOBDDS cannot by a printer that converts theories to BDDs, use print(..) instead"); //todo
 	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Compounds cannot be printed as BDDs");
+	}
 	virtual void visit(const Namespace*) {
 		throw IdpException("Namespaces cannot be printed as BDDs");
 	}

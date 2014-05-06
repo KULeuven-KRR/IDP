@@ -148,6 +148,9 @@ public:
 	void visit(const FOBDD*) {
 		throw notyetimplemented("Printing fobdds in ecnf format");
 	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Printing compounds in ecnf format");
+	}
 
 	void visit(const GroundClause& g) {
 		Assert(isTheoryOpen());
