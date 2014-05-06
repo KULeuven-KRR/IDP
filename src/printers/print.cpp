@@ -81,3 +81,7 @@ template<>
 void Printer::print(const FOBDD* b) {
 	visit(b);
 }
+template<>
+void Printer::print(const Compound* b) {
+	visit(b);
+}

@@ -1,0 +1,25 @@
+vocabulary voc{
+	type Klant
+	type Score constructed from {A, B}
+	KlantScore(Klant):Score
+}
+
+theory theo:voc{}
+
+structure struc:voc{
+	Klant = {Fre}
+	KlantScore = {Fre->A()}
+}
+
+include <mx>
+procedure main(){
+	stdoptions.nbmodels = 1
+	local model = modelexpand(theo, struc)[1]
+	print(model[voc::KlantScore].graph.ct)
+	for tup in tuples(model[voc::KlantScore].graph.ct) do
+	    for i=1, #tup, 1 do
+			print(tup[i])
+	    end
+	end
+return 1;
+}

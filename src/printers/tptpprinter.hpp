@@ -114,8 +114,11 @@ protected:
 		throw notyetimplemented("Converting Query to tptp format.");
 	}
 	void visit(const FOBDD*) {
-			throw notyetimplemented("Converting FOBDD to tptp format.");
-		}
+		throw notyetimplemented("Converting FOBDD to tptp format.");
+	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Converting Compounds to tptp format.");
+	}
 
 	void visit(const Theory* theory) {
 		auto temp = theory->clone();

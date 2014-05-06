@@ -73,8 +73,11 @@ public:
 		throw notyetimplemented("Printing queries in ASP format");
 	}
 	void visit(const FOBDD*) {
-			throw notyetimplemented("Printing fobdds in ASP format");
-		}
+		throw notyetimplemented("Printing fobdds in ASP format");
+	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Printing compounds in ASP format");
+	}
 
 	void visit(const Structure* structure) {
 		Assert(isTheoryOpen());

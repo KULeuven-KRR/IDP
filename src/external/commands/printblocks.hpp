@@ -42,3 +42,4 @@ public:
 		return InternalArgument(new std::string(printToString(a)));
 	}
 };
+

@@ -65,11 +65,6 @@ Vocabulary* InternalArgument::get<Vocabulary*>() {
 }
 
 template<>
-const Compound* InternalArgument::get<const Compound*>() {
-	return _value._compound;
-}
-
-template<>
 int InternalArgument::get<int>() {
 	return _value._int;
 }
@@ -92,6 +87,11 @@ UserProcedure* InternalArgument::get<UserProcedure*>() {
 template<>
 SortIterator* InternalArgument::get<SortIterator*>() {
 	return _value._sortiterator;
+}
+
+template<>
+const Compound* InternalArgument::get<const Compound*>() {
+	return _value._compound;
 }
 
 template<>
