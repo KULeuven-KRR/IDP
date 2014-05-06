@@ -21,4 +21,5 @@ procedure main(){
 			print(tup[i])
 	    end
 	end
+return 1;
 }
