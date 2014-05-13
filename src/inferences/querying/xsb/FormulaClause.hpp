@@ -197,6 +197,12 @@ public:
 	bool fact() {
 		return _fact;
 	}
+	void numericalOperation(bool b) {
+		_numerical_operation = b;
+	}
+	bool numericalOperation() {
+		return _numerical_operation;
+	}
 	void sign(bool b) {
 		_sign = b;
 	}
