@@ -116,13 +116,12 @@ endif()
 set_target_properties(idp-bin PROPERTIES OUTPUT_NAME idp)
 
 set_target_properties(idp-bin PROPERTIES 
-		OUTPUT_NAME kbs
-		VERSION ${idp_VERSION}
+	OUTPUT_NAME kbs
+	VERSION ${idp_VERSION}
 )
 
 set(DATAFILES "")
 file(GLOB DATAFILES "${PROJECT_SOURCE_DIR}/data/share/std/*.idp")
-#message(STATUS "Datafiles ${DATAFILES}")
 
 # add the install targets
 install (TARGETS idp-bin DESTINATION bin PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
@@ -141,4 +140,3 @@ if(WITHXSB)
 install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P  
 		DESTINATION share/std)
 endif()
-#?SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES} kbs idp.bat idp")
