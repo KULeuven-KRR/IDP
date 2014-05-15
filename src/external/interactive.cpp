@@ -18,7 +18,9 @@
 extern "C"{
 	#include "linenoise.h"
 }
+#ifdef UNIX
 #include <sys/stat.h>
+#endif UNIX
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
@@ -96,13 +98,13 @@ void idp_rl_start() {
 	bool success = false;
 	/* Load the history at startup */
 #ifdef UNIX
-		auto homedir = getenv ("HOME");
-		char temp[strlen(homedir)];
-		strcpy(temp,homedir );
-        mkdir(strcat(temp, "/.idp3"),S_IRWXO | S_IRWXG | S_IRWXU);
-        historyfilename = strcat(temp, "/.history");
+	auto homedir = getenv ("HOME");
+	char temp[strlen(homedir)];
+	strcpy(temp,homedir );
+	mkdir(strcat(temp, "/.idp3"),S_IRWXO | S_IRWXG | S_IRWXU);
+	historyfilename = strcat(temp, "/.history");
 #else
-        historyfilename = ".idp3_history";
+	historyfilename = ".idp3_history";
 #endif
 	// Create it first if it does not yet exist
 	FILE* f = fopen(historyfilename, "r");
