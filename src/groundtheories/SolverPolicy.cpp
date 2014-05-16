@@ -147,10 +147,7 @@ template<class Solver>
 void SolverPolicy<Solver>::polStartLazyFormula(LazyInstantiation* inst, TsType type, bool conjunction) {
 	auto mon = new LazyClauseMon(inst);
 	auto lit = createLiteral(inst->residual);
-	extAdd(getSolver(),
-			MinisatID::LazyGroundImpl(getDefConstrID(),
-					MinisatID::Implication(getDefConstrID(), lit, convert(type),
-							MinisatID::litlist { }, conjunction), mon));
+	extAdd(getSolver(), MinisatID::LazyGroundImpl(MinisatID::Implication(lit, convert(type), MinisatID::litlist { }, conjunction), mon));
 	CHECKUNSAT;
 }
 
@@ -413,7 +410,7 @@ void SolverPolicy<Solver>::polAddLazyElement(Lit head, PFSymbol* symbol, const s
 			vars.push_back(convert(arg._varid));
 		}
 	}
-	auto le = MinisatID::LazyAtom(getDefConstrID(), createLiteral(head), vars, gr);
+	auto le = MinisatID::LazyAtom(createLiteral(head), vars, gr);
 	extAdd(getSolver(), le);
 	CHECKUNSAT;
 }

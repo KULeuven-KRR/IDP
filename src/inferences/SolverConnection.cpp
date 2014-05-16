@@ -20,10 +20,6 @@ using namespace std;
 
 namespace SolverConnection {
 
-uint getDefConstrID() {
-	return 1;
-}
-
 MinisatID::VarID convert(VarId varid) {
 	return {varid.id};
 }
