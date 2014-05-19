@@ -1,0 +1,245 @@
+/**
+ * Title: Belfius small case
+ * Author: Frederic Gobert
+ */
+vocabulary V {
+    type Klant
+    
+    type KlantType constructed from {Axion, NAxion}
+    type IRScore constructed from {A, B, C, D, E, F, G, H, I, J, K, L, Z}
+    type Profiel constructed from {PP, PM, P, MM, M}
+    type Segment constructed from {Prive, ActiefP, RetailActief, RetailAndere, Andere}
+    type EricAntwoord constructed from {OK, NOK, QUEST}
+    type Waarde constructed from {Good, Medium, Bad}
+    
+    type Leeftijd isa int
+    type CDRCode isa int
+    type Maanden isa int
+    
+    type F1Type isa float
+    type F2Type isa float
+    type F3Type isa float
+    type BestaandeSchuldenType isa float
+    type LeenbedragType isa float  
+    type NCTOType isa float
+    type BezittingenType isa float
+    type PotentieelType isa float
+    type ShadowLimitType isa float
+    type AlphaType isa float
+    type BetaType isa float
+    
+    
+    //FUNCTIESYMBOLEN
+    //bedragen
+    BestaandeSchulden(Klant):BestaandeSchuldenType
+    Leenbedrag(Klant):LeenbedragType  
+    NCTO(Klant):NCTOType
+    Bezittingen(Klant):BezittingenType
+    Potentieel(Klant):PotentieelType
+    ShadowLimit(Klant):ShadowLimitType
+    
+    //gewichten
+    Alpha(Klant):AlphaType
+    Beta(Klant):BetaType
+    
+    //risico
+    IRScore(Klant):IRScore
+    CDRWaarde(Klant):Waarde
+    CDRCode(Klant):CDRCode    
+    Profiel(Klant):Profiel
+    
+    //klantinfo
+    Segment(Klant):Segment
+    Type(Klant):KlantType
+    Leeftijd(Klant):Leeftijd
+    LeeftijdZichtrekening(Klant):Maanden
+    
+    //eric beslissing
+    EricAntwoord(Klant):EricAntwoord
+    
+    //constanten
+    CurrentKlant:Klant
+    F1:F1Type
+    F2:F2Type
+    F3:F3Type
+    
+    //PREDICAATSYMBOLEN    
+    HeeftDexiaHypotheek(Klant)
+    
+    //tabellen
+    ProfielTabel(IRScore, Waarde, Profiel)
+    AlphaTabel(IRScore, float)
+    BetaTabel(Segment, float)
+    CDRTabel(CDRCode, Waarde)
+}
+
+theory T : V {
+    //TYPEBEPALING KLANT
+    {
+        !k: Type(k) = Axion <- Leeftijd(k) < 25.
+        !k: Type(k) = NAxion <- Leeftijd(k) >= 25.
+    }
+    
+    //POTENTIEELBEREKENING
+    {
+        !k a: Alpha(k) = a <- AlphaTabel(IRScore(k), a).
+        !k b: Beta(k) = b <- BetaTabel(Segment(k), b).
+        !k: ShadowLimit(k) = Alpha(k)*Beta(k)*(F1*NCTO(k) + F2*Bezittingen(k)) <- ~HeeftDexiaHypotheek(k).
+        !k: ShadowLimit(k) = Alpha(k)*Beta(k)*(F3*NCTO(k) + F2*Bezittingen(k)) <- HeeftDexiaHypotheek(k).    
+        !k: Potentieel(k) = ShadowLimit(k) - (BestaandeSchulden(k) + Leenbedrag(k)).
+    }
+    
+    //PROFIELBEPALING
+    {
+        !k p c: Profiel(k) = p <- CDRTabel(CDRCode(k), c) & ProfielTabel(IRScore(k), c, p).
+        !k c: CDRWaarde(k) = c <- CDRTabel(CDRCode(k), c).
+    }
+    
+    //FINALE BESLISSING
+    {
+        !k: EricAntwoord(k) = OK <- Profiel(k) = PP & 0 =< Potentieel(k) < 99.16.        
+        !k: EricAntwoord(k) = OK <- Profiel(k) = PP & 99.16 =< Potentieel(k) < 198.32.
+        !k: EricAntwoord(k) = OK <- Profiel(k) = PP & Type(k) = Axion & 99.16 =< Potentieel(k) < 148.74.
+        !k: EricAntwoord(k) = OK <- Profiel(k) = PP & Potentieel(k) > 198.32.
+        !k: EricAntwoord(k) = OK <- Profiel(k) = PP & Type(k) = Axion & Potentieel(k) > 148.74.        
+        !k: EricAntwoord(k) = OK <- Profiel(k) = P & Potentieel(k) > 198.32.
+        !k: EricAntwoord(k) = OK <- Profiel(k) = P & Type(k) = Axion & Potentieel(k) > 148.74.
+        
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = PP & Potentieel(k) < 0.        
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = P & Potentieel(k) < 0.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = P & 0 =< Potentieel(k) < 99.16.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = P & 99.16 =< Potentieel(k) < 198.32.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = P & Type(k) = Axion & 99.16 =< Potentieel(k) < 148.74.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = PM & 99.16 =< Potentieel(k) < 198.32.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = PM & Type(k) = Axion & 99.16 =< Potentieel(k) < 148.74.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = PM & Potentieel(k) > 198.32.
+        !k: EricAntwoord(k) = QUEST <- Profiel(k) = PM & Type(k) = Axion & Potentieel(k) > 148.74.
+        
+        !k: EricAntwoord(k) = QUEST <- LeeftijdZichtrekening(k) =< 6.
+    
+        !k: EricAntwoord(k) = NOK <- EricAntwoord(k) ~= OK & EricAntwoord(k) ~= QUEST.    
+    }
+}
+
+structure S : V{
+    //DOMAIN    
+    Klant = {Fre}    
+    Leeftijd = {0..150}
+    CDRCode = {1..49}
+    Maanden = {0..500}
+    
+    F1Type = {0.7}
+    F2Type = {0.02}
+    F3Type = {0.3}
+    BestaandeSchuldenType = {5}
+    LeenbedragType = {1000}
+    NCTOType = {50}
+    BezittingenType = {5000}
+    PotentieelType = {-855.5}
+    ShadowLimitType = {149.5}
+    AlphaType = {1}
+    BetaType = {1.3}
+    
+    CurrentKlant = Fre
+    F1 = 0.7
+    F2 = 0.02
+    F3 = 0.3
+    
+    //KLANTINFO
+    Leeftijd = {Fre -> 23}
+    LeeftijdZichtrekening = {Fre -> 12}
+    Segment = {Fre -> Prive()}
+    HeeftDexiaHypotheek = {Fre}
+    
+    //RISICO
+    IRScore = {Fre -> A()}
+    CDRCode = {Fre -> 1}
+    
+    //BEDRAGEN
+    BestaandeSchulden = {Fre -> 5}
+    NCTO = {Fre -> 50}
+    Bezittingen = {Fre -> 5000}
+    Leenbedrag = {Fre -> 1000} 
+    
+    ProfielTabel = {
+        A(), Good(), PP(); B(), Good(), PP(); C(), Good(), PP(); D(), Good(), PP();
+        A(), Medium(), P(); B(), Medium(), P(); C(), Medium(), P(); D(), Medium(), P();
+        A(), Bad(), PM(); B(), Bad(), PM(); C(), Bad(), PM(); D(), Bad(), PM();
+        E(), Good(), P(); F(), Good(), P(); G(), Good(), P(); Z(), Good(), P(); 
+        E(), Medium(), PM(); F(), Medium(), PM(); G(), Medium(), PM(); Z(), Medium(), PM(); 
+        E(), Bad(), M(); F(), Good(), M(); G(), Good(), M(); Z(), Good(), M();
+        H(), Good(), PM(); I(), Good(), PM(); J(), Good(), PM(); K(), Good(), PM(); L(), Good(), PM();
+        H(), Medium(), M(); I(), Medium(), M(); J(), Medium(), M(); K(), Medium(), M(); L(), Medium(), M();
+        H(), Bad(), MM(); I(), Bad(), MM(); J(), Bad(), MM(); K(), Bad(), MM(); L(), Bad(), MM();   
+    }
+    
+    AlphaTabel = {
+        A(), 1; B(), 1; C(), 1; D(), 1;
+        E(), 0.9; F(), 0.9;
+        G(), 0.7; H(), 0.7;
+        I(), 0.2; J(), 0.2;
+        K(), 0; L(), 0;
+        Z(), 0.6;
+    }
+    
+    BetaTabel = {
+        Prive(), 1.3;
+        ActiefP(), 1.3;
+        RetailActief(), 1.2;
+        RetailAndere(), 1.1;
+        Andere(), 1.0
+    }
+    
+    CDRTabel = {
+        1, Good();
+        2, Good();
+        3, Good();
+        4, Good();
+        5, Bad();
+        6, Bad();
+        7, Bad();
+        8, Good();
+        9, Bad();
+        10, Bad();
+        11, Good();
+        12, Medium();
+        13, Bad();
+        14, Medium();
+        15, Medium();
+        16, Medium();
+        17, Bad();
+        18, Bad();
+        19, Bad();
+        20, Medium();
+        21, Medium();
+        22, Good();
+        23, Good();
+        24, Bad();
+        25, Medium();
+        26, Medium();
+        27, Medium();
+        28, Medium();
+        29, Bad();
+        30, Medium();
+        31, Medium();
+        32, Medium();
+        33, Good();
+        34, Medium();
+        35, Good();
+        36, Bad();
+        37, Good();
+        38, Good();
+        39, Good();
+        40, Good();
+        41, Bad();
+        42, Medium();
+        43, Medium();
+        44, Good();
+        45, Bad();
+        46, Good();
+        47, Good();
+        48, Good();
+        49, Good();
+    }
+}
+
