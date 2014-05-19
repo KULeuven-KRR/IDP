@@ -42,10 +42,15 @@ public:
 		Assert(domain != NULL);
 		if (not domain->approxFinite() && domain->isRange()) {
 			Warning::warning("Approximating int as all integers in -2^32..2^32, as the solver does not support true infinity at the moment. Models might be lost.");
-			execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
+			execute(MinisatID::IntVarRange(convert(varid), domain->first()->value()._int, domain->last()->value()._int));
 		}else if (domain->isRange()) {
 			// the domain is a complete range from minvalue to maxvalue.
-			execute(MinisatID::IntVarRange(getDefConstrID(), convert(varid), domain->first()->value()._int, domain->last()->value()._int));
+			auto nonden = translator->getNonDenoting(varid);
+			if(nonden==translator->falseLit()){
+				execute(MinisatID::IntVarRange(convert(varid), domain->first()->value()._int, domain->last()->value()._int));
+			}else{
+				execute(MinisatID::IntVarRange(convert(varid), domain->first()->value()._int, domain->last()->value()._int, createLiteral(nonden)));
+			}
 		} else {
 			// the domain is not a complete range.
 			std::vector<MinisatID::Weight> w;
@@ -53,7 +58,12 @@ public:
 				CHECKTERMINATION;
 				w.push_back((MinisatID::Weight) (*it)->value()._int);
 			}
-			execute(MinisatID::IntVarEnum(getDefConstrID(), convert(varid), w));
+			auto nonden = translator->getNonDenoting(varid);
+			if(nonden==translator->falseLit()){
+				execute(MinisatID::IntVarEnum(convert(varid), w, createLiteral(nonden)));
+			}else{
+				execute(MinisatID::IntVarEnum(convert(varid), w));
+			}
 		}
 	}
 	void addFDVariables(const varidlist& varids) {
@@ -63,7 +73,7 @@ public:
 	}
 
 	void add(const GroundClause& cl) {
-		execute(MinisatID::Disjunction(getDefConstrID(), createList(cl)));
+		execute(MinisatID::Disjunction(createList(cl)));
 	}
 
 	void addLazyAddition(const litlist& glist, int constraintID) {
@@ -75,7 +85,7 @@ public:
 		for (auto lit : rule.body()) {
 			list.push_back(createLiteral(lit));
 		}
-		execute(MinisatID::Rule(getDefConstrID(), createAtom(rule.head()), list, rule.type() == RuleType::CONJ, defnr.id, useUFSAndOnlyIfSem()));
+		execute(MinisatID::Rule(createAtom(rule.head()), list, rule.type() == RuleType::CONJ, defnr.id, useUFSAndOnlyIfSem()));
 	}
 
 	void add(DefId defID, Lit head, double bound, bool lowerbound, SetId setnr, AggFunction aggtype, TsType sem) {
@@ -103,7 +113,7 @@ public:
 			break;
 		}
 		execute(
-				MinisatID::Aggregate(getDefConstrID(), createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, defID.id,
+				MinisatID::Aggregate(createLiteral(head), setnr.id, createWeight(bound), convert(aggtype), sign, msem, defID.id,
 						useUFSAndOnlyIfSem()));
 	}
 
@@ -113,6 +123,10 @@ public:
 	void addOptimization(VarId varid) {
 		addFDVariable(varid);
 		execute(MinisatID::OptimizeVar(1, convert(varid), true));
+	}
+
+	void add(Lit, VarId varid){
+		addFDVariable(varid);
 	}
 
 	void add(Lit tseitin, TsType type, const GroundClause rhs, bool conjunctive) {
@@ -139,7 +153,7 @@ public:
 			impltype = MinisatID::ImplicationType::EQUIVALENT;
 			break;
 		}
-		execute(MinisatID::Implication(getDefConstrID(), createLiteral(newtseitin), impltype, createList(newrhs), newconj));
+		execute(MinisatID::Implication(createLiteral(newtseitin), impltype, createList(newrhs), newconj));
 	}
 
 	void add(SetId setnr, const litlist& lits, bool weighted, const weightlist& weights) {
@@ -185,9 +199,9 @@ public:
 			addFDVariable(term->varid());
 			if (right._isvarid) {
 				addFDVariable(right._varid);
-				execute(MinisatID::CPBinaryRelVar(getDefConstrID(), createLiteral(tseitin), convert(term->varid()), comp, convert(right._varid)));
+				execute(MinisatID::CPBinaryRelVar(createLiteral(tseitin), convert(term->varid()), comp, convert(right._varid)));
 			} else {
-				execute(MinisatID::CPBinaryRel(getDefConstrID(), createLiteral(tseitin), convert(term->varid()), comp, right._bound));
+				execute(MinisatID::CPBinaryRel(createLiteral(tseitin), convert(term->varid()), comp, right._bound));
 			}
 		} else if (isa<CPSetTerm>(*left)) {
 			auto term = dynamic_cast<CPSetTerm*>(left);
@@ -340,7 +354,7 @@ public:
 		for (auto var : varids) {
 			vars.push_back(convert(var));
 		}
-		execute(MinisatID::CPSumWeighted(getDefConstrID(), MinisatID::mkPosLit(head), createList(conditions), vars, w, rel, bound));
+		execute(MinisatID::CPSumWeighted(MinisatID::mkPosLit(head), createList(conditions), vars, w, rel, bound));
 	}
 
 	void polAddWeightedProd(const MinisatID::Atom& head, const litlist& conditions, const varidlist& varids, const int& weight, VarId bound,
@@ -353,7 +367,7 @@ public:
 		for (auto var : varids) {
 			vars.push_back(convert(var));
 		}
-		execute(MinisatID::CPProdWeighted(getDefConstrID(), MinisatID::mkPosLit(head), createList(conditions), vars, w, rel, convert(bound)));
+		execute(MinisatID::CPProdWeighted(MinisatID::mkPosLit(head), createList(conditions), vars, w, rel, convert(bound)));
 	}
 
 	/**
@@ -365,7 +379,7 @@ public:
 			auto impltseitin = translator->createNewUninterpretedNumber();
 			auto comptseitin = translator->createNewUninterpretedNumber();
 			tseitins.push_back(impltseitin);
-			execute(MinisatID::CPBinaryRelVar(getDefConstrID(), createLiteral(comptseitin), convert(varids[i]), comp, convert(rhsvarid)));
+			execute(MinisatID::CPBinaryRelVar(createLiteral(comptseitin), convert(varids[i]), comp, convert(rhsvarid)));
 			auto cond = conditions[i];
 			if(forall){
 				add(impltseitin, TsType::EQ, { -cond, comptseitin }, false);

@@ -88,6 +88,22 @@ public:
 	~ComparisonGrounder();
 };
 
+class DenotationGrounder: public FormulaGrounder {
+private:
+	SIGN sign;
+	FuncTerm* term;
+	std::vector<TermGrounder*> tgs;
+
+	Lit run() const;
+
+protected:
+	void internalRun(ConjOrDisj& literals, LazyGroundingRequest& request);
+
+public:
+	DenotationGrounder(AbstractGroundTheory* grounding, SIGN sign, FuncTerm* term, const std::vector<TermGrounder*>& tgs, const GroundingContext& gc);
+	~DenotationGrounder();
+};
+
 // Expresses bound comp aggterm!
 class AggGrounder: public FormulaGrounder {
 private:

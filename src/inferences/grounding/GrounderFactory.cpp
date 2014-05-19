@@ -888,6 +888,72 @@ ClauseGrounder* createQ(LazyGroundingManager* manager, AbstractGroundTheory* gro
 	return grounder;
 }
 
+FormulaGrounder* GrounderFactory::checkDenotationGrounder(const QuantForm* qf){
+	if(not getOption(CPSUPPORT) || qf->quantVars().size()!=1){
+		return NULL;
+	}
+
+	auto existsquant = not qf->isUnivWithSign();
+	auto subsign = qf->subformula()->sign();
+	FuncTerm* ft = NULL;
+	Variable* x = NULL;
+
+	Term *st1 = NULL, *st2 = NULL;
+	auto pf = dynamic_cast<PredForm*>(qf->subformula());
+	if(pf!=NULL && is(pf->symbol(), STDPRED::EQ)){
+		st1 = pf->subterms()[0];
+		st2 = pf->subterms()[1];
+	}
+
+	auto ef = dynamic_cast<EqChainForm*>(qf->subformula());
+	if(ef!=NULL && ef->subterms().size()==2 && (ef->comps()[0]==CompType::EQ||ef->comps()[0]==CompType::NEQ) ){
+		if(ef->comps()[0]==CompType::NEQ){
+			subsign = not subsign;
+		}
+		st1 = ef->subterms()[0];
+		st2 = ef->subterms()[1];
+	}
+
+	if(st1!=NULL){
+		if(st1->type()==TermType::FUNC && st2->type()==TermType::VAR){
+			ft = dynamic_cast<FuncTerm*>(st1);
+			x = dynamic_cast<VarTerm*>(st2)->var();
+		}else if(st2->type()==TermType::FUNC && st1->type()==TermType::VAR){
+			ft = dynamic_cast<FuncTerm*>(st2);
+			x = dynamic_cast<VarTerm*>(st1)->var();
+		}
+	}
+
+	if(existsquant && subsign == SIGN::NEG){
+		return NULL;
+	}
+	if(not existsquant && subsign == SIGN::POS){ // TODO can be simplified (forall x: c=x)
+		return NULL;
+	}
+	if(ft==NULL
+			|| x!=*qf->quantVars().begin()
+			|| _structure.concrstructure->inter(x->sort())->empty()
+			|| not SortUtils::isSubsort(ft->function()->outsort(), x->sort(), _vocabulary)
+			|| TermUtils::contains(x,ft)
+			|| not CPSupport::eligibleForCP(ft->function(), _vocabulary)){
+		return NULL;
+	}
+	for(auto t: ft->subterms()){
+		if(t->type()!=TermType::DOM && t->type()!=TermType::VAR){
+			return NULL; // TODO need lazy denotation grounder for this
+		}
+	}
+
+	SaveContext();
+	std::vector<TermGrounder*> grounders;
+	for(auto t: ft->subterms()){
+		descend(t);
+		grounders.push_back(getTermGrounder());
+	}
+	RestoreContext();
+	return new DenotationGrounder(getGrounding(), existsquant?SIGN::POS:SIGN::NEG, ft, grounders, getContext());
+}
+
 void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc) {
 	// NOTE: to reduce the number of tseitins created, negations are pushed deeper whenever relevant:
 	// If qf is a negated exist, push the negation one level deeper. Take a clone to avoid changing qf;
@@ -900,22 +966,22 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 	}
 	auto newqf = (tempqf == NULL ? qf : tempqf);
 
-	// Visit subformula
-	SaveContext();
-	descend(subformula);
-	RestoreContext();
-
-	auto subgrounder = getFormGrounder();
-	Assert(subgrounder!=NULL);
-
-	FormulaGrounder* grounder = NULL;
-
+	auto grounder = checkDenotationGrounder(newqf);
+	tablesize subsize(TST_EXACT, 1);
 	if (grounder == NULL) {
+		// Visit subformula
+		SaveContext();
+		descend(subformula);
+		RestoreContext();
+
+		auto subgrounder = getFormGrounder();
+		Assert(subgrounder!=NULL);
 		grounder = createQ(_groundingmanager, getGrounding(), subgrounder, newqf, gc, getContext(), recursive(newqf));
+		subsize = subgrounder->getMaxGroundSize();
 	}
 	Assert(grounder!=NULL);
 
-	grounder->setMaxGroundSize(gc._universe.size() * subgrounder->getMaxGroundSize());
+	grounder->setMaxGroundSize(gc._universe.size() * subsize);
 
 	_formgrounder = grounder;
 	checkAndAddAsTopGrounder();
@@ -926,22 +992,33 @@ void GrounderFactory::createTopQuantGrounder(const QuantForm* qf, Formula* subfo
 }
 
 void GrounderFactory::createNonTopQuantGrounder(const QuantForm* qf, Formula* subformula, const GenAndChecker& gc) {
-	// Create grounder for subformula
+	_formgrounder = NULL;
 	SaveContext();
-	DeeperContext(qf->sign());
-	descend(subformula);
+	_formgrounder = checkDenotationGrounder(qf);
 	RestoreContext();
 
-	// Create the grounder
-	SaveContext();
-	if (recursive(qf)) {
-		_context._tseitin = TsType::RULE;
+	tablesize subsize(TST_EXACT, 1);
+	if(_formgrounder==NULL){
+		// Create grounder for subformula
+		SaveContext();
+		DeeperContext(qf->sign());
+		descend(subformula);
+		RestoreContext();
+
+		// Create the grounder
+		SaveContext();
+		if (recursive(qf)) {
+			_context._tseitin = TsType::RULE;
+		}
+
+		auto subfg = _formgrounder;
+
+		subsize = subfg->getMaxGroundSize();
+		_formgrounder = createQ(_groundingmanager, getGrounding(), subfg, qf, gc, getContext(), recursive(qf));
+		RestoreContext();
 	}
-
-	auto subsize = _formgrounder->getMaxGroundSize();
-	_formgrounder = createQ(_groundingmanager, getGrounding(), _formgrounder, qf, gc, getContext(), recursive(qf));
 	_formgrounder->setMaxGroundSize(gc._universe.size() * subsize);
-	RestoreContext();
+
 
 	checkAndAddAsTopGrounder();
 }

@@ -221,6 +221,64 @@ void ComparisonGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& 
 	formula.literals.push_back(run()); // TODO can do better?
 }
 
+
+DenotationGrounder::DenotationGrounder(AbstractGroundTheory* grounding, SIGN sign, FuncTerm* term, const std::vector<TermGrounder*>& tgs, const GroundingContext& gc)
+		: 	FormulaGrounder(grounding, gc),
+		  	sign(sign),
+			term(term->clone()),
+			tgs(tgs) {
+	Assert(getContext()._tseitin!=TsType::RULE);
+
+	for(auto tg: tgs){
+		addAll(_varmap, tg->getVarmapping());
+	}
+	auto var = new Variable(term->sort());
+	setFormula(new QuantForm(SIGN::POS, QUANT::EXIST, {var}, new PredForm(SIGN::POS, get(STDPRED::EQ, term->sort()), {term->cloneKeepVars(), new VarTerm(var, {})}, {}),{}));
+
+	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
+}
+
+DenotationGrounder::~DenotationGrounder() {
+}
+
+Lit DenotationGrounder::run() const {
+	if (verbosity() > 2) {
+		printorig();
+		pushtab();
+	}
+	Lit result = _false;
+
+	std::vector<GroundTerm> args;
+	auto undef = false;
+	for(auto tg: tgs){
+		auto gt = tg->run();
+		if(not gt.isVariable && gt._domelement== NULL){
+			undef = true;
+			break;
+		}
+		Assert(not gt.isVariable); // TODO to allow this: lazy denotation grounder similar to lazyelement above
+		args.push_back(gt);
+	}
+	if(not undef){
+		result = -translator()->getNonDenoting(translator()->translateTerm(term->function(), args));
+	}
+
+	if (verbosity() > 2) {
+		poptab();
+		clog << tabs() << "Result is " << translator()->printLit(result) << "\n";
+	}
+	if(isNeg(sign)){
+		result = -result;
+	}
+	return result;
+}
+
+void DenotationGrounder::internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) {
+	formula.setType(Conn::CONJ);
+	formula.literals.push_back(run()); // TODO can do better?
+}
+
+
 // TODO incorrect groundsize
 AggGrounder::AggGrounder(AbstractGroundTheory* grounding, GroundingContext gc, TermGrounder* bg, CompType comp, AggFunction tp, EnumSetGrounder* sg, SIGN sign)
 		: 	FormulaGrounder(grounding, gc),

@@ -108,8 +108,10 @@ GroundTranslator::GroundTranslator(StructureInfo structure, AbstractGroundTheory
 	atomtype.push_back(AtomType::LONETSEITIN);
 	atom2Tuple.push_back(NULL);
 	atom2TsBody.push_back((TsBody*) NULL);
+}
 
-
+Lit GroundTranslator::getNonDenoting(const VarId& varid) const{
+	return var2partial.at(varid.id);
 }
 
 void GroundTranslator::initialize(){
@@ -561,6 +563,11 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 		auto ft = new ftpair(info.symbol, args);
 		var2Tuple[varid.id] = ft;
 		var2domain[varid.id] = _structure.concrstructure->storableInter(info.symbol->outsort());
+		if(info.symbol->partial()){
+			auto atom = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
+			var2partial[varid.id] = atom;
+			atom2TsBody[atom] = new DenotingTsBody(TsType::EQ, varid); // TODO Rule?
+		}
 		return varid;
 	}
 }
@@ -618,6 +625,7 @@ VarId GroundTranslator::nextVarNumber(SortTable* domain) {
 	var2Tuple.push_back(NULL);
 	var2CTsBody.push_back(NULL);
 	var2domain.push_back(domain);
+	var2partial.push_back(falseLit());
 	return id;
 }
 

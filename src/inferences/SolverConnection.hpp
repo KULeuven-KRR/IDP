@@ -19,7 +19,6 @@ class GroundTranslator;
 class TraceMonitor;
 
 namespace SolverConnection {
-	uint	getDefConstrID();
 	MinisatID::VarID convert(VarId varid);
 	MinisatID::AggType convert(AggFunction agg);
 	MinisatID::EqType convert(CompType rel);

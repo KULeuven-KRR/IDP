@@ -97,6 +97,12 @@ bool approxTwoValued(const Term* t, const Structure* str) {
 	return transform<ApproxCheckTwoValued, bool>(t, str);
 }
 
+bool contains(const Variable* v, const Term* f){
+	ContainedVariables cv;
+	auto vs = cv.execute(f); // TODO only in TERM positions!!!
+	return ::contains(vs,const_cast<Variable*>(v));
+}
+
 bool containsSymbol(const PFSymbol* s, const Term* f) {
 	return transform<CheckContainment, bool>(s, f);
 }

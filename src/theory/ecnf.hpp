@@ -530,6 +530,21 @@ public:
 	bool operator<(const TsBody& rhs) const;
 };
 
+class DenotingTsBody: public TsBody {
+private:
+	VarId varid;
+public:
+	DenotingTsBody(TsType type, VarId varid)
+			: 	TsBody(type),
+			  	varid(varid) {
+	}
+	VarId getVarId() const {
+		return varid;
+	}
+	bool operator==(const TsBody& rhs) const;
+	bool operator<(const TsBody& rhs) const;
+};
+
 class CPTerm;
 
 /**

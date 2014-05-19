@@ -55,6 +55,9 @@ public:
 	void polNotifyLazyWatch(Atom, TruthValue, LazyGroundingManager*){
 		throw notyetimplemented("Storing ground theories with lazy ground elements");
 	}
+	void polAdd(Lit, VarId){
+		throw notyetimplemented("Storing denotation tseitins");
+	}
 
 	void polRecursiveDelete() {
 	}

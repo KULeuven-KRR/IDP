@@ -141,6 +141,7 @@ private:
 	std::vector<ftpair*> var2Tuple; // Owns pointers!
 	std::vector<CPTsBody*> var2CTsBody;
 	std::vector<SortTable*> var2domain;
+	std::vector<Lit> var2partial;
 	std::map<int, VarId> storedTerms; // Tabling of terms which are equal to a domain element
 
 	// Maps used to detect identical CP terms and atoms
@@ -285,6 +286,7 @@ public:
 	CPTsBody* cprelation(const VarId& varid) const {
 		return var2CTsBody.at(varid.id);
 	}
+	Lit getNonDenoting(const VarId& varid) const;
 	SortTable* domain(const VarId& varid) const {
 		return var2domain.at(varid.id);
 	}

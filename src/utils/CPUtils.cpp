@@ -28,13 +28,7 @@ bool eligibleForCP(const PredForm* pf, const Vocabulary* voc) {
 }
 
 bool nonOverloadedNonBuiltinEligibleForCP(const Function* f, const Vocabulary* v) {
-	if (f->partial()) { // TODO For now, user-defined partial terms are never eligible for CP
-		return false;
-	}
-	if (not FuncUtils::isIntFunc(f, v)) {
-		return false;
-	}
-	return true;
+	return FuncUtils::isIntFunc(f, v);
 }
 
 bool eligibleForCP(const Function* function, const Vocabulary* voc) {

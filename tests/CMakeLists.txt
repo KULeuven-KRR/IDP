@@ -25,7 +25,7 @@ if(WITHGECODE)
 	addToCXX("-D WITHGECODE")
 endif()
 
-include_directories ("
+include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/safeint"
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/source"
@@ -38,7 +38,7 @@ include_directories ("
 	"${PROJECT_SOURCE_DIR}/lib/gtest-1.6.0/include/"
 	"${PROJECT_SOURCE_DIR}/lib/linenoise/"
 	"${PROJECT_SOURCE_DIR}/tests/"
-")
+)
 
 set(MXTESTS "mxtests")
 set(TESTINCLUDES TestUtils.hpp TestUtils.cpp testingtools.hpp testingtools.cpp testsuite.cpp)
