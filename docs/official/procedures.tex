@@ -147,29 +147,34 @@ Also this  namespace and all its procedures are included in the global namespace
 	\item[alltwovaluedextensions(table)]
 		This procedures takes a table of structures and returns all two-valued extensions of any of the given structures.
 	\item[clean(structure)]
-		Modifies the given structure (the structure is the same, but its representation changes): transforms fully specified three-valued relations into two-valued ones.  For example if \code{P} has domain \code[1..2] and in the given structure, \code{P<ct> = \{1\}, P<cf> = \{2\}}, in the end, \code{P} is \code{\{1\}}.
+		Modifies the given structure (the structure is the same, but its representation changes): transforms fully specified three-valued relations into two-valued ones.  For example if \code{P} has domain \code{[1..2]} and in the given structure, \code{P<ct> = \{1\}, P<cf> = \{2\}}, in the end, \code{P} is \code{\{1\}}.
 	\item[clone(structure)]
 		Returns a structure identical to the given one.
 	\item[isconsistent(structure)]
  		Check whether the structure is consistent.
 	\item[makefalse(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to false.
+ 		Sets all tuples of the given table to false, independent of the previous values (so this will never make the table inconsistent).
  		Modifies the table-interpretation.
 	\item[makefalse(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to false.
+ 		Sets the interpretation of the given tuple to false, independent of the previous value (so this will never make the table inconsistent).
  		Modifies the table-interpretation.
 	\item[maketrue(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to true.
+ 		Sets all tuples of the given table to true, independent of the previous values (so this will never make the table inconsistent).
  		Modifies the table-interpretation.
 	\item[maketrue(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to true.
+ 		Sets the interpretation of the given tuple to true, independent of the previous value (so this will never make the table inconsistent).
  		Modifies the table-interpretation.
 	\item[makeunknown(predicate\_interpretation,table)]
- 		Sets all tuples of the given table to unknown.
+ 		Sets all tuples of the given table to unknown, independent of the previous values (so this will never make the table inconsistent).
  		Modifies the table-interpretation.
 	\item[makeunknown(predicate\_interpretation,tuple)]
- 		Sets the interpretation of the given tuple to unknown.
+ 		Sets the interpretation of the given tuple to unknown, independent of the previous value (so this will never make the table inconsistent).
  		Modifies the table-interpretation.
+	\item[merge(structure,structure)]
+ 		Create a new structure which is the result of combining both input structures. The union of the elements in the sorts are taken. For predicates/functions, 
+ 		the union of the certainly falses and certainly trues are taken. This means that the resulting structure can be inconsistent (if an element was present in the cf
+ 		of one structure and the ct of another) or can become three-valued, even if the two original ones are two-valued (if a sort is extended through one argument, and 
+ 		the predicates interpreting that sort in the other argument, are not extended.
 	\item[newstructure(vocabulary,string)]
  		Create an empty structure with the given name over the given vocabulary.
  		
@@ -227,14 +232,6 @@ The \code{vocabulary} namespace and all its procedures are included in the globa
 \end{description}
 
 
-
-
-
-
-
-
-
-
 \subsubsection{Miscellaneous}
 \todo{WHY is the parse method directly in global\_namespace?}
 \begin{description}
@@ -254,7 +251,7 @@ The mx standard library file contains some useful commands for model expansion. 
 \begin{lstlisting}
 	include <mx>
 \end{lstlisting}
-All commands in the mx standard library file are defined in a namespace with the same name (and hence should be called by \code{mx::command(...)}.
+%All commands in the mx standard library file are defined in a namespace with the same name (and hence should be called by \code{mx::command(...)}.
 The following commands are supported by mx:
 \begin{description}
 	\item[onemodel(theory,structure)]
@@ -270,6 +267,17 @@ The table\_utils standard library file can be include by
 \begin{lstlisting}
 	include <table_utils>
 \end{lstlisting}
-It contains several useful commands for manipulating tables, converting predicate tables to lua-tables,\ldots.
+It contains several useful commands for manipulating tables, converting predicate tables to lua-tables.
+
+\begin{description}
+ \item[printtuples(name, table)]
+	      Given a predicate name and a relationship table, prints all tuples in the table
+ \item[tablecontains(table, element)]
+	      Returns true if a given table contains a certain element
+ \item[totable(input)]
+	      Converts the input to a lua-table. The input can be a domain, predicate table or a tuple.
+%TODO expand
+\end{description}
+
 \todo{document}
 
