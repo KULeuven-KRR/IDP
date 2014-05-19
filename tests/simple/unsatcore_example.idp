@@ -5,6 +5,7 @@ theory T:V{
 	{
 		p <- true.
 	}
+	~p.
 }
 
 structure S1:V{
