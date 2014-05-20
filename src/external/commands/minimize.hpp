@@ -17,6 +17,7 @@
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "inferences/modelexpansion/LuaTraceMonitor.hpp"
 #include "lua/luaconnection.hpp"
+#include "Weight.hpp"
 
 typedef TypedInference<LIST(AbstractTheory*, Structure*, Term*)> OptimizeInferenceBase;
 class MinimizeInference: public OptimizeInferenceBase {
@@ -64,7 +65,7 @@ public:
 		//Optimal value
 		InternalArgument val;
 		opt._type = AT_INT;
-		opt._value._int = toInt(value); // TODO what if larger?
+		opt._value._int = MinisatID::toInt(value); // TODO what if larger?
 		randt._value._table->push_back(opt);
 
 		if (tracer != NULL) {
