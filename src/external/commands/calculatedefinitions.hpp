@@ -68,6 +68,7 @@ public:
 		auto structure = result._calculated_model;
 		auto sols = refineStructureWithDefinitions::doRefineStructureWithDefinitions(newTheory, structure);
 		if(not sols._hasModel ){
+			delete newTheory;
 			return nilarg();
 		}
 		Assert(sols._hasModel and sols._calculated_model != NULL);
