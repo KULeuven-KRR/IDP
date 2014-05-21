@@ -204,7 +204,7 @@ procedure check(solutions){
 			setvocabulary(v,V)
 			structure = merge(S,v)
 		end
-		if(not isconsistent(merge(S,structure)) or #modelexpand(T, structure, Vout)==0) then
+		if(not isconsistent(merge(S,structure)) or not value(T, structure)) then
 			io.stderr:write("Found an invalid solution:\n")
 			io.stderr:write(tostring(v))
 			return 0
