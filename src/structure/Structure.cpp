@@ -253,6 +253,9 @@ tablesize Structure::nrTwoValuedAtoms() const {
 	for (auto predinter : _predinter) {
 		ret = ret + inter(predinter.first)->nrTwoValuedAtoms();
 	}
+	for (auto funcinter : _funcinter) {
+		ret = ret + inter(funcinter.first)->nrTwoValuedAtoms();
+	}
 	return ret;
 }
 

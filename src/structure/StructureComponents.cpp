@@ -4106,6 +4106,19 @@ const std::set<ElementTuple>& FuncInter::getInconsistentAtoms() const{
 	}
 	return _graphinter->getInconsistentAtoms();
 }
+
+tablesize FuncInter::nrTwoValuedAtoms() const {
+	if (_functable != NULL) {
+		return _functable->universe().size();
+	} else {
+		tablesize ret;
+		ret = ret + toDouble(_graphinter->ct()->size());
+		ret = ret + toDouble(_graphinter->cf()->size());
+		ret = ret - _graphinter->getInconsistentAtoms().size();
+		return ret;
+	}
+}
+
 FuncInter* FuncInter::clone() const {
 	return clone(universe());
 }

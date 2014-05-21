@@ -559,6 +559,7 @@ public:
 	bool approxTwoValued() const {
 		return _functable != NULL;
 	}
+	tablesize nrTwoValuedAtoms() const;
 
 	const Universe& universe() const {
 		return _graphinter->universe();
