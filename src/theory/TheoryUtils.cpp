@@ -222,19 +222,19 @@ bool approxTotal(Definition* def) {
 	return total;
 }
 
-bool approxHasRecursionOverNegation(Definition* d) {
+bool approxHasRecursionOverNegation(const Definition* d) {
 	return transform<ApproxHasRecursionOverNegation, bool>(d);
 }
 
-std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition* d) {
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(const Definition* d) {
 	return transform<ApproxRecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
 }
 
-bool hasRecursionOverNegation(Definition* d) {
+bool hasRecursionOverNegation(const Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
 }
 
-std::set<PFSymbol*> recurionsOverNegationSymbols(Definition* d) {
+std::set<PFSymbol*> recurionsOverNegationSymbols(const Definition* d) {
 	return transform<RecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
 }
 

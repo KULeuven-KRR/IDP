@@ -376,13 +376,13 @@ bool approxTotal(Definition*);
 
 /** Approximate Check whether the definition has recursion over negation
  * Guaranteed to be complete in case definitions are split.*/
-bool approxHasRecursionOverNegation(Definition*);
-std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition*);
+bool approxHasRecursionOverNegation(const Definition*);
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(const Definition*);
 
 /** Check whether the definition has recursion over negation
  * WARNING: expensive! If you are certain that definitions are split, better use approx method!*/
-bool hasRecursionOverNegation(Definition*);
-std::set<PFSymbol*> recurionsOverNegationSymbols(Definition*);
+bool hasRecursionOverNegation(const Definition*);
+std::set<PFSymbol*> recurionsOverNegationSymbols(const Definition*);
 
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);

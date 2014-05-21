@@ -26,7 +26,7 @@ Theory* SplitDefinitions::execute(Theory* t) {
 
 	UniqueNames<PFSymbol*> usn;
 	UniqueNames<Rule*> urn;
-	UniqueNames<Definition*> udn;
+	UniqueNames<const Definition*> udn;
 
 	auto structure = BootstrappingUtils::getDefinitionInfo(t, usn, urn, udn);
 	auto newDefs = split(structure, urn);

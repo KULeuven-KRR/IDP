@@ -25,14 +25,14 @@ class Predicate;
 class HasRecursionOverNegation {
 
 public:
-	bool execute(Definition* d);
+	bool execute(const Definition* d);
 
 };
 
 class RecursionOverNegationSymbols {
 
 public:
-	std::set<PFSymbol*> execute(Definition* d);
+	std::set<PFSymbol*> execute(const Definition* d);
 
 private:
 	void prepare();
@@ -60,5 +60,5 @@ public:
 class ApproxRecursionOverNegationSymbols {
 
 public:
-	std::set<PFSymbol*> execute(Definition* d);
+	std::set<PFSymbol*> execute(const Definition* d);
 };
