@@ -214,7 +214,7 @@ std::set<PFSymbol*> defined(Definition* d) {
 
 bool approxTotal(Definition* def) {
 	auto total = true;
-	total &= not DefinitionUtils::hasRecursionOverNegation(def);
+	total &= not DefinitionUtils::approxHasRecursionOverNegation(def);
 	total &= not DefinitionUtils::approxContainsRecDefAggTerms(def);
 	for (auto ds : DefinitionUtils::defined(def)) {
 		total &= ds->isPredicate(); // TODO currently no way of knowing whether a function definition will be total!!! (e.g. f(x)=y <- true)
@@ -222,9 +222,22 @@ bool approxTotal(Definition* def) {
 	return total;
 }
 
+bool approxHasRecursionOverNegation(Definition* d) {
+	return transform<ApproxHasRecursionOverNegation, bool>(d);
+}
+
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition* d) {
+	return transform<ApproxRecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
+}
+
 bool hasRecursionOverNegation(Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
 }
+
+std::set<PFSymbol*> recurionsOverNegationSymbols(Definition* d) {
+	return transform<RecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
+}
+
 
 void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
@@ -527,6 +540,11 @@ T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool
 	}
 	if (skolemize && not nbmodelsequivalent) {
 		theory = FormulaUtils::skolemize(theory);
+	}
+	if (getOption(BoolType::SPLIT_DEFS)) {
+		if (isa<Theory>(*theory)) {
+			DefinitionUtils::splitDefinitions(dynamic_cast<Theory*>(theory));
+		}
 	}
 	return theory;
 }

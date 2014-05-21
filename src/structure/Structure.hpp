@@ -67,8 +67,8 @@ public:
 
 	void sortCheck() const; // Checks whether any sorts are empty and throws a warning for those
 	// Check whether no term maps to multiple elements and whether non-partial functions are specified completely.
-	void functionCheck();
-	bool satisfiesFunctionConstraints(const Function* f);
+	bool satisfiesFunctionConstraints(bool throwerrors = false) const;
+	bool satisfiesFunctionConstraints(const Function* f, bool throwerrors = false) const;
 	void checkAndAutocomplete(); //!< make the domains consistent with the predicate and function tables
 
 	// Inspectors
@@ -113,7 +113,7 @@ public:
 	void put(std::ostream& s) const;
 
 private:
-	bool functionCheck(const Function* f, bool throwErrors = false);
+	bool functionCheck(const Function* f, bool throwErrors = false) const;
 	void autocompleteFromSymbol(PFSymbol* symbol, PredInter* inter);
 };
 

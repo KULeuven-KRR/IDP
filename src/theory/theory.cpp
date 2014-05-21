@@ -551,8 +551,8 @@ ostream& FixpDef::put(ostream& output) const {
  ***************/
 
 Theory* Theory::clone() const {
-	Theory* newtheory = new Theory(_name, _vocabulary, ParseInfo());
-	for (auto it : components()) {
+	auto newtheory = new Theory(_name, _vocabulary, ParseInfo());
+	for (auto it : getComponents()) {
 		newtheory->add(it->clone());
 	}
 	return newtheory;
@@ -606,7 +606,7 @@ void Theory::add(TheoryComponent* comp) { // FIXME handle all cases with an enum
 }
 
 
-vector<TheoryComponent*> Theory::components() const {
+vector<TheoryComponent*> Theory::getComponents() const {
 	vector<TheoryComponent*> stc;
 	// NOTE: re-ordered for lazy grounding
 	for (auto it = _definitions.cbegin(); it != _definitions.cend(); ++it) {

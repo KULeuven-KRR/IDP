@@ -49,5 +49,6 @@ private:
 	PredTable* solveBDDQuery(const FOBDD* b, Structure const * const s) const;
 };
 
-bool evaluate(Formula* form, const Structure* structure);
+class TheoryComponent;
+bool evaluate(TheoryComponent* form, const Structure* structure);
 const DomainElement* evaluate(Term* term, const Structure* structure);

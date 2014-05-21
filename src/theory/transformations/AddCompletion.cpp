@@ -79,11 +79,11 @@ Rule* AddCompletion::visit(Rule* rule) {
 			bv.insert(var);
 		}
 	}
-	auto body = newrule->body()->cloneKeepVars();
+	auto body = newrule->body();
 	if(not bv.empty()){
 		body = new QuantForm(SIGN::POS, QUANT::EXIST, bv, body, FormulaParseInfo((body->pi())));
 	}
-	newrule = new Rule(hv, newrule->head()->cloneKeepVars(), body, newrule->pi());
+	newrule = new Rule(hv, newrule->head(), body, newrule->pi());
 
 	// Add sentence body implies head
 	varset vars;
@@ -102,7 +102,6 @@ Rule* AddCompletion::visit(Rule* rule) {
 	}else{
 		_sentences.push_back(new QuantForm(SIGN::POS, QUANT::UNIV, vars, bf ,newrule->body()->pi()));
 	}
-
 
 	// Create part of the sentence head implies body
 	std::map<Variable*, Variable*> old2newheadvars;

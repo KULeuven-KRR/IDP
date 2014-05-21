@@ -705,6 +705,7 @@ public:
 		_name = n;
 	} //!< Change the name of the theory
 	virtual void add(TheoryComponent* f) = 0; //!< Add a formula or a (complex) (fixpoint) definition to the theory
+	virtual std::vector<TheoryComponent*> getComponents() const = 0;
 
 	const std::string& name() const {
 		return _name;
@@ -788,7 +789,7 @@ public:
 	const std::vector<FixpDef*>& fixpdefs() const {
 		return _fixpdefs;
 	}
-	std::vector<TheoryComponent*> components() const;
+	std::vector<TheoryComponent*> getComponents() const;
 
 	virtual std::ostream& put(std::ostream&) const;
 };

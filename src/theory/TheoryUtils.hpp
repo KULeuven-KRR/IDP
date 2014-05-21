@@ -19,6 +19,7 @@
 #include "vocabulary/VarCompare.hpp"
 #include "information/GetQuantifiedVariables.hpp"
 #include "information/CollectSymbols.hpp"
+#include "information/CollectSymbolOccurences.hpp"
 
 class Definition;
 class SetExpr;
@@ -225,7 +226,7 @@ void flatten(AbstractTheory*);
 Theory* graphFuncsAndAggs(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
-/** Merge two theories */
+/** Merge two theories, returns a full clone */
 AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 
 /** Count the number of subformulas in the theory */
@@ -277,6 +278,12 @@ std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, boo
 template<class T>
 std::set<PFSymbol* > collectSymbols(const T* f){
 	return transform<CollectSymbols, std::set<PFSymbol*> >(f);
+}
+
+template<class T>
+std::set<std::pair<PFSymbol*, Context> > collectSymbolOccurences(const T* f){
+	CollectSymbolOccurences t;
+	return t.execute(f);
 }
 
 Formula* removeQuantificationsOverSort(Formula* f, const Sort* s);
@@ -367,8 +374,15 @@ std::set<PFSymbol*> defined(Definition*);
 /** Approximate check whether the given definition is total */
 bool approxTotal(Definition*);
 
-/** Check whether the definition has recursion over negation */
+/** Approximate Check whether the definition has recursion over negation
+ * Guaranteed to be complete in case definitions are split.*/
+bool approxHasRecursionOverNegation(Definition*);
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition*);
+
+/** Check whether the definition has recursion over negation
+ * WARNING: expensive! If you are certain that definitions are split, better use approx method!*/
 bool hasRecursionOverNegation(Definition*);
+std::set<PFSymbol*> recurionsOverNegationSymbols(Definition*);
 
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);

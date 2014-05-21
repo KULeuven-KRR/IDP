@@ -2,32 +2,23 @@
 	Modelling SAT with IDP
 ***************************************/
 
-
 vocabulary V{
-type Atom
-type Clause
-PosIn(Atom,Clause) // atom occurs positively in clause
-NegIn(Atom,Clause) // atom occurs negatively in clause
-F(Atom) 
+	type Atom
+	type Clause
+	PosIn(Atom,Clause) // atom occurs positively in clause
+	NegIn(Atom,Clause) // atom occurs negatively in clause
+	F(Atom) 
 }
 
 theory T : V { 
-! c: ? a: (PosIn(a,c) & F(a)) | (NegIn(a,c) &  ~F(a)).
+	!c: ? a: (PosIn(a,c) & F(a)) | (NegIn(a,c) &  ~F(a)).
 }
 
-structure S : V{ 
-Atom = {X1;X2;X3}
-Clause = {C1;C2;C3}
-PosIn = { X1,C1; X2,C2 }
-NegIn = { X2,C1; X3,C2; X1,C3; X3,C3 }
-
-// x1 | ~x2
-// x2 | ~x3
-// ~x1 | ~x3
-//Solutions:
-//F = {X1}
-//F = {X1;X2}
-//F = {}
+structure S : V {
+	Atom = {X1;X2;X3}
+	Clause = {C1;C2;C3}
+	PosIn = { X1,C1; X2,C2 }
+	NegIn = { X2,C1; X3,C2; X1,C3; X3,C3 }
 }
 
 procedure getExpectedNbOfModels(){

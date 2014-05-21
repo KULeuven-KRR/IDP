@@ -32,8 +32,9 @@
 #include <iostream>
 
 using namespace std;
-DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition* definition, Structure* structure,
+DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Definition* d, Structure* structure,
 		bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const {
+	auto definition = d->clone();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
@@ -58,6 +59,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 				}
 			}
 		}
+		definition->recursiveDelete();
 
 		for (auto symbol : symbols) {
 			auto sorted = xsb_interface->queryDefinition(symbol);
@@ -102,12 +104,12 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 #endif
 	// Default: Evaluation using ground-and-solve
 	auto data = SolverConnection::createsolver(1);
-	Theory theory("", structure->vocabulary(), ParseInfo());
-	theory.add(definition);
+	auto theory = new Theory("", structure->vocabulary(), ParseInfo());
+	theory->add(definition);
 	bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 	bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
-	auto symstructure = generateBounds(&theory, structure, propagate, LUP);
-	auto grounder = GrounderFactory::create(GroundInfo(&theory, { structure, symstructure }, NULL, true), data);
+	auto symstructure = generateBounds(theory, structure, propagate, LUP);
+	auto grounder = GrounderFactory::create(GroundInfo(theory, { structure, symstructure }, NULL, true), data);
 
 	auto size = toDouble(grounder->getMaxGroundSize());
 	size = size < 1 ? 1 : size;
@@ -116,6 +118,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 		delete (data);
 		delete (grounder);
     	result._hasModel=true;
+    	theory->recursiveDelete();
 		return result;
 	}
 
@@ -127,6 +130,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 		delete (data);
 		delete (grounder);
     	result._hasModel=false;
+    	theory->recursiveDelete();
 		return result;
 	}
 
@@ -151,6 +155,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(Definition
 	}
 	// Cleanup
 	grounding->recursiveDelete();
+	theory->recursiveDelete();
 	delete (data);
 	delete (mx);
 	delete (grounder);
@@ -169,6 +174,12 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	}
 	if (structure->vocabulary() != theory->vocabulary()) {
 		throw IdpException("Definition Evaluation requires that the theory and structure range over the same vocabulary.");
+	}
+
+	if(theory->definitions().empty()){
+		DefinitionCalculationResult result(structure);
+		result._hasModel = true;
+		return result;
 	}
 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
@@ -257,7 +268,7 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 	bool foundone = false;
 	auto def = opens.begin();
 	while (def != opens.end()) {
-		auto hasrecursion = DefinitionUtils::hasRecursionOverNegation((*def).first);
+		auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation((*def).first);
 		//TODO in the future: put a smarter check here
 
 		auto currentdefinition = def++;
@@ -275,7 +286,7 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
-	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
+	auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation(definition);
 	if (getOption(XSB) && hasrecursion) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 	}
