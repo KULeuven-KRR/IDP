@@ -222,6 +222,7 @@ bool evaluate(TheoryComponent* comp, const Structure* structure){
 	}
 	auto def = dynamic_cast<Definition*>(comp);
 	if(def!=NULL){
+		def = def->clone();
 		auto split = getOption(SPLIT_DEFS);
 		auto xsb = getOption(XSB);
 		setOption(SPLIT_DEFS, false);
@@ -229,6 +230,7 @@ bool evaluate(TheoryComponent* comp, const Structure* structure){
 		auto success = CalculateDefinitions::doCalculateDefinitions(def, structure->clone(), false, def->defsymbols())._hasModel;
 		setOption(SPLIT_DEFS, split);
 		setOption(XSB, xsb);
+		def->recursiveDelete();
 		return success;
 	}
 	throw IdpException("Component not supported in evaluate");
