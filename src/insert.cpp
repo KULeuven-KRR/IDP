@@ -967,7 +967,7 @@ void Insert::closestructure(bool assumeClosedWorld) {
 		_currstructure->checkAndAutocomplete();
 		if (not getOption(BoolType::ASSUMECONSISTENTINPUT)) {
 			_currstructure->sortCheck();
-			_currstructure->functionCheck();
+			_currstructure->satisfiesFunctionConstraints(true);
 		}
 		if (assumeClosedWorld) {
 			for (auto pred : _currstructure->vocabulary()->getPreds()) {

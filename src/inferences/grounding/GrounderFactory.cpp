@@ -441,14 +441,14 @@ void GrounderFactory::visit(const Theory* theory) {
 	// experiment with:
 	//tmptheory = FormulaUtils::removeFunctionSymbolsFromDefs(tmptheory, _structure);
 
-	const auto components = theory->components();
+	const auto components = theory->getComponents();
 	// NOTE: primitive reorder present: definitions first => important for good lazy grounding at the moment
 	// TODO Order the components to optimize the grounding process
 
 	// newtheory = FormulaUtils::replaceWithNestedTseitins(newtheory); // FIXME bugged!
 
 	std::vector<Grounder*> children;
-	const auto components2 = theory->components(); // NOTE: primitive reorder present: definitions first
+	const auto components2 = theory->getComponents(); // NOTE: primitive reorder present: definitions first
 	for (auto i = components2.cbegin(); i < components2.cend(); ++i) {
 		InitContext();
 		descend(*i);

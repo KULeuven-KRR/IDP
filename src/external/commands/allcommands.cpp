@@ -122,6 +122,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<PrintGroundingInference>());
 	inferences.push_back(make_shared<EntailsInference>());
 	inferences.push_back(make_shared<EvaluateFormulaInference>());
+	inferences.push_back(make_shared<EvaluateTheoryInference>());
 	inferences.push_back(make_shared<EvaluateTermInference>());
 	inferences.push_back(make_shared<RemoveNestingInference>());
 	inferences.push_back(make_shared<RemoveCardinalitiesInference>());

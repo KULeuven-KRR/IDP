@@ -16,6 +16,7 @@
 #include "generators/BDDBasedGeneratorFactory.hpp"
 #include "inferences/propagation/PropagatorFactory.hpp"
 #include "inferences/propagation/GenerateBDDAccordingToBounds.hpp"
+#include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 #include "generators/InstGenerator.hpp"
 #include "fobdds/FoBdd.hpp"
 #include "fobdds/FoBddManager.hpp"
@@ -196,23 +197,41 @@ PredTable* Querying::solveBDDQuery(const FOBDD* bdd, Structure const * const str
 	return result;
 }
 
-bool evaluate(Formula* form, const Structure* structure){
-	for(auto s: FormulaUtils::collectSymbols(form)){
-		if(not structure->inter(s)->approxTwoValued()){
-			throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+bool evaluate(TheoryComponent* comp, const Structure* structure){
+	if(not structure->isConsistent() || not structure->satisfiesFunctionConstraints()){
+		return false;
+	}
+	auto form = dynamic_cast<Formula*>(comp);
+	if(form!=NULL){
+		for(auto s: FormulaUtils::collectSymbols(form)){
+			if(not structure->inter(s)->approxTwoValued()){
+				throw notyetimplemented("Cannot evaluate a formula in a three-valued structure");
+			}
+		}
+		if(not form->freeVars().empty()){
+			throw IdpException("The input formula had free variables");
+		}
+
+		Query q("Eval", {}, form, {});
+		auto result = Querying::doSolveQuery(&q, structure);
+		if(result->empty()){ // No answers => false
+			return false;
+		}else{ // Empty tuple => true
+			return true;
 		}
 	}
-	if(not form->freeVars().empty()){
-		throw IdpException("The input formula had free variables");
+	auto def = dynamic_cast<Definition*>(comp);
+	if(def!=NULL){
+		auto split = getOption(SPLIT_DEFS);
+		auto xsb = getOption(XSB);
+		setOption(SPLIT_DEFS, false);
+		setOption(XSB, true);
+		auto success = CalculateDefinitions::doCalculateDefinitions(def, structure->clone(), false, def->defsymbols())._hasModel;
+		setOption(SPLIT_DEFS, split);
+		setOption(XSB, xsb);
+		return success;
 	}
-
-	Query q("Eval", {}, form, {});
-	auto result = Querying::doSolveQuery(&q, structure);
-	if(result->empty()){ // No answers => false
-		return false;
-	}else{ // Empty tuple => true
-		return true;
-	}
+	throw IdpException("Component not supported in evaluate");
 }
 
 const DomainElement* evaluate(Term* term, const Structure* structure){

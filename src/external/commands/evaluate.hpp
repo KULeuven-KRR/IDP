@@ -15,6 +15,24 @@
 #include "inferences/querying/Query.hpp"
 #include "errorhandling/error.hpp"
 
+class EvaluateTheoryInference: public TheoryStructureBase {
+public:
+	EvaluateTheoryInference()
+			: TheoryStructureBase("value", "Gets the value of a theory in a two-valued structure.") {
+		setNameSpace(getInferenceNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto theory = get<0>(args);
+		for(auto s: theory->getComponents()){
+			if(not evaluate(s, get<1>(args))){
+				return InternalArgument(false);
+			}
+		}
+		return InternalArgument(true);
+	}
+};
+
 class EvaluateFormulaInference: public FormulaStructureBase {
 public:
 	EvaluateFormulaInference()

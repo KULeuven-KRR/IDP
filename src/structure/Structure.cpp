@@ -537,16 +537,20 @@ void Structure::sortCheck() const {
 	}
 }
 
-void Structure::functionCheck() {
+bool Structure::satisfiesFunctionConstraints(bool throwerrors) const {
 	for (auto func2inter : _funcinter) {
-		functionCheck(func2inter.first, true);
+		if (not functionCheck(func2inter.first, throwerrors)) {
+			return false;
+		}
 	}
-}
-bool Structure::satisfiesFunctionConstraints(const Function* f) {
-	return functionCheck(f, false);
+	return true;
 }
 
-bool Structure::functionCheck(const Function* f, bool throwErrors) {
+bool Structure::satisfiesFunctionConstraints(const Function* f, bool throwerrors) const {
+	return functionCheck(f, throwerrors);
+}
+
+bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 	auto fi = inter(f);
 //#warning check for partial interpretations!
 	if(f->builtin()){ // builtins are always valid function interpretations

@@ -44,7 +44,10 @@ public:
 	}
 
 	void add(TheoryComponent*) {
-		Assert(false);
+		throw notyetimplemented("Cannot add components to a ground theory");
+	}
+	std::vector<TheoryComponent*> getComponents() const {
+		throw notyetimplemented("Cannot retrieve components to a ground theory");
 	}
 
 	virtual void recursiveDelete();
