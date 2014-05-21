@@ -87,7 +87,7 @@ class AddMarkers;
 		friend class TheorySupportedChecker; \
 		friend class TheorySymmetryAnalyzer; \
 		friend class TheoryMutatingVisitor; \
-		friend class AddCompletion; \
+		friend class ReplaceDefinitionsWithCompletion; \
 		friend class AddFuncConstraints; \
 		friend class DeriveSorts; \
 		friend class Flatten; \

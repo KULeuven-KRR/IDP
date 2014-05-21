@@ -35,7 +35,7 @@
 #include "transformations/PushNegations.hpp"
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
-#include "transformations/AddCompletion.hpp"
+#include "transformations/ReplaceDefinitionsWithCompletion.hpp"
 #include "transformations/AddIfCompletion.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
@@ -498,7 +498,7 @@ Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, const st
 }
 
 void addCompletion(AbstractTheory* t, const Structure* s) {
-	auto newt = transform<AddCompletion, AbstractTheory*>(t, s);
+	auto newt = transform<ReplaceDefinitionsWithCompletion, AbstractTheory*>(t, s);
 	Assert(newt==t);
 }
 
