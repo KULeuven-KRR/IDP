@@ -112,6 +112,10 @@ std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* the
 }
 
 void computeRemainingDefinitions(const std::vector<Definition*> postprocessdefs, Structure* structure, Vocabulary* outputvoc) {
+	if (postprocessdefs.empty()) {
+		return;
+	}
+
 	// First, we recheck which definitions we really need to evaluate (possible including those used as constructions in lazy grounding)
 	std::queue<PFSymbol*> sq;
 	std::map<PFSymbol*, std::vector<Definition*>> s2defs;

@@ -176,6 +176,12 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 		throw IdpException("Definition Evaluation requires that the theory and structure range over the same vocabulary.");
 	}
 
+	if(theory->definitions().empty()){
+		DefinitionCalculationResult result(structure);
+		result._hasModel = true;
+		return result;
+	}
+
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Calculating known definitions\n";
 	}
