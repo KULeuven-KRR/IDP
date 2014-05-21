@@ -30,6 +30,18 @@ InternalArgument postProcess(std::vector<Structure*> sols) {
 	return InternalArgument(structure);
 }
 
+InternalArgument doSymbolicPropagation(AbstractTheory* t, Structure* s) {
+	vector<Structure*> sols;
+	if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
+		PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
+		sols = propagator->propagate(t, s);
+	} else {
+		SymbolicPropagation propagator;
+		sols = propagator.propagate(t, s);
+	}
+	return postProcess(sols);
+}
+
 /**
  * Implements symbolic propagation, followed by an evaluation of the BDDs to obtain a concrete structure
  */
@@ -42,15 +54,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		vector<Structure*> sols;
-		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
-			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
-			sols = propagator->propagate(get<0>(args), get<1>(args));
-		} else {
-			SymbolicPropagation propagator;
-			sols = propagator.propagate(get<0>(args), get<1>(args));
-		}
-		return postProcess(sols);
+		return doSymbolicPropagation(get<0>(args), get<1>(args));
 	}
 };
 
@@ -71,14 +75,7 @@ public:
 			newTheory->add(definition->clone());
 		}
 		FormulaUtils::addCompletion(newTheory,structure);
-		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
-			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
-			sols = propagator->propagate(newTheory, structure);
-		} else {
-			SymbolicPropagation propagator;
-			sols = propagator.propagate(newTheory, structure);
-		}
-		return postProcess(sols);
+		return doSymbolicPropagation(newTheory, structure);
 	}
 };
 
