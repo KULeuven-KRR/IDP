@@ -14,9 +14,9 @@
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
 
-class NrTwoValuedAtomsInference: public StructureBase {
+class GetNbOfTwoValuedAtomsInStructure: public StructureBase {
 	public:
-	NrTwoValuedAtomsInference()
+	GetNbOfTwoValuedAtomsInStructure()
 				: StructureBase("nrtwovaluedatoms", "Retrieve the number of two-valued atoms in the given structure.") {
 			setNameSpace(getStructureNamespaceName());
 		}
