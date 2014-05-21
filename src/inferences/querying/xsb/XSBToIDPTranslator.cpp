@@ -23,24 +23,6 @@
 using std::string;
 using std::stringstream;
 
-
-// ATTENTION!
-// when changing this prefix, also adapt the XSB "built-in" predicates
-// that IDP provides in data/shared/std/xsb_compiler.P
-// It is generally also a good idea to search the code for hard-coded use
-// of these predicates and adapt them.
-#ifndef IDPXSB_PREFIX
-#define IDPXSB_PREFIX "ix"
-#endif
-
-#ifndef IDPXSB_CAPS_PREFIX
-#define IDPXSB_CAPS_PREFIX "IX"
-#endif
-
-#ifndef IDPXSB_SHORT_PREFIX
-#define IDPXSB_SHORT_PREFIX "x"
-#endif
-
 bool XSBToIDPTranslator::isoperator(int c) {
 	return c == '*' ||
 			c == '(' ||
@@ -116,7 +98,7 @@ string XSBToIDPTranslator::transform_into_term_name(string str) {
 		return ss.str();
 	} else {
 		stringstream ss;
-		ss << IDPXSB_PREFIX << "_" << getNewID() << "_" << to_simple_chars(str);
+		ss << get_idp_prefix() << "_" << getNewID() << "_" << to_simple_chars(str);
 		return ss.str();
 	}
 }
@@ -250,31 +232,41 @@ string XSBToIDPTranslator::to_simple_chars(string str) {
 
 string XSBToIDPTranslator::to_prolog_varname(string str) {
 	stringstream s;
-	s << IDPXSB_CAPS_PREFIX << to_simple_chars(str);
+	s << get_idp_caps_prefix() << to_simple_chars(str);
 	return s.str();
 }
 
 string XSBToIDPTranslator::to_prolog_sortname(const Sort* sort) {
 	if (isXSBCompilerSupported(sort)) {
 		std::stringstream ss;
-		ss << IDPXSB_PREFIX << sort->name();
+		ss << get_idp_prefix() << sort->name();
 		return ss.str();
 	} else {
 		return to_prolog_term(to_simple_chars(sort->name()));
 	}
 }
 
+
+// ATTENTION!
+// when changing this prefix, also adapt the XSB "built-in" predicates
+// that IDP provides in data/shared/std/xsb_compiler.P
+// It is generally also a good idea to search the code for hard-coded use
+// of these predicates and adapt them.
 string XSBToIDPTranslator::get_idp_prefix() {
-	return IDPXSB_PREFIX;
+	return "ix";
+}
+
+string XSBToIDPTranslator::get_short_idp_prefix() {
+	return "x";
 }
 
 string XSBToIDPTranslator::get_idp_caps_prefix() {
-	return IDPXSB_CAPS_PREFIX;
+	return "IX";
 }
 
 string XSBToIDPTranslator::get_forall_term_name() {
 	std::stringstream ss;
-	ss << IDPXSB_PREFIX << "forall";
+	ss << get_idp_prefix() << "forall";
 	return ss.str();
 }
 
@@ -286,25 +278,25 @@ string XSBToIDPTranslator::get_twovalued_findall_term_name() {
 
 string XSBToIDPTranslator::get_threevalued_findall_term_name() {
 	std::stringstream ss;
-	ss << IDPXSB_PREFIX << "threeval_findall";
+	ss << get_idp_prefix() << "threeval_findall";
 	return ss.str();
 }
 
 string XSBToIDPTranslator::get_abs_term_name() {
 	std::stringstream ss;
-	ss << IDPXSB_PREFIX << "abs";
+	ss << get_idp_prefix() << "abs";
 	return ss.str();
 }
 
 string XSBToIDPTranslator::get_division_term_name() {
 	std::stringstream ss;
-	ss << IDPXSB_PREFIX << "division";
+	ss << get_idp_prefix() << "division";
 	return ss.str();
 }
 
 string XSBToIDPTranslator::get_exponential_term_name() {
 	std::stringstream ss;
-	ss << IDPXSB_PREFIX << "exponential";
+	ss << get_idp_prefix() << "exponential";
 	return ss.str();
 }
 
@@ -322,7 +314,7 @@ string XSBToIDPTranslator::new_pred_name_with_prefix(string str) {
 
 string XSBToIDPTranslator::new_pred_name() {
 	stringstream ss;
-	ss << IDPXSB_SHORT_PREFIX << getNewID();
+	ss << get_short_idp_prefix() << getNewID();
 	return ss.str();
 }
 

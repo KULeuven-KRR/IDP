@@ -66,6 +66,7 @@ public:
 	static std::string to_simple_chars(std::string);
 
 	static std::string get_idp_prefix();
+	static std::string get_short_idp_prefix();
 	static std::string get_idp_caps_prefix();
 	static std::string get_forall_term_name();
 	static std::string get_twovalued_findall_term_name();
