@@ -216,8 +216,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
-				}
-				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 					clog << "Using structure " << toString(structure) << "\n";
 				}
 				bool tooexpensive = false;
@@ -250,8 +248,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Done calculating known definitions\n";
-	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 		clog << "Resulting structure:\n" << toString(structure) << "\n";
 	}
 	result._hasModel = true;
