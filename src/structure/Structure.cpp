@@ -248,17 +248,6 @@ bool Structure::approxTwoValued() const {
 	return true;
 }
 
-tablesize Structure::nrTwoValuedAtoms() const {
-	tablesize ret;
-	for (auto predinter : _predinter) {
-		ret = ret + inter(predinter.first)->nrTwoValuedAtoms();
-	}
-	for (auto funcinter : _funcinter) {
-		ret = ret + inter(funcinter.first)->nrTwoValuedAtoms();
-	}
-	return ret;
-}
-
 bool Structure::isConsistent() const {
 	for (auto name2func : _funcinter) {
 		auto inter = name2func.second;

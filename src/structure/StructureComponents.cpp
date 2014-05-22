@@ -3747,14 +3747,6 @@ bool PredInter::approxTwoValued() const {
 	return isConsistent() && _ct->approxEqual(_pt);
 }
 
-tablesize PredInter::nrTwoValuedAtoms() const {
-	tablesize ret;
-	ret = ret + toDouble(_ct->size());
-	ret = ret + toDouble(_cf->size());
-	ret = ret - _inconsistentElements.size();
-	return ret;
-}
-
 void PredInter::makeTrueExactly(const ElementTuple& tuple, bool ignoresortchecks) {
 	if (_inconsistentElements.find(tuple) != _inconsistentElements.cend()) {
 		_inconsistentElements.erase(tuple);
@@ -4105,18 +4097,6 @@ const std::set<ElementTuple>& FuncInter::getInconsistentAtoms() const{
 		return emptyset;
 	}
 	return _graphinter->getInconsistentAtoms();
-}
-
-tablesize FuncInter::nrTwoValuedAtoms() const {
-	if (_functable != NULL) {
-		return _functable->universe().size();
-	} else {
-		tablesize ret;
-		ret = ret + toDouble(_graphinter->ct()->size());
-		ret = ret + toDouble(_graphinter->cf()->size());
-		ret = ret - _graphinter->getInconsistentAtoms().size();
-		return ret;
-	}
 }
 
 FuncInter* FuncInter::clone() const {

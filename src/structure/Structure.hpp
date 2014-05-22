@@ -80,7 +80,6 @@ public:
 	PredInter* inter(const PFSymbol* s) const; // Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure
 	bool approxTwoValued() const;
-	tablesize nrTwoValuedAtoms() const;
 	bool isConsistent() const;
 
 	const std::map<Sort*, SortTable*>& getSortInters() const {
