@@ -14,6 +14,7 @@
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
+#include "utils/BootstrappingUtils.hpp"
 
 class RemoveNestingInference: public TheoryBase {
 public:
@@ -95,5 +96,35 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		FormulaUtils::replaceDefinitionsWithCompletion(get<0>(args), NULL); // TODO can be improved with structure
 		return nilarg();
+	}
+};
+
+// IMPORTANT: for debugging purposes, symbols is stored globally for now (cannot be passed to Lua yet).
+//	Approach will not work if calling tometa twice before backtranslation!
+UniqueStringNames<PFSymbol*> symbols;
+
+class ToMetaInference: public TheoryBase {
+public:
+	ToMetaInference()
+			: TheoryBase("tometa", "TODO.") {
+		setNameSpace(getTheoryNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto result = BootstrappingUtils::toMeta(dynamic_cast<Theory*>(get<0>(args)));
+		symbols = result.symbols;
+		return InternalArgument(result.metastructure);
+	}
+};
+
+class FromMetaInference: public TypedInference<LIST(Vocabulary*, Predicate*, Structure*)> {
+public:
+	FromMetaInference()
+			: TypedInference<LIST(Vocabulary*, Predicate*, Structure*)>("frommeta", "TODO.") {
+		setNameSpace(getTheoryNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		return InternalArgument(BootstrappingUtils::fromMeta( {get<0>(args), get<2>(args), symbols}, get<1>(args)));
 	}
 };

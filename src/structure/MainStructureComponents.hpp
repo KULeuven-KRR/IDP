@@ -261,7 +261,7 @@ public:
 													//!< Returns 0 in case this is impossible, or the table was
 													//!< already enumerated
 
-	virtual void add(const ElementTuple& tuple) = 0; //!< Add a tuple to the table
+	virtual void add(const ElementTuple& tuple, bool ignoresortsortchecks = false) = 0; //!< Add a tuple to the table
 	virtual void remove(const ElementTuple& tuple) = 0; //!< Remove a tuple from the table
 
 	virtual TableIterator begin() const = 0;
@@ -291,7 +291,7 @@ public:
 	bool approxInverse(const PredTable*) const;
 	bool contains(const ElementTuple& tuple) const;
 	tablesize size() const;
-	void add(const ElementTuple& tuple);
+	void add(const ElementTuple& tuple, bool ignoresortsortchecks = false);
 	void remove(const ElementTuple& tuple);
 
 	TableIterator begin() const;
@@ -329,7 +329,7 @@ public:
 	tablesize size() const;
 	bool contains(const ElementTuple& tuple) const;
 	bool contains(const DomainElement* el) const;
-	void add(const ElementTuple& tuple);
+	void add(const ElementTuple& tuple, bool ignoresortsortchecks = false);
 	void add(const DomainElement* el);
 	void add(int i1, int i2);
 	void remove(const ElementTuple& tuple);
@@ -374,7 +374,7 @@ public:
 	// !!! RETURNS NULL iff the given tuple does not map to a domainelement within the range sort
 	const DomainElement* operator[](const ElementTuple& tuple) const;
 	bool contains(const ElementTuple& tuple) const;
-	void add(const ElementTuple& tuple);
+	void add(const ElementTuple& tuple, bool ignoresortsortchecks = false);
 	void remove(const ElementTuple& tuple);
 
 	TableIterator begin() const;
@@ -543,7 +543,7 @@ public:
 	 */
 	void funcTable(FuncTable* ft);
 
-	void add(const ElementTuple& tuple);
+	void add(const ElementTuple& tuple, bool ignoresortchecks = false);
 
 	bool isConsistent() const;
 	const std::set<ElementTuple>& getInconsistentAtoms() const;

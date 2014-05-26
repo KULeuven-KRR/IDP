@@ -970,16 +970,7 @@ void Insert::closestructure(bool assumeClosedWorld) {
 			_currstructure->satisfiesFunctionConstraints(true);
 		}
 		if (assumeClosedWorld) {
-			for (auto pred : _currstructure->vocabulary()->getPreds()) {
-				for (auto predToSet : pred.second->nonbuiltins()) {
-					makeUnknownsFalse(_currstructure->inter(predToSet));
-				}
-			}
-			for (auto func : _currstructure->vocabulary()->getFuncs()) {
-				for (auto funcToSet : func.second->nonbuiltins()) {
-					makeUnknownsFalse(_currstructure->inter(funcToSet)->graphInter());
-				}
-			}
+			makeUnknownsFalse(_currstructure);
 		}
 		_currstructure->clean();
 	}

@@ -126,6 +126,7 @@ void clean(Function* function, FuncInter* inter);
  * NOTE: might result in an inconsistent structure for function symbols!
  */
 void makeUnknownsFalse(PredInter* inter);
+void makeUnknownsFalse(Structure* structure);
 
 void makeTwoValued(Function* function, FuncInter* inter);
 void makeTwoValued(Predicate* p, PredInter* inter);

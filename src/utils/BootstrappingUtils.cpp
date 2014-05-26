@@ -9,15 +9,51 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 #include "BootstrappingUtils.hpp"
+
 #include "common.hpp"
 #include "commontypes.hpp"
 #include "utils/UniqueNames.hpp"
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
 
+#include "theory/information/Metafier.hpp"
+
 extern void parsefile(const std::string&);
 
 namespace BootstrappingUtils {
+
+MetaRepr toMeta(Theory* theory) {
+	if (not getGlobal()->instance()->alreadyParsed("bootstrap")) {
+		parsefile("bootstrap");
+	}
+	auto defnamespace = getGlobal()->getGlobalNamespace()->subspace("stdspace")->subspace("meta");
+	Assert(defnamespace != NULL);
+	auto voc = defnamespace->vocabulary("metavoc");
+	auto str = new Structure(createName(), voc, { });
+
+	UniqueStringNames<PFSymbol*> symbols;
+
+	MetaInters m(str);
+
+	for (auto s : theory->vocabulary()->getNonOverloadedSymbols()) {
+		addSymbol(s, m, symbols);
+	}
+
+	std::cerr << "METAFYING\n";
+	Metafier metafy(theory, m, symbols);
+	std::cerr << "AUTOCOMPLETE\n";
+	str->checkAndAutocomplete();
+	makeUnknownsFalse(str);
+	str->clean();
+	return {theory->vocabulary(), str, symbols};
+}
+
+// IMPORTANT: need to guarantee that symbol information conforms to the information in the vocabulary
+Theory* fromMeta(MetaRepr meta, Predicate* setOfSentences) {
+	DeMetafier d(meta.origvoc, meta.metastructure, meta.symbols);
+	return d.translate(setOfSentences);
+}
+
 template<class Def>
 Structure* getDefinitionInfo(const std::vector<Def>& defs, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
 		UniqueNames<Def>& uniqueDefNames) {
@@ -58,7 +94,7 @@ Structure* getDefinitionInfo(const std::vector<Def>& defs, UniqueNames<PFSymbol*
 
 		for (auto r : d->rules()) {
 			auto ruleName = mapName(r, uniqueRuleNames);
-			inInter->add( { ruleName, defname });
+			inInter->add( { ruleName, defname }, true);
 
 			auto head = r->head();
 			PFSymbol* definedSymbol;
@@ -72,7 +108,7 @@ Structure* getDefinitionInfo(const std::vector<Def>& defs, UniqueNames<PFSymbol*
 			}
 
 			auto symbolName = mapName(definedSymbol, uniqueSymbNames);
-			definesInter->add( { ruleName, symbolName });
+			definesInter->add( { ruleName, symbolName }, true);
 
 			auto ruleclone = r->clone();
 			ruleclone = DefinitionUtils::unnestHeadTermsNotVarsOrDomElems(ruleclone, structure);
@@ -100,21 +136,21 @@ Structure* getDefinitionInfo(const std::vector<Def>& defs, UniqueNames<PFSymbol*
 }
 
 Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<const Definition*>& udn) {
-	return getDefinitionInfo(std::vector<const Definition*>({ d }), usn, urn, udn);
+	return getDefinitionInfo(std::vector<const Definition*>( { d }), usn, urn, udn);
 }
 Structure* getDefinitionInfo(Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
-	return getDefinitionInfo(std::vector<Definition*>({ d }), usn, urn, udn);
+	return getDefinitionInfo(std::vector<Definition*>( { d }), usn, urn, udn);
 }
 Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<const Definition*>& udn) {
 	std::vector<const Definition*> defs;
-	for(auto d: t->definitions()){
+	for (auto d : t->definitions()) {
 		defs.push_back(d);
 	}
 	return getDefinitionInfo(defs, usn, urn, udn);
 }
 Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
 	std::vector<Definition*> defs;
-	for(auto d: t->definitions()){
+	for (auto d : t->definitions()) {
 		defs.push_back(d);
 	}
 	return getDefinitionInfo(defs, usn, urn, udn);
