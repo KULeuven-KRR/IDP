@@ -387,6 +387,11 @@ std::set<PFSymbol*> recurionsOverNegationSymbols(const Definition*);
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);
 
+#ifdef WITHXSB
+/** Group definitions for minimum overhead with XSB */
+void joinDefinitionsForXSB(Theory* t);
+#endif
+
 /** Check whether the definition has a recursive aggregate */
 bool approxContainsRecDefAggTerms(const Definition*);
 

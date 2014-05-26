@@ -97,6 +97,7 @@ enum BoolType {
 	REDUCEDGROUNDING,
 	POSTPROCESS_DEFS,
 	SPLIT_DEFS,
+	JOIN_DEFS_FOR_XSB,
 	GUARANTEE_NO_REC_NEG, //user guarantees that his theories have no recursion over negation
 	PROVER_SUPPORTS_TFA,
 	XSB_SHORT_NAMES,

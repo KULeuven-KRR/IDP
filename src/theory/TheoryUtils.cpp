@@ -64,6 +64,9 @@
 #include "information/ContainedVariables.hpp"
 #include "information/CheckContainsRecursivelyDefinedAggTerms.hpp"
 #include "transformations/SubstituteVarWithVar.hpp"
+#ifdef WITHXSB
+#include "transformations/JoinDefinitionsForXSB.hpp"
+#endif
 
 using namespace std;
 
@@ -242,6 +245,13 @@ std::set<PFSymbol*> recurionsOverNegationSymbols(const Definition* d) {
 void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }
+
+#ifdef WITHXSB
+/** Group definitions for minimum overhead with XSB */
+void joinDefinitionsForXSB(Theory* t) {
+	transform<JoinDefinitionsForXSB>(t);
+}
+#endif
 
 bool approxContainsRecDefAggTerms(const Definition* def) {
 	return transform<CheckApproxContainsRecDefAggTerms, bool>(def);

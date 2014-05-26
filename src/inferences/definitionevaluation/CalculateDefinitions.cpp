@@ -184,6 +184,12 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
 
+#ifdef WITHXSB
+	if (getOption(XSB)) {
+		DefinitionUtils::joinDefinitionsForXSB(theory);
+	}
+#endif
+
 	// Collect the open symbols of all definitions
 	auto opens = DefinitionUtils::opens(theory->definitions());
 
@@ -278,7 +284,7 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
-	auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation(definition);
+	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
 	if (getOption(XSB) && hasrecursion) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 	}

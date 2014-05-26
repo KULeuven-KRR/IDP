@@ -128,6 +128,7 @@ Options* setBootstrappingOptions() {
 	getGlobal()->setOptions(newoptions);
 	setOption(POSTPROCESS_DEFS, false); //Important since postprocessing is implemented with bootstrapping
 	setOption(SPLIT_DEFS, false); //Important since splitting is implemented with bootstrapping
+	setOption(JOIN_DEFS_FOR_XSB, false); //Important since joining is implemented with bootstrapping
 	setOption(GUARANTEE_NO_REC_NEG, true); //Important since checking recursion over negation is implemented with bootstrapping
 
 	setOption(GROUNDWITHBOUNDS, true);
