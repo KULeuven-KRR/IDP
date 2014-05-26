@@ -1,0 +1,28 @@
+vocabulary V{
+	type x isa int
+	p(x)
+	c:x
+	a:x
+}
+
+theory T:V{
+	a=c.
+	p(c).
+	~p(a).
+}
+structure S : V {
+	x = {1..10000000}
+}
+
+include <mx>
+procedure main(){
+// TODO works only with all of the options below AND the theory simplifier!
+	stdoptions.nbmodels=2 // TODO this is currently necessary (ISSUE!), as tseitin sharing is more difficult when "one-directional" tseitins are used in some cases.
+	stdoptions.liftedunitpropagation=false
+	stdoptions.verbosity.grounding=1
+	stdoptions.verbosity.solving=1
+	stdoptions.cpsupport=true
+	stdoptions.cpgroundatoms = true
+	stdoptions.equalitytheory=true
+	printmodels(modelexpand(T,S))
+}	

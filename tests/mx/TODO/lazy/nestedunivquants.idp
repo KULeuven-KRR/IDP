@@ -1,0 +1,44 @@
+vocabulary V{
+	type t isa nat
+	p(t)
+	q(t,t)
+	r(t)
+	a
+}
+
+vocabulary Vout{
+}
+
+theory T:V{
+	!x: p(x) => (!y: r(y)) & a.
+//	!x: p(x) => !y: r(y) & a. // TODO need conjunctive delays!
+	!x: p(x) => !z: q(x,z).
+	?x: p(x).
+	?x: r(x).
+}
+
+structure S:V{
+	t = {0..1000000000}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1 // TODO cannot check with a as outputvoc without skolemization to prove the unsat part
+}
+procedure shouldNotCheck(){
+	return true;
+}
+procedure exec(){
+	stdoptions.verbosity.solving=4
+	stdoptions.verbosity.grounding=4
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation=true
+	stdoptions.lazyheur=true
+	stdoptions.relevancewatched=true
+	stdoptions.existsexpansion=2
+	stdoptions.lazysizelimit=3
+	stdoptions.satdelay=true
+	stdoptions.tseitindelay=true
+	stdoptions.timeout = 5
+	stdoptions.nbmodels=0
+	printmodels(modelexpand(T,S,Vout))
+}

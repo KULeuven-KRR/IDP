@@ -1,0 +1,15 @@
+vocabulary V {
+	A(int)
+}
+structure S : V { }
+theory T : V {
+	{
+		A(0).
+	}
+}
+procedure main(){
+	L=modelexpand(T,S);
+	for i=1,#L do 
+		print (L[i]) 
+	end;
+}

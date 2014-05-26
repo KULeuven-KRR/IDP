@@ -1,0 +1,22 @@
+vocabulary V{
+	type x isa nat
+	p(x)
+	q
+}
+
+vocabulary Vout{
+	extern V::q/0
+}
+
+theory T:V{ // NOTE: only solvable by skolemization (and cp support)
+	!x: p(x) => q.
+	?x: p(x).
+}
+
+structure S:V{
+	x = {0..1000000000}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}
