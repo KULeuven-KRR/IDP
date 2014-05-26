@@ -293,8 +293,8 @@ public:
 
 	void visit(const UserProcedure* p){
 		output() << "procedure "<< p->name()<<"(";
+		auto beginargs=true;
 		for(auto a:p->args()){
-			auto beginargs=true;
 			if(not beginargs){
 				output()<< ", ";
 			}else{
