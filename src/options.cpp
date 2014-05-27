@@ -171,6 +171,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::XSB_SHORT_NAMES, "xsbshortnames", boolvalues, true, PrintBehaviour::DONOTPRINT); // Translation to XSB code does not maintain predicate and atom names, but introduces identifiers to minimize communication overhead with XSB
+		BoolPol::createOption(BoolType::SHOW_XSB_WARNINGS, "showxsbwarnings", boolvalues, false, PrintBehaviour::DONOTPRINT); // Show XSB warnings
 		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
 		BoolPol::createOption(BoolType::REFINE_DEFS_WITH_XSB, "refinedefinitionswithxsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
 		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, PrintBehaviour::DONOTPRINT);

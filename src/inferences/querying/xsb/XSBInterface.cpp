@@ -84,6 +84,12 @@ XSBInterface::XSBInterface() {
 	auto checkvalue = xsb_init_string(const_cast<char*>(ss.str().c_str()));
 	handleResult(checkvalue);
 	commandCall("[basics].");
+	// Set warnings to not be printed
+	if (not getOption(SHOW_XSB_WARNINGS)) {
+		stringstream ss1;
+		ss1 << "set_prolog_flag(warning_action,silent_warning).";
+		commandCall(ss1.str());
+	}
 	stringstream ss2;
 	ss2 << "consult('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
 	commandCall(ss2.str());

@@ -101,6 +101,7 @@ enum BoolType {
 	GUARANTEE_NO_REC_NEG, //user guarantees that his theories have no recursion over negation
 	PROVER_SUPPORTS_TFA,
 	XSB_SHORT_NAMES,
+	SHOW_XSB_WARNINGS,
 	REFINE_DEFS_WITH_XSB,
 	XSB
 };
