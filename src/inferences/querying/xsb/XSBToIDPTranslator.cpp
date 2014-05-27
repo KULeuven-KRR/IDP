@@ -61,7 +61,8 @@ bool XSBToIDPTranslator::isXSBCompilerSupported(const PFSymbol* symbol) {
 bool XSBToIDPTranslator::isXSBCompilerSupported(const Sort* sort) {
 	return sort == get(STDSORT::INTSORT) ||
 		sort == get(STDSORT::NATSORT) ||
-		sort == get(STDSORT::FLOATSORT);
+		sort == get(STDSORT::FLOATSORT) ||
+		sort == get(STDSORT::STRINGSORT);
 }
 
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {

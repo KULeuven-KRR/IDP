@@ -146,11 +146,19 @@ ixnat(X) :-
     nonvar(X),
     X >= 0,
     ixint(X).
-    
+
 ixnat(X) :- 
     var(X),
     throw_infinite_type_generation_error.
-     
+
+ixstring(X) :- 
+    nonvar(X),
+    atomic(X). % Possible todo - maintain strings during translation and check for is_charlist/1 here
+
+ixstring(X) :-
+    var(X),
+    throw_infinite_type_generation_error.
+
 % First argument has to be instantiated
 % Second argument can be output variable or instantiated
 ixsame_number(X,Y) :-
