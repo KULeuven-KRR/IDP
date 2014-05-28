@@ -132,7 +132,7 @@ void XSBInterface::sendToXSB(string str) {
 		tmp << str;
 		tmp.close();
 		stringstream ss;
-		ss << "consult('" << name << "').\n";
+		ss << "load_dyn('" << name << "').\n";
 		commandCall(ss.str());
 	} catch (const Exception& ex) {
 		stringstream ss;
