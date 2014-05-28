@@ -108,13 +108,17 @@ ixforall(CallA, CallB) :-
 %   2: Gather all "undefined" answers of the Query
 %   3: Append each possible subset of "undefined" answers list to the "true" 
 %      answers list
-%   4: Introduce loop to make return tuple undefined
+%   4: Introduce loop to make return tuple undefined if some "undefined" answers
+%      were added to the Ret list (generate_CT_or_U_answers/1 is used for this)
 ixthreeval_findall(Var,Query,Ret) :-
-  findall(Var,call_tv(Query,true),L2),
-  findall(Var,call_tv(Query,undefined),L),
-  ixsubset(L,S),
-  append(S,L2,Ret),
-  undef.
+  findall(Var,call_tv(Query,true),CTList),
+  findall(Var,call_tv(Query,undefined),Ulist),
+  ixsubset(Ulist,S),
+  append(S,CTList,Ret),
+  generate_CT_or_U_answer(S).
+
+generate_CT_or_U_answer([]).
+generate_CT_or_U_answer([_|_]) :- undef.
 
 :- table undef/0.
 undef :- tnot(undef).
