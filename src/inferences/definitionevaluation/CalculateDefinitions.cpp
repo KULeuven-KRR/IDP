@@ -183,6 +183,9 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	}
 
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
+	if (not symbolsToQuery.empty()) {
+		updateSymbolsToQuery(symbolsToQuery, theory->definitions());
+	}
 
 #ifdef WITHXSB
 	if (getOption(XSB)) {
@@ -261,6 +264,17 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	return result;
 }
 
+// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(const Definition* definition,
+		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
+	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+	auto newdef = definition->clone();
+	theory->add(newdef);
+	auto ret = calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
+	theory->recursiveDelete();
+	return  ret;
+}
+
 void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 		std::set<PFSymbol*> >& opens) {
 	bool foundone = false;
@@ -282,6 +296,37 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 	}
 }
 
+void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, std::vector<Definition*> defs) const {
+	std::set<PFSymbol*> opens;
+	bool stop = false;
+	while (not stop) {
+		stop = true;
+		for (auto def : defs) {
+			for (auto symbol : symbols) {
+				if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
+					auto opensofdef = DefinitionUtils::opens(def);
+					for (auto opensymbol : opensofdef) {
+						for (auto def2 : defs) {
+							if (def2 == def) {
+								continue;
+							}
+							if (def2->defsymbols().find(opensymbol) != def2->defsymbols().end()) {
+								auto oldsize = (symbols.size());
+								for (auto defsymbol : def2->defsymbols()) {
+									symbols.insert(defsymbol);
+								}
+								if (oldsize < symbols.size()) {
+									stop = false;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
 	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
@@ -297,14 +342,3 @@ bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
 	return getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
 }
 #endif
-
-// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(const Definition* definition,
-		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
-	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
-	auto newdef = definition->clone();
-	theory->add(newdef);
-	auto ret = calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
-	theory->recursiveDelete();
-	return  ret;
-}
