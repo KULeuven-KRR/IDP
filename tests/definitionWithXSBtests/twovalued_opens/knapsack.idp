@@ -2,84 +2,50 @@ vocabulary V{
 	type item isa nat  //1 ..n
 	type domain isa nat // 1..n*n
 	type smalldomain isa domain // 1..n
-	In(item)  //in knapsack
 	W(item):smalldomain  //gewicht input
 	P(item):smalldomain  //profit input
 	MaxW:domain // allowed max weight, input
-
-	AccW(item):domain  // Accumulate weight items 1 ..item
-	AccP(item):domain  // Accumulate profit items 1 ..item
 	
 	Smaller(item,item) // Smaller(x,y) iff x < y (must be total)
-	Next(item):item // mapping to next in order
-	Prev(item):item // mapping to previous in order
 	Largest:item
 	Smallest:item
 	
+	Next(item):item // mapping to next in order
+	Prev(item):item // mapping to previous in order
+
 	InInitial(item)
 	AccWInitial(item):domain
-	ProfitInitial:domain
 }
 
 theory T:V{
 	// define total order on items using a strictly smaller predicate
 	// Smaller(i,j) iff profit/weight of i > profit/weight of j.
 	// This way, the profit to weight ratio is descending (see paper)
-	{ !i j: Smaller(i,j) <- P(i)/W(i) > P(j)/W(j).
-	  !i j: Smaller(i,j) <- P(i)/W(i) = P(j)/W(j) & i>j. }
+	{ Smaller(i,j) <- P(i)/W(i) > P(j)/W(j).
+	  Smaller(i,j) <- P(i)/W(i) = P(j)/W(j) & i>j. }
 	// note: Smallest = item with best profit to weight ratio
 	// note: Largest = item with worst profit to weight ratio
-	{ !i: Largest=i <- !j: i~=j => Smaller(j,i).}
-	{ !i: Smallest=i <- !j: ~Smaller(j,i).}
+	{ Largest=i <- !j: i~=j => Smaller(j,i).}
+	{ Smallest=i <- !j: ~Smaller(j,i).}
 
 	// Defining a next predicate mapping i -> i+1, and i_max -> i_max
-	{ !i[item] j[item]: Next(i)=j <- Smaller(i,j) & ~?k[item]: Smaller(i,k) & Smaller(k,j).
-		Next(Largest)=Largest. }
+	{ 
+		Next(i)=j <- Smaller(i,j) & ~?k[item]: Smaller(i,k) & Smaller(k,j).
+		Next(Largest)=Largest. 
+	}
 	
 	// Defining a prev predicate mapping i -> i-1, and i_min -> i_min
-	{ !i j: Prev(i)=j <- j~=Largest & Next(j)=i.
-		Prev(Smallest)=Smallest.}
-	
-	// define AccW based on ascending order
-	In(Smallest) => AccW(Smallest) = W(Smallest).
-	~In(Smallest) => AccW(Smallest) = 0.
-	!i: i~=Smallest & In(i) => AccW(i) = AccW(Prev(i)) + W(i).
-	!i: i~=Smallest & ~In(i) => AccW(i) = AccW(Prev(i)).
-	
-	// define AccP based on ascending order
-	In(Smallest) => AccP(Smallest) = P(Smallest).
-	~In(Smallest) => AccP(Smallest) = 0.
-	!i: i~=Smallest & In(i) => AccP(i) = AccP(Prev(i)) + P(i).
-	!i: i~=Smallest & ~In(i) => AccP(i) = AccP(Prev(i)).
-	
-	// Knapsack constraint
-	!i: AccW(i) =< MaxW.   // of alleen AccW(Largest) =< W ?
+	{ 
+		Prev(i)=j <- j~=Largest & Next(j)=i.
+		Prev(Smallest)=Smallest.
+	}
 	
 	// Calculating initial upper bound
-	{ InInitial(Smallest) <- MaxW >= W(Smallest).
-		!i: InInitial(i) <- i~= Smallest & MaxW >= W(i)+AccWInitial(Prev(i)). }
-	!i: AccWInitial(i)=sum{j:(Smaller(j,i) | i=j) & InInitial(j):W(j)}.
-	
-	// Enforce initial lower bound
-	ProfitInitial=sum{j:InInitial(j):P(j)}.
-	//!i: AccP(i) >= ProfitInitial-sum{j:Smaller(i,j):P(j)}.
-	
-	// testcode to check whether InInitial indeed is a solution
-	//!i:In(i) <=> InInitial(i).
-	
-	// extra constraints:
-	//-------------------
-	// initial limits
-	!i[item] j[item]: Smaller(i,j) => (AccW(i) =< AccW(j)).
-	!i[item] j[item]: Smaller(i,j) => (AccP(i) =< AccP(j)).
-
-	// AccX(i) also simply is a sum of terms
-	!i:	AccW(i)=sum{j:(Smaller(j,i) | i=j) & In(j):W(j)}.
-	!i:	AccP(i)=sum{j:(Smaller(j,i) | i=j) & In(j):P(j)}.
-	
-	// AccX(i) also is a sum of any smaller accumulator plus a sum of terms
-	!i k: Smaller(k,i) => AccW(i)=AccW(k) + sum{j:(Smaller(j,i) | i=j) & Smaller(k,j) & In(j):W(j)}.
-	!i k: Smaller(k,i) => AccP(i)=AccP(k) + sum{j:(Smaller(j,i) | i=j) & Smaller(k,j) & In(j):P(j)}.
+	{ 
+		InInitial(Smallest) <- MaxW >= W(Smallest).
+		InInitial(i) <- i~= Smallest & MaxW >= W(i)+AccWInitial(Prev(i)). 
+		AccWInitial(i)=sum{j:(Smaller(j,i) | i=j) & InInitial(j):W(j)}.
+	}
 }
 
 structure S:V{
