@@ -141,7 +141,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
 		DefinitionRefiningResult processDefResult(structure);
 		processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
-		processDefResult._hasModel = postprocess(processDefResult, definition, initial_interpretations);
+		processDefResult._hasModel = postprocess(processDefResult, initial_interpretations);
 		initial_interpretations.clear(); // These are not needed anymore
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 			clog << "Resulting structure:\n" << toString(structure) << "\n";
@@ -181,8 +181,7 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 
 // Separate procedure to decide whether the definition refinement is acceptable
 // Also contains some verbosity code
-bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result,
-		const Definition* def, std::map<PFSymbol*, PredInter*>& initial_inters) const {
+bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result, std::map<PFSymbol*, PredInter*>& initial_inters) const {
 	if (not result._hasModel) {
 		return false;
 	}
