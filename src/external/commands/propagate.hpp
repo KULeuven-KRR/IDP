@@ -74,7 +74,7 @@ public:
 		for (auto definition : inputTheory->definitions()) {
 			newTheory->add(definition->clone());
 		}
-		FormulaUtils::addCompletion(newTheory,structure);
+		FormulaUtils::replaceDefinitionsWithCompletion(newTheory,structure);
 		return doSymbolicPropagation(newTheory, structure);
 	}
 };

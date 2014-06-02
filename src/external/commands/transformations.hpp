@@ -71,12 +71,12 @@ public:
 class CompletionInference: public TheoryBase {
 public:
 	CompletionInference()
-			: TheoryBase("completion", "Add definitional completion to the given theory.") {
+			: TheoryBase("completion", "Replaces definitions with their completion in the given theory.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		FormulaUtils::addCompletion(get<0>(args), NULL); // TODO can be improved with structure
+		FormulaUtils::replaceDefinitionsWithCompletion(get<0>(args), NULL); // TODO can be improved with structure
 		return nilarg();
 	}
 };
