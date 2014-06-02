@@ -97,7 +97,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
         	return result;
 		} else {
 	    	result._hasModel=true;
-	    	result._calculated_definitions.push_back(definition);
 		}
     	return result;
 	}
@@ -161,9 +160,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	delete (grounder);
 
 	result._hasModel=(not abstractsolutions.empty() && structure->isConsistent());
-	if(result._hasModel) {
-    	result._calculated_definitions.push_back(definition);
-	}
 	return result;
 }
 
@@ -187,6 +183,15 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	}
 
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
+	if (not symbolsToQuery.empty()) {
+		updateSymbolsToQuery(symbolsToQuery, theory->definitions());
+	}
+
+#ifdef WITHXSB
+	if (getOption(XSB)) {
+		DefinitionUtils::joinDefinitionsForXSB(theory);
+	}
+#endif
 
 	// Collect the open symbols of all definitions
 	auto opens = DefinitionUtils::opens(theory->definitions());
@@ -220,8 +225,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
-				}
-				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 					clog << "Using structure " << toString(structure) << "\n";
 				}
 				bool tooexpensive = false;
@@ -240,7 +243,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 					fixpoint = false;
 					opens.erase(currentdefinition);
 					theory->remove(definition);
-					result._calculated_definitions.push_back(definition);
+					definition->recursiveDelete();
 				}
 			}
 		}
@@ -254,13 +257,22 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Done calculating known definitions\n";
-	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 4) {
 		clog << "Resulting structure:\n" << toString(structure) << "\n";
 	}
 	result._hasModel = true;
 	result._calculated_model = structure;
 	return result;
+}
+
+// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(const Definition* definition,
+		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
+	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+	auto newdef = definition->clone();
+	theory->add(newdef);
+	auto ret = calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
+	theory->recursiveDelete();
+	return  ret;
 }
 
 void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
@@ -284,9 +296,40 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 	}
 }
 
+void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, std::vector<Definition*> defs) const {
+	std::set<PFSymbol*> opens;
+	bool stop = false;
+	while (not stop) {
+		stop = true;
+		for (auto def : defs) {
+			for (auto symbol : symbols) {
+				if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
+					auto opensofdef = DefinitionUtils::opens(def);
+					for (auto opensymbol : opensofdef) {
+						for (auto def2 : defs) {
+							if (def2 == def) {
+								continue;
+							}
+							if (def2->defsymbols().find(opensymbol) != def2->defsymbols().end()) {
+								auto oldsize = (symbols.size());
+								for (auto defsymbol : def2->defsymbols()) {
+									symbols.insert(defsymbol);
+								}
+								if (oldsize < symbols.size()) {
+									stop = false;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 #ifdef WITHXSB
-bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
-	auto hasrecursion = DefinitionUtils::approxHasRecursionOverNegation(definition);
+bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
+	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
 	if (getOption(XSB) && hasrecursion) {
 		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
 	}
@@ -299,11 +342,3 @@ bool CalculateDefinitions::determineXSBUsage(Definition* definition) {
 	return getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
 }
 #endif
-
-// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(Definition* definition,
-		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
-	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
-	theory->add(definition);
-	return calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
-}

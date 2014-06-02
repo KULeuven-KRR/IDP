@@ -35,12 +35,10 @@ class Definition;
 struct DefinitionCalculationResult {
 	bool _hasModel;
 	Structure* _calculated_model;
-	std::vector<Definition*> _calculated_definitions;
 
 	DefinitionCalculationResult(Structure* structure) :
 		_hasModel(false),
-		_calculated_model(structure),
-		_calculated_definitions() {};
+		_calculated_model(structure) {};
 
 
 };
@@ -64,25 +62,37 @@ public:
 		return c.calculateKnownDefinitions(theory, structure, satdelay, symbolsToQuery);
 	}
 	static DefinitionCalculationResult doCalculateDefinitions(
-			Definition* definition, Structure* structure, bool satdelay = false,
+			const Definition* definition, Structure* structure, bool satdelay = false,
 			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
 		CalculateDefinitions c;
 		return c.calculateKnownDefinition(definition, structure, satdelay, symbolsToQuery);
 	}
 
 #ifdef WITHXSB
-	static bool determineXSBUsage(Definition* definition);
+	static bool determineXSBUsage(const Definition* definition);
 #endif
 
 private:
 	DefinitionCalculationResult calculateKnownDefinitions(Theory* theory, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
-	DefinitionCalculationResult calculateKnownDefinition(Definition* definition, Structure* structure,
+	DefinitionCalculationResult calculateKnownDefinition(const Definition* definition, Structure* structure,
 			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
 
 	DefinitionCalculationResult calculateDefinition(const Definition* definition, Structure* structure,
 			bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const;
+
+	/** Splitting of definition may have caused the given set of symbolsToQuery to not be enough:
+	 *  E.g. Definition
+	 *  { p <- q.
+	 *    q <- r. }
+	 *  is split into two definitions:
+	 *  { p <- q. }
+	 *  { q <- r. }
+	 *  If the initial symbol to query was only { p }, then we need to add q as well, since we'll be
+	 *  querying the second definition and need to query q in order to evaluate it.
+	 */
+	void updateSymbolsToQuery(std::set<PFSymbol*>& symbolsToQuery, std::vector<Definition*>) const;
 
 	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
 };

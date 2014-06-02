@@ -18,8 +18,9 @@
 extern void parsefile(const std::string&);
 
 namespace BootstrappingUtils {
-Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
-		UniqueNames<Definition*>& uniqueDefNames) {
+template<class Def>
+Structure* getDefinitionInfo(const std::vector<Def>& defs, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
+		UniqueNames<Def>& uniqueDefNames) {
 	if (not getGlobal()->instance()->alreadyParsed("definitions")) {
 		parsefile("definitions");
 	}
@@ -98,11 +99,25 @@ Structure* getDefinitionInfo(const std::vector<Definition*>& defs, UniqueNames<P
 
 }
 
+Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<const Definition*>& udn) {
+	return getDefinitionInfo(std::vector<const Definition*>({ d }), usn, urn, udn);
+}
 Structure* getDefinitionInfo(Definition* d, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
 	return getDefinitionInfo(std::vector<Definition*>({ d }), usn, urn, udn);
 }
+Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<const Definition*>& udn) {
+	std::vector<const Definition*> defs;
+	for(auto d: t->definitions()){
+		defs.push_back(d);
+	}
+	return getDefinitionInfo(defs, usn, urn, udn);
+}
 Structure* getDefinitionInfo(const Theory* t, UniqueNames<PFSymbol*>& usn, UniqueNames<Rule*>& urn, UniqueNames<Definition*>& udn) {
-	return getDefinitionInfo(t->definitions(), usn, urn, udn);
+	std::vector<Definition*> defs;
+	for(auto d: t->definitions()){
+		defs.push_back(d);
+	}
+	return getDefinitionInfo(defs, usn, urn, udn);
 }
 
 Options* setBootstrappingOptions() {
@@ -113,6 +128,7 @@ Options* setBootstrappingOptions() {
 	getGlobal()->setOptions(newoptions);
 	setOption(POSTPROCESS_DEFS, false); //Important since postprocessing is implemented with bootstrapping
 	setOption(SPLIT_DEFS, false); //Important since splitting is implemented with bootstrapping
+	setOption(JOIN_DEFS_FOR_XSB, false); //Important since joining is implemented with bootstrapping
 	setOption(GUARANTEE_NO_REC_NEG, true); //Important since checking recursion over negation is implemented with bootstrapping
 
 	setOption(GROUNDWITHBOUNDS, true);

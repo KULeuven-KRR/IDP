@@ -16,20 +16,19 @@
 #include "IncludeComponents.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 
-
 extern void parsefile(const std::string&);
 
 using namespace std;
 
-bool HasRecursionOverNegation::execute(Definition* d) {
+bool HasRecursionOverNegation::execute(const Definition* d) {
 	return not DefinitionUtils::recurionsOverNegationSymbols(d).empty();
 }
 
-bool ApproxHasRecursionOverNegation::execute(Definition* d) {
+bool ApproxHasRecursionOverNegation::execute(const Definition* d) {
 	return not DefinitionUtils::approxRecurionsOverNegationSymbols(d).empty();
 }
 
-std::set<PFSymbol*> ApproxRecursionOverNegationSymbols::execute(Definition* d) {
+std::set<PFSymbol*> ApproxRecursionOverNegationSymbols::execute(const Definition* d) {
 	if (getOption(GUARANTEE_NO_REC_NEG)) {
 		return {};
 	}
@@ -46,16 +45,15 @@ std::set<PFSymbol*> ApproxRecursionOverNegationSymbols::execute(Definition* d) {
 	return result;
 }
 
-
-std::set<PFSymbol*> RecursionOverNegationSymbols::execute(Definition* d) {
-	if(getOption(GUARANTEE_NO_REC_NEG)){
+std::set<PFSymbol*> RecursionOverNegationSymbols::execute(const Definition* d) {
+	if (getOption(GUARANTEE_NO_REC_NEG)) {
 		return {};
 	}
 	prepare();
 
 	UniqueNames<PFSymbol*> usn;
 	UniqueNames<Rule*> urn;
-	UniqueNames<Definition*> udn;
+	UniqueNames<const Definition*> udn;
 
 	auto structure = BootstrappingUtils::getDefinitionInfo(d, usn, urn, udn);
 	auto result = handle(structure, usn);

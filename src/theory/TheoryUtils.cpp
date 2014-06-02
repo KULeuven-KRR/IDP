@@ -35,7 +35,7 @@
 #include "transformations/PushNegations.hpp"
 #include "transformations/Flatten.hpp"
 #include "transformations/DeriveSorts.hpp"
-#include "transformations/AddCompletion.hpp"
+#include "transformations/ReplaceDefinitionsWithCompletion.hpp"
 #include "transformations/AddIfCompletion.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
@@ -64,6 +64,9 @@
 #include "information/ContainedVariables.hpp"
 #include "information/CheckContainsRecursivelyDefinedAggTerms.hpp"
 #include "transformations/SubstituteVarWithVar.hpp"
+#ifdef WITHXSB
+#include "transformations/JoinDefinitionsForXSB.hpp"
+#endif
 
 using namespace std;
 
@@ -222,19 +225,19 @@ bool approxTotal(Definition* def) {
 	return total;
 }
 
-bool approxHasRecursionOverNegation(Definition* d) {
+bool approxHasRecursionOverNegation(const Definition* d) {
 	return transform<ApproxHasRecursionOverNegation, bool>(d);
 }
 
-std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition* d) {
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(const Definition* d) {
 	return transform<ApproxRecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
 }
 
-bool hasRecursionOverNegation(Definition* d) {
+bool hasRecursionOverNegation(const Definition* d) {
 	return transform<HasRecursionOverNegation, bool>(d);
 }
 
-std::set<PFSymbol*> recurionsOverNegationSymbols(Definition* d) {
+std::set<PFSymbol*> recurionsOverNegationSymbols(const Definition* d) {
 	return transform<RecursionOverNegationSymbols, std::set<PFSymbol*> >(d);
 }
 
@@ -243,7 +246,14 @@ void splitDefinitions(Theory* t) {
 	transform<SplitDefinitions>(t);
 }
 
-bool approxContainsRecDefAggTerms(Definition* def) {
+#ifdef WITHXSB
+/** Group definitions for minimum overhead with XSB */
+void joinDefinitionsForXSB(Theory* t) {
+	transform<JoinDefinitionsForXSB>(t);
+}
+#endif
+
+bool approxContainsRecDefAggTerms(const Definition* def) {
 	return transform<CheckApproxContainsRecDefAggTerms, bool>(def);
 }
 
@@ -497,8 +507,8 @@ Formula* unnestThreeValuedTerms(Formula* f, const Structure* structure, const st
 	return transform<UnnestThreeValuedTerms, Formula*>(f, structure, definedsymbols, cpsupport);
 }
 
-void addCompletion(AbstractTheory* t, const Structure* s) {
-	auto newt = transform<AddCompletion, AbstractTheory*>(t, s);
+void replaceDefinitionsWithCompletion(AbstractTheory* t, const Structure* s) {
+	auto newt = transform<ReplaceDefinitionsWithCompletion, AbstractTheory*>(t, s);
 	Assert(newt==t);
 }
 

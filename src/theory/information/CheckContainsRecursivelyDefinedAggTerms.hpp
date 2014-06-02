@@ -24,9 +24,16 @@ private:
 
 public:
 	bool execute(const Definition* def) {
-		_def = def;
+		auto theory = new Theory("wrapper_theory", ParseInfo());
+		auto newdef = def->clone();
+		theory->add(newdef);
+		DefinitionUtils::splitDefinitions(theory);
 		_result = false;
-		def->accept(this);
+		for (auto d : theory->definitions()) {
+			_def = d;
+			d->accept(this);
+		}
+		theory->recursiveDelete();
 		return _result;
 	}
 

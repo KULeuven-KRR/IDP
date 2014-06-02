@@ -9,14 +9,14 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#include "AddCompletion.hpp"
+#include "ReplaceDefinitionsWithCompletion.hpp"
 
 #include "IncludeComponents.hpp"
 #include "theory/TheoryUtils.hpp"
 
 using namespace std;
 
-Theory* AddCompletion::visit(Theory* theory) {
+Theory* ReplaceDefinitionsWithCompletion::visit(Theory* theory) {
 	for (auto def : theory->definitions()) {
 		def->accept(this);
 		for (auto sentence : _sentences){
@@ -28,7 +28,7 @@ Theory* AddCompletion::visit(Theory* theory) {
 	return theory;
 }
 
-Definition* AddCompletion::visit(Definition* def) {
+Definition* ReplaceDefinitionsWithCompletion::visit(Definition* def) {
 	_headvars.clear();
 	_symbol2sentences.clear();
 	_sentences.clear();
@@ -67,7 +67,7 @@ Definition* AddCompletion::visit(Definition* def) {
 	return def;
 }
 
-Rule* AddCompletion::visit(Rule* rule) {
+Rule* ReplaceDefinitionsWithCompletion::visit(Rule* rule) {
 	auto newrule = DefinitionUtils::unnestNonVarHeadTerms(rule->clone(), _structure);
 
 	// Split quantified variables in head and body variables

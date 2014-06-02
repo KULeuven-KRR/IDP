@@ -200,7 +200,7 @@ Formula* unnestTerms(Formula*, const Structure* str = NULL, Vocabulary* voc = NU
 Formula* unnestThreeValuedTerms(Formula*, const Structure*, const std::set<PFSymbol*>& definedsymbols, bool cpsupport);
 
 /** Replace all definitions in the theory by their completion */
-void addCompletion(AbstractTheory*, const Structure* s);
+void replaceDefinitionsWithCompletion(AbstractTheory*, const Structure* s);
 
 /**
  * Add the If direction of the definition semantics. The old definition is not removed, but can be regarded as the remaining only if and ufs constraint.
@@ -376,19 +376,24 @@ bool approxTotal(Definition*);
 
 /** Approximate Check whether the definition has recursion over negation
  * Guaranteed to be complete in case definitions are split.*/
-bool approxHasRecursionOverNegation(Definition*);
-std::set<PFSymbol*> approxRecurionsOverNegationSymbols(Definition*);
+bool approxHasRecursionOverNegation(const Definition*);
+std::set<PFSymbol*> approxRecurionsOverNegationSymbols(const Definition*);
 
 /** Check whether the definition has recursion over negation
  * WARNING: expensive! If you are certain that definitions are split, better use approx method!*/
-bool hasRecursionOverNegation(Definition*);
-std::set<PFSymbol*> recurionsOverNegationSymbols(Definition*);
+bool hasRecursionOverNegation(const Definition*);
+std::set<PFSymbol*> recurionsOverNegationSymbols(const Definition*);
 
 /** Stratify all definitions in a theory */
 void splitDefinitions(Theory* t);
 
+#ifdef WITHXSB
+/** Group definitions for minimum overhead with XSB */
+void joinDefinitionsForXSB(Theory* t);
+#endif
+
 /** Check whether the definition has a recursive aggregate */
-bool approxContainsRecDefAggTerms(Definition*);
+bool approxContainsRecDefAggTerms(const Definition*);
 
 /** Add a "symbol <- false" body to open symbols with a 3-valued interpretation */
 Definition* makeDefinitionCalculable(Definition*, Structure*);

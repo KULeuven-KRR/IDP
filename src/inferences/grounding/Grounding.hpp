@@ -161,10 +161,7 @@ private:
 		}
 		Assert(defCalculatedResult._calculated_model->isConsistent());
 		_structure = defCalculatedResult._calculated_model;
-		for (auto def : defCalculatedResult._calculated_definitions) {
-			def->recursiveDelete(); // These are no longer present in the theory
-		}
-		if(getOption(BoolType::XSB)) {
+		if(getOption(BoolType::XSB) && getOption(BoolType::REFINE_DEFS_WITH_XSB)) {
 			auto defRefinedResult = refineStructureWithDefinitions::doRefineStructureWithDefinitions(dynamic_cast<Theory*>(_theory), _structure, satdelay);
 			if (not defRefinedResult._hasModel) {
 				// FIXME bugged: NULL as symstructure (see above))
@@ -181,7 +178,7 @@ private:
 			logActionAndTime("Starting approximation at ");
 		}
 
-		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE && getOption(BoolType::XSB)) {
+		if (getGlobal()->getOptions()->approxDef() != ApproxDef::NONE) {
 			PropagationUsingApproxDef* propagator = new PropagationUsingApproxDef();
 			auto propagated_structures = propagator->propagate(_theory, _structure);
 			if (propagated_structures.size() == 0 || not propagated_structures[0]->isConsistent()) {

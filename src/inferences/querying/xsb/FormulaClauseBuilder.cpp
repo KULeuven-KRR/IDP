@@ -30,49 +30,49 @@ void FormulaClauseBuilder::leave() {
 
 string FormulaClauseBuilder::generateNewAndClauseName() {
 	std::stringstream ss;
-	ss <<"andClause" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("andClause");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewOrClauseName() {
 	std::stringstream ss;
-	ss <<"orClause" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("orClause");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewExistsClauseName() {
 	std::stringstream ss;
-	ss <<"existsClause" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("existsClause");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewForallClauseName() {
 	std::stringstream ss;
-	ss <<"forallClause" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("forallClause");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewAggregateClauseName() {
 	std::stringstream ss;
-	ss <<"aggClause" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("aggClause");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewAggregateTermName() {
 	std::stringstream ss;
-	ss <<"aggTerm" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("aggTerm");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewEnumSetExprName() {
 	std::stringstream ss;
-	ss <<"enumSetExpr" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("enumSetExpr");
 	return ss.str();
 }
 
 string FormulaClauseBuilder::generateNewQuantSetExprName() {
 	std::stringstream ss;
-	ss <<"quantSetExpr" << getGlobal()->getNewID();
+	ss << _translator->new_pred_name_with_prefix("quantSetExpr");
 	return ss.str();
 }
 
@@ -271,7 +271,16 @@ void FormulaClauseBuilder::visit(const PredForm* p) {
 				}
 				term->addInputvarsToCheck(inputvars);
 			} else {
+				auto toNumericalOperation = true;
+				for(auto arg : p->args()) {
+					if(not (SortUtils::isSubsort(arg->sort(),get(STDSORT::FLOATSORT)) ||
+							SortUtils::isSubsort(arg->sort(),get(STDSORT::INTSORT)) ||
+							SortUtils::isSubsort(arg->sort(),get(STDSORT::NATSORT))) ) {
+						toNumericalOperation = false;
+					}
+				}
 				term->numeric(true);
+				term->numericalOperation(toNumericalOperation);
 				term->addInputvarsToCheck(set<PrologVariable*>(term->variables().begin(), term->variables().end()));
 			}
 		} else if (is(p->symbol(),STDFUNC::ABS)) {

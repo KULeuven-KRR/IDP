@@ -103,7 +103,6 @@ FILE* GlobalData::openFile(const char* filename, const char* mode) {
 	return f;
 }
 
-
 char* GlobalData::getTempFileName() {
 	auto filename = tmpnam(NULL);
 	_temp_file_names.insert(filename);
@@ -116,7 +115,6 @@ void GlobalData::closeFile(FILE* filepointer) {
 	fclose(filepointer);
 }
 
-#include <unistd.h>
 void GlobalData::removeTempFile(char* name) {
 	Assert(name!=NULL);
 	_temp_file_names.erase(name);

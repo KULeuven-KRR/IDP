@@ -13,6 +13,22 @@
 
 #include "commandinterface.hpp"
 #include "IncludeComponents.hpp"
+#include "structure/StructureUtils.hpp"
+
+class GetNbOfTwoValuedAtomsInStructure: public StructureBase {
+	public:
+	GetNbOfTwoValuedAtomsInStructure()
+				: StructureBase("nrtwovaluedatoms", "Retrieve the number of two-valued atoms in the given structure.") {
+			setNameSpace(getStructureNamespaceName());
+		}
+
+		InternalArgument execute(const std::vector<InternalArgument>& args) const {
+			InternalArgument ia;
+			ia._type = AT_DOUBLE;
+			ia._value._double = toDouble(StructureUtils::getNbOfTwoValuedAtoms(get<0>(args)));
+			return ia;
+		}
+};
 
 class IsConsistentInference: public StructureBase {
 public:

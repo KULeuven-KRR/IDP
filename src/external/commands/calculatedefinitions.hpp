@@ -39,9 +39,6 @@ public:
 			return InternalArgument();
 		}
 		Assert(sols._hasModel and sols._calculated_model != NULL);
-		for (auto def : sols._calculated_definitions) {
-			def->recursiveDelete();
-		}
 		return InternalArgument(sols._calculated_model);
 	}
 };
@@ -63,9 +60,16 @@ public:
 			Error::error("Can only calculate definitions with a non-ground theory.");
 			return nilarg();
 		}
-		auto sols = refineStructureWithDefinitions::doRefineStructureWithDefinitions(theory, get<1>(args)->clone());
+		auto newTheory = new Theory("", theory->vocabulary(), ParseInfo());
+		for (auto definition : theory->definitions()) {
+			newTheory->add(definition->clone());
+		}
+		auto result = CalculateDefinitions::doCalculateDefinitions(newTheory,get<1>(args));
+		auto structure = result._calculated_model;
+		auto sols = refineStructureWithDefinitions::doRefineStructureWithDefinitions(newTheory, structure);
 		if(not sols._hasModel ){
-			return InternalArgument();
+			delete newTheory;
+			return nilarg();
 		}
 		Assert(sols._hasModel and sols._calculated_model != NULL);
 

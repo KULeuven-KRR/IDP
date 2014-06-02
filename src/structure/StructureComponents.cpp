@@ -4098,6 +4098,7 @@ const std::set<ElementTuple>& FuncInter::getInconsistentAtoms() const{
 	}
 	return _graphinter->getInconsistentAtoms();
 }
+
 FuncInter* FuncInter::clone() const {
 	return clone(universe());
 }

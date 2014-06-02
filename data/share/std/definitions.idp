@@ -140,6 +140,29 @@ namespace stdspace{
 			//options should be set by bootstrapping procedure
 			return onemodel(mytheo,struc)
 		}*/
+		
+		vocabulary def_join_voc {
+			// IN
+			extern vocabulary higher
+			xsbcalculable(def)
+			
+			// OUT
+			dependson(def,def)
+			samedef(def,def)
+		}
+		theory def_join_theory : def_join_voc {
+			{
+				dependson(d1,d2) <- ?s : openin(s,d1) & definedin(s,d2).
+				dependson(d1,d2) <- ?d3 : dependson(d1,d3) & dependson(d3,d2).
+			}
+			{
+				samedef(d,d).
+				samedef(d1,d2) <- xsbcalculable(d1) & xsbcalculable(d2) & 
+								  ~(dependson(d1,d2) & dependson(d2,d1)) & 
+				                  (~? s : definedin(s,d1) & definedin(s,d2)) &
+				                  ~(?def : ~samedef(d1,def) & dependson(d2,def)).
+			}
+		}
 
 		/**
 		* Finding symbols involved in recursion over negation

@@ -1,0 +1,24 @@
+vocabulary V {
+  type t isa int
+  P(t)
+  Q(t)
+  R(t)
+}
+
+theory T : V {
+  {
+    P(0).
+    P(x) <- Q(x-1) & R(x).
+  }
+  {
+    Q(x) <- P(x-1) & R(x).
+  }
+}
+
+structure S : V {
+  t = {0..101}
+  R<ct> = {0..99}
+  R<cf> = {101}
+  P<ct> = {2}
+  
+}

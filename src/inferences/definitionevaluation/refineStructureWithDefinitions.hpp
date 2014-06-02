@@ -69,9 +69,8 @@ private:
 			Structure* structure, bool satdelay,
 			std::set<PFSymbol*> symbolsToQuery) const;
 
-	DefinitionRefiningResult processDefinition(Definition* definition,
+	DefinitionRefiningResult processDefinition(const Definition* definition,
 			Structure* structure, bool satdelay,
 			std::set<PFSymbol*> symbolsToQuery) const;
-	bool postprocess(DefinitionRefiningResult&, const Definition*,std::map<PFSymbol*, PredInter*>&) const;
+	bool postprocess(DefinitionRefiningResult&, std::map<PFSymbol*, PredInter*>&) const;
 };
-

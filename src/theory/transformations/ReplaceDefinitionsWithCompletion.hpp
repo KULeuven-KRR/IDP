@@ -19,7 +19,7 @@ class Variable;
 class PFSymbol;
 class Structure;
 
-class AddCompletion: public TheoryMutatingVisitor {
+class ReplaceDefinitionsWithCompletion: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	const Structure* _structure;

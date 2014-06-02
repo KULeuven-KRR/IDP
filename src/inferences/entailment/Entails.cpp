@@ -130,7 +130,7 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	axiomsSupported.runCheck(axioms);
 	if (axiomsSupported.definitionFound()) {
 		Warning::warning("The input contains a definition. A (possibly) weaker form of entailment will be verified, based on its completion.");
-		FormulaUtils::addCompletion(axioms, NULL);
+		FormulaUtils::replaceDefinitionsWithCompletion(axioms, NULL);
 	}
 
 	TheorySupportedChecker conjecturesSupported;

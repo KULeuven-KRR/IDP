@@ -14,6 +14,7 @@
 #include "creation/cppinterface.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "structure/StructureComponents.hpp"
+#include "structure/Structure.hpp"
 
 #ifdef WITHXSB
 #include "inferences/querying/xsb/XSBInterface.hpp"
@@ -24,8 +25,9 @@
 
 using namespace std;
 DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
-		Definition* definition, Structure* structure, bool satdelay,
+		const Definition* d, Structure* structure, bool satdelay,
 		std::set<PFSymbol*> symbolsToQuery) const {
+	auto definition = d->clone();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Refining definition: " << toString(definition) << "\n";
 	}
@@ -117,16 +119,16 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		clog << "Refining definitions\n";
 	}
 	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
-	auto queue = std::set<Definition*>(theory->definitions().begin(), theory->definitions().end());
+	auto definitions_to_process = std::set<Definition*>(theory->definitions().begin(), theory->definitions().end());
 	std::map<PFSymbol*, PredInter*> initial_interpretations;
 	DefinitionRefiningResult result(structure);
 	result._hasModel = true;
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
 	// three-valued open symbols
-	while (not queue.empty()) {
-		auto it = queue.begin();
-		auto definition = *(it++);
+	while (not definitions_to_process.empty()) {
+		auto definition = *(definitions_to_process.begin());
+		definitions_to_process.erase(definition);
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 			clog << "Refining " << toString(definition) << "\n";
 		}
@@ -139,9 +141,9 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		FormulaUtils::removeInterpretationOfDefinedSymbols(definition,structure);
 		DefinitionRefiningResult processDefResult(structure);
 		processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
-		processDefResult._hasModel = postprocess(processDefResult, definition, initial_interpretations);
+		processDefResult._hasModel = postprocess(processDefResult, initial_interpretations);
 		initial_interpretations.clear(); // These are not needed anymore
-		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
+		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 			clog << "Resulting structure:\n" << toString(structure) << "\n";
 		}
 		if (not processDefResult._hasModel) { // If the definition did not have a model, quit execution
@@ -150,25 +152,22 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 			}
 			result._hasModel = false;
 			return result;
-		} else { // If it did have a model, update result and queue and continue
-			// update the refined symbols
-			result._refined_symbols.insert(processDefResult._refined_symbols.begin(),
-					processDefResult._refined_symbols.end());
+		}
+		// update the refined symbols
+		result._refined_symbols.insert(processDefResult._refined_symbols.begin(),
+				processDefResult._refined_symbols.end());
 
-			// Find definitions with opens for which the interpretation has changed
-			for (auto def : theory->definitions()) {
-				// Don't do anything for the definition if it is still in the queue
-				if (queue.find(def) != queue.end()) {
-					for (auto symbol : processDefResult._refined_symbols) {
-						auto opensOfDefinition = DefinitionUtils::opens(def);
-						if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
-							queue.insert(def);
-						}
+		// Find definitions with opens for which the interpretation has changed
+		for (auto def : theory->definitions()) {
+			// Don't do anything for the definition if it is still in the queue
+			if (definitions_to_process.find(def) == definitions_to_process.end()) {
+				for (auto symbol : processDefResult._refined_symbols) {
+					auto opensOfDefinition = DefinitionUtils::opens(def);
+					if (opensOfDefinition.find(symbol) != opensOfDefinition.end()) {
+						definitions_to_process.insert(def);
 					}
 				}
 			}
-			// remove the current definition from the queue - it has just been evaluated
-			queue.erase(definition);
 		}
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
@@ -182,11 +181,11 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 
 // Separate procedure to decide whether the definition refinement is acceptable
 // Also contains some verbosity code
-bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result,
-		const Definition* def, std::map<PFSymbol*, PredInter*>& initial_inters) const {
+bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& result, std::map<PFSymbol*, PredInter*>& initial_inters) const {
 	if (not result._hasModel) {
 		return false;
 	}
+	result._refined_symbols.clear();
 	for (auto it : initial_inters) {
 		auto symbol = it.first;
 		auto inter = it.second;
@@ -202,14 +201,14 @@ bool refineStructureWithDefinitions::postprocess(DefinitionRefiningResult& resul
 			result._hasModel = false;
 			return false;
 		}
-		// If no inconsistency is detected, update the refined symbols
-		result._refined_symbols.clear();
+		// Update the refined symbols
 		if(not (inter->ct()->size() == result._calculated_model->inter(symbol)->ct()->size() and
 				inter->pt()->size() == result._calculated_model->inter(symbol)->pt()->size()) ) {
 			// The interpretation on this symbol has changed
 			result._refined_symbols.insert(symbol);
 		}
 	}
+	result._calculated_model->clean();
 	return true;
 }
 

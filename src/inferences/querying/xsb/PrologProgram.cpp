@@ -121,11 +121,6 @@ string PrologProgram::getFacts() {
 }
 
 void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostream& ss) {
-	if (not _structure->inter(symbol)->approxTwoValued()) {
-		// If the symbol is not two-valued, it needs to be tabled to handle the unknown values
-		// TODO: include something like the table() framework for the rules?
-		ss << ":- table " << _translator->to_prolog_pred_and_arity(symbol) << ".\n";
-	}
 	auto certainly_true = _structure->inter(symbol)->ct();
 	auto possibly_true = _structure->inter(symbol)->pt();
 	for (auto it = possibly_true->begin(); !it.isAtEnd(); ++it) {
@@ -135,10 +130,8 @@ void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostr
 		if (not certainly_true->contains(tuple)) {
 			// If the tuple is not in the certainly true table, it is unknown
 			// Unknown symbols needs to be printed as follows:
-			//   symbol(arg1,..,argn) :- tnot(symbol(arg1,..,argn)).
-			ss << " :- tnot(" << symbol_name;
-			printTuple(tuple,ss);
-			ss << ")";
+			//   symbol(arg1,..,argn) :- undef.
+			ss << " :- undef";
 		}
 		ss << ".\n";
 	}

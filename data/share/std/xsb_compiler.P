@@ -104,24 +104,21 @@ ixforall(CallA, CallB) :-
     tables:not_exists((call(CallA), tables:not_exists(CallB))).
 
 % ixthreeval_findall(Var,Query,Ret)
-% Case to find all "true" answers -> only return if non-empty though
-ixthreeval_findall(Var,Query,Ret) :-
-  findall(Var,call_tv(Query,true),Ret),
-  Ret = [_|_].
-
-% ixthreeval_findall(Var,Query,Ret)
-% Case to find all "undefined" answers
 %   1: Gather all "true" answers
 %   2: Gather all "undefined" answers of the Query
 %   3: Append each possible subset of "undefined" answers list to the "true" 
 %      answers list
-%   4: Introduce loop to make return tuple undefined
+%   4: Introduce loop to make return tuple undefined if some "undefined" answers
+%      were added to the Ret list (generate_CT_or_U_answers/1 is used for this)
 ixthreeval_findall(Var,Query,Ret) :-
-  findall(Var,call_tv(Query,true),L2),
-  findall(Var,call_tv(Query,undefined),L),
-  ixsubset(L,S),
-  append(S,L2,Ret),
-  undef.
+  findall(Var,call_tv(Query,true),CTList),
+  findall(Var,call_tv(Query,undefined),Ulist),
+  ixsubset(Ulist,S),
+  append(S,CTList,Ret),
+  generate_CT_or_U_answer(S).
+
+generate_CT_or_U_answer([]).
+generate_CT_or_U_answer([_|_]) :- undef.
 
 :- table undef/0.
 undef :- tnot(undef).
@@ -153,11 +150,19 @@ ixnat(X) :-
     nonvar(X),
     X >= 0,
     ixint(X).
-    
+
 ixnat(X) :- 
     var(X),
     throw_infinite_type_generation_error.
-     
+
+ixstring(X) :- 
+    nonvar(X),
+    atomic(X). % Possible todo - maintain strings during translation and check for is_charlist/1 here
+
+ixstring(X) :-
+    var(X),
+    throw_infinite_type_generation_error.
+
 % First argument has to be instantiated
 % Second argument can be output variable or instantiated
 ixsame_number(X,Y) :-

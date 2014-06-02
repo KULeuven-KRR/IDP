@@ -27,10 +27,18 @@ class XSBToIDPTranslator {
 private:
 	std::unordered_map<std::string, const DomainElement*> _domainels;
 	std::unordered_map<std::string, std::string> _termnames;
+	unsigned int _predicate_name_counter;
 
 	std::string transform_into_term_name(std::string);
 
+	unsigned int getNewID() {
+		return ++_predicate_name_counter;
+	}
+
 public:
+	XSBToIDPTranslator() :
+		_predicate_name_counter(1) {}
+
 //  These 4 procedures decide whether a given string represents an
 //	XSB built-in or an XSB predicate that is supported in the
 //	predefined XSB code for IDP found in data/share/std/xsb_compiler.P
@@ -58,11 +66,17 @@ public:
 	static std::string to_simple_chars(std::string);
 
 	static std::string get_idp_prefix();
+	static std::string get_short_idp_prefix();
 	static std::string get_idp_caps_prefix();
 	static std::string get_forall_term_name();
 	static std::string get_twovalued_findall_term_name();
 	static std::string get_threevalued_findall_term_name();
 	static std::string get_abs_term_name();
+	static std::string get_division_term_name();
+	static std::string get_exponential_term_name();
+
+	std::string new_pred_name_with_prefix(std::string);
+	std::string new_pred_name();
 
 private:
 	std::map<std::string, PrologVariable*> vars;
