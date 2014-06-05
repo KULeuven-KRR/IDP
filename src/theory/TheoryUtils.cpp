@@ -65,7 +65,7 @@
 #include "information/CheckContainsRecursivelyDefinedAggTerms.hpp"
 #include "transformations/SubstituteVarWithVar.hpp"
 #ifdef WITHXSB
-#include "transformations/JoinDefinitionsForXSB.hpp"
+#include "inferences/querying/xsb/JoinDefinitionsForXSB.hpp"
 #endif
 
 using namespace std;
