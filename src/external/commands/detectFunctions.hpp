@@ -16,7 +16,7 @@
 class DetectFunctionsInference: public TheoryBase {
 public:
 	DetectFunctionsInference()
-			: TheoryBase("detectfunctionsNotEmpty", "Detect functions, in the assumption that types will never be empty.") {
+			: TheoryBase("detectfunctionsNotEmpty", "Detect functions and rewrite the theory accordingly, in the assumption that types will never be empty.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 
