@@ -737,11 +737,13 @@ private:
 	std::vector<FixpDef*> _fixpdefs; //!< the fixpoint definitions of the theory
 
 public:
-	Theory(const std::string& name, const ParseInfo& pi)
-			: AbstractTheory(name, pi) {
-	}
 	Theory(const std::string& name, Vocabulary* voc, const ParseInfo& pi)
 			: AbstractTheory(name, voc, pi) {
+	}
+
+	// NOTE: guarantee to add a voc before calling any non-add method!
+	Theory(const std::string& name, const ParseInfo& pi)
+			: AbstractTheory(name, pi) {
 	}
 
 	Theory* clone() const;
