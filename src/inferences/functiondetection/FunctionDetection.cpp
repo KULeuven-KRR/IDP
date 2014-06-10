@@ -136,26 +136,6 @@ bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const
 
 	functheory->recursiveDelete();
 
-	auto computPred = pred;
-	if (origVoc->contains(pred)) {
-		computPred = new Predicate(pred->nameNoArity() + "_c", pred->sorts());
-		newTheory->vocabulary()->add(computPred);
-
-		std::vector<Variable*> vars;
-		for (uint i = 0; i < pred->sorts().size(); ++i) {
-			vars.push_back(new Variable(pred->sort(i)));
-		}
-
-		newTheory = FormulaUtils::replacePredByPred(pred, computPred, newTheory);
-
-		// Add input/output definition
-		auto newdef = new Definition();
-		auto newrule = new Rule(getVarSet(vars), &atom(pred, vars), &atom(computPred, vars), ParseInfo());
-		newdef->add(newrule->clone());
-		newTheory->add(newdef);
-		inoutputvarcount += vars.size();
-	}
-
 	std::vector<int> domainindices, codomainsindices;
 	for (uint i = 0; i < predvars.size(); ++i) {
 		if (contains(complement, predvars[i])) {
@@ -170,6 +150,6 @@ bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const
 	} else {
 		totalfunc += codomainsindices.size();
 	}
-	newTheory = FormulaUtils::replacePredByFunctions(newTheory, computPred, getSet(domainindices), getSet(codomainsindices), partial);
+	newTheory = FormulaUtils::replacePredByFunctions(newTheory, pred, origVoc->contains(pred), getSet(domainindices), getSet(codomainsindices), partial);
 	return true;
 }

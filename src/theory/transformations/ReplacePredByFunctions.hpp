@@ -12,6 +12,7 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "IncludeComponents.hpp"
+#include "creation/cppinterface.hpp"
 
 /**
  * Given a functional dependency <P,domainindices,codomainindicates,partial>
@@ -32,7 +33,7 @@ private:
 
 public:
 	template<typename T>
-	T execute(T t, Vocabulary* voc, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
+	T execute(T t, Vocabulary* voc, Predicate* pred, bool addinoutputdef, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
 		vocabulary = voc;
 		_predToReplace = pred;
 		_domainindices = domainindices;
@@ -44,11 +45,26 @@ public:
 			std::stringstream ss;
 			ss <<pred->nameNoArity() << "_" << ind;
 			auto newfunc = new Function(ss.str(), domainsorts, pred->sorts()[ind], ParseInfo());
+			cerr <<"Introducing " <<print(newfunc) <<"\n";
 			newfunc->partial(partialfunctions);
 			vocabulary->add(newfunc);
 			_index2function[ind] = newfunc;
 		}
 		t = t->accept(this);
+
+		if(addinoutputdef){
+			std::vector<Variable*> vars;
+			for (uint i = 0; i < pred->sorts().size(); ++i) {
+				vars.push_back(new Variable(pred->sort(i)));
+			}
+
+			auto newrule = new Rule(getVarSet(vars), &Gen::atom(pred, vars), Gen::atom(pred, vars).accept(this), ParseInfo());
+
+			auto outputdef = new Definition();
+			outputdef->add(newrule);
+			t->add(outputdef);
+		}
+
 		return t;
 	}
 

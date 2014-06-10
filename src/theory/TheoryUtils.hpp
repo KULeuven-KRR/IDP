@@ -158,7 +158,7 @@ Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* the
 template<class T>
 T replaceVariablesUsingEqualities(T t);
 
-Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions);
+Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, bool addinoutputdef, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 

@@ -506,19 +506,19 @@ Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* the
 
 template<class T>
 T replaceVariablesUsingEqualities(T t) {
-	cerr <<"Replaced \n" <<print(t) <<"\n";
+//	cerr <<"Replaced \n" <<print(t) <<"\n";
 	t = flatten(t);
 	t = splitComparisonChains(t);
 	t = pushNegations(t);
 	t = pullQuantifiers(t);
 	t = transform<ReplaceVariableUsingEqualities, T>(t);
 	t = pushQuantifiers(t);
-	cerr <<" with \n" <<print(t) <<"\n";
+//	cerr <<" with \n" <<print(t) <<"\n";
 	return t;
 }
 
-Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
-	return transform<ReplacePredByFunctions, Theory*>(newTheory, newTheory->vocabulary(), pred, domainindices, codomainsindices, partialfunctions);
+Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, bool addinoutputdef, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
+	return transform<ReplacePredByFunctions, Theory*>(newTheory, newTheory->vocabulary(), pred, addinoutputdef, domainindices, codomainsindices, partialfunctions);
 }
 
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {
