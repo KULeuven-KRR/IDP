@@ -24,7 +24,7 @@ public:
 		auto t = get<0>(args);
 		auto theory = dynamic_cast<Theory*>(t);
 		if(theory==NULL){
-			return InternalArgument(false);
+			throw IdpException("Expected a concrete Theory.");
 		}
 		FunctionDetection::doDetectAndRewriteIntoFunctions(theory);
 		return InternalArgument(theory);
