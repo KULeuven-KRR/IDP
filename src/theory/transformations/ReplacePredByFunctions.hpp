@@ -122,8 +122,8 @@ protected:
 		std::vector<Rule*> rules;
 		for(auto ind2func: _index2function){
 			auto origterm = pf->subterms()[ind2func.first]->clone(var2var);
-			auto newterm = new FuncTerm(ind2func.second, domainterms, TermParseInfo());
-			auto newhead = new PredForm(SIGN::POS, get(STDPRED::EQ)->disambiguate({origterm->sort(), origterm->sort()}), {newterm, origterm->clone(var2var)}, FormulaParseInfo());
+			domainterms.push_back(origterm->clone(var2var));
+			auto newhead = new PredForm(SIGN::POS, ind2func.second, domainterms, {});
 			rules.push_back(new Rule(newvars, newhead, rule->body()->clone(var2var), ParseInfo()));
 		}
 		auto lastrule = rules.back();
