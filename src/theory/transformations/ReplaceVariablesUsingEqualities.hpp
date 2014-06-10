@@ -39,16 +39,19 @@ private:
 	std::map<Variable*, Term*> replacements; // Note: CLONE!
 	varset removingvars, allowedvars;
 
+	uint replaced;
+
 public:
 	template<typename T>
 	T execute(T t) {
-		do{
+		do {
+			replaced = 0;
 			atomReplace.clear();
 			replacements.clear();
 			removingvars.clear();
 			allowedvars.clear();
 			t = t->accept(this);
-		}while(not atomReplace.empty());
+		} while (replaced > 0);
 		return t;
 	}
 
@@ -59,6 +62,7 @@ protected:
 
 	Term* visit(VarTerm* vt) {
 		if (contains(replacements, vt->var())) {
+			replaced++;
 			return replacements.at(vt->var())->cloneKeepVars()->accept(this);
 		}
 		return vt;
@@ -66,7 +70,7 @@ protected:
 
 	Formula* visit(PredForm* pf) {
 		auto it = atomReplace.find(pf);
-		if(it!=atomReplace.cend()){
+		if (it != atomReplace.cend()) {
 			return it->second;
 		}
 		return traverse(pf);
@@ -117,7 +121,7 @@ protected:
 
 	void checkAndAddReplacements(Formula* f, const varset& quantvars, bool replaceeqs) {
 		auto bf = dynamic_cast<BoolForm*>(f);
-		if(bf==NULL){
+		if (bf == NULL) {
 			addReplacements(f, replaceeqs, quantvars);
 			return;
 		}
@@ -143,14 +147,12 @@ protected:
 			}
 			auto left = pf->subterms()[0];
 			auto right = pf->subterms()[1];
-			if(isVar(right)){
+			if (isVar(right)) {
 				swap(left, right);
 			}
 			auto vt = dynamic_cast<VarTerm*>(left);
-			if(vt==NULL || not contains(allowedvars, vt->var())
-					|| contains(replacements, vt->var())
-					|| (needeq && pf->sign() == SIGN::NEG)	|| (not needeq && pf->sign() == SIGN::POS)
-					|| contains(right->freeVars(), vt->var())){
+			if (vt == NULL || not contains(allowedvars, vt->var()) || contains(replacements, vt->var()) || (needeq && pf->sign() == SIGN::NEG)
+					|| (not needeq && pf->sign() == SIGN::POS) || contains(right->freeVars(), vt->var())) {
 				continue;
 			}
 			bool loop = false;
@@ -164,16 +166,14 @@ protected:
 			}
 
 			auto ft = dynamic_cast<FuncTerm*>(right);
-			if(ft!=NULL && ft->function()->partial()){
-				if(f->subformulas().size()==1){ // We will add again what we drop, so abort
-					continue;
-				}
+			if (ft != NULL && ft->function()->partial()) {
 				auto v = Gen::var(left->sort());
-				atomReplace[pf] = new QuantForm(needeq?SIGN::POS:SIGN::NEG, QUANT::EXIST, {v}, &Gen::operator ==(*new VarTerm(v, {}), *right->cloneKeepVars()), {});
-			}else if(left->sort()!=right->sort()){
-				atomReplace[pf] = new PredForm(needeq?SIGN::POS:SIGN::NEG, left->sort()->pred(), {right->cloneKeepVars()}, {});
+				atomReplace[pf] = new QuantForm(needeq ? SIGN::POS : SIGN::NEG, QUANT::EXIST, { v },
+						&Gen::operator ==(*new VarTerm(v, { }), *right->cloneKeepVars()), { });
+			} else if (left->sort() != right->sort()) {
+				atomReplace[pf] = new PredForm(needeq ? SIGN::POS : SIGN::NEG, left->sort()->pred(), { right->cloneKeepVars() }, { });
 			} else {
-				atomReplace[pf] = needeq?trueFormula():falseFormula();
+				atomReplace[pf] = needeq ? trueFormula() : falseFormula();
 			}
 			removingvars.insert(vt->var());
 			replacements[vt->var()] = right->cloneKeepVars();
