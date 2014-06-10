@@ -16,24 +16,6 @@
 class DetectFunctionsInference: public TheoryBase {
 public:
 	DetectFunctionsInference()
-			: TheoryBase("detectfunctionsNotEmpty", "Detect functions and rewrite the theory accordingly, in the assumption that types will never be empty.") {
-		setNameSpace(getTheoryNamespaceName());
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		auto t = get<0>(args);
-		auto theory = dynamic_cast<Theory*>(t);
-		if(theory==NULL){
-			return InternalArgument(false);
-		}
-		FunctionDetection::doDetectAndRewriteIntoFunctions(theory, true);
-		return InternalArgument(theory);
-	}
-};
-
-class DetectFunctionsInference2: public TheoryBase {
-public:
-	DetectFunctionsInference2()
 			: TheoryBase("detectfunctions", "Detect functions and rewrite the theory accordingly, assuming that types can be empty.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
@@ -44,7 +26,7 @@ public:
 		if(theory==NULL){
 			return InternalArgument(false);
 		}
-		FunctionDetection::doDetectAndRewriteIntoFunctions(theory,false);
+		FunctionDetection::doDetectAndRewriteIntoFunctions(theory);
 		return InternalArgument(theory);
 	}
 };

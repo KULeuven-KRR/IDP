@@ -22,38 +22,41 @@
 #include "creation/cppinterface.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "utils/ListUtils.hpp"
-#include "utils/SubsetIterator.hpp"
+#include "utils/SubsetGenerator.hpp"
 
 using namespace std;
 using namespace Gen;
 
-void FunctionDetection::doDetectAndRewriteIntoFunctions(Theory* theory, bool assumeTypesNotEmpty) {
-	FunctionDetection c(theory, assumeTypesNotEmpty);
+void FunctionDetection::doDetectAndRewriteIntoFunctions(Theory* theory) {
+	FunctionDetection c(theory);
 	c.detectAndRewriteIntoFunctions();
 }
 
-FunctionDetection::FunctionDetection(Theory* theory, bool assumeTypesNotEmpty)
-		: 	origVoc(new Vocabulary("detectionVoc")), theory(theory), assumeTypesNotEmpty(assumeTypesNotEmpty), inoutputvarcount(0), totalfunc(0),partfunc(0),calls(0) {
+FunctionDetection::FunctionDetection(Theory* theory)
+		: 	origVoc(new Vocabulary("detectionVoc")),
+			theory(theory),
+			inoutputvarcount(0),
+			totalfunc(0),
+			partfunc(0),
+			provercalls(0) {
 	origVoc->add(theory->vocabulary());
 	stringstream ss;
-	ss <<"funcVoc_" <<getGlobal()->getNewID();
+	ss << "funcVoc_" << getGlobal()->getNewID();
 	theory->vocabulary(new Vocabulary(ss.str()));
 	theory->vocabulary()->add(origVoc);
 }
 
-FunctionDetection::~FunctionDetection(){
-	delete(origVoc);
+FunctionDetection::~FunctionDetection() {
+	delete (origVoc);
 }
 
 void FunctionDetection::detectAndRewriteIntoFunctions() {
-	if(getOption(VERBOSE_FUNCDETECT)>0){
-		clog <<"varin&&" <<FormulaUtils::countQuantVars(theory) <<"\n";
+	if (getOption(VERBOSE_FUNCDETECT) > 0) {
+		clog << "varin&&" << FormulaUtils::countQuantVars(theory) << "\n";
 	}
-	auto somereplaced = false;
 
 	for (auto pn : origVoc->getPreds()) { // TODO this does NOT cover everything if we start introducing reduced predicates
 		for (auto pred : pn.second->nonbuiltins()) {
-			CHECKTERMINATION;
 			auto replaced = false;
 			if (pred->arity() == 0) {
 				continue;
@@ -64,79 +67,34 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 				auto var = new Variable(pred->sort(i));
 				predvars.push_back(var);
 			}
+
 			auto subsetgen = SubsetGenerator<Variable*, VarCompare>(predvars, min((int) pred->arity() - 1, 3));
-
-			for (auto subset : subsetgen) {
+			while (subsetgen.hasNextSubset()) {
+				CHECKTERMINATION
 				if (replaced) {
 					break;
 				}
-				replaced = tryToTransform(theory, pred, predvars, subset, false);
+				replaced = tryToTransform(theory, pred, predvars, subsetgen.getCurrentSubset(), false);
 				if (replaced) {
 					break;
 				}
-				replaced = tryToTransform(theory, pred, predvars, subset, true);
-			}
+				replaced = tryToTransform(theory, pred, predvars, subsetgen.getCurrentSubset(), true);
 
-			if (replaced) {
-				somereplaced = true;
-				continue;
+				subsetgen.nextSubset();
 			}
 		}
 	}
 
-	if(somereplaced){
-		FormulaUtils::pushNegations(theory);
-		FormulaUtils::flatten(theory);
-		for(auto def: theory->definitions()){ // TODO should also go deeper, pull as many variables up as possible!
-			for(auto rule:def->rules()){
-				auto qf = dynamic_cast<QuantForm*>(rule->body());
-				if(qf!=NULL && not qf->isUnivWithSign()){
-					for(auto var: qf->quantVars()){
-						rule->addvar(var);
-					}
-					rule->body(qf->subformula());
-				}
-			}
-		}
-		theory = FormulaUtils::replaceVariablesUsingEqualities(theory);
-		theory = FormulaUtils::simplify(theory, NULL); // FIXME assumeTypesNotEmpty
-
-		// TODO fix transformations so it does not have to be called multiple times (which is incomplete anyway)
-		theory = FormulaUtils::replaceVariablesUsingEqualities(theory);
-		theory = FormulaUtils::simplify(theory, NULL); // FIXME assumeTypesNotEmpty
-	}
-
-	theory = FormulaUtils::skolemize(theory);
-
-	for(auto def: theory->definitions()){
-		for(auto rule:def->rules()){
-			varset bodyonlyvars, rem;
-			for(auto var : rule->quantVars()){
-				if(not contains(rule->head()->freeVars(), var)){
-					bodyonlyvars.insert(var);
-				}else{
-					rem.insert(var);
-				}
-			}
-			rule->setQuantVars(rem);
-			if(not bodyonlyvars.empty()){
-				rule->body(new QuantForm(SIGN::POS, QUANT::UNIV, bodyonlyvars, rule->body(), FormulaParseInfo()));
-			}
-		}
-	}
-	FormulaUtils::pushNegations(theory);
-	FormulaUtils::flatten(theory);
-
-	if(getOption(VERBOSE_FUNCDETECT)>0){
-		clog <<"varout&&" <<FormulaUtils::countQuantVars(theory)-inoutputvarcount <<"\n";
-		clog <<"totalfunc&&" <<totalfunc <<"\n";
-		clog <<"partfunc&&" <<partfunc <<"\n";
-		clog <<"calls&&" <<calls <<"\n";
+	if (getOption(VERBOSE_FUNCDETECT) > 0) {
+		clog << "varout&&" << FormulaUtils::countQuantVars(theory) - inoutputvarcount << "\n"; // NOTE: skolelize will further improve this value
+		clog << "totalfunc&&" << totalfunc << "\n";
+		clog << "partfunc&&" << partfunc << "\n";
+		clog << "calls&&" << provercalls << "\n";
 	}
 }
 
 bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const std::vector<Variable*>& predvars, const varset& domainset, bool partial) {
-	if(domainset.size()==pred->arity()){
+	if (domainset.size() == pred->arity()) {
 		throw IdpException("Invalid code path");
 	}
 	auto predvarset = getVarSet(predvars);
@@ -144,7 +102,7 @@ bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const
 	auto functheory = new Theory("Test", newTheory->vocabulary(), ParseInfo());
 	auto complement = getComplement(predvarset, domainset);
 
-	if(not partial){
+	if (not partial) {
 		auto constr = &forall(domainset, exists(complement, atom(pred, predvars)));
 		functheory->add(constr->clone());
 	}
@@ -154,24 +112,24 @@ bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const
 
 	std::vector<Variable*> predvars2;
 	std::vector<Formula*> equalities;
-	for(auto v: predvars){
+	for (auto v : predvars) {
 		auto newvar = v;
-		if(contains(complement, v)){
+		if (contains(complement, v)) {
 			newvar = new Variable(v->sort());
-			auto constr = &atom(::get(STDPRED::EQ)->disambiguate({v->sort(), v->sort()}, newTheory->vocabulary()), std::vector<Variable*>{v,newvar});
+			auto constr = &atom(::get(STDPRED::EQ)->disambiguate( { v->sort(), v->sort() }, newTheory->vocabulary()), std::vector<Variable*> { v, newvar });
 			equalities.push_back(constr->clone());
 			surjectionconstraintvars.insert(newvar);
 		}
 		predvars2.push_back(newvar);
 	}
 
-	auto constr2 = &forall(surjectionconstraintvars, disj({&not atom(pred, predvars), &not atom(pred, predvars2), &conj(equalities)}));
+	auto constr2 = &forall(surjectionconstraintvars, disj( { &not atom(pred, predvars), &not atom(pred, predvars2), &conj(equalities) }));
 	functheory->add(constr2->clone());
 
 	auto entails = Entails::doCheckEntailment(newTheory->clone(), functheory);
-	calls++;
+	provercalls++;
 
-	if(entails!=State::PROVEN){
+	if (entails != State::PROVEN) {
 		functheory->recursiveDelete();
 		return false;
 	}
@@ -179,38 +137,38 @@ bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const
 	functheory->recursiveDelete();
 
 	auto computPred = pred;
-	if(origVoc->contains(pred)){
-		computPred = new Predicate(pred->nameNoArity()+"_c", pred->sorts());
+	if (origVoc->contains(pred)) {
+		computPred = new Predicate(pred->nameNoArity() + "_c", pred->sorts());
 		newTheory->vocabulary()->add(computPred);
 
 		std::vector<Variable*> vars;
-		for(uint i=0; i<pred->sorts().size(); ++i){
+		for (uint i = 0; i < pred->sorts().size(); ++i) {
 			vars.push_back(new Variable(pred->sort(i)));
 		}
 
 		newTheory = FormulaUtils::replacePredByPred(pred, computPred, newTheory);
 
-		// Add input/output definition, NOTE requires pre- and postprocessing of definitions // TODO overhead in case an symbol is partially interpreted
+		// Add input/output definition
 		auto newdef = new Definition();
 		auto newrule = new Rule(getVarSet(vars), &atom(pred, vars), &atom(computPred, vars), ParseInfo());
 		newdef->add(newrule->clone());
 		newTheory->add(newdef);
-		inoutputvarcount+=vars.size();
+		inoutputvarcount += vars.size();
 	}
 
 	std::vector<int> domainindices, codomainsindices;
-	for(uint i=0; i<predvars.size(); ++i){
-		if(contains(complement, predvars[i])){
+	for (uint i = 0; i < predvars.size(); ++i) {
+		if (contains(complement, predvars[i])) {
 			codomainsindices.push_back(i);
-		}else{
+		} else {
 			domainindices.push_back(i);
 		}
 	}
 
-	if(partial){
-		partfunc+=codomainsindices.size();
-	}else{
-		totalfunc+=codomainsindices.size();
+	if (partial) {
+		partfunc += codomainsindices.size();
+	} else {
+		totalfunc += codomainsindices.size();
 	}
 	newTheory = FormulaUtils::replacePredByFunctions(newTheory, computPred, getSet(domainindices), getSet(codomainsindices), partial);
 	return true;

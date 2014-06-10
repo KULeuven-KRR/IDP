@@ -24,14 +24,15 @@ class FunctionDetection {
 private:
 	Vocabulary* origVoc;
 	Theory *theory;
-	bool assumeTypesNotEmpty;
-	int inoutputvarcount,totalfunc,partfunc, calls;
+
+	// Stats
+	int inoutputvarcount, totalfunc, partfunc, provercalls;
 
 public:
-	static void doDetectAndRewriteIntoFunctions(Theory* theory, bool assumeTypesNotEmpty = true);
+	static void doDetectAndRewriteIntoFunctions(Theory* theory);
 
 private:
-	FunctionDetection(Theory* theory, bool assumeTypesNotEmpty);
+	FunctionDetection(Theory* theory);
 	~FunctionDetection();
 	void detectAndRewriteIntoFunctions();
 	bool tryToTransform(Theory* newTheory, Predicate* pred, const std::vector<Variable*>& predvars, const varset& domainset, bool partial = false);

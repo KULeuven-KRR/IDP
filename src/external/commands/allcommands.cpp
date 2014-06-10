@@ -116,7 +116,6 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<CompletionInference>());
 	inferences.push_back(make_shared<CleanInference>());
 	inferences.push_back(make_shared<DetectFunctionsInference>());
-	inferences.push_back(make_shared<DetectFunctionsInference2>());
 	inferences.push_back(make_shared<ChangeVocabularyInference>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(AbstractTheory*)>>());
