@@ -41,6 +41,7 @@
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
+#include "transformations/PullQuantifications.hpp"
 #include "transformations/EliminateUniversalQuantifications.hpp"
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
@@ -499,20 +500,21 @@ Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variab
 	return transform<SubstituteVarWithVar, Formula*>(formula, var2var);
 }
 
-Formula* pushQuantifiers(Formula* t) {
-	return transform<PushQuantifications, Formula*>(t);
-}
-
 Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory){
 	return transform<ReplacePredByPred, Formula*>(theory, origPred, newPred);
 }
 
 template<class T>
 T replaceVariablesUsingEqualities(T t) {
+	cerr <<"Replaced \n" <<print(t) <<"\n";
 	t = flatten(t);
 	t = splitComparisonChains(t);
 	t = pushNegations(t);
-	return transform<ReplaceVariableUsingEqualities, T>(t);
+	t = pullQuantifiers(t);
+	t = transform<ReplaceVariableUsingEqualities, T>(t);
+	t = pushQuantifiers(t);
+	cerr <<" with \n" <<print(t) <<"\n";
+	return t;
 }
 
 Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
@@ -570,6 +572,14 @@ T pushNegations(T t) {
 	return transform<PushNegations, T>(t);
 }
 template<class T>
+T pullQuantifiers(T t) {
+	return transform<PullQuantifications, T>(t);
+}
+template<class T>
+T pushQuantifiers(T t) {
+	return transform<PushQuantifications, T>(t);
+}
+template<class T>
 T splitComparisonChains(T t, Vocabulary* voc) {
 	return transform<SplitComparisonChains, T>(t, voc);
 }
@@ -589,6 +599,9 @@ T simplify(T t, const Structure* s) {
 template<class T>
 T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool nbmodelsequivalent) {
 	FormulaUtils::combineAggregates(theory);
+
+	theory = FormulaUtils::replaceVariablesUsingEqualities(theory);
+
 	theory = FormulaUtils::simplify(theory, structure);
 
 	if (skolemize && nbmodelsequivalent) {
@@ -941,6 +954,9 @@ template AbstractTheory* FormulaUtils::pushNegations(AbstractTheory*);
 template Formula* FormulaUtils::splitComparisonChains(Formula*, Vocabulary*);
 template Theory* FormulaUtils::splitComparisonChains(Theory*, Vocabulary*);
 template AbstractTheory* FormulaUtils::splitComparisonChains(AbstractTheory*, Vocabulary*);
+template Formula* FormulaUtils::pushQuantifiers(Formula*);
+template Theory* FormulaUtils::pushQuantifiers(Theory*);
+template Definition* FormulaUtils::pushQuantifiers(Definition*);
 template Term* TermUtils::simplify(Term* t, const Structure* s);
 template Formula* FormulaUtils::simplify(Formula* t, const Structure* s);
 template Theory* FormulaUtils::simplify(Theory* t, const Structure* s);

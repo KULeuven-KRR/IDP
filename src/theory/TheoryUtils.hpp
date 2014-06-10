@@ -174,9 +174,6 @@ Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const 
 /** Replace the variables according to the given map */
 Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variable*>& var2var);
 
-/** Non-recursively push quantifiers down as far as possible */
-Formula* pushQuantifiers(Formula* t);
-
 /** Recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggs(Formula*, const Structure* str = NULL);
 
@@ -223,6 +220,12 @@ T flatten(T);
 /** Push negations inside */
 template<class T>
 T pushNegations(T);
+/** Pull quantifications outside */
+template<class T>
+T pullQuantifiers(T);
+/** Non-recursively push quantifiers down as far as possible */
+template<class T>
+T pushQuantifiers(T t);
 /** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
 template<class T>
 T splitComparisonChains(T, Vocabulary* voc = NULL);

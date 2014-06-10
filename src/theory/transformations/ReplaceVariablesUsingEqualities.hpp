@@ -13,58 +13,48 @@
 #include "visitors/TheoryMutatingVisitor.hpp"
 #include "IncludeComponents.hpp"
 
+using namespace FormulaUtils;
+
 /**
  * Transformation which looks for variables which will only make a formula true if it is equal to another term.
  * In that case, it replaces all occurrences of the variable with the other term.
  *
- * NOTE: requires flattened, negation pushed and eqchain free input
- * NOTE: afterwards it is best to the simplify transformation.
+ * NOTE: requires flattened, negation pushed and eqchain free input and assumes no graphed functions
+ * 		(otherwise, less substitutions might be detected)
+ * NOTE: afterwards it is best to apply simplify
  *
- * FIXME Should folding of partial terms introduce EXISTS?
- * FIXME the implementation only replaces with function terms
+ *
+ * algo:
+ * for exists quants: find conjunctive ~= atoms, remove allowed
+ * for forall quants: find disjunctive = atoms, remove allowed
+ * for set quants: find conjunctive = atoms, remove?
+ * for rule quants: find conjunctive = atoms, do not remove
+ *
+ * TODO look further down than just one level, e.g. push/pull quantifiers might help for this
  */
 class ReplaceVariableUsingEqualities: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	std::set<PredForm*> removals;
-	std::map<Variable*, FuncTerm*> replacements; // Note: CLONE!
+	std::map<PredForm*, Formula*> atomReplace;
+	std::map<Variable*, Term*> replacements; // Note: CLONE!
 	varset removingvars, allowedvars;
 
 public:
 	template<typename T>
 	T execute(T t) {
-		replacements.clear();
-		t = t->accept(this);
+		do{
+			atomReplace.clear();
+			replacements.clear();
+			removingvars.clear();
+			allowedvars.clear();
+			t = t->accept(this);
+		}while(not atomReplace.empty());
 		return t;
 	}
 
 protected:
-	bool hasVarInEq(PredForm* pf) {
-		return getVarOfEq(pf) != NULL;
-	}
-	bool hasFuncInEq(PredForm* pf) {
-		return getFuncOfEq(pf) != NULL;
-	}
 	bool isVar(Term* t) {
 		return t->type() == TermType::VAR;
-	}
-	Variable* getVarOfEq(PredForm* pf) {
-		if (isa<VarTerm>(*pf->subterms()[0])) {
-			return dynamic_cast<VarTerm*>(pf->subterms()[0])->var();
-		} else if (isa<VarTerm>(*pf->subterms()[1])) {
-			return dynamic_cast<VarTerm*>(pf->subterms()[1])->var();
-		} else {
-			return NULL;
-		}
-	}
-	FuncTerm* getFuncOfEq(PredForm* pf) {
-		if (isa<FuncTerm>(*pf->subterms()[0])) {
-			return dynamic_cast<FuncTerm*>(pf->subterms()[0]);
-		} else if (isa<FuncTerm>(*pf->subterms()[1])) {
-			return dynamic_cast<FuncTerm*>(pf->subterms()[1]);
-		} else {
-			return NULL;
-		}
 	}
 
 	Term* visit(VarTerm* vt) {
@@ -75,128 +65,118 @@ protected:
 	}
 
 	Formula* visit(PredForm* pf) {
-		if (contains(removals, pf)) {
-			return new BoolForm(pf->sign(), true, { }, pf->pi());
+		auto it = atomReplace.find(pf);
+		if(it!=atomReplace.cend()){
+			return it->second;
 		}
 		return traverse(pf);
 	}
 
-	/**
-	 * algo:
-	 * for exists quants: find conjunctive ~= atoms, remove allowed
-	 * for forall quants: find disjunctive = atoms, remove allowed
-	 * for set quants: find conjunctive = atoms, remove?
-	 * for rule quants: find conjunctive = atoms, do not remove
-	 */
-
 	Formula* visit(QuantForm* qf) {
 		auto oldrepl = replacements;
 		auto oldvars = allowedvars;
-
 		allowedvars.insert(qf->quantVars().cbegin(), qf->quantVars().cend());
-		checkAndAddReplacements(qf->subformula(), allowedvars, not qf->isUnivWithSign(), true);
+
+		checkAndAddReplacements(qf->subformula(), allowedvars, not qf->isUnivWithSign());
 		auto result = traverse(qf);
 
 		replacements = oldrepl;
 		allowedvars = oldvars;
-
 		return result;
 	}
 
 	QuantSetExpr* visit(QuantSetExpr* set) {
 		auto oldrepl = replacements;
-		removingvars.clear();
-		checkAndAddReplacements(set->getCondition(), set->quantVars(), true, false);
+		auto oldrem = removingvars;
+
+		checkAndAddReplacements(set->getCondition(), set->quantVars(), true);
 		auto result = traverse(set);
 		auto quants = result->quantVars();
-		for(auto var:removingvars){
+		for (auto var : removingvars) {
 			quants.erase(var);
 		}
 		set->setQuantVars(quants);
-		replacements = oldrepl;
-		return result;
-	}
 
-	void checkAndAddReplacements(Formula* f, const varset& quantvars, bool whenconj, bool alsonegation){
-		auto bf = dynamic_cast<BoolForm*>(f);
-		if (bf != NULL) {
-			auto conjcontext = bf->isConjWithSign();
-			if((conjcontext || bf->subformulas().size()==1) && whenconj){
-				addReplacements(bf, conjcontext, quantvars);
-			}
-			if(alsonegation && not whenconj && (not conjcontext || bf->subformulas().size()==1)){
-				addReplacements(bf, conjcontext, quantvars);
-			}
-		}else{
-			addReplacements(new BoolForm(f->sign(), whenconj, {f}, FormulaParseInfo()), whenconj, quantvars);
-		}
+		replacements = oldrepl;
+		removingvars = oldrem;
+		return result;
 	}
 
 	Rule* visit(Rule* rule) {
 		auto oldrepl = replacements;
-		checkAndAddReplacements(rule->body(), rule->quantVars(), true, false);
-		auto head = rule->head()->accept(this);
-		auto body = rule->body()->accept(this);
+
+		checkAndAddReplacements(rule->body(), rule->quantVars(), true);
+		auto head = rule->head()->accept(this)->clone();
+		auto body = rule->body()->accept(this)->clone();
+		auto newrule = new Rule(rule->quantVars(), dynamic_cast<PredForm*>(head), body, { });
+		rule->recursiveDelete();
+
 		replacements = oldrepl;
-		auto newrule = new Rule(rule->quantVars(), dynamic_cast<PredForm*>(head), body, ParseInfo());
-		return newrule->clone();
+		return newrule;
 	}
 
-	void addReplacements(BoolForm* bf, bool conjcontext, const varset& allowedvars) {
-		for (auto subform : bf->subformulas()) {
+	void checkAndAddReplacements(Formula* f, const varset& quantvars, bool replaceeqs) {
+		auto bf = dynamic_cast<BoolForm*>(f);
+		if(bf==NULL){
+			addReplacements(f, replaceeqs, quantvars);
+			return;
+		}
+		auto conjcontext = bf->isConjWithSign();
+		if ((conjcontext || bf->subformulas().size() == 1) && replaceeqs) {
+			addReplacements(bf, true, quantvars);
+		}
+		if (not replaceeqs && (not conjcontext || bf->subformulas().size() == 1)) {
+			addReplacements(bf, false, quantvars);
+		}
+	}
+
+	/**
+	 * Goes through all subformulas and check whether an allowedvar can be replaced, through = if needeq is true and through ~= otherwise.
+	 * If the replaced term might not have a value, a denotes atom is added (with proper negation depending on needeq).
+	 * If the replaced term might not be in the var sort, a type check is added ( " " " ).
+	 */
+	void addReplacements(Formula* f, bool needeq, const varset& allowedvars) {
+		for (auto subform : f->subformulas()) {
 			auto pf = dynamic_cast<PredForm*>(subform);
-			if (pf == NULL || pf->args().size() != 2) {
+			if (pf == NULL || not VocabularyUtils::isPredicate(pf->symbol(), STDPRED::EQ)) {
 				continue;
 			}
-			if (((conjcontext && pf->sign() == SIGN::POS) || (not conjcontext && pf->sign() == SIGN::NEG))
-					&& VocabularyUtils::isPredicate(pf->symbol(), STDPRED::EQ) && hasVarInEq(pf) && hasFuncInEq(pf)
-					&& not contains(replacements, getVarOfEq(pf)) && contains(allowedvars, getVarOfEq(pf))) {
-				if(contains(getFuncOfEq(pf)->freeVars(), getVarOfEq(pf))){ // TODO can be improved
-					continue;
-				}
-				bool loop = false;
-				for(auto var:getFuncOfEq(pf)->freeVars()){
-					if(contains(replacements, var)){
-						loop = true;
-						continue;
-					}
-				}
-				if(loop){
-					continue;
-				}
-				replacements[getVarOfEq(pf)] = getFuncOfEq(pf)->cloneKeepVars();
-				if(not getFuncOfEq(pf)->function()->partial() || pf->sign()==SIGN::POS){
-					removals.insert(pf);
-				}
-				removingvars.insert(getVarOfEq(pf));
-			} else if (((conjcontext && pf->sign() == SIGN::POS) || (not conjcontext && pf->sign() == SIGN::NEG)) && pf->symbol()->isFunction()
-					&& pf->subterms().back()->type() == TermType::VAR && not contains(replacements, dynamic_cast<VarTerm*>(pf->subterms().back())->var())
-			 	 	 && contains(allowedvars, dynamic_cast<VarTerm*>(pf->subterms().back())->var())) {
-				auto var = dynamic_cast<VarTerm*>(pf->subterms().back())->var();
-				if(contains(getFuncOfEq(pf)->freeVars(), var)){ // TODO can be improved
-					continue;
-				}
-				bool loop = false;
-				for(auto var:getFuncOfEq(pf)->freeVars()){
-					if(contains(replacements, var)){
-						loop = true;
-						continue;
-					}
-				}
-				if(loop){
-					continue;
-				}
-				std::vector<Term*> terms;
-				for (auto term : pf->subterms()) {
-					terms.push_back(term->cloneKeepVars());
-				}
-				terms.pop_back();
-				replacements[dynamic_cast<VarTerm*>(pf->subterms().back())->var()] = new FuncTerm(dynamic_cast<Function*>(pf->symbol()), terms,	TermParseInfo());
-				if(not getFuncOfEq(pf)->function()->partial() || pf->sign()==SIGN::POS){
-					removals.insert(pf);
-				}
-				removingvars.insert(dynamic_cast<VarTerm*>(pf->subterms().back())->var());
+			auto left = pf->subterms()[0];
+			auto right = pf->subterms()[1];
+			if(isVar(right)){
+				swap(left, right);
 			}
+			auto vt = dynamic_cast<VarTerm*>(left);
+			if(vt==NULL || not contains(allowedvars, vt->var())
+					|| contains(replacements, vt->var())
+					|| (needeq && pf->sign() == SIGN::NEG)	|| (not needeq && pf->sign() == SIGN::POS)
+					|| contains(right->freeVars(), vt->var())){
+				continue;
+			}
+			bool loop = false;
+			for (auto var : right->freeVars()) {
+				if (contains(replacements, var)) {
+					loop = true;
+				}
+			}
+			if (loop) {
+				continue;
+			}
+
+			auto ft = dynamic_cast<FuncTerm*>(right);
+			if(ft!=NULL && ft->function()->partial()){
+				if(f->subformulas().size()==1){ // We will add again what we drop, so abort
+					continue;
+				}
+				auto v = Gen::var(left->sort());
+				atomReplace[pf] = new QuantForm(needeq?SIGN::POS:SIGN::NEG, QUANT::EXIST, {v}, &Gen::operator ==(*new VarTerm(v, {}), *right->cloneKeepVars()), {});
+			}else if(left->sort()!=right->sort()){
+				atomReplace[pf] = new PredForm(needeq?SIGN::POS:SIGN::NEG, left->sort()->pred(), {right->cloneKeepVars()}, {});
+			} else {
+				atomReplace[pf] = needeq?trueFormula():falseFormula();
+			}
+			removingvars.insert(vt->var());
+			replacements[vt->var()] = right->cloneKeepVars();
 		}
 	}
 };
