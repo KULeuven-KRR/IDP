@@ -506,14 +506,12 @@ Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* the
 
 template<class T>
 T replaceVariablesUsingEqualities(T t) {
-//	cerr <<"Replaced \n" <<print(t) <<"\n";
 	t = flatten(t);
 	t = splitComparisonChains(t);
 	t = pushNegations(t);
 	t = pullQuantifiers(t);
 	t = transform<ReplaceVariableUsingEqualities, T>(t);
 	t = pushQuantifiers(t);
-//	cerr <<" with \n" <<print(t) <<"\n";
 	return t;
 }
 
