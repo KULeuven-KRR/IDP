@@ -45,7 +45,6 @@ public:
 			std::stringstream ss;
 			ss <<pred->nameNoArity() << "_" << ind;
 			auto newfunc = new Function(ss.str(), domainsorts, pred->sorts()[ind], ParseInfo());
-			cerr <<"Introducing " <<print(newfunc) <<"\n";
 			newfunc->partial(partialfunctions);
 			vocabulary->add(newfunc);
 			_index2function[ind] = newfunc;

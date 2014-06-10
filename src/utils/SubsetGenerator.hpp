@@ -29,13 +29,11 @@ private:
 	std::vector<uint> currIndices;
 	int minimalindex; // Indicates the lowest index to be added to the next level. Level = minimalindex+1
 
-	bool returnedemptyset; // The first set to be returned is the empty set (and this is not caught by the algorithm used for the remainder
 	std::set<T, Comparator> currentsubset;
 
 private:
 	bool atLevelEnd() const {
-		return returnedemptyset
-				&& (currIndices.size() == 0 // We just returned the empty set OR
+		return (currIndices.size() == 0 // We just returned the empty set OR
 						|| (currIndices[minimalindex] == totalset.size() - 1 // we just returned the subset consists of all last elements in totalset
 								&& currIndices[0] == currIndices[minimalindex] - minimalindex));
 	}
@@ -44,8 +42,7 @@ public:
 	SubsetGenerator(const std::vector<T>& totalset, int maxsubsetsize = -1)
 			: 	totalset(totalset),
 			  	maxsubsetsize(maxsubsetsize < 0 ? totalset.size() : maxsubsetsize),
-				minimalindex(-1),
-				returnedemptyset(false)  {
+				minimalindex(-1) {
 	}
 
 	const std::set<T, Comparator>& getCurrentSubset() const {
@@ -53,17 +50,12 @@ public:
 	}
 
 	bool hasNextSubset() const {
-		return not atLevelEnd() || (currIndices.size() < maxsubsetsize);
+		return not atLevelEnd() || (currIndices.size() <= maxsubsetsize);
 	}
 
 	void nextSubset() {
 		if (not hasNextSubset()) {
 			throw IdpException("No next subset available");
-		}
-
-		if (not returnedemptyset) { // Means that the empty set is the next set (the first one to be generated)
-			returnedemptyset = true;
-			return;
 		}
 
 		if (atLevelEnd()) {

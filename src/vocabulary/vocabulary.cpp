@@ -463,7 +463,9 @@ Variable::Variable(const std::string& name, Sort* sort, const ParseInfo& pi)
 
 Variable::Variable(Sort* s)
 		: _sort(s) {
-	_name = "var" + convertToString(getGlobal()->getNewID());
+	stringstream ss;
+	ss <<"var" << convertToString(getGlobal()->getNewID());
+	_name = ss.str();
 }
 
 void Variable::sort(Sort* s) {

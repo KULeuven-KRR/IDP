@@ -68,17 +68,18 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 				predvars.push_back(var);
 			}
 
-			auto subsetgen = SubsetGenerator<Variable*, VarCompare>(predvars, min((int) pred->arity() - 1, 3));
+			auto subsetgen = SubsetGenerator<Variable*, VarCompare>(predvars, min((int) pred->arity()-1, 3));
 			while (subsetgen.hasNextSubset()) {
 				CHECKTERMINATION
 				if (replaced) {
 					break;
 				}
-				replaced = tryToTransform(theory, pred, predvars, subsetgen.getCurrentSubset(), false);
+				auto subset = subsetgen.getCurrentSubset();
+				replaced = tryToTransform(theory, pred, predvars, subset, false);
 				if (replaced) {
 					break;
 				}
-				replaced = tryToTransform(theory, pred, predvars, subsetgen.getCurrentSubset(), true);
+				replaced = tryToTransform(theory, pred, predvars, subset, true);
 
 				subsetgen.nextSubset();
 			}
