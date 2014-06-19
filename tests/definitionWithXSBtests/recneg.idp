@@ -13,7 +13,6 @@ vocabulary V {
   P1
   
   P
-  Q
   R
   S
   T
@@ -47,10 +46,6 @@ theory T : V {
   
   {
     P <- P.
-  }
-  
-  {
-    Q <- ~Q.
   }
   
   {
