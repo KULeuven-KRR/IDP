@@ -19,26 +19,23 @@ using namespace FormulaUtils;
  * Transformation which looks for variables which will only make a formula true if it is equal to another term.
  * In that case, it replaces all occurrences of the variable with the other term.
  *
- * NOTE: requires flattened, negation pushed and eqchain free input and assumes no graphed functions
+ * NOTE: requires flattened, negation and quant pushed and eqchain free input and assumes no graphed functions
  * 		(otherwise, less substitutions might be detected)
- * NOTE: afterwards it is best to apply simplify
- *
+ * NOTE: variables are not removed, as we do not have a structure here to check for empty domains.
+ * 		For this, run simplify or improvetheoryforinference with a structure afterwards *
  *
  * algo:
- * for exists quants: find conjunctive ~= atoms, remove allowed
- * for forall quants: find disjunctive = atoms, remove allowed
- * for set quants: find conjunctive = atoms, remove?
- * for rule quants: find conjunctive = atoms, do not remove
- *
- * TODO look further down than just one level, e.g. push/pull quantifiers might help for this
+ * 		for exists quants: remove conjunctive = atoms
+ * 		for forall quants: remove disjunctive ~= atoms
+ * 		for set quants: remove conjunctive = atoms, IMPORTANT: remove variable from quantset, otherwise set size might change
+ * 		for rule quants: remove conjunctive = atoms
  */
 class ReplaceVariableUsingEqualities: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
 	std::map<PredForm*, Formula*> atomReplace;
-	std::map<Variable*, Term*> replacements; // Note: CLONE!
+	std::map<Variable*, Term*> replacements;
 	varset removingvars, allowedvars;
-
 	uint replaced;
 
 public:
@@ -56,10 +53,6 @@ public:
 	}
 
 protected:
-	bool isVar(Term* t) {
-		return t->type() == TermType::VAR;
-	}
-
 	Term* visit(VarTerm* vt) {
 		if (contains(replacements, vt->var())) {
 			replaced++;
@@ -81,7 +74,7 @@ protected:
 		auto oldvars = allowedvars;
 		allowedvars.insert(qf->quantVars().cbegin(), qf->quantVars().cend());
 
-		checkAndAddReplacements(qf->subformula(), allowedvars, not qf->isUnivWithSign());
+		checkAndAddReplacements(qf->subformula(), allowedvars, not qf->isUniv());
 		auto result = traverse(qf);
 
 		replacements = oldrepl;
@@ -122,7 +115,6 @@ protected:
 	void checkAndAddReplacements(Formula* f, const varset& quantvars, bool replaceeqs) {
 		auto bf = dynamic_cast<BoolForm*>(f);
 		if (bf == NULL) {
-			addReplacements(f, replaceeqs, quantvars);
 			return;
 		}
 		auto conjcontext = bf->isConjWithSign();
@@ -134,12 +126,31 @@ protected:
 		}
 	}
 
+	bool canReplaceFirstWithSecond(Term* left, Term* right, PredForm* pf, bool hasToBeEquality){
+		auto vt = dynamic_cast<VarTerm*>(left);
+		if (vt == NULL
+				|| not contains(allowedvars, vt->var())
+				|| contains(replacements, vt->var())
+				|| (hasToBeEquality && pf->sign() == SIGN::NEG)
+				|| (not hasToBeEquality && pf->sign() == SIGN::POS)
+				|| contains(right->freeVars(), vt->var())) {
+			return false;
+		}
+		bool loop = false;
+		for (auto var : right->freeVars()) {
+			if (contains(replacements, var)) {
+				loop = true;
+			}
+		}
+		return not loop;
+	}
+
 	/**
 	 * Goes through all subformulas and check whether an allowedvar can be replaced, through = if needeq is true and through ~= otherwise.
 	 * If the replaced term might not have a value, a denotes atom is added (with proper negation depending on needeq).
 	 * If the replaced term might not be in the var sort, a type check is added ( " " " ).
 	 */
-	void addReplacements(Formula* f, bool needeq, const varset& allowedvars) {
+	void addReplacements(BoolForm* f, bool needeq, const varset& allowedvars) {
 		for (auto subform : f->subformulas()) {
 			auto pf = dynamic_cast<PredForm*>(subform);
 			if (pf == NULL || not VocabularyUtils::isPredicate(pf->symbol(), STDPRED::EQ)) {
@@ -147,21 +158,10 @@ protected:
 			}
 			auto left = pf->subterms()[0];
 			auto right = pf->subterms()[1];
-			if (isVar(right)) {
-				swap(left, right);
+			if(canReplaceFirstWithSecond(right, left, pf, needeq)){
+				swap(left,right);
 			}
-			auto vt = dynamic_cast<VarTerm*>(left);
-			if (vt == NULL || not contains(allowedvars, vt->var()) || contains(replacements, vt->var()) || (needeq && pf->sign() == SIGN::NEG)
-					|| (not needeq && pf->sign() == SIGN::POS) || contains(right->freeVars(), vt->var())) {
-				continue;
-			}
-			bool loop = false;
-			for (auto var : right->freeVars()) {
-				if (contains(replacements, var)) {
-					loop = true;
-				}
-			}
-			if (loop) {
+			if(not canReplaceFirstWithSecond(left, right, pf, needeq)){
 				continue;
 			}
 
@@ -175,8 +175,9 @@ protected:
 			} else {
 				atomReplace[pf] = needeq ? trueFormula() : falseFormula();
 			}
-			removingvars.insert(vt->var());
-			replacements[vt->var()] = right->cloneKeepVars();
+			auto var = dynamic_cast<VarTerm*>(left)->var();
+			removingvars.insert(var);
+			replacements[var] = right->cloneKeepVars();
 		}
 	}
 };

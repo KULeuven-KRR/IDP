@@ -94,6 +94,10 @@ void FunctionDetection::detectAndRewriteIntoFunctions() {
 	}
 }
 
+/**
+ * partial: looking for partial functions
+ * domainset: set of variables in the domain of the sought-for functions
+ */
 bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const std::vector<Variable*>& predvars, const varset& domainset, bool partial) {
 	if (domainset.size() == pred->arity()) {
 		throw IdpException("Invalid code path");
@@ -130,12 +134,11 @@ bool FunctionDetection::tryToTransform(Theory* newTheory, Predicate* pred, const
 	auto entails = Entails::doCheckEntailment(newTheory->clone(), functheory);
 	provercalls++;
 
+	functheory->recursiveDelete();
+
 	if (entails != State::PROVEN) {
-		functheory->recursiveDelete();
 		return false;
 	}
-
-	functheory->recursiveDelete();
 
 	std::vector<int> domainindices, codomainsindices;
 	for (uint i = 0; i < predvars.size(); ++i) {
