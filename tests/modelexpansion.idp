@@ -166,7 +166,7 @@ procedure mxwithsymm(){
 
 procedure mxCardFO(){
 	newT = clone(T)
-	removecardinalities(newT,0)
+	removecardinalities(newT,10)
 	return run(newT)
 }
 

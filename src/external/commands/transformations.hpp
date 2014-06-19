@@ -32,7 +32,7 @@ typedef TypedInference<LIST(AbstractTheory*, int)> TheoryIntBase;
 class RemoveCardinalitiesInference: public TheoryIntBase {
 public:
 	RemoveCardinalitiesInference()
-			: TheoryIntBase("removecardinalities", "Replaced cardinalities with a bound smaller than the given one (or always if 0) with FO sentences.") {
+			: TheoryIntBase("removecardinalities", "Replace all atoms #{xxx: phi}=n with equivalent FO sentences in the given theory, if the given threshold is zero or larger than n*|xxx|.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 

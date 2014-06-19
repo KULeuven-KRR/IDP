@@ -120,7 +120,7 @@ int countQuantVars(const Rule* t);
 int countQuantVars(const Formula* t);
 
 /** Modifies the theory by transforming cardinality constraints bounded by a value smaller than maxbound to its FO-counterpart. **/
-AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound);
+AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxVarsToIntroduce);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
 std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager);

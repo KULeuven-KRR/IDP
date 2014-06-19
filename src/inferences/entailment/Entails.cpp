@@ -123,8 +123,8 @@ Entails::Entails(Theory* axioms, Theory* conjectures)
 
 	axioms = dynamic_cast<Theory*>(FormulaUtils::splitComparisonChains(axioms,axioms->vocabulary()));
 	conjectures = dynamic_cast<Theory*>(FormulaUtils::splitComparisonChains(conjectures,conjectures->vocabulary()));
-	FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 5);
-	FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 5);
+	FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 6);
+	FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 6);
 
 	FormulaUtils::replaceDefinitionsWithCompletion(axioms, NULL);
 

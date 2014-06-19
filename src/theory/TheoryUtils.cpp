@@ -369,8 +369,8 @@ namespace FormulaUtils {
 	}
 }
 
- AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound) {
-	return transform<CardConstrToFO, AbstractTheory*>(t, maxbound);
+ AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxVarsToIntroduce) {
+	return transform<CardConstrToFO, AbstractTheory*>(t, maxVarsToIntroduce);
 }
 
 void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
