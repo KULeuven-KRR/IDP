@@ -40,6 +40,7 @@ class TheorySymmetryAnalyzer;
 template<typename Stream> class TPTPPrinter;
 template<typename Stream> class EcnfPrinter;
 template<typename Stream> class IDPPrinter;
+class CountQuantVars;
 class SplitIntoMonotoneAgg;
 class ReplaceNestedWithTseitinTerm;
 class ConstructNewReducedForm;
@@ -56,6 +57,9 @@ class ContainedVariables;
 class SubstituteVarWithDom;
 class CombineAggregates;
 class AddMarkers;
+class ReplacePredByPred;
+class ReplacePredByFunctions;
+class ReplaceVariableUsingEqualities;
 
 #define VISITORS() \
 		friend class DefaultTraversingTheoryVisitor; \
@@ -84,6 +88,7 @@ class AddMarkers;
 		template<typename Stream> friend class TPTPPrinter; \
 		template<typename Stream> friend class IDPPrinter; \
 		template<typename Stream> friend class EcnfPrinter; \
+		friend class CountQuantVars; \
 		friend class TheorySupportedChecker; \
 		friend class TheorySymmetryAnalyzer; \
 		friend class TheoryMutatingVisitor; \
@@ -94,9 +99,9 @@ class AddMarkers;
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
 		friend class GraphFuncsAndAggs; \
-		friend class CalculateKnownArithmetic; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
+		friend class PullQuantifications; \
 		friend class EliminateUniversalQuantifications; \
 		friend class RemoveEquivalences; \
 		friend class SplitComparisonChains; \
@@ -120,11 +125,15 @@ class AddMarkers;
 		friend class TopDownApproximatingDefinitionForallRule;\
 		friend class BottomUpApproximatingDefinition;\
 		friend class Skolemize;\
+		friend class ReplacePredByPred;\
 		friend class CollectQuantifiedVariables;\
 		friend class CollectSymbols;\
 		friend class CollectSymbolOccurences;\
 		friend class AddMarkers;\
 		friend class ReplaceLTCSymbols;\
+		friend class ReplaceVariableUsingEqualities; \
+		friend class ReplacePredByFunctions;\
+		friend class Simplify;\
 		friend class RemoveQuantificationsOverSort;\
 		friend class CardConstrToFO;\
 		friend class SubstituteVarWithVar;

@@ -18,7 +18,7 @@ procedure mxnobounds(){
 	stdoptions.groundwithbounds = false	
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 // NOTE: only based on lazy tseitin delaying!!!!
@@ -26,14 +26,14 @@ procedure mxnobounds(){
 procedure mxlazy(){
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxlazycp(){
 	stdoptions.cpsupport = true
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 // NOTE: never enable delaying here which depends on well-founded definitions!
@@ -47,21 +47,30 @@ procedure mxverylazy(){
 	stdoptions.satdelay=true
 	stdoptions.tseitindelay=true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
+}
+
+procedure mxfuncdetect(){
+	stdoptions.timeout = 100
+	stdoptions.verbosity.functiondetection=0
+	stdoptions.verbosity.entails=0
+	newT = detectfunctions(clone(T))
+	setvocabulary(S,getvocabulary(newT))
+	return run(newT)
 }
 
 procedure mxnoboundslong(){
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 200
-	return run()
+	return run(T)
 }
 
 procedure mxwithbounds(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithxsb(){
@@ -69,7 +78,7 @@ procedure mxwithxsb(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithapproxdefs(){
@@ -78,14 +87,14 @@ procedure mxwithapproxdefs(){
   	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithboundswithoutLUP(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxnonreduced(){
@@ -93,7 +102,7 @@ procedure mxnonreduced(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithcp(){
@@ -103,7 +112,7 @@ procedure mxwithcp(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithcpgecode(){
@@ -113,7 +122,7 @@ procedure mxwithcpgecode(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithfullcp(){
@@ -122,7 +131,7 @@ procedure mxwithfullcp(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 
@@ -131,7 +140,7 @@ procedure mxwithSharedTseitins(){
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
-	return run()
+	return run(T)
 }
 
 procedure mxwithsymm(){
@@ -156,11 +165,12 @@ procedure mxwithsymm(){
 }
 
 procedure mxCardFO(){
-	removecardinalities(T,0)
-	return run()
+	newT = clone(T)
+	removecardinalities(newT,10)
+	return run(newT)
 }
 
-procedure run() {
+procedure run(theory) {
 	if(allowed~=nil) then
 		if (not allowed()) then return 1; end
 	end
@@ -173,7 +183,7 @@ procedure run() {
 	stdoptions.mxtimeout = 2000
 	
 	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
-	solutions = modelexpand(T, S, Vout)
+	solutions = modelexpand(theory, S, Vout)
 	io.stderr:write("MX done\n")
 	standardoptions()
 	if(#solutions~=getExpectedNbOfModels()) then
@@ -204,7 +214,8 @@ procedure check(solutions){
 			setvocabulary(v,V)
 			structure = merge(S,v)
 		end
-		if(not isconsistent(merge(S,structure)) or not value(T, structure)) then
+		mergedS = merge(S,structure)
+		if(not isconsistent(mergedS) or not value(T, structure)) then
 			io.stderr:write("Found an invalid solution:\n")
 			io.stderr:write(tostring(v))
 			return 0

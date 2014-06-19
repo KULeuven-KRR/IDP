@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <utils/ListUtils.hpp>
 
 class Variable;
 
@@ -10,3 +11,8 @@ struct VarCompare{
 };
 
 typedef std::set<Variable*, VarCompare> varset;
+
+template<class L>
+varset getVarSet(const L& vars){
+	return getSet<Variable*, VarCompare>(vars);
+}

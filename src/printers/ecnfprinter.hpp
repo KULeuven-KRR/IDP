@@ -122,36 +122,6 @@ public:
 		printer.setTranslator(t);
 	}
 
-	void visit(const Vocabulary*) {
-		throw notyetimplemented("Printing vocabularies in ecnf format");
-	}
-
-	void visit(const Namespace*) {
-		throw notyetimplemented("Printing namespaces in ecnf format");
-	}
-
-	void visit(const UserProcedure*) {
-		throw notyetimplemented("Printing procedures in ecnf format");
-	}
-
-	void visit(const Structure*) {
-		throw notyetimplemented("Printing structures in ecnf format");
-	}
-
-	void visit(const PredTable*){
-		throw notyetimplemented("Printing tables in ecnf format");
-	}
-
-	void visit(const Query*) {
-		throw notyetimplemented("Printing queries in ecnf format");
-	}
-	void visit(const FOBDD*) {
-		throw notyetimplemented("Printing fobdds in ecnf format");
-	}
-	void visit(const Compound*) {
-		throw notyetimplemented("Printing compounds in ecnf format");
-	}
-
 	void visit(const GroundClause& g) {
 		Assert(isTheoryOpen());
 		printer.add(g);
@@ -199,10 +169,6 @@ public:
 			output() << "==== ====" << "\n";
 		}
 		endTheory();
-	}
-
-	void visit(const GroundFixpDef*) {
-		throw notyetimplemented("Printing ground fixpoint definitions");
 	}
 
 	void openDefinition(DefId defid) {
@@ -255,5 +221,91 @@ public:
 private:
 	void printAggregate(AggFunction aggtype, TsType arrow, DefId defnr, bool geqthanbound, int head, SetId setnr, double bound) {
 		printer.add(defnr, head, bound, geqthanbound, setnr, aggtype, arrow);
+	}
+
+protected:
+	void visit(const Vocabulary*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	void visit(const Namespace*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	void visit(const Structure*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	void visit(const PredTable*){
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	void visit(const Query*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	void visit(const GroundFixpDef*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const Theory*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const PredForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const EqChainForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const EquivForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const BoolForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const QuantForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const AggForm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const VarTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const FuncTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const DomainTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const AbstractGroundTheory*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const Rule*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const Definition*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const FixpDef*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const AggTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const CPVarTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const CPSetTerm*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const EnumSetExpr*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const QuantSetExpr*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const UserProcedure*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	virtual void visit(const FOBDD*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
+	}
+	void visit(const Compound*) {
+		throw notyetimplemented("Trying to print out theory component which cannot be printed in ECNF format.");
 	}
 };

@@ -15,10 +15,11 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 
 \subsection{Verbosity options}
 \begin{description}
-	\item[{groundverbosity = [0..max(int)]}] Verbosity of the grounder.  The higher the verbosity, the more debug information is printed.
-	\item[{satverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of \minisatid
-	\item[{propagateverbosity = [0..max(int)]}] Like groundverbosity, but controls the verbosity of the propagation.
-	\item[{approxdef = [0..5]}] Verbosity of the module that uses an approximating definition to perform approximation prior to grounding and solving. 
+	\item[{grounding = [0..max(int)]}] Verbosity of the grounder. The higher the verbosity, the more debug information is printed.
+	\item[{solving = [0..max(int)]}] Like groundverbosity, but controls the verbosity of \minisatid
+	\item[{propagation = [0..max(int)]}] Like grounding, but controls the verbosity of the propagation.
+	\item[{approxdef = [0..5]}] Verbosity of the module that uses an approximating definition to perform approximation prior to grounding and solving.
+	\item[{functiondetection = [0..max(int)]}] Verbosity of the module that detects functions and rewrites a theory accordingly. 
 	\item[{calculatedefinitions = [0..5]}] Verbosity of the module that calculates definitions prior to grounding and solving. 
 		\begin{itemize}
 		\item 1 or greater: print when calculating the definition starts and ends. Also prints the input- and outputstructure of the process.

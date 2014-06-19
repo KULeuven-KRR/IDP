@@ -44,6 +44,7 @@
 #include "options.hpp"
 #include "createdummytuple.hpp"
 #include "minimize.hpp"
+#include "detectFunctions.hpp"
 #include "parse.hpp"
 #include "theoryquery.hpp"
 #include "unsatcore.hpp"
@@ -114,6 +115,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<GroundInference>());
 	inferences.push_back(make_shared<CompletionInference>());
 	inferences.push_back(make_shared<CleanInference>());
+	inferences.push_back(make_shared<DetectFunctionsInference>());
 	inferences.push_back(make_shared<ChangeVocabularyInference>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(Structure*)>>());
 	inferences.push_back(make_shared<GetVocabularyInference<LIST(AbstractTheory*)>>());
@@ -145,6 +147,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<ProgressInference>());
 	inferences.push_back(make_shared<InitInference>());
 	inferences.push_back(make_shared<InitInferenceNoTime>());
+	inferences.push_back(make_shared<RemoveValidQuantificationsInference>());
 	inferences.push_back(make_shared<InvariantInference>());
 	inferences.push_back(make_shared<ProverInvariantInference>());
 	inferences.push_back(make_shared<setNameInference<Structure*> >());

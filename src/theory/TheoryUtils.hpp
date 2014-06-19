@@ -48,6 +48,8 @@ class Term;
 class DomElemContainer;
 typedef std::map<Variable*, const DomElemContainer*> var2dommap;
 
+class Predicate;
+
 // TODO what does it mean to pass NULL as vocabulary?
 
 template<typename Transformer, typename ReturnType, typename Construct, typename ... Values>
@@ -113,8 +115,12 @@ bool containsFuncTermsOutsideOfSets(Formula* f);
 bool containsAggTerms(Formula* f);
 bool containsSymbol(const PFSymbol* s, const Formula* f);
 
+int countQuantVars(const Theory* t);
+int countQuantVars(const Rule* t);
+int countQuantVars(const Formula* t);
+
 /** Modifies the theory by transforming cardinality constraints bounded by a value smaller than maxbound to its FO-counterpart. **/
-AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound);
+AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxVarsToIntroduce);
 
 /** If some predform can be found which can make the formula true by itself, one such symbol is returned, otherwise NULL **/
 std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager);
@@ -129,20 +135,11 @@ void deriveSorts(Vocabulary* v, Formula* f);
  */
 double estimatedCostAll(Formula* query, const varset& freevars, bool inverse,const  Structure* structure);
 
-/** Flatten all nested formulas */
-Formula* flatten(Formula*);
-
 /** Recursively rewrite all function terms to their predicate form, and aggregate terms to aggregate formulas
  *  definedsymbols parameter:
  *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
  *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
-
-/** Push negations inside */
-Formula* pushNegations(Formula* f);
-
-/** Calculate all operations on domainelements */
-Formula* calculateArithmetic(Formula* f, const Structure* s) ;
 
 /** Rewrite all equivalences into implications */
 Formula* removeEquivalences(Formula*);
@@ -155,8 +152,13 @@ void removeInterpretationOfDefinedSymbols(const Definition*, Structure*);
 /** Replace atoms in which functions occur nested with new atoms without those arguments and add the correct equivalences.*/
 Theory* replaceWithNestedTseitins(Theory* theory);
 
-/** Recursively rewrite all EqChainForms in the given formula to BoolForms */
-Formula* splitComparisonChains(Formula*, Vocabulary* voc = NULL);
+Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory);
+Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory);
+
+template<class T>
+T replaceVariablesUsingEqualities(T t);
+
+Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, bool addinoutputdef, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions);
 
 Formula* splitIntoMonotoneAgg(Formula* f);
 
@@ -171,9 +173,6 @@ Formula* substituteTerm(Formula*, Term*, Variable*);
 Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const DomainElement*>& var2domelem);
 /** Replace the variables according to the given map */
 Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variable*>& var2var);
-
-/** Non-recursively push quantifiers down as far as possible */
-Formula* pushQuantifiers(Formula* t);
 
 /** Recursively move all function and aggregate terms */
 Formula* unnestFuncsAndAggs(Formula*, const Structure* str = NULL);
@@ -216,7 +215,20 @@ void addFuncConstraints(TheoryComponent*, Vocabulary*, std::map<Function*, Formu
 void addFuncConstraints(Term*, Vocabulary*, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions = true);
 
 /** Rewrite (! x : ! y : phi) to (! x y : phi), rewrite ((A & B) & C) to (A & B & C), etc. */
-void flatten(AbstractTheory*);
+template<class T>
+T flatten(T);
+/** Push negations inside */
+template<class T>
+T pushNegations(T);
+/** Pull quantifications outside */
+template<class T>
+T pullQuantifiers(T);
+/** Non-recursively push quantifiers down as far as possible */
+template<class T>
+T pushQuantifiers(T t);
+/** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
+template<class T>
+T splitComparisonChains(T, Vocabulary* voc = NULL);
 
 /** Rewrite (F(x) = y) or (y = F(x)) to Graph_F(x,y) 
  * Rewrite (AggTerm op BoundTerm) to an aggregate formula (op = '=', '<', or '>')
@@ -232,12 +244,8 @@ AbstractTheory* merge(AbstractTheory*, AbstractTheory*);
 /** Count the number of subformulas in the theory */
 int nrSubformulas(AbstractTheory*);
 
-/** Push negations inside */
-void pushNegations(AbstractTheory*);
-
-/** Calculate all operations on domainelements */
 template<class T>
-T calculateArithmetic(T theory, const Structure* structure);
+T simplify(T theory, const Structure* structure);
 
 /** Applies some useful transformations to reduce the grounding size of the theory **/
 template<class T>
@@ -253,9 +261,6 @@ Theory* eliminateUniversalQuantifications(Theory*);
 
 /** Rewrite A <=> B to (A => B) & (B => A) */
 AbstractTheory* removeEquivalences(AbstractTheory*);
-
-/** Rewrite chains of equalities to a conjunction or disjunction of atoms. */
-AbstractTheory* splitComparisonChains(AbstractTheory*, Vocabulary* voc = NULL);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL);
@@ -313,6 +318,8 @@ bool isVar(Term* t);
 bool isAggOrFunc(Term* t);
 bool isVarOrDom(Term* t);
 
+bool isCard(Term* term);
+
 /** Returns false if the term is not two-valued in the given structure.
  *  May return true if the term is two-valued in the structure. */
 bool approxTwoValued(const Term*, const Structure*);
@@ -325,6 +332,9 @@ bool containsSymbol(const PFSymbol* s, const Term* f);
 
 /** Derive sorts in the given term */
 void deriveSorts(Vocabulary*, Term*);
+
+template<class T>
+T simplify(T theory, const Structure* structure);
 
 /** Derive bounds of the given term in the given structure, returned as a tuple <minbound, maxbound>
  * 	If no bounds can be derived, NULL is returned for both bounds

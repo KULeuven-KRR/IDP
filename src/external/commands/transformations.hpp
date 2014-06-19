@@ -32,7 +32,7 @@ typedef TypedInference<LIST(AbstractTheory*, int)> TheoryIntBase;
 class RemoveCardinalitiesInference: public TheoryIntBase {
 public:
 	RemoveCardinalitiesInference()
-			: TheoryIntBase("removecardinalities", "Replaced cardinalities with a bound smaller than the given one (or always if 0) with FO sentences.") {
+			: TheoryIntBase("removecardinalities", "Replace all atoms #{xxx: phi}=n with equivalent FO sentences in the given theory, if the given threshold is zero or larger than n*|xxx|.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 
@@ -51,6 +51,23 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		FormulaUtils::pushNegations(get<0>(args));
+		return nilarg();
+	}
+};
+
+class RemoveValidQuantificationsInference: public TheoryStructureBase {
+public:
+	RemoveValidQuantificationsInference()
+			: TheoryStructureBase("simplify", "Simplifies the theory, removing valid formulas, computing arithmetic, etc..") {
+		setNameSpace(getTheoryNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto theory = dynamic_cast<Theory*>(get<0>(args));
+		if(theory==NULL){
+			return nilarg();
+		}
+		FormulaUtils::simplify(theory, get<1>(args));
 		return nilarg();
 	}
 };

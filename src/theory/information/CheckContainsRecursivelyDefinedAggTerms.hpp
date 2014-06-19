@@ -24,7 +24,11 @@ private:
 
 public:
 	bool execute(const Definition* def) {
-		auto theory = new Theory("wrapper_theory", ParseInfo());
+		auto voc = Vocabulary("wrapper_voc");
+		for(auto s: FormulaUtils::collectSymbols(def)){
+			voc.add(s);
+		}
+		auto theory = new Theory("wrapper_theory", &voc, {});
 		auto newdef = def->clone();
 		theory->add(newdef);
 		DefinitionUtils::splitDefinitions(theory);

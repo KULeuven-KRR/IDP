@@ -100,19 +100,19 @@ protected:
 	}
 };
 
-State Entails::doCheckEntailment(const std::string& command, const Theory* axioms, const Theory* conjectures) {
-		auto axclone = axioms->clone();
-		auto conjclone = conjectures->clone();
-		Entails c(command, axclone, conjclone);
-		auto result = c.checkEntailment();
-		axclone->recursiveDelete();
-		conjclone->recursiveDelete();
-		return result;
+State Entails::doCheckEntailment(Theory* axioms, Theory* conjectures) {
+	auto state = State::UNKNOWN;
+	try{
+		Entails c(axioms, conjectures);
+		state = c.checkEntailment();
+	}catch(const IdpException& ex){
+		Warning::warning(ex.getMessage());
 	}
+	return state;
+}
 
-Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures)
-		: 	command(command),
-			axioms(axioms),
+Entails::Entails(Theory* axioms, Theory* conjectures)
+		: 	axioms(axioms),
 			conjectures(conjectures),
 			hasArithmetic(true) {
 
@@ -121,8 +121,12 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	disprovenStrings.push_back("SZS status CounterSatisfiable");
 	disprovenStrings.push_back("SPASS beiseite: Completion found.");
 
-	FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 5);
-	FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 5);
+	axioms = dynamic_cast<Theory*>(FormulaUtils::splitComparisonChains(axioms,axioms->vocabulary()));
+	conjectures = dynamic_cast<Theory*>(FormulaUtils::splitComparisonChains(conjectures,conjectures->vocabulary()));
+	FormulaUtils::replaceCardinalitiesWithFOFormulas(conjectures, 6);
+	FormulaUtils::replaceCardinalitiesWithFOFormulas(axioms, 6);
+
+	FormulaUtils::replaceDefinitionsWithCompletion(axioms, NULL);
 
 	// Determine whether the theories are compatible with this inference
 	// and whether arithmetic support is required
@@ -144,10 +148,20 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	// Turn functions into predicates (for partial function support)
 	FormulaUtils::unnestTerms(axioms);
 	axioms = FormulaUtils::graphFuncsAndAggs(axioms, NULL, {}, true, false);
+	std::map<Function*, Formula*> axiom_funcconstraints;
+	FormulaUtils::addFuncConstraints(axioms, axioms->vocabulary(), axiom_funcconstraints);
+	for(auto func2formula: axiom_funcconstraints){
+		axioms->add(func2formula.second);
+	}
 
 	FormulaUtils::unnestTerms(conjectures);
 	conjectures = FormulaUtils::graphFuncsAndAggs(conjectures, NULL, {}, true, false);
-        
+	std::map<Function*, Formula*> conj_funcconstraints;
+	FormulaUtils::addFuncConstraints(conjectures, conjectures->vocabulary(), conj_funcconstraints);
+	for(auto func2formula: conj_funcconstraints){
+		conjectures->add(func2formula.second);
+	}
+
 	if(axiomsSupported.aggregateFound()){
 		Warning::warning("The input contains aggregates. Non-cardinality aggregates will be dropped, resulting in a weaker form of entailment.");
 	}
@@ -157,6 +171,21 @@ Entails::Entails(const std::string& command, Theory* axioms, Theory* conjectures
 	if(not getOption(PROVER_SUPPORTS_TFA)){
 		hasArithmetic = false;
 	}
+}
+
+std::ostream& operator<<(std::ostream& output, const State& object) {
+	switch(object){
+	case State::DISPROVEN:
+		output <<"Disproven";
+		break;
+	case State::PROVEN:
+		output <<"Proven";
+		break;
+	case State::UNKNOWN:
+		output <<"Unknown";
+		break;
+	}
+	return output;
 }
 
 State Entails::checkEntailment() {
@@ -170,7 +199,7 @@ State Entails::checkEntailment() {
 	auto printer = new TPTPPrinter<std::ofstream>(hasArithmetic, tptpFile);
 
 	// Print the theories to a TPTP file
-	if (getOption(VERBOSE_ENTAILMENT) > 0) {
+	if (getOption(VERBOSE_ENTAILMENT) > 1) {
 		clog << "Adding axioms " << print(axioms) << "\n";
 	}
 	printer->print(axioms->vocabulary());
@@ -179,14 +208,17 @@ State Entails::checkEntailment() {
 	if (axioms->vocabulary() != conjectures->vocabulary()) {
 		printer->print(conjectures->vocabulary());
 	}
-	if (getOption(VERBOSE_ENTAILMENT) > 0) {
+	if (getOption(VERBOSE_ENTAILMENT) > 1) {
 		clog << "Adding conjectures " << print(conjectures) << "\n";
 	}
 	printer->print(conjectures);
 	delete (printer);
 	tptpFile.close();
 
-	auto tempcommand = command;
+	auto tempcommand = getOption(PROVERCOMMAND);
+	if(tempcommand==""){
+		tempcommand = getInstallDirectoryPath()+"/bin/SPASS -TimeLimit=%t -TPTP %i > %o";
+	}
 	auto pos = tempcommand.find("%i");
 	if (pos == std::string::npos) {
 		throw IdpException("The argument string must contain the string \"%i\", indicating where to insert the input file.");
@@ -200,6 +232,14 @@ State Entails::checkEntailment() {
 		pos = tempcommand.find("%o");
 	}
 	tempcommand.replace(pos, 2, tptpoutput_filename);
+
+	pos = tempcommand.find("%t");
+	if (pos == std::string::npos) {
+		// Cannot set prover timeout
+		Warning::warning("Prover command does not support time limit.");
+	}else{
+		tempcommand.replace(pos, 2, toString(getOption(TIMEOUT_ENTAILMENT)).c_str());
+	}
 
 	// Call the prover with timeout.
 	if (getOption(VERBOSE_ENTAILMENT) > 0) {
@@ -255,7 +295,14 @@ State Entails::checkEntailment() {
 	tptpResult.close();
 
 	if (pos == std::string::npos) {
-		throw IdpException("The automated theorem prover gave up or stopped in an irregular state.");
+		state = State::UNKNOWN;
+		if (getOption(VERBOSE_ENTAILMENT) > 0) {
+			Warning::warning("The automated theorem prover gave up or stopped in an irregular state.");
+		}
+	}
+
+	if (getOption(VERBOSE_ENTAILMENT) > 0) {
+		clog <<"The prover answered " <<state <<"\n";
 	}
 
 	return state;

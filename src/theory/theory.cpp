@@ -448,10 +448,18 @@ Definition* Definition::clone() const {
 	return newdef;
 }
 
+PFSymbol* getDefSymbol(const Rule* r){
+	if(VocabularyUtils::isPredicate(r->head()->symbol(), STDPRED::EQ)){
+		return dynamic_cast<FuncTerm*>(r->head()->subterms()[0])->function();
+	}else{
+		return r->head()->symbol();
+	}
+}
+
 void Definition::updateDefinedSymbols() {
 	_defsyms.clear();
 	for (auto rule : _rules) {
-		_defsyms.insert(rule->head()->symbol());
+		_defsyms.insert(getDefSymbol(rule));
 	}
 }
 
@@ -464,12 +472,12 @@ void Definition::recursiveDelete() {
 
 void Definition::add(Rule* r) {
 	_rules.insert(r);
-	_defsyms.insert(r->head()->symbol());
+	_defsyms.insert(getDefSymbol(r));
 }
 
 void Definition::remove(Rule* r) {
 	_rules.erase(r);
-	_defsyms.insert(r->head()->symbol());
+	_defsyms.insert(getDefSymbol(r));
 	updateDefinedSymbols();
 }
 

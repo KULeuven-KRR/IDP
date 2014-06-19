@@ -9,11 +9,11 @@
 class CardConstrToFO: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
-	int _maxbound;
+	int _maxVarsToIntroduce;
 public:
 	template<typename T>
-	T execute(T t, int maxbound) {
-		_maxbound = maxbound;
+	T execute(T t, int maxVarsToIntroduce) {
+		_maxVarsToIntroduce = maxVarsToIntroduce;
 		return t->accept(this);
 	}
 protected:

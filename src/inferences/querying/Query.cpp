@@ -47,7 +47,7 @@ PredTable* Querying::solveQuery(Query* q, Structure const * const structure, std
 	std::shared_ptr<FOBDDManager> manager;
 	const FOBDD* bdd = NULL;
 	auto newquery = q->query()->clone();
-	newquery = FormulaUtils::calculateArithmetic(newquery,structure);
+	newquery = FormulaUtils::simplify(newquery,structure);
 	auto alltwoval = true;
 	for(auto s: FormulaUtils::collectSymbols(q->query())){
 		if(not structure->inter(s)->approxTwoValued()){

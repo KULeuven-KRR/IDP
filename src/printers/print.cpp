@@ -34,7 +34,7 @@ Printer* Printer::create(Stream& stream) {
 	case Language::ECNF:
 		return new EcnfPrinter<Stream>(getOption(BoolType::CREATETRANSLATION), stream);
 	case Language::TPTP:
-		return new TPTPPrinter<Stream>(false, stream);
+		return new TPTPPrinter<Stream>(getOption(BoolType::PROVER_SUPPORTS_TFA), stream);
 	case Language::ASP:
 		return new ASPPrinter<Stream>(stream);
 	default:

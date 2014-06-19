@@ -349,7 +349,7 @@ TEST(SplitComparisonChainsTest,NormalEqChainForm) {
 	auto aisbisc = new EqChainForm(SIGN::POS, true, { xt, yt, zt }, { CompType::EQ, CompType::EQ }, FormulaParseInfo());
 
 	// Rewriting (x = y = z) to ((x = y) & (y = z)).
-	auto result = FormulaUtils::splitComparisonChains(aisbisc);
+	auto result = FormulaUtils::splitComparisonChains((Formula*)aisbisc);
 
 	ASSERT_TRUE(isa<BoolForm>(*result));
 	ASSERT_EQ((uint)2, result->subformulas().size());
@@ -366,7 +366,7 @@ TEST(SplitComparisonChainsTest,WeirdEqChainForm) {
 	auto weird = new EqChainForm(SIGN::NEG, false, { xt, yt, zt }, { CompType::LEQ, CompType::GT }, FormulaParseInfo());
 
 	// Rewriting ~((x =< y) | (y > z)).
-	auto result = FormulaUtils::splitComparisonChains(weird);
+	auto result = FormulaUtils::splitComparisonChains((Formula*)weird);
 
 	ASSERT_TRUE(isa<BoolForm>(*result));
 	ASSERT_EQ((uint)2, result->subformulas().size());

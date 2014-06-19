@@ -542,6 +542,9 @@ public:
 	const varset& quantVars() const {
 		return _quantvars;
 	}
+	void setQuantVars(const varset& vars){
+		_quantvars = vars;
+	}
 
 	// Output
 	std::ostream& put(std::ostream&) const;
@@ -588,10 +591,11 @@ public:
 	void add(Rule*); //!< add a rule to the definition
 	void remove(Rule*); //!< remove a rule of the definition
 	template<typename List>
-	void add(const List& list){
+	Definition* add(const List& list){
 		for(auto i=list.cbegin(); i!=list.cend(); ++i){
 			add(*i);
 		}
+		return this;
 	}
 
 	const ruleset& rules() const {
@@ -733,11 +737,13 @@ private:
 	std::vector<FixpDef*> _fixpdefs; //!< the fixpoint definitions of the theory
 
 public:
-	Theory(const std::string& name, const ParseInfo& pi)
-			: AbstractTheory(name, pi) {
-	}
 	Theory(const std::string& name, Vocabulary* voc, const ParseInfo& pi)
 			: AbstractTheory(name, voc, pi) {
+	}
+
+	// NOTE: guarantee to add a voc before calling any non-add method!
+	Theory(const std::string& name, const ParseInfo& pi)
+			: AbstractTheory(name, pi) {
 	}
 
 	Theory* clone() const;

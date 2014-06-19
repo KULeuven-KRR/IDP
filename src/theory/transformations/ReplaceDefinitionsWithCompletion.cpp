@@ -68,7 +68,16 @@ Definition* ReplaceDefinitionsWithCompletion::visit(Definition* def) {
 }
 
 Rule* ReplaceDefinitionsWithCompletion::visit(Rule* rule) {
-	auto newrule = DefinitionUtils::unnestNonVarHeadTerms(rule->clone(), _structure);
+	auto newrule = rule->clone();
+	if(VocabularyUtils::isPredicate(newrule->head()->symbol(), STDPRED::EQ)){
+		auto left = newrule->head()->subterms()[0];
+		auto right = newrule->head()->subterms()[1];
+		auto functerm = dynamic_cast<FuncTerm*>(left);
+		auto terms = functerm->subterms();
+		terms.push_back(right);
+		newrule->head(new PredForm(SIGN::POS, functerm->function(), terms, {}));
+	}
+	newrule = DefinitionUtils::unnestNonVarHeadTerms(newrule, _structure);
 
 	// Split quantified variables in head and body variables
 	varset hv, bv;
@@ -112,7 +121,7 @@ Rule* ReplaceDefinitionsWithCompletion::visit(Rule* rule) {
 		old2newheadvars[vt->var()]=newheadvars[i];
 	}
 	auto newbody = newrule->body()->clone(old2newheadvars);
-	_symbol2sentences[rule->head()->symbol()].push_back(newbody);
+	_symbol2sentences[newrule->head()->symbol()].push_back(newbody);
 
 	newrule->body()->recursiveDeleteKeepVars();
 	newrule->head()->recursiveDeleteKeepVars();

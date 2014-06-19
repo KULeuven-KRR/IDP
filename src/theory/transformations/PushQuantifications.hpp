@@ -24,5 +24,20 @@ public:
 	}
 
 protected:
+	Rule* visit(Rule* rule) {
+		varset bodyonlyvars, rem;
+		for(auto var : rule->quantVars()){
+			if(not contains(rule->head()->freeVars(), var)){
+				bodyonlyvars.insert(var);
+			}else{
+				rem.insert(var);
+			}
+		}
+		rule->setQuantVars(rem);
+		if(not bodyonlyvars.empty()){
+			rule->body(new QuantForm(SIGN::POS, QUANT::EXIST, bodyonlyvars, rule->body(), FormulaParseInfo()));
+		}
+		return rule;
+	}
 	Formula* visit(QuantForm*);
 };

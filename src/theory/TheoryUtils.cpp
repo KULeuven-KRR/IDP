@@ -31,6 +31,7 @@
 #include "information/HasRecursionOverNegation.hpp"
 #include "information/CountNbOfSubFormulas.hpp"
 #include "information/DeriveTermBounds.hpp"
+#include "information/CountQuantVars.hpp"
 #include "transformations/CardConstrToFO.hpp"
 #include "transformations/PushNegations.hpp"
 #include "transformations/Flatten.hpp"
@@ -40,6 +41,7 @@
 #include "transformations/GraphFuncsAndAggs.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
+#include "transformations/PullQuantifications.hpp"
 #include "transformations/EliminateUniversalQuantifications.hpp"
 #include "transformations/SplitComparisonChains.hpp"
 #include "transformations/SubstituteTerm.hpp"
@@ -53,9 +55,12 @@
 #include "transformations/UnnestDomainTerms.hpp"
 #include "transformations/UnnestThreeValuedTerms.hpp"
 #include "transformations/UnnestVarContainingTerms.hpp"
-#include "transformations/CalculateKnownArithmetic.hpp"
 #include "transformations/IntroduceSharedTseitins.hpp"
 #include "transformations/SplitIntoMonotoneAgg.hpp"
+#include "transformations/ReplacePredByPred.hpp"
+#include "transformations/ReplaceVariablesUsingEqualities.hpp"
+#include "transformations/ReplacePredByFunctions.hpp"
+#include "transformations/Simplify.hpp"
 #include "transformations/ReplaceNestedWithTseitin.hpp"
 #include "transformations/Skolemize.hpp"
 #include "transformations/AddFuncConstraints.hpp"
@@ -94,6 +99,33 @@ bool isAggOrFunc(Term* t) {
 
 bool isVarOrDom(Term* t) {
 	return isVar(t) || isDom(t);
+}
+
+bool isCard(Term* t){
+	if(not TermUtils::isAgg(t)){
+		return false;
+	}
+	auto at = dynamic_cast<AggTerm*>(t);
+	if(at->function()==AggFunction::CARD){
+		return true;
+	}
+
+	if(at->function()==AggFunction::SUM){
+		for(auto set: at->set()->getSets()){
+			auto term = dynamic_cast<DomainTerm*>(set->getTerm());
+			if(term==NULL || term->value()->type()!=DomainElementType::DET_INT || term->value()->value()._int!=1 ){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
+template<class T>
+T simplify(T t, const Structure* structure){
+	return transform<Simplify, T>(t, structure);
 }
 
 bool approxTwoValued(const Term* t, const Structure* str) {
@@ -337,8 +369,8 @@ namespace FormulaUtils {
 	}
 }
 
- AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxbound) {
-	return transform<CardConstrToFO, AbstractTheory*>(t, maxbound);
+ AbstractTheory* replaceCardinalitiesWithFOFormulas(AbstractTheory* t, int maxVarsToIntroduce) {
+	return transform<CardConstrToFO, AbstractTheory*>(t, maxVarsToIntroduce);
 }
 
 void addFuncConstraints(AbstractTheory* theory, Vocabulary* voc, std::map<Function*, Formula*>& funcconstraints, bool alsoCPableFunctions) {
@@ -386,6 +418,16 @@ bool containsSymbol(const PFSymbol* s, const Formula* f) {
 	return transform<CheckContainment, bool>(s, f);
 }
 
+int countQuantVars(const Theory* t){
+	return transform<CountQuantVars, int>(t);
+}
+int countQuantVars(const Rule* t){
+	return transform<CountQuantVars, int>(t);
+}
+int countQuantVars(const Formula* t){
+	return transform<CountQuantVars, int>(t);
+}
+
 std::shared_ptr<Delay> findDelay(const Formula* f, const var2dommap& varmap, const LazyGroundingManager* manager) {
 	// NOTE: need complete specification to guarantee output parameter to be passed correctly!
 	return transform<FindDelayPredForms, std::shared_ptr<Delay>, const Formula, const var2dommap&, const LazyGroundingManager*>(f, varmap, manager);
@@ -396,20 +438,8 @@ void deriveSorts(Vocabulary* v, Formula* f) {
 	transform<DeriveSorts>(f, v, true);
 }
 
-Formula* flatten(Formula* f) {
-	return transform<Flatten, Formula*>(f);
-}
-
 Formula* graphFuncsAndAggs(Formula* f, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, Formula*>(f, str, definedsymbols, unnestall, cpsupport, con);
-}
-
-Formula* pushNegations(Formula* f) {
-	return transform<PushNegations, Formula*>(f);
-}
-
-Formula* calculateArithmetic(Formula* f, const Structure* s) {
-	return transform<CalculateKnownArithmetic, Formula*>(f,s);
 }
 
 Formula* removeEquivalences(Formula* f) {
@@ -436,11 +466,6 @@ void removeInterpretationOfDefinedSymbols(const Definition* d, Structure* s) {
 Theory* replaceWithNestedTseitins(Theory* theory) {
 	return transform<ReplaceNestedWithTseitinTerm, Theory*>(theory);
 }
-
-Formula* splitComparisonChains(Formula* f, Vocabulary* v) {
-	return transform<SplitComparisonChains, Formula*>(f, v);
-}
-
 Formula* splitIntoMonotoneAgg(Formula* f) {
 	return transform<SplitIntoMonotoneAgg, Formula*>(f);
 }
@@ -467,12 +492,31 @@ Formula* substituteVarWithDom(Formula* formula, const std::map<Variable*, const 
 	return transform<SubstituteVarWithDom, Formula*>(formula, var2domelem);
 }
 
+Theory* replacePredByPred(Predicate* origPred, Predicate* newPred, Theory* theory){
+	return transform<ReplacePredByPred, Theory*>(theory, origPred, newPred);
+}
+
 Formula* substituteVarWithVar(Formula* formula, const std::map<Variable*, Variable*>& var2var){
 	return transform<SubstituteVarWithVar, Formula*>(formula, var2var);
 }
 
-Formula* pushQuantifiers(Formula* t) {
-	return transform<PushQuantifications, Formula*>(t);
+Formula* replacePredByPred(Predicate* origPred, Predicate* newPred, Formula* theory){
+	return transform<ReplacePredByPred, Formula*>(theory, origPred, newPred);
+}
+
+template<class T>
+T replaceVariablesUsingEqualities(T t) {
+	t = flatten(t);
+	t = splitComparisonChains(t);
+	t = pushNegations(t);
+	t = pullQuantifiers(t);
+	t = transform<ReplaceVariableUsingEqualities, T>(t);
+	t = pushQuantifiers(t);
+	return t;
+}
+
+Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, bool addinoutputdef, const std::set<int>& domainindices, const std::set<int>& codomainsindices, bool partialfunctions){
+	return transform<ReplacePredByFunctions, Theory*>(newTheory, newTheory->vocabulary(), pred, addinoutputdef, domainindices, codomainsindices, partialfunctions);
 }
 
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {
@@ -517,9 +561,25 @@ void addIfCompletion(AbstractTheory* t) {
 	Assert(newt==t);
 }
 
-void flatten(AbstractTheory* t) {
-	auto newt = transform<Flatten, AbstractTheory*>(t);
-	Assert(newt==t);
+template<class T>
+T flatten(T t) {
+	return transform<Flatten, T>(t);
+}
+template<class T>
+T pushNegations(T t) {
+	return transform<PushNegations, T>(t);
+}
+template<class T>
+T pullQuantifiers(T t) {
+	return transform<PullQuantifications, T>(t);
+}
+template<class T>
+T pushQuantifiers(T t) {
+	return transform<PushQuantifications, T>(t);
+}
+template<class T>
+T splitComparisonChains(T t, Vocabulary* voc) {
+	return transform<SplitComparisonChains, T>(t, voc);
 }
 
 Theory* graphFuncsAndAggs(Theory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
@@ -529,20 +589,18 @@ AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, const
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, definedsymbols, unnestall, cpsupport, con);
 }
 
-void pushNegations(AbstractTheory* t) {
-	auto newt = transform<PushNegations, AbstractTheory*>(t);
-	Assert(newt==t);
-}
-
 template<class T>
-T calculateArithmetic(T t, const Structure* s) {
-	return transform<CalculateKnownArithmetic, T>(t,s);
+T simplify(T t, const Structure* s) {
+	return transform<Simplify, T>(t,s);
 }
 
 template<class T>
 T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool nbmodelsequivalent) {
 	FormulaUtils::combineAggregates(theory);
-	theory = FormulaUtils::calculateArithmetic(theory, structure);
+
+	theory = FormulaUtils::replaceVariablesUsingEqualities(theory);
+
+	theory = FormulaUtils::simplify(theory, structure);
 
 	if (skolemize && nbmodelsequivalent) {
 		// TODO: skolemization is not nb-model-equivalent out of the box (might help this in future by changing solver)
@@ -586,10 +644,6 @@ Theory* eliminateUniversalQuantifications(Theory* t) {
 
 AbstractTheory* removeEquivalences(AbstractTheory* t) {
 	return transform<RemoveEquivalences, AbstractTheory*>(t);
-}
-
-AbstractTheory* splitComparisonChains(AbstractTheory* t, Vocabulary* voc) {
-	return transform<SplitComparisonChains, AbstractTheory*>(t, voc);
 }
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str) {
@@ -889,7 +943,23 @@ AbstractTheory* removeQuantificationsOverSort(AbstractTheory* f, const Sort* s) 
 
 }
 
-template Theory* FormulaUtils::calculateArithmetic(Theory* t, const Structure* s);
-template AbstractTheory* FormulaUtils::calculateArithmetic(AbstractTheory* t, const Structure* s);
+template Formula* FormulaUtils::flatten(Formula*);
+template Theory* FormulaUtils::flatten(Theory*);
+template AbstractTheory* FormulaUtils::flatten(AbstractTheory*);
+template Formula* FormulaUtils::pushNegations(Formula*);
+template Theory* FormulaUtils::pushNegations(Theory*);
+template AbstractTheory* FormulaUtils::pushNegations(AbstractTheory*);
+template Formula* FormulaUtils::splitComparisonChains(Formula*, Vocabulary*);
+template Theory* FormulaUtils::splitComparisonChains(Theory*, Vocabulary*);
+template AbstractTheory* FormulaUtils::splitComparisonChains(AbstractTheory*, Vocabulary*);
+template Formula* FormulaUtils::pushQuantifiers(Formula*);
+template Theory* FormulaUtils::pushQuantifiers(Theory*);
+template Definition* FormulaUtils::pushQuantifiers(Definition*);
+template Term* TermUtils::simplify(Term* t, const Structure* s);
+template Formula* FormulaUtils::simplify(Formula* t, const Structure* s);
+template Theory* FormulaUtils::simplify(Theory* t, const Structure* s);
+template AbstractTheory* FormulaUtils::simplify(AbstractTheory* t, const Structure* s);
+template Formula* FormulaUtils::replaceVariablesUsingEqualities(Formula* t);
+template Theory* FormulaUtils::replaceVariablesUsingEqualities(Theory* t);
 template Theory* FormulaUtils::improveTheoryForInference(Theory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
 template AbstractTheory* FormulaUtils::improveTheoryForInference(AbstractTheory* theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);

@@ -13,22 +13,27 @@
 
 #include <vector>
 #include <string>
+class Vocabulary;
 class Theory;
+class Predicate;
+class Variable;
+class Structure;
+#include "vocabulary/VarCompare.hpp"
 
-enum class State {
-	PROVEN, DISPROVEN, UNKNOWN
-};
-
-class Entails {
+class FunctionDetection {
 private:
-	Theory *axioms, *conjectures;
-	bool hasArithmetic; // If true, TFA syntax will be output, otherwise FOF (and arithmetic will be approximated).
-	std::vector<std::string> provenStrings, disprovenStrings;
+	Vocabulary* origVoc;
+	Theory *theory;
+
+	// Stats
+	int inoutputvarcount, totalfunc, partfunc, provercalls;
 
 public:
-	static State doCheckEntailment(Theory* axioms, Theory* conjectures);
+	static void doDetectAndRewriteIntoFunctions(Theory* theory);
 
 private:
-	Entails(Theory* axioms, Theory* conjectures);
-	State checkEntailment();
+	FunctionDetection(Theory* theory);
+	~FunctionDetection();
+	void detectAndRewriteIntoFunctions();
+	bool tryToTransform(Theory* newTheory, Predicate* pred, const std::vector<Variable*>& predvars, const varset& domainset, bool partial = false);
 };

@@ -1,0 +1,19 @@
+vocabulary V{
+	type x isa int
+	p(x,x)
+}
+
+theory T:V{
+	#{x y: p(x,y)} = 10.
+	!y: #{x: p(x,y)} =<1.
+	!x y: p(x,y) & y<MAX[:x] => x=y+1.
+	!x y: p(x,y) & y=MAX[:x] => x=y.
+}
+
+structure S:V{
+	x = {1..10}
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

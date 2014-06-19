@@ -11,24 +11,27 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
-class Theory;
+#include "visitors/TheoryMutatingVisitor.hpp"
 
-enum class State {
-	PROVEN, DISPROVEN, UNKNOWN
-};
-
-class Entails {
-private:
-	Theory *axioms, *conjectures;
-	bool hasArithmetic; // If true, TFA syntax will be output, otherwise FOF (and arithmetic will be approximated).
-	std::vector<std::string> provenStrings, disprovenStrings;
-
+class PullQuantifications: public TheoryMutatingVisitor {
+	VISITORFRIENDS()
 public:
-	static State doCheckEntailment(Theory* axioms, Theory* conjectures);
+	template<typename T>
+	T execute(T t) {
+		return t->accept(this);
+	}
 
-private:
-	Entails(Theory* axioms, Theory* conjectures);
-	State checkEntailment();
+protected:
+	// TODO Extend
+
+	Rule* visit(Rule* rule) {
+		auto qf = dynamic_cast<QuantForm*>(rule->body());
+		if (qf != NULL && not qf->isUnivWithSign()) {
+			for (auto var : qf->quantVars()) {
+				rule->addvar(var);
+			}
+			rule->body(qf->subformula());
+		}
+		return rule;
+	}
 };

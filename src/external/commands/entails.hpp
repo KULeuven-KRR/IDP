@@ -31,7 +31,7 @@ public:
 
 		auto axioms = dynamic_cast<Theory*>(get<0>(args)->clone());
 		auto conjectures = dynamic_cast<Theory*>(get<1>(args)->clone());
-		auto state = Entails::doCheckEntailment(getOption(PROVERCOMMAND), axioms, conjectures);
+		auto state = Entails::doCheckEntailment(axioms, conjectures);
 		delete (axioms);
 		delete (conjectures);
 

@@ -9,26 +9,12 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#pragma once
+#include "FileEnumerator.hpp"
 
-#include <vector>
-#include <string>
-class Theory;
+namespace Tests {
 
-enum class State {
-	PROVEN, DISPROVEN, UNKNOWN
-};
+TEST_P(SimpleMXnbTest, DoesMXWithFunctionDetection) {
+	runTests("modelexpansion.idp", GetParam(), "mxfuncdetect()");
+}
 
-class Entails {
-private:
-	Theory *axioms, *conjectures;
-	bool hasArithmetic; // If true, TFA syntax will be output, otherwise FOF (and arithmetic will be approximated).
-	std::vector<std::string> provenStrings, disprovenStrings;
-
-public:
-	static State doCheckEntailment(Theory* axioms, Theory* conjectures);
-
-private:
-	Entails(Theory* axioms, Theory* conjectures);
-	State checkEntailment();
-};
+}

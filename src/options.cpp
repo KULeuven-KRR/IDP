@@ -149,6 +149,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::VERBOSE_PROPAGATING, "propagation", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_CREATE_PROPAGATORS, "createpropagators", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_QUERY, "query", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::VERBOSE_FUNCDETECT, "functiondetection", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_DEFINITIONS, "calculatedefinitions", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_APPROXDEF, "approxdef", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::VERBOSE_SYMMETRY, "symmetrybreaking", 0, getMaxElem<int>(), 0, PrintBehaviour::PRINT);
@@ -203,6 +204,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		IntPol::createOption(IntType::MXTIMEOUT, "mxtimeout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::MEMORYOUT, "memoryout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
 		IntPol::createOption(IntType::MXMEMORYOUT, "mxmemoryout", 0, getMaxElem<int>(), getMaxElem<int>(), PrintBehaviour::PRINT);
+		IntPol::createOption(IntType::TIMEOUT_ENTAILMENT, "timeout_entailment", 0, getMaxElem<int>(), 2, PrintBehaviour::PRINT);
 
 		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic

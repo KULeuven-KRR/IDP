@@ -8,12 +8,12 @@ namespace stdspace {
 procedure configIDP(){
 	// For example, set the default theorem prover command to use. Examples (working at the time of writing) below:
 	eprovercommand = "eprover -xAuto -tAuto --tptp3-format %i > %o"
-	spasscommand = "SPASS -TPTP %i > %o"
+	spasscommand = "SPASS -TimeLimit=%t -TPTP %i > %o"
 	vampirecommand = "vampire --proof tptp --output_axiom_names on --mode casc --input_file %i > %o"
 	metitarskicommand = "run-metitarski %i > %o"
 	meliacommand = "run-melia-jar -format tff-int %i > %o"  --java -jar -Dfile.encoding=UTF-8 -Xmx512m -jar MELIA-0.1.2.jar
 
-	stdoptions.provercommand = spasscommand
+	stdoptions.provercommand = "" // The empty string means: use the builtin compiled SPASS prover
 	stdoptions.proversupportsTFA = false
 }
 }

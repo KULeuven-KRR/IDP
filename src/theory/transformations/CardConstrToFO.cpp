@@ -18,20 +18,18 @@
 #include "creation/cppinterface.hpp"
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-bool isCard(Term* i) {
-	return TermUtils::isAgg(i) && dynamic_cast<AggTerm*>(i)->function() == CARD;
-}
+using namespace TermUtils;
 
 Formula* CardConstrToFO::visit(EqChainForm* ef) {
 	bool needsSplit = false;
-	for (auto i = ef->subterms().cbegin(); i < ef->subterms().cend(); ++i) {
-		if (isCard(*i)) {
+	for (auto st : ef->subterms()) {
+		if (isCard(st)) {
 			needsSplit = true;
 			break;
 		}
 	}
 	if (needsSplit) {
-		auto newformula = FormulaUtils::splitComparisonChains(ef);
+		auto newformula = FormulaUtils::splitComparisonChains((Formula*)ef);
 		return newformula->accept(this);
 	} else {
 		return traverse(ef);
@@ -67,7 +65,7 @@ Formula* CardConstrToFO::visit(AggForm* form) {
 	}
 	auto c = form->comp();
 	auto bound = dynamic_cast<DomainTerm*>(term)->value()->value()._int;
-	if (_maxbound!=0 && _maxbound < bound) {
+	if (_maxVarsToIntroduce!=0 && _maxVarsToIntroduce * form->_aggterm->set()->getSets().front()->quantVars().size() <= bound) {
 		return traverse(form);
 	}
 	if (c == CompType::GT) {
