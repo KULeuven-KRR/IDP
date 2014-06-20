@@ -182,7 +182,6 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
     char* delimiter = new char [strlen(" ") + 1];
     strcpy(delimiter," ");
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
-	delete(query);
 	handleResult(rc);
 
 	while (rc == XSB_SUCCESS) {
@@ -198,8 +197,9 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	}
 	XSB_StrDestroy(&buff);
 
-	delete(delimiter);
 	delete (term);
+	delete[] (delimiter);
+	delete[] (query);
 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
 		clog << "Resulted in the following answer tuples:\n";
@@ -217,44 +217,34 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 
 bool XSBInterface::hasUnknowns(PFSymbol* s) {
 	auto term = symbol2term(s);
-	SortedElementTable result;
 	XSB_StrDefine (buff);
 	stringstream ss;
 	ss << "call_tv(" << *term << ",undefined).";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
-		clog << "Quering XSB with: " <<  query << "\n";
+		clog << "To determine whether there XSB program is non-total, quering XSB with: " <<  query << "\n";
 	}
     char* delimiter = new char [strlen(" ") + 1];
     strcpy(delimiter," ");
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
-	delete(query);
 	handleResult(rc);
-
+	auto hasUnknowns = (rc == XSB_SUCCESS);
 	while (rc == XSB_SUCCESS) {
-		std::list<string> answer = split(buff.string);
-		ElementTuple tuple;
-		for (auto it = answer.begin(); it != answer.end(); ++it) {
-			tuple.push_back(_translator->to_idp_domelem(*it));
-		}
-		result.insert(tuple);
-
 		rc = xsb_next_string(&buff, delimiter);
 		handleResult(rc);
 	}
 	XSB_StrDestroy(&buff);
-	auto hasUnknowns = not result.empty();
 
-	delete(delimiter);
 	delete (term);
+	delete[] (delimiter);
+	delete[] (query);
 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
-		clog << "Resulted in the following answer:\n";
 		if (hasUnknowns) {
-			clog << "true\n\n";
+			clog << "Resulted in at least one answer (the XSB program is non-total).\n";
 		} else {
-			clog << "false\n\n";
+			clog << "Resulted in no answers (the XSB program is total).\n";
 		}
 	}
 	return hasUnknowns;
