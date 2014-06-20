@@ -45,7 +45,7 @@ void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgr
 	Assert(not groundweight.isVariable);
 	const auto& d = groundweight._domelement;
 	if (d == NULL) {
-		throw notyetimplemented("invalid term (partial function?) in set expression");
+		return;
 	}
 	auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 
@@ -76,7 +76,7 @@ void groundSetLiteral(LitGrounder* sublitgrounder, const TermGrounder& subtermgr
 	if (l == sublitgrounder->translator()->trueLit() && not groundweight.isVariable) {
 		const auto& d = groundweight._domelement;
 		if(d==NULL){
-			throw notyetimplemented("Invalid term in set expression");
+			return;
 		}
 		auto w = (d->type() == DET_INT) ? ((double) d->value()._int) : (d->value()._double);
 		trueweights.push_back(w);
