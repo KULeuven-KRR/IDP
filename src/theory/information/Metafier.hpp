@@ -283,7 +283,7 @@ public:
 			auto subf = getForm(m.singleform->value( { d }));
 			return new QuantForm(SIGN::POS, qt, f2vars[d], subf, { });
 		} else if (m.boolforms->contains(d)) {
-			auto conj = m.qtype->value( { d }) == m.conj;
+			auto conj = m.btype->value( { d }) == m.conj;
 			std::vector<Formula*> forms;
 			for (auto f : f2forms[d]) {
 				forms.push_back(getForm(f));

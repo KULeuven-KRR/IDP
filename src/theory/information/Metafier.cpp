@@ -202,7 +202,7 @@ void Metafier::visit(const EqChainForm* eq) {
 }
 
 void Metafier::visit(const AggForm*) {
-	throw notyetimplemented("meta"); // TODO implement
+	throw notyetimplemented("aggform to meta"); // TODO implement
 	//HANDLENEGATION(pf)
 }
 
