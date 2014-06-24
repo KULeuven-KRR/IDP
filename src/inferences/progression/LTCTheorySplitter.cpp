@@ -54,15 +54,12 @@ template<class T>
 LTCFormulaInfo LTCTheorySplitter::info(T* t) {
 	LTCFormulaInfo result;
 	auto symbols = FormulaUtils::collectSymbols(t);
-
 	result.containsStart = contains(symbols, _start);
-
 	result.containsNext = contains(symbols, _next);
 
-	auto vars = FormulaUtils::collectQuantifiedVariables(t, true);
+	auto vars = FormulaUtils::collectVariables(t);
 	result.hasTimeVariable = false;
-	for (auto tuple : vars) {
-		auto var = tuple.first;
+	for (auto var : vars) {
 		if (var->sort() == _time) {
 			result.hasTimeVariable = true;
 		}
