@@ -48,7 +48,7 @@ vocabulary actualTheoryVoc{
 	
 }
 
-vocabulary preprocessingVoc{
+vocabulary V{
 	extern vocabulary types
 	extern vocabulary actualTheoryVoc
 	ReachableNoRels(relevantobject,object)
@@ -56,7 +56,7 @@ vocabulary preprocessingVoc{
 
 
 
-theory T: preprocessingVoc{
+theory T: V{
 	
 	
 	{
@@ -71,7 +71,7 @@ procedure getExpectedNbOfModels(){
 }
 
 
-structure S:preprocessingVoc{
+structure S:V{
 connected = {}
 }
 
