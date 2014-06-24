@@ -141,7 +141,7 @@ class Metafier: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
 	MetaInters& m;
-	int maxid = 0;
+	int maxid;
 	std::vector<const DomainElement*> ids;
 
 	UniqueStringNames<PFSymbol*>& symbols;
@@ -150,6 +150,7 @@ private:
 public:
 	Metafier(Theory* f, MetaInters& meta, UniqueStringNames<PFSymbol*>& _symbols)
 			: 	m(meta),
+			  	maxid(0),
 				symbols(_symbols) {
 		f->accept(this);
 		for (auto id : ids) {
@@ -184,7 +185,7 @@ private:
 	Vocabulary* voc;
 	Structure* str;
 	MetaInters m;
-	int maxid = 0;
+	int maxid;
 	std::vector<const DomainElement*> ids;
 
 	UniqueStringNames<PFSymbol*>& symbols;
@@ -205,6 +206,7 @@ public:
 			: 	voc(origvoc),
 				str(str),
 				m(str),
+				maxid(0),
 				symbols(_symbols) {
 		for (auto i = m.vars->begin(); not i.isAtEnd(); ++i) {
 			d2var[(*i)[0]] = new Variable(symbols.getOriginal(*m.varsort->value( { (*i)[0] })->value()._string)->sorts()[0]);
