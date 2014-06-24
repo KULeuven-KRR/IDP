@@ -73,6 +73,16 @@ procedure mxwithbounds(){
 	return run(T)
 }
 
+procedure mxwithmeta(){
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	metastruc = tometa(T)
+	mv = getvocabulary(metastruc)
+	T = frommeta(V, mv::sentence, metastruc)
+	stdoptions.timeout = 7
+	return run()
+}
+
 procedure mxwithxsb(){
 	stdoptions.xsb=true
 	stdoptions.groundwithbounds = true

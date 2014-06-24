@@ -135,7 +135,9 @@ if(${BUILDTESTS})
 		addMXTest(nobounds nobounds.cpp) 
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
-        addMXTest(focard focard.cpp)
+		addMXTest(focard focard.cpp)
+		addMXTest(metarep metarep.cpp)
+		
 
 		add_executable(slow ${MXTESTS}/slow.cpp ${MXINCLUDES})
 		addTest(slow)
@@ -170,6 +172,7 @@ if(${BUILDTESTS})
 			mxtests/satnobounds.cpp
 			mxtests/satbounds.cpp
 			mxtests/satcp.cpp
+			mxtests/metarep.cpp
 		)
         
         if(SPASS)
