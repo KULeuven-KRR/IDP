@@ -11,6 +11,7 @@
 #pragma once
 
 #include "visitors/TheoryVisitor.hpp"
+#include "theory/term.hpp"
 
 
 class ContainedVariables: public DefaultTraversingTheoryVisitor {
