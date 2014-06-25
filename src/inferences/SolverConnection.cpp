@@ -139,6 +139,18 @@ PCSolver* createsolver(int nbmodels) {
 		modes.polarity = MinisatID::Polarity::RAND;
 	}
 
+	switch(getGlobal()->getOptions()->solverHeuristic()){
+	case SolverHeuristic::CLASSIC:
+		modes.heuristic = MinisatID::Heuristic::CLASSIC;
+		break;
+	case SolverHeuristic::VMTF:
+		modes.heuristic = MinisatID::Heuristic::VMTF;
+		break;
+	default:
+		modes.heuristic = MinisatID::Heuristic::CLASSIC;
+		break;
+	}
+
 	return new PCSolver(modes);
 }
 
