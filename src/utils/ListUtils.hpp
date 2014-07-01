@@ -26,7 +26,7 @@ void addAll(C1& list, const C2& toadd){
 template<typename T>
 void deleteList(std::vector<T*>& l) {
 	for (auto i = l.cbegin(); i != l.cend(); ++i) {
-		if (*i != NULL) {
+		if (*i != nullptr) {
 			delete (*i);
 		}
 	}
@@ -44,7 +44,7 @@ void deleteList(std::vector<std::vector<T*>>& l) {
 template<typename T>
 void deleteList(std::set<T*>& l) {
 	for (auto i = l.cbegin(); i != l.cend(); ++i) {
-		if (*i != NULL) {
+		if (*i != nullptr) {
 			delete (*i);
 		}
 	}
@@ -54,7 +54,7 @@ void deleteList(std::set<T*>& l) {
 template<typename T, typename K>
 void deleteList(std::map<K, T*>& l) {
 	for (auto i = l.cbegin(); i != l.cend(); ++i) {
-		if ((*i).second != NULL) {
+		if ((*i).second != nullptr) {
 			delete ((*i).second);
 		}
 	}
@@ -66,7 +66,7 @@ void deleteList(std::map<K, std::map<K, std::vector<T*> > >& l) {
 	for (auto i = l.cbegin(); i != l.cend(); ++i) {
 		for (auto j = (*i).second.cbegin(); j != (*i).second.cend(); ++j) {
 			for (auto k = (*j).second.cbegin(); k != (*j).second.cend(); ++k) {
-				if ((*k).second != NULL) {
+				if ((*k).second != nullptr) {
 					delete ((*k).second);
 				}
 			}
