@@ -39,6 +39,18 @@ std::string str(Language choice) {
 	}
 }
 
+std::string str(SolverHeuristic choice) {
+	switch (choice) {
+	case SolverHeuristic::CLASSIC:
+		return "classic";
+	case SolverHeuristic::VMTF:
+		return "vmtf";
+	default:
+		throw IdpException("Invalid code path.");
+	}
+}
+
+
 std::string str(SymmetryBreaking choice) {
 	switch (choice) {
 	case SymmetryBreaking::NONE:
@@ -72,6 +84,9 @@ std::string str(ApproxDef choice) {
 inline Language operator++(Language& x) {
 	return x = (Language) (((int) (x) + 1));
 }
+inline SolverHeuristic operator++(SolverHeuristic& x) {
+	return x = (SolverHeuristic) (((int) (x) + 1));
+}
 inline SymmetryBreaking operator++(SymmetryBreaking& x) {
 	return x = (SymmetryBreaking) (((int) (x) + 1));
 }
@@ -79,6 +94,9 @@ inline ApproxDef operator++(ApproxDef& x) {
 	return x = (ApproxDef) (((int) (x) + 1));
 }
 inline Language operator*(Language& x) {
+	return x;
+}
+inline SolverHeuristic operator*(SolverHeuristic& x){
 	return x;
 }
 inline SymmetryBreaking operator*(SymmetryBreaking& x) {
@@ -212,6 +230,8 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
 				PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::APPROXDEF, "approxdef", possibleStringValues<ApproxDef>(), str(ApproxDef::NONE),
+				PrintBehaviour::PRINT);
+		StringPol::createOption(StringType::SOLVERHEURISTIC, "solverheuristic", possibleStringValues<SolverHeuristic>(), str(SolverHeuristic::CLASSIC),
 				PrintBehaviour::PRINT);
 	}
 }
@@ -414,6 +434,19 @@ ApproxDef Options::approxDef() const {
 	Warning::warning("Encountered unsupported language option, assuming NONE.\n");
 	return ApproxDef::NONE;
 }
+
+SolverHeuristic Options::solverHeuristic() const {
+	auto values = possibleValues<SolverHeuristic>();
+	const std::string& value = StringPol::getValue(StringType::SOLVERHEURISTIC);
+	for (auto i = values.cbegin(); i != values.cend(); ++i) {
+		if (value.compare(str(*i)) == 0) {
+			return *i;
+		}
+	}
+	Warning::warning("Encountered unsupported language option, assuming NONE.\n");
+	return SolverHeuristic::CLASSIC;
+}
+
 
 std::string Options::printAllowedValues(const std::string& name) const {
 	if (isOptionOfType<int>(name)) {

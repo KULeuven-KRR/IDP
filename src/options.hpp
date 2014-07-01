@@ -37,7 +37,8 @@ enum StringType {
 	LANGUAGE,
 	SYMMETRYBREAKING,
 	PROVERCOMMAND,
-	APPROXDEF
+	APPROXDEF,
+	SOLVERHEURISTIC
 };
 
 enum IntType {
@@ -116,6 +117,14 @@ enum OptionType {
 enum DoubleType {
 
 };
+
+enum class SolverHeuristic {
+	CLASSIC,
+	VMTF,
+	FIRST = CLASSIC,
+	LAST = VMTF
+};
+
 
 enum class SymmetryBreaking {
 	NONE,
@@ -439,6 +448,7 @@ public:
 	Language language() const;
 	SymmetryBreaking symmetryBreaking() const;
 	ApproxDef approxDef() const;
+	SolverHeuristic solverHeuristic() const;
 
 	// NOTE: do NOT call this code outside luaconnection or other user interface methods.
 	template<class ValueType>
