@@ -65,7 +65,7 @@ Formula* CardConstrToFO::visit(AggForm* form) {
 	}
 	auto c = form->comp();
 	auto bound = dynamic_cast<DomainTerm*>(term)->value()->value()._int;
-	if (_maxVarsToIntroduce!=0 && _maxVarsToIntroduce * form->getAggTerm()->set()->getSets().front()->quantVars().size() <= bound) {
+	if (_maxVarsToIntroduce!=0 && bound * form->getAggTerm()->set()->getSets().front()->quantVars().size() > _maxVarsToIntroduce) {
 		return traverse(form);
 	}
 	if (c == CompType::GT) {
