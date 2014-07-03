@@ -20,6 +20,13 @@
 
 using namespace TermUtils;
 
+/**
+* Note: Many grounding optimization techniques cannot take aggregates into account.
+* A partial remedy is converting cardinality aggregates to FO sentences, which 
+* ofcourse can be used by grounding optimization techniques.
+* Hence these Card2FO algorithms were developed.
+**/
+
 Formula* CardConstrToFO::visit(EqChainForm* ef) {
 	bool needsSplit = false;
 	for (auto st : ef->subterms()) {
@@ -65,6 +72,7 @@ Formula* CardConstrToFO::visit(AggForm* form) {
 	}
 	auto c = form->comp();
 	auto bound = dynamic_cast<DomainTerm*>(term)->value()->value()._int;
+	// If _maxVarsToIntroduce==0 or _maxVarsToIntroduce >= bound * the number of variables in the aggregate, then the aggregate will be converted to an FO formula.
 	if (_maxVarsToIntroduce!=0 && bound * form->getAggTerm()->set()->getSets().front()->quantVars().size() > _maxVarsToIntroduce) {
 		return traverse(form);
 	}
