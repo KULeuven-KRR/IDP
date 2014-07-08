@@ -193,7 +193,24 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 	a->getBound()->accept(this);
 	a->getAggTerm()->accept(this);
 	leave();
-	term->arguments(PrologTerm::vars2terms(term->variables()));
+
+	list<PrologVariable*> args = list<PrologVariable*>();
+	for (auto var : term->variables()) {
+		bool add = true;
+		for (auto quantset : a->getAggTerm()->set()->getSets()) {
+			for (auto quantvar : quantset->quantVars()) {
+				auto compvar = createPrologVar(quantvar);
+				// TODO: a better check is possible (maintain mapping of Variable => PrologVariable)
+				if (compvar == var) {
+					add = false;
+				}
+			}
+		}
+		if (add) {
+			args.push_back(var);
+		}
+	}
+	term->arguments(PrologTerm::vars2terms(args));
 	_parent->addVariables(term->variables());
 }
 
