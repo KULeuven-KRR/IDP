@@ -1,3 +1,5 @@
+// TODO: comparing solution might wrongly fail because of issue https://bitbucket.org/krr/idp/issue/428/issues-with-infinity
+
 vocabulary V{
 	type x isa int
 	A:x // Should be 0
