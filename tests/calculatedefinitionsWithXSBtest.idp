@@ -7,9 +7,9 @@ procedure checkForRandomInputStructure(theory, structure, nrtimes) {
 	io.stderr:write("MX done, resulted in "..#NOXSBMODELS.." (max "..nrtimes..") models.\n")
 	stdoptions.xsb=true
 	for i,v in ipairs(NOXSBMODELS) do
-		io.stderr:write("Checking model nr. "..i.."\n")
+		io.stderr:write("Checking model nr. "..i.."... ")
 		if(checkDefinitionEvaluation(theory, v) ~= 1) then
-			io.stderr:write("Definition evaluation with XSB resulted in\nno model when it should have for these structure and theory:\n")
+			io.stderr:write("FAIL! Definition evaluation with XSB resulted in\nno model when it should have for these structure and theory:\n")
 			io.stderr:write(tostring(v))
 			io.stderr:write(tostring(theory))
 			return 0
@@ -43,6 +43,12 @@ procedure checkDefinitionEvaluation(theory, structure) {
 		return 1
 	end
 	io.stderr:write("Both definition evaluations resulted in a model. Comparing models...\n")
+	if (shouldNotCompareStructure~=nil) then
+		io.stderr:write("NOTE: non-XSB and XSB structure not compared because too expensive!\n")
+		io.stderr:write("\tThe XSB structure was:\n"..tostring(XSBMODEL))
+		io.stderr:write("\tThe NON-XSB structure was:\n"..tostring(NOXSBMODEL).."\n")
+		return 1;
+	end
 	if (equal(XSBMODEL,NOXSBMODEL)) then
 		return 1
 	else
