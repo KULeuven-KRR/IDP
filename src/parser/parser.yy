@@ -363,6 +363,7 @@ full_func_decl	: identifier '(' sort_pointer_tuple ')' ':' sort_pointer	{ $$ = d
 constr_func_decl	: identifier '(' sort_pointer_tuple ')' { $$ = data().constructorfunction(*$1,*$3, @1); delete($3); }
 				| identifier								{ $$ = data().constructorfunction(*$1,{},@1); }	
 				| NEWLINE constr_func_decl					{ $$ =$2;}
+				| constr_func_decl NEWLINE					{ $$ =$1;}
 				; 														
 
 
