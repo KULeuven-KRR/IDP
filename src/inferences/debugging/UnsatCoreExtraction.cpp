@@ -91,7 +91,7 @@ public:
 				core.push_back(&Gen::atom(pf.symbol, pf.args));
 			}
 		}
-		clog << outputwithparseinfo.str();
+		cout << outputwithparseinfo.str();
 		for (auto id2rules : ruleinstances) {
 			auto def = new Definition();
 			def->add(id2rules.second);
@@ -259,7 +259,7 @@ vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheor
 		throw notyetimplemented("Unsatcore extraction for non first-order theories");
 	}
 
-	clog << ">>> Generating an unsatisfiable subset of the given theory.\n";
+	cout << ">>> Generating an unsatisfiable subset of the given theory.\n";
 
 	stringstream ss;
 	ss << "unsatcore_voc" << getGlobal()->getNewID();
@@ -286,7 +286,7 @@ vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheor
 		throw IdpException("The given theory has models that extend the structure, so there are no unsat cores.");
 	}
 
-	clog << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
+	cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
 
 	// TODO should set remaining markers on true to allow ealier pruning
 	auto core = mxresult.unsat_in_function_of_ct_lits;
