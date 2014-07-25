@@ -65,3 +65,86 @@ function tostring(e)
 		return oldTostring(e)
 	end
 end
+
+
+-- Returns a structure that is a solution to the model expansion problem with input theory T and structure S 
+function onemodel(T,S) 
+        Opts = getoptions()
+        local oldnbmodels = Opts.nbmodels
+        Opts.nbmodels = 1
+        local solutions, trace = modelexpand(T,S)
+        Opts.nbmodels = oldnbmodels
+        local solution = nil
+        if solutions then
+                solution = solutions[1]
+        end
+        if trace then
+                return solution, trace
+        else
+                return solution
+        end
+end
+
+-- Returns a structure that is a solution to the model expansion problem with input theory T, structure S and output vocabularium V 
+function onemodel(T,S,V) 
+        Opts = getoptions()
+        local oldnbmodels = Opts.nbmodels
+        Opts.nbmodels = 1
+        local solutions, trace = modelexpand(T,S,V)
+        Opts.nbmodels = oldnbmodels
+        local solution = nil
+        if solutions then
+                solution = solutions[1]
+        end
+        if trace then
+                return solution, trace
+        else
+                return solution
+        end
+end
+
+-- Returns all solutions to the model expansion problem with input theory T and structure S 
+function allmodels(T,S) 
+        Opts = getoptions()
+        local oldnbmodels = Opts.nbmodels
+        Opts.nbmodels = 0
+        local solutions, trace = modelexpand(T,S)
+        Opts.nbmodels = oldnbmodels
+        if trace then
+                return solutions, trace
+        else
+                return solutions
+        end
+end
+
+-- Returns all solutions to the model expansion problem with input theory T, structure S and output vocabularium V 
+function allmodels(T,S,V) 
+        Opts = getoptions()
+        local oldnbmodels = Opts.nbmodels
+        Opts.nbmodels = 0
+        local solutions, trace = modelexpand(T,S,V)
+        Opts.nbmodels = oldnbmodels
+        if trace then
+                return solutions, trace
+        else
+                return solutions
+        end
+end
+
+-- Prints a given list of models or unsatisfiable if the list is empty 
+function printmodels(sols) 
+        if #sols == 0 then
+                print("Unsatisfiable")
+        end
+
+        print("Number of models: "..#sols)
+        for k,v in ipairs(sols) do
+                print("Model "..k)
+                local kstr = tostring(k)
+                local str = "======"
+                for i=1,string.len(kstr) do str = str.."=" end
+                print(str)
+                print(v)
+        end
+end
+
