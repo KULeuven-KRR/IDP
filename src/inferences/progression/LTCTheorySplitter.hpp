@@ -72,8 +72,9 @@ private:
 	template<class T>
 	LTCFormulaInfo info(T* t);
 
-	/** Splits the LTC theory/invariant. If invar==true, extra checks are performed to check that it is really an invariant and the invariant formulas are created*/
+	/** Splits the LTC theory/invariant. If invar==true, extra checks are performed to check that it is really an invariant and the invariant formulas are created
+	If the boolean onlyStartAndNext is true, it will replace a formula/rule !t: \phi(t) by \phi(Start) and phi(next(t)) but NOT by current state*/
 	template<class Form, class Construct>
-	void handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct, bool invar);
+	void handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct, bool invar, bool onlyStartAndNext = false);
 };
 

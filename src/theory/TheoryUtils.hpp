@@ -19,6 +19,7 @@
 #include "vocabulary/VarCompare.hpp"
 #include "information/GetQuantifiedVariables.hpp"
 #include "information/CollectSymbols.hpp"
+#include "information/ContainedVariables.hpp"
 #include "information/CollectSymbolOccurences.hpp"
 
 class Definition;
@@ -279,6 +280,14 @@ void unnestTerms(AbstractTheory*, const Structure* str = NULL, Vocabulary* voc =
 std::map<Variable*, QuantType> collectQuantifiedVariables(Formula* f, bool recursive);
 std::map<Variable*, QuantType> collectQuantifiedVariables(Rule* f, bool recursive);
 std::map<Variable*, QuantType> collectQuantifiedVariables(AbstractTheory* f, bool recursive);
+
+/** Returns all variables contained in t */
+template<class T>
+varset collectVariables(T* t){
+	ContainedVariables c;
+	return c.execute(t);
+}
+
 
 template<class T>
 std::set<PFSymbol* > collectSymbols(const T* f){

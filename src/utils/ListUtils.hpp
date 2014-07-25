@@ -14,6 +14,8 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <stddef.h>
+
 
 template<typename C1, typename C2>
 void addAll(C1& list, const C2& toadd){

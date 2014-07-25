@@ -54,15 +54,12 @@ template<class T>
 LTCFormulaInfo LTCTheorySplitter::info(T* t) {
 	LTCFormulaInfo result;
 	auto symbols = FormulaUtils::collectSymbols(t);
-
 	result.containsStart = contains(symbols, _start);
-
 	result.containsNext = contains(symbols, _next);
 
-	auto vars = FormulaUtils::collectQuantifiedVariables(t, true);
+	auto vars = FormulaUtils::collectVariables(t);
 	result.hasTimeVariable = false;
-	for (auto tuple : vars) {
-		auto var = tuple.first;
+	for (auto var : vars) {
 		if (var->sort() == _time) {
 			result.hasTimeVariable = true;
 		}
@@ -115,7 +112,17 @@ void LTCTheorySplitter::createTheories(const Theory* theo, bool single_state_inv
 			if (bodyinfo.containsNext && not headinfo.containsNext) {
 				Error::LTC::timeStratificationViolated(rule->pi());
 			}
-			handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar);
+			if(headinfo.hasTimeVariable && not headinfo.containsNext){
+				//Special case: rule of the form !t: P(t) <- \phi(t)
+				//This is dangerous in case that SAME defintion also contains rules of the form !t: P(next(t)) <- psi(t).
+				//since only part of  the rules defining P will end up in the same definition!!!!
+				//Solution: explicitely split this rules in two, one with t=Start and one with t next t
+				handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar, true);
+
+			} else{
+				handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar);
+			}
+
 		}
 		auto defsymbols = def->defsymbols();
 		auto initDefsymbols = initDef->defsymbols();
@@ -151,7 +158,7 @@ void LTCTheorySplitter::createTheories(const Theory* theo, bool single_state_inv
 }
 
 template<class Form, class Construct>
-void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct, bool invar) {
+void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initConstruct, Construct* biStateConstruct, bool invar, bool onlyStartNext) {
 	auto sentenceInfo = info(sentence);
 	auto newSentence = sentence->clone();
 	//We already checked quantifications. They are okay now. First, we remove all quantifications over time,
@@ -196,7 +203,7 @@ void LTCTheorySplitter::handleAndAddToConstruct(Form* sentence, Construct* initC
 		newNextSentence = ReplaceLTCSymbols::replaceSymbols(newNextSentence, _ltcVoc, true);
 		initConstruct->add(newSentence);
 		biStateConstruct->add(newNextSentence);
-		if(not invar){
+		if((not invar) && not onlyStartNext){
 			auto newTSentence = newSentence->clone();
 			biStateConstruct->add(newTSentence);
 		}
