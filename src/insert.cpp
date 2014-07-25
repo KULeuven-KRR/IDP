@@ -2710,6 +2710,13 @@ PFSymbol* Insert::findUniqueMatch(NSPair* nst) const {
 }
 
 void Insert::emptyinter(NSPair* nst, const string& utf) const {
+    	ParseInfo pi = nst->_pi;
+	longname name = nst->_name;
+	Sort* s = sortInScope(name, pi);
+	if (s && belongsToVoc(s) && !s->hasFixedInterpretation()) {
+                sortsOccurringInUserDefinedStructure[_currstructure].insert(s);
+        } 
+        
 	bool func = false;
 	int universesize = -1;
 	if (nst->_sortsincluded) {
