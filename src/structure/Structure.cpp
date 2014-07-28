@@ -391,7 +391,7 @@ bool addToInterpretation(Structure* structure, Sort* sort, const DomainElement* 
             }
         }
     }
-    // NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
+    // NOTE: we do not autocomplete sorts for which the interpretation is provided by the user, since this is a bug more often than not.
     if (not sort->hasFixedInterpretation()
             && not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort)
             && getOption(AUTOCOMPLETE)) {
