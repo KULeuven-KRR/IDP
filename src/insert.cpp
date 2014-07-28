@@ -9,6 +9,9 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
+#include "structure/MainStructureComponents.hpp"
+
+
 #include "IncludeComponents.hpp"
 #include "insert.hpp"
 #include "visitors/TheoryVisitor.hpp"
@@ -2709,14 +2712,17 @@ PFSymbol* Insert::findUniqueMatch(NSPair* nst) const {
 	return NULL;
 }
 
+// this method dispatches the declaration of an empty interpretation of a symbol to the appropriate method (sort, pred or func interpretation)
+// NOTE: what about the types of the tables? Apparently, only enumerated tables are used, but the signature of the functions can contain e.g. ints?
 void Insert::emptyinter(NSPair* nst, const string& utf) const {
-    	ParseInfo pi = nst->_pi;
-	longname name = nst->_name;
-	Sort* s = sortInScope(name, pi);
-	if (s && belongsToVoc(s) && !s->hasFixedInterpretation()) {
-                sortsOccurringInUserDefinedStructure[_currstructure].insert(s);
-        } 
+	if (sortInScope(nst->_name, nst->_pi)) {
+            auto ist = new EnumeratedInternalSortTable();
+            auto st = new SortTable(ist);
+            sortinter(nst,st);
+            return;
+        }
         
+        // the empty interpretation is no sort, so it must be either a function or a predicate
 	bool func = false;
 	int universesize = -1;
 	if (nst->_sortsincluded) {
