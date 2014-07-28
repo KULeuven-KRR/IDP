@@ -9,9 +9,6 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#include "structure/MainStructureComponents.hpp"
-
-
 #include "IncludeComponents.hpp"
 #include "insert.hpp"
 #include "visitors/TheoryVisitor.hpp"
