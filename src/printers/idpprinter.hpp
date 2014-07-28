@@ -214,9 +214,9 @@ public:
 		Assert(isTheoryOpen());
 		output() << *(a->function());
 		if (a->function()->arity() > 0) {
-			output() << '(' << a->arg(0);
+			output() << '(' << *a->arg(0);
 			for (size_t n = 1; n < a->function()->arity(); ++n) {
-				output()<< ',' << a->arg(n);
+				output()<< ',' << *a->arg(n);
 			}
 			output() << ')';
 		}
