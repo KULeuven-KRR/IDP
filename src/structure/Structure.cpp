@@ -382,29 +382,45 @@ void computescore(Sort* s, map<Sort*, unsigned int>& scores) {
 	scores[s] = sc;
 }
 
+bool addToInterpretation(Structure* structure, Sort* sort, const DomainElement* e) {
+    if (e->type() == DET_COMPOUND) {
+        const Compound* c = e->value()._compound;
+        for (uint i = 0; i < c->args().size(); i++) {
+            if ( not addToInterpretation(structure, c->function()->sort(i), c->args().at(i))){
+                return false;
+            }
+        }
+    }
+    // NOTE: we do not autocomplete sorts for which the interpretation is provided by the user, since this is a bug more often than not.
+    if (not sort->hasFixedInterpretation()
+            && not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort)
+            && getOption(AUTOCOMPLETE)) {
+        structure->inter(sort)->add(e);
+    } else if (!structure->inter(sort)->contains(e) && not getOption(ASSUMECONSISTENTINPUT)) {
+        return false;
+    }
+    return true;
+}
+
 template<class Table>
 void checkAndCompleteSortTable(const Table* pt, const Universe& univ, PFSymbol* symbol, Structure* structure) {
-	if (not pt->approxFinite() || (getOption(ASSUMECONSISTENTINPUT) && not getOption(AUTOCOMPLETE))) {
-		return;
-	}
-	for (auto jt = pt->begin(); not jt.isAtEnd(); ++jt) {
-		const ElementTuple& tuple = *jt;
-		for (unsigned int col = 0; col < tuple.size(); ++col) {
-			auto sort = symbol->sorts()[col];
-			// NOTE: we do not use predicate/function interpretations to autocomplete user provided sorts, this is a bug more often than not
-			if (not sort->hasFixedInterpretation()
-					&& not getGlobal()->getInserter().interpretationSpecifiedByUser(structure, sort)
-					&& getOption(AUTOCOMPLETE)) {
-				univ.tables()[col]->add(tuple[col]);
-			} else if (!univ.tables()[col]->contains(tuple[col]) && not getOption(ASSUMECONSISTENTINPUT)) {
-				if (typeid(*symbol) == typeid(Predicate)) {
-					Error::predelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structure->name());
-				} else {
-					Error::funcelnotinsort(toString(tuple[col]), symbol->name(), sort->name(), structure->name());
-				}
-			}
-		}
-	}
+    if (not pt->approxFinite() || (getOption(ASSUMECONSISTENTINPUT) && not getOption(AUTOCOMPLETE))) {
+        return;
+    }
+    for (auto jt = pt->begin(); not jt.isAtEnd(); ++jt) {
+        const ElementTuple& tuple = *jt;
+        for (unsigned int col = 0; col < tuple.size(); ++col) {
+            auto sort = symbol->sorts()[col];
+            auto e = tuple[col];
+            if (not addToInterpretation(structure, sort, e)) {
+                if (typeid (*symbol) == typeid (Predicate)) {
+                    Error::predelnotinsort(toString(e), symbol->name(), sort->name(), structure->name());
+                } else {
+                    Error::funcelnotinsort(toString(e), symbol->name(), sort->name(), structure->name());
+                }
+            }
+        }
+    }
 }
 
 void addUNAPattern(Function*) {
@@ -435,10 +451,6 @@ void Structure::checkAndAutocomplete() {
 	// Adding elements from predicate interpretations to sorts
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		auto pred = it->first;
-		if (pred->arity() == 1 && pred->sorts()[0]->pred() == pred) {
-			continue; // It was a sort itself
-		}
-
 		autocompleteFromSymbol(pred, it->second);
 	}
 	// Adding elements from function interpretations to sorts
