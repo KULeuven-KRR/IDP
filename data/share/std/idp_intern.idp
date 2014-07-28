@@ -306,6 +306,66 @@ procedure printcore(theory,structure){
 	return result
 }*/
 
-}
 
+
+/** Returns a structure that is a solution to the model expansion problem with input theory T and structure S */
+	procedure onemodel(T,S,V) {
+		Opts = getoptions()
+		local oldnbmodels = Opts.nbmodels
+		Opts.nbmodels = 1
+                local solutions, trace
+                if V then
+                    solutions, trace = modelexpand(T,S,V)
+                else 
+                    solutions, trace = modelexpand(T,S)
+                end
+		Opts.nbmodels = oldnbmodels
+		local solution = nil
+		if solutions then
+			solution = solutions[1]
+		end
+		if trace then
+			return solution, trace
+		else
+			return solution
+		end
+	}
+
+	/** Returns all solutions to the model expansion problem with input theory T and structure S */
+	procedure allmodels(T,S,V) {
+		Opts = getoptions()
+		local oldnbmodels = Opts.nbmodels
+		Opts.nbmodels = 0
+                local solutions, trace
+                if V then
+                    solutions, trace = modelexpand(T,S,V)
+                else 
+                    solutions, trace = modelexpand(T,S)
+                end
+		Opts.nbmodels = oldnbmodels
+		if trace then
+			return solutions, trace
+		else
+			return solutions
+		end
+	}
+	
+	/** Prints a given list of models or unsatisfiable if the list is empty */
+	procedure printmodels(sols) {
+		if #sols == 0 then
+			print("Unsatisfiable")
+		end
+
+		print("Number of models: "..#sols)
+		for k,v in ipairs(sols) do
+			print("Model "..k)
+			local kstr = tostring(k)
+			local str = "======"
+			for i=1,string.len(kstr) do str = str.."=" end
+			print(str)
+			print(v)
+		end
+	}
+
+}
 }
