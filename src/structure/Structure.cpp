@@ -451,6 +451,14 @@ void Structure::checkAndAutocomplete() {
 	// Adding elements from predicate interpretations to sorts
 	for (auto it = _predinter.cbegin(); it != _predinter.cend(); ++it) {
 		auto pred = it->first;
+		if (pred->arity() == 1 && pred->sorts()[0]->pred() == pred) {
+			continue; // It was a sort itself
+			/* NOTE: using sort interpretations for autocompleting types is only useful to
+			* - extend a supertype
+			* - interpret the base types of a constructed type
+			* Both are done later in this method
+			*/
+		}
 		autocompleteFromSymbol(pred, it->second);
 	}
 	// Adding elements from function interpretations to sorts
@@ -500,12 +508,11 @@ void Structure::checkAndAutocomplete() {
 				}
 				auto st = inter(sort);
 				for (auto kt : toextend) {
-					auto kst = inter(kt);
 					if (not st->approxFinite()) {
 						throw notyetimplemented("Completing non approx-finite tables");
 					}
 					for (auto lt = st->sortBegin(); not lt.isAtEnd(); ++lt) {
-						kst->add(*lt);
+                                            addToInterpretation(this,kt,*lt);
 					}
 				}
 				if (sort->builtin()) {
