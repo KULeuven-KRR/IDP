@@ -198,7 +198,8 @@ void Metafier::visit(const Definition* d) {
 }
 
 void Metafier::visit(const EqChainForm* eq) {
-	auto cloned = FormulaUtils::splitComparisonChains(eq->clone(), NULL);
+	Formula* f = eq->clone();
+	auto cloned = FormulaUtils::splitComparisonChains(f, NULL);
 	cloned->accept(this);
 	cloned->recursiveDelete();
 }

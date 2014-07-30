@@ -46,9 +46,11 @@ struct MetaInters {
 	const DomainElement *conj, *disj, *forall, *exists;
 	const DomainElement *sum, *min, *max, *prod, *card;
 
+	//Takes as input the name of a nilary constructor. Outputs its value, i.e. the compound name()
 	const DomainElement* getConstrElem(std::string name, const Structure* str) {
-		auto c = new FuncTerm(*str->vocabulary()->func_no_arity(name).begin(), { }, { });
-		return evaluate(c, str);
+		auto func=*str->vocabulary()->func_no_arity(name).begin();
+		Assert(func->arity() == 0);
+		return str->inter(func)->value({});
 	}
 
 	MetaInters(Structure* str) {
