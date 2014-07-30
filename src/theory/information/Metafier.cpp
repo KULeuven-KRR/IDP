@@ -198,12 +198,15 @@ void Metafier::visit(const Definition* d) {
 }
 
 void Metafier::visit(const EqChainForm* eq) {
-	FormulaUtils::splitComparisonChains(eq->clone(), NULL)->accept(this);
+	auto cloned = FormulaUtils::splitComparisonChains(eq->clone(), NULL);
+	cloned->accept(this);
+	cloned->recursiveDelete();
 }
 
-void Metafier::visit(const AggForm*) {
-	throw notyetimplemented("aggform to meta"); // TODO implement
-	//HANDLENEGATION(pf)
+void Metafier::visit(const AggForm* af) {
+	auto ecf = new EqChainForm(af->sign(), true, { af->getBound(), af->getAggTerm() }, { af->comp() }, FormulaParseInfo());
+	ecf->accept(this);
+	delete ecf;
 }
 
 const DomainElement* Metafier::getAgg(AggFunction f) {
@@ -218,6 +221,8 @@ const DomainElement* Metafier::getAgg(AggFunction f) {
 		return m.prod;
 	case AggFunction::SUM:
 		return m.sum;
+	default:
+		throw IdpException("Invalid code path: unexpected aggregate function");
 	}
 }
 
