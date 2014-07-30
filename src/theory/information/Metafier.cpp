@@ -172,7 +172,7 @@ void Metafier::visit(const Rule* r) {
 	for (auto v : r->quantVars()) {
 		auto vid = createDomElem(vars.getUnique(v));
 		m.rvars->makeTrueExactly( { id, vid }, true);
-		m.varsort->add( { id, toDom(v->sort(), symbols) }, true);
+		m.varsort->add( { vid, toDom(v->sort(), symbols) }, true);
 	}
 
 	ids.clear();
