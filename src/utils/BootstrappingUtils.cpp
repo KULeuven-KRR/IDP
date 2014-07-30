@@ -38,13 +38,28 @@ MetaRepr toMeta(Theory* theory) {
 	for (auto s : theory->vocabulary()->getNonOverloadedSymbols()) {
 		addSymbol(s, m, symbols);
 	}
-
-	std::cerr << "METAFYING\n";
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
+		std::clog << "Metafying theory\n";
+	}
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 3) {
+		std::clog << "Input:" << toString(theory);
+	}
 	Metafier metafy(theory, m, symbols);
-	std::cerr << "AUTOCOMPLETE\n";
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
+		std::clog << "(Metafying) Finished metafying theory; autocompleting structure\n";
+	}
 	str->checkAndAutocomplete();
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
+		std::clog << "(Metafying) Finished autocompleting structure; making two-valued\n";
+	}
 	makeUnknownsFalse(str);
 	str->clean();
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 1) {
+		std::clog << "(Metafying) Finished\n";
+	}
+	if (getOption(IntType::VERBOSE_TRANSFORMATIONS) > 3) {
+		std::clog << "Output:" << toString(str);
+	}
 	return {theory->vocabulary(), str, symbols};
 }
 
