@@ -26,17 +26,17 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-            try{
 		auto theory = get<0>(args);
 		auto core = UnsatCoreExtraction::extractCore(theory, get<1>(args));
-		auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
-		for(auto c: core){
-			coretheory->add(c);
+		if(core.size()>0){
+			auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
+			for(auto c: core){
+				coretheory->add(c);
+			}
+			return {coretheory};
+		}else{
+			return InternalArgument();
 		}
-		return {coretheory};
-            }catch(IdpException e){
-                cout << e.getMessage() << endl;
-                return InternalArgument();
-            }
+		
 	}
 };

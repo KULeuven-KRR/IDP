@@ -283,7 +283,8 @@ vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheor
 
 	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { { }, am->getMarkers() });
 	if (not mxresult.unsat) {
-		throw IdpException("The given theory has models that extend the structure, so there are no unsat cores.");
+		cout << ">>> The given theory has models that extend the structure, so there are no unsat cores." << endl;
+		return vector<TheoryComponent*>();
 	}
 
 	cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
