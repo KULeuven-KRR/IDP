@@ -346,7 +346,6 @@ struct InternalArgument {
 	}
 	InternalArgument(AbstractTheory* t)
 			: _type(AT_THEORY) {
-		std::cout << "Constructing theo" << std::endl;
 		_value._theory = t;
 	}
 	InternalArgument(Options* o)
