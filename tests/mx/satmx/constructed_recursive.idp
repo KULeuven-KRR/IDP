@@ -13,3 +13,7 @@ theory T: V {
 
 structure S: V {
 }
+
+procedure shouldNotCheck(){
+	return true
+}

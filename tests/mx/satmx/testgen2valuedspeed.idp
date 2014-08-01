@@ -19,3 +19,7 @@ structure S:V{
 procedure expectsModel(){
 	return true
 }
+
+procedure shouldNotCheck(){
+	return true
+}
