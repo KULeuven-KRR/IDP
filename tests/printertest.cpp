@@ -28,9 +28,7 @@ void runTests2(const string& instancefile, const std::string& command="") {
 	Status result = Status::FAIL;
 	ASSERT_NO_THROW(result=test( {instancefile, testfile}, command););
 	ASSERT_EQ(Status::SUCCESS, result);
-	ASSERT_NO_THROW(result=test( {"tmp.idp",testfile2}, command););
-	ASSERT_EQ(Status::SUCCESS, result);
-	ASSERT_NO_THROW( result = test( {getTestDirectory() +"modelexpansion.idp", "tmp.idp"}, "checkmodelsandnonmodels()"););
+	ASSERT_NO_THROW( result = test( {getTestDirectory() +"modelexpansion.idp", testfile2, "tmp.idp"}, "mxwithcp()"););
 	ASSERT_EQ(Status::SUCCESS, result);
 }
 

@@ -1,7 +1,7 @@
 include <mx>
 
-procedure main(){
-//code to test if readed printed output is correct
-	return 1
-}
 
+procedure shouldNotCheck(){
+	//Print tests should not verify all their models...
+	return true;
+}
