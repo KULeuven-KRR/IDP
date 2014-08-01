@@ -33,9 +33,13 @@ procedure main(){
 
 include <LTC>
 
+procedure nothing(){
+}
+
 procedure alternative(){
 	local expected = nbOfProgressions()
-	sols = simulate_random(T,S, expected + 1) 
+	//Random simulation but without output (nothing)
+	sols = simulate(T, S, true, expected + 1, nothing)
 	if strict() then
 		if (#sols == expected) then
 			return 1
