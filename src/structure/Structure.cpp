@@ -580,6 +580,10 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 		return true;
 	}
 
+	if(fi->approxTwoValued()){
+		return true;
+	}
+
 	// Check whether each input tuple maps to less than two output tuples
 	auto pt = fi->graphInter();
 	auto ct = pt->ct();
