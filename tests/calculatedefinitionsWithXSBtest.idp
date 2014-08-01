@@ -38,6 +38,10 @@ procedure checkDefinitionEvaluation(theory, structure) {
 	end
 	if (XSBMODEL == nil or NOXSBMODEL == nil) then
 	end
+	if (shouldNotCheck ~= nil) then
+		io.stderr:write("Both definition evaluations resulted in a model.  Not checking equiality since might be too expensive\n")
+		return 1
+	end
 	io.stderr:write("Both definition evaluations resulted in a model. Comparing models...\n")
 	if (equal(XSBMODEL,NOXSBMODEL)) then
 		return 1
