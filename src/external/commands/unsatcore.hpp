@@ -28,12 +28,12 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto theory = get<0>(args);
 		auto core = UnsatCoreExtraction::extractCore(theory, get<1>(args));
-		if(core.size()>0){
+		if(core.succes){
 			auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
-			for(auto c: core){
+			for(auto c: core.core){
 				coretheory->add(c);
 			}
-			return {coretheory};
+			return InternalArgument(coretheory);
 		}else{
 			return InternalArgument();
 		}

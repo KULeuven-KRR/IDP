@@ -253,7 +253,7 @@ protected:
 	}
 };
 
-vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
+UnsatCoreResult UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
 	auto intheory = dynamic_cast<Theory*>(atheory);
 	if (intheory == NULL) {
 		throw notyetimplemented("Unsatcore extraction for non first-order theories");
@@ -284,7 +284,7 @@ vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheor
 	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { { }, am->getMarkers() });
 	if (not mxresult.unsat) {
 		cout << ">>> The given theory has models that extend the structure, so there are no unsat cores." << endl;
-		return vector<TheoryComponent*>();
+		return UnsatCoreResult();
 	}
 
 	cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
@@ -337,5 +337,8 @@ vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheor
 	newtheory->recursiveDelete();
 	delete (s);
 	delete (voc);
-	return coreresult;
+	UnsatCoreResult r;
+	r.succes = true;
+	r.core = coreresult;
+	return r;
 }
