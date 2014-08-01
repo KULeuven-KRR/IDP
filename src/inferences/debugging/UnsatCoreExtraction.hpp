@@ -17,7 +17,13 @@ class TheoryComponent;
 class AbstractTheory;
 class Structure;
 
+struct UnsatCoreResult {
+	bool succes;
+	std::vector<TheoryComponent*> core;
+};
+
+
 class UnsatCoreExtraction {
 public:
-	static std::vector<TheoryComponent*> extractCore(AbstractTheory* atheory, Structure* structure);
+	static UnsatCoreResult extractCore(AbstractTheory* atheory, Structure* structure);
 };
