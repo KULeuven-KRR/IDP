@@ -204,6 +204,9 @@ procedure run(theory) {
 }
 
 procedure check(solutions){
+	//avoid bootstrapping code while checking (too expensive to do it over and over again)
+	stdoptions.postprocessdefs = false
+	stdoptions.splitdefs = false
 	if(shouldNotCheck~=nil) then
 		print("NOTE: solutions unchecked because too expensive!")
 		return 1;
