@@ -57,9 +57,9 @@ public:
 	const vector<Predicate*>& getMarkers() const {
 		return newpreds;
 	}
-	vector<TheoryComponent*>* getComponentsFromMarkers(const vector<DomainAtom>& pfs) const {
+	vector<TheoryComponent*> getComponentsFromMarkers(const vector<DomainAtom>& pfs) const {
 		map<DefId, vector<Rule*>> ruleinstances;
-		vector<TheoryComponent*>* core = new vector<TheoryComponent*>();
+		vector<TheoryComponent*> core;
 		stringstream outputwithparseinfo;
 		outputwithparseinfo << "The following is an unsatisfiable subset, "
 				"given that functions can map to at most one element (and exactly one if not partial) "
@@ -71,7 +71,7 @@ public:
 				auto varAndForm = marker2formula.at(pred);
 				auto var2elems = getVarInstantiation(varAndForm, pf, ss);
 				auto newform = FormulaUtils::substituteVarWithDom(varAndForm.second->cloneKeepVars(), var2elems);
-				core->push_back(newform);
+				core.push_back(newform);
 				outputwithparseinfo << "\t" << print(newform) << " instantiated from line " << newform->pi().linenumber() << ss.str() << ".\n";
 			} else if (contains(marker2rule, pred)) {
 				auto varAndForm = marker2rule.at(pred);
@@ -88,14 +88,14 @@ public:
 					outputwithparseinfo << "\t" << print(newrule) << " instantiated from line " << newrule->pi().linenumber() << ss.str() << ".\n";
 				}
 			} else {
-				core->push_back(&Gen::atom(pf.symbol, pf.args));
+				core.push_back(&Gen::atom(pf.symbol, pf.args));
 			}
 		}
 		cout << outputwithparseinfo.str();
 		for (auto id2rules : ruleinstances) {
 			auto def = new Definition();
 			def->add(id2rules.second);
-			core->push_back(def->clone());
+			core.push_back(def->clone());
 		}
 		return core;
 	}
@@ -253,7 +253,7 @@ protected:
 	}
 };
 
-vector<TheoryComponent*>* UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
+vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
 	auto intheory = dynamic_cast<Theory*>(atheory);
 	if (intheory == NULL) {
 		throw notyetimplemented("Unsatcore extraction for non first-order theories");
@@ -284,7 +284,7 @@ vector<TheoryComponent*>* UnsatCoreExtraction::extractCore(AbstractTheory* atheo
 	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { { }, am->getMarkers() });
 	if (not mxresult.unsat) {
 		cout << ">>> The given theory has models that extend the structure, so there are no unsat cores." << endl;
-		return NULL;
+		return vector<TheoryComponent*>();
 	}
 
 	cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";

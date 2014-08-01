@@ -27,10 +27,9 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		auto theory = get<0>(args);
-		auto corePtr = UnsatCoreExtraction::extractCore(theory, get<1>(args));
-		if(corePtr){
+		auto core = UnsatCoreExtraction::extractCore(theory, get<1>(args));
+		if(core.size()>0){
 			auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
-			auto core = *corePtr;
 			for(auto c: core){
 				coretheory->add(c);
 			}
