@@ -19,5 +19,5 @@ class Structure;
 
 class UnsatCoreExtraction {
 public:
-	static std::vector<TheoryComponent*> extractCore(AbstractTheory* atheory, Structure* structure);
+	static std::vector<TheoryComponent*>* extractCore(AbstractTheory* atheory, Structure* structure);
 };
