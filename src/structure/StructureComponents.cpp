@@ -853,7 +853,8 @@ void StringInternalSortIterator::operator++() {
 }
 
 const DomainElement* StringInternalSortIterator::operator*() const {
-	return createDomElem(_iter);
+	auto r = GlobalData::getGlobalDomElemFactory()->create(_iter,true);
+	return r;
 }
 
 const DomainElement* CharInternalSortIterator::operator*() const {
