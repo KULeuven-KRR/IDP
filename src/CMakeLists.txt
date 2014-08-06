@@ -9,7 +9,7 @@
 #  Celestijnenlaan 200A, B-3001 Leuven, Belgium
 #-------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 2.8) 
- 		
+
 OPTION(USEINTERACTIVE "allow user-interaction" ON)
 
 addToCXX("-std=c++0x")
