@@ -80,6 +80,11 @@ void SolverPolicy<Solver>::polAdd(Lit head, AggTsBody* body) {
 }
 
 template<typename Solver>
+void SolverPolicy<Solver>::polAdd(const GroundEquivalence& geq) {
+	adder.add(geq.head, TsType::EQ, geq.body, geq.conj);
+}
+
+template<typename Solver>
 void SolverPolicy<Solver>::polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction) {
 	adder.add(tseitin, type, rhs, conjunction);
 }

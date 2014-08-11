@@ -21,6 +21,7 @@
 #include <assert.h>
 
 #include "visitors/TheoryVisitor.hpp"
+#include "theory/ecnf.hpp"
 
 class Options;
 class Vocabulary;
@@ -38,7 +39,6 @@ class GroundAggregate;
 class GroundTranslator;
 class PredTable;
 class FOBDD;
-typedef std::vector<Lit> GroundClause;
 
 // NOTE: open and close theory have to be called externally, to guarantee the printer that it is closed correctly (and not reopened too soon)
 class Printer: public TheoryVisitor {
@@ -93,6 +93,14 @@ protected:
 	virtual void visit(const AggGroundRule*) = 0;
 	virtual void visit(const GroundAggregate*) = 0;
 	virtual void visit(const CPReification*) = 0;
+	virtual void visit(const GroundEquivalence& geq){
+		// no support for equalities yet, so we convert to clauses
+		std::vector<GroundClause> clauses;
+		geq.getClauses(clauses);
+		for(auto cl:clauses){
+			visit(cl);
+		}
+	}
 
 public:
 	virtual ~Printer(){}
@@ -125,6 +133,9 @@ public:
 	}
 	void print(const GroundClause& clause) {
 		visit(clause);
+	}
+	void print(const GroundEquivalence& geq){
+		visit(geq);
 	}
 };
 

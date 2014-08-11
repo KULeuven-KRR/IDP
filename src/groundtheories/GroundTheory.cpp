@@ -91,7 +91,7 @@ void GroundTheory<Policy>::closeTheory() {
 	}
 }
 
-template<class Policy>
+ template<class Policy>
 void GroundTheory<Policy>::add(const GroundClause& cl, bool skipfirst) {
 	bool propagates = cl.size()==1;
 	// If propagates is true, it will have been added to the grounding if necessary by addTseitinInterpretations
@@ -208,7 +208,7 @@ void GroundTheory<Policy>::add(Lit head, AggTsBody* body) {
 
 template<class Policy>
 void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body, bool conj, DefId defnr) {
-	if (type == TsType::IMPL || type == TsType::EQ) {
+	if (type == TsType::IMPL) {
 		if (conj) {
 			for (auto lit : body) {
 				add( { -head, lit }, true);
@@ -221,7 +221,7 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 			add(cl, true);
 		}
 	}
-	if (type == TsType::RIMPL || type == TsType::EQ) {
+	if (type == TsType::RIMPL) {
 		if (conj) {
 			litlist cl(body.size() + 1, head);
 			for (size_t i = 0; i < body.size(); ++i) {
@@ -237,6 +237,12 @@ void GroundTheory<Policy>::add(const Lit& head, TsType type, const litlist& body
 	if (type == TsType::RULE) {
 		Assert(defnr != getIDForUndefined());
 		add(defnr, PCGroundRule(head, conj ? RuleType::CONJ : RuleType::DISJ, body, true)); //TODO true (recursive) might not always be the case?
+	}
+	if (type ==  TsType::EQ){
+		GroundEquivalence geq(head, body, conj);
+		Policy::polAdd(geq);
+		addTseitinInterpretations(body, getIDForUndefined(), false, false);
+		notifyAtomsAdded(body.size()+1);
 	}
 }
 

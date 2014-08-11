@@ -72,6 +72,28 @@ public:
 	}
 };
 
+class GroundEquivalence{
+public:
+	const Lit head;
+	const std::vector<Lit> body;
+	const bool conj;
+	
+	GroundEquivalence(const Lit h, const std::vector<Lit>& b, const bool c):head(h),body(b),conj(c){}
+	
+	void getClauses(std::vector<GroundClause>& clauses) const{
+		clauses.clear();
+		int neg = (conj?1:-1);
+		Lit hd = neg*head;
+		clauses.push_back(GroundClause());
+		clauses[0].resize(body.size() + 1, hd);
+		for (size_t i = 0; i < body.size(); ++i) {
+			Lit b = neg*body[i];
+			clauses[0][i + 1] = -b;
+			clauses.push_back({-hd , b});
+		}
+	}
+};
+
 /********************************
  Ground aggregate formulas
  ********************************/

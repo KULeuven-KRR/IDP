@@ -24,11 +24,6 @@ struct GroundTerm;
 
 //FIXME definition numbers are passed directly to the solver. In future, solver input change might render this invalid
 
-// Enumeration used in GroundTheory::transformForAdd
-enum VIType {
-	VIT_DISJ, VIT_CONJ, VIT_SET
-};
-
 struct LazyInstantiation;
 class DelayGrounder;
 class GenerateBDDAccordingToBounds;

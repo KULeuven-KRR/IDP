@@ -72,6 +72,15 @@ void GroundPolicy::polAdd(DefId defnr, AggGroundRule* rule) {
 	_definitions.at(defnr)->addAggRule(rule->head(), rule->setnr(), rule->aggtype(), rule->lower(), rule->bound(), rule->recursive());
 }
 
+void GroundPolicy::polAdd(const GroundEquivalence& geq){
+	// no support for equalities yet, so we convert to clauses
+	std::vector<GroundClause> clauses;
+	geq.getClauses(clauses);
+	for(auto cl: clauses){
+		polAdd(cl);
+	}
+}
+
 void GroundPolicy::polAddOptimization(AggFunction /*function*/, SetId /*setid*/) {
 	throw notyetimplemented("Adding optimization to the grounding\n");
 }
