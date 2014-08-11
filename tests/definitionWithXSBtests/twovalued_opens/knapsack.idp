@@ -12,9 +12,10 @@ vocabulary V{
 	
 	Next(item):item // mapping to next in order
 	Prev(item):item // mapping to previous in order
-
-	InInitial(item)
-	AccWInitial(item):domain
+	
+// CURRENTLY DISABLED THESE SYMBOLS (WHICH ARE DEFINED BY RECURSION OVER AGGREGATES)
+// 	InInitial(item)
+// 	AccWInitial(item):domain
 }
 
 theory T:V{
