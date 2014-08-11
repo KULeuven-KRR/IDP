@@ -88,6 +88,7 @@ string PrologProgram::getFacts() {
 	}
 
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
+		std::cout << "HANDLIN SORT: " << toString(*it) << "\n";
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
 			SortTable* st = _structure->inter((*it));
 			if (not st->isRange() && st->finite()) {
@@ -95,6 +96,7 @@ string PrologProgram::getFacts() {
 				_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
 				auto factname = _translator->to_prolog_sortname((*it));
 				for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
+
 					output << factname << "(" << _translator->to_prolog_term((*tuple).front()) << ").\n";
 				}
 			}
@@ -111,10 +113,12 @@ string PrologProgram::getFacts() {
 		}
 
 		auto isSort = false;
-		if(symbol->nrSorts() == 1 &&
-				symbol->sorts()[0]->pred() == symbol) {
-			isSort = true;
-			continue;
+		// TODO: eens dat de _sorts fatsoenlijk gezet zijn, kan er een simpelere check komen
+		for (auto sort : _sorts) {
+			if (sort->pred() == symbol) {
+				isSort = true;
+				continue;
+			}
 		}
 
 		if (isSort) {
