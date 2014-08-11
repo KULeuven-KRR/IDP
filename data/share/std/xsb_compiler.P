@@ -155,6 +155,15 @@ ixnat(X) :-
     var(X),
     throw_infinite_type_generation_error.
 
+% TODO: leaves through too much!
+ixchar(X) :- 
+    nonvar(X),
+    atomic(X). % Possible todo - maintain strings during translation and check for is_charlist(X,1) (of size 1) here
+    
+ixchar(X) :- 
+    var(X),
+    throw_infinite_type_generation_error.
+    
 ixstring(X) :- 
     nonvar(X),
     atomic(X). % Possible todo - maintain strings during translation and check for is_charlist/1 here

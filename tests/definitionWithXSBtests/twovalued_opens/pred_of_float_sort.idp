@@ -1,0 +1,16 @@
+vocabulary V {
+  type x isa float
+  
+  P(x)
+  Q(x)
+}
+
+theory T : V {
+  {
+    P(i) <- Q(i) & float(i).
+  }
+}
+structure S : V {
+  x = {1.7; 3.3; 42}
+  Q = {1.7; 42}
+}

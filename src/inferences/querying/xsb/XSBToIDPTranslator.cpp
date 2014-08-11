@@ -56,6 +56,11 @@ bool XSBToIDPTranslator::isXSBNumber(std::string str) {
 // predicates in data/share/std/xsb_compiler.P, accompanied of the
 // IDPXSB_PREFIX.
 bool XSBToIDPTranslator::isXSBCompilerSupported(const PFSymbol* symbol) {
+	for (auto name2sort : Vocabulary::std()->getSorts()) {
+		if (symbol == name2sort.second->pred()) {
+			return true;
+		}
+	}
 	return is(symbol,STDFUNC::ABS);
 }
 bool XSBToIDPTranslator::isXSBCompilerSupported(const Sort* sort) {
@@ -66,8 +71,10 @@ bool XSBToIDPTranslator::isXSBCompilerSupported(const Sort* sort) {
 }
 
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
-	if (is(symbol,STDFUNC::ABS)) {
-		return get_abs_term_name();
+	if (isXSBCompilerSupported(symbol)) {
+		stringstream ss;
+		ss << get_idp_prefix() << symbol->nameNoArity();
+		return ss.str();
 	}
 	if (is(symbol,STDPRED::EQ) || is(symbol,STDPRED::GT) || is(symbol,STDPRED::LT)) {
 		// When translating to XSB, it does not matter for comparison symbols which
@@ -280,12 +287,6 @@ string XSBToIDPTranslator::get_twovalued_findall_term_name() {
 string XSBToIDPTranslator::get_threevalued_findall_term_name() {
 	std::stringstream ss;
 	ss << get_idp_prefix() << "threeval_findall";
-	return ss.str();
-}
-
-string XSBToIDPTranslator::get_abs_term_name() {
-	std::stringstream ss;
-	ss << get_idp_prefix() << "abs";
 	return ss.str();
 }
 

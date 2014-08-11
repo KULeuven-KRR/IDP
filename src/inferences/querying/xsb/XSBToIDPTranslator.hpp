@@ -71,7 +71,6 @@ public:
 	static std::string get_forall_term_name();
 	static std::string get_twovalued_findall_term_name();
 	static std::string get_threevalued_findall_term_name();
-	static std::string get_abs_term_name();
 	static std::string get_division_term_name();
 	static std::string get_exponential_term_name();
 

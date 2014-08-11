@@ -81,6 +81,12 @@ string PrologProgram::getRanges() {
 
 string PrologProgram::getFacts() {
 	stringstream output;
+
+	// Always consider built-in sorts
+	for (auto name2sort : Vocabulary::std()->getSorts()) {
+		_sorts.insert(name2sort.second);
+	}
+
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
 			SortTable* st = _structure->inter((*it));
@@ -98,16 +104,17 @@ string PrologProgram::getFacts() {
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto symbol : openSymbols) {
+		Assert(isa<Predicate*>(symbol));
 		if (_translator->isXSBBuiltIn(symbol->nameNoArity()) ||
 				_translator->isXSBCompilerSupported(symbol)) {
 			continue;
 		}
 
 		auto isSort = false;
-		for (auto sort : _sorts) {
-			if (sort->pred() == symbol)
-				isSort = true;
-				continue;
+		if(symbol->nrSorts() == 1 &&
+				symbol->sorts()[0]->pred() == symbol) {
+			isSort = true;
+			continue;
 		}
 
 		if (isSort) {

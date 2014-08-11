@@ -1,0 +1,16 @@
+vocabulary V {
+  type x isa string
+  
+  P(x)
+  Q(x)
+}
+
+theory T : V {
+  {
+    P(i) <- Q(i) & string(i).
+  }
+}
+structure S : V {
+  x = {"foo"; "bar"}
+  Q = {"foo"}
+}
