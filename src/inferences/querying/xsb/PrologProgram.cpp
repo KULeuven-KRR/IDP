@@ -23,8 +23,6 @@
 
 using namespace std;
 
-
-
 void PrologProgram::setDefinition(Definition* d) {
 	_definition = d;
 
@@ -88,7 +86,6 @@ string PrologProgram::getFacts() {
 	}
 
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
-		std::cout << "HANDLIN SORT: " << toString(*it) << "\n";
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
 			SortTable* st = _structure->inter((*it));
 			if (not st->isRange() && st->finite()) {
@@ -112,21 +109,10 @@ string PrologProgram::getFacts() {
 			continue;
 		}
 
-		auto isSort = false;
-		// TODO: eens dat de _sorts fatsoenlijk gezet zijn, kan er een simpelere check komen
-		for (auto sort : _sorts) {
-			if (sort->pred() == symbol) {
-				isSort = true;
-				continue;
-			}
+		if (not hasElem(_sorts, [&](const Sort* sort){return sort->pred() == symbol;}) ) {
+			_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
+			printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
 		}
-
-		if (isSort) {
-			continue;
-		}
-
-		_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
-		printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
 	}
 	return output.str();
 }
