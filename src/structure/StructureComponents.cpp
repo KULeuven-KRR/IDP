@@ -552,6 +552,9 @@ ProcInternalTableIterator::ProcInternalTableIterator(const InternalPredTable* p,
 		vsi2.push_back(univ.tables()[n]->sortBegin());
 	}
 	_curr = TableIterator(new CartesianInternalTableIterator(vsi1, vsi2, true));
+	if(_curr.isAtEnd()){
+		return;
+	}
 	if (!_predicate->contains(*_curr, _univ))
 		operator++();
 }

@@ -1,0 +1,26 @@
+vocabulary V {
+    type t //extern vocabulary types
+    P(t)
+}
+
+theory T : V {
+
+}
+
+procedure isP(a){
+    print("hello")
+    return false
+}
+
+structure S : V {
+        t={} 
+    P = procedure isP
+   
+}
+
+----------- Main
+include <mx>
+procedure main() {
+	print("OK")
+	return 1
+}
