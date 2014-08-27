@@ -28,13 +28,17 @@ namespace stdspace{
 			extern vocabulary basicdata
 			depends(def, symbol,symbol,sign) //means: symbol depends pos/neg on second symbol (directly or indirectly)
 			dependsAny(def, symbol,symbol) //means: symbol depends on second symbol
+			definedin(symbol,def)
 		}
 		theory dependency: dependencyGraph{
+			{	
+				definedin(p,d) <- ?r: in(r) = d & defines(r) = p.
+			}
 			{
 				depends(d, p, q, s) <- ?r: in(r) = d & defines(r) = p & inbody(r,q,s).
-				depends(d, p, q, s) <- depends(d,p,r,s) & depends(d,r,q,pos).
-				depends(d, p, q, s) <- depends(d,p,r,pos) & depends(d,r,q,s).
-				depends(d, p, q, pos) <- depends(d,p,r,s) & depends(d,r,q,s).
+				depends(d, p, q, s) <- definedin(p,d) & definedin(q,d) & depends(d,p,r,s) & depends(d,r,q,pos).
+				depends(d, p, q, s) <- definedin(p,d) & definedin(q,d) &depends(d,p,r,pos) & depends(d,r,q,s).
+				depends(d, p, q, pos) <- definedin(p,d) & definedin(q,d) & depends(d,p,r,s) & depends(d,r,q,s).
 			}
 			{
 				dependsAny(d,p,q) <- depends(d,p,q,s).
