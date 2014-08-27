@@ -18,7 +18,7 @@ procedure main() {
 	stdoptions.trace = true
 	solution, trace = allmodels(T,S)
 	print(tabletostring(trace))
-	if (#trace==7 and 
+	if (#trace>5 and #trace<10 and
 		trace[1]["type"]=="assign" and 
 		trace[1]["dl"]==1) then
 			
