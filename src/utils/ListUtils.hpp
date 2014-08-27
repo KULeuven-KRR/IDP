@@ -91,6 +91,22 @@ bool contains(const std::vector<Elem>& l, const Elem& e) {
 	return false;
 }
 
+
+
+/**
+ * Check whether the container has an element that returns true for the function
+ */
+template<class List, class FunctionFromElementToBool>
+bool hasElem(const List& l, const FunctionFromElementToBool& func) {
+	for (auto el : l) {
+		if (func(el)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 /**
  * Returns true if the contents of the first list are a subset or equal to the contents of the second
  */
