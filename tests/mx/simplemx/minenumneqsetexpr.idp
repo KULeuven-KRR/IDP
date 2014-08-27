@@ -15,3 +15,7 @@ structure S:V{
 procedure getExpectedNbOfModels(){
 	return 12
 }
+
+procedure doNotPrint(){
+	return true
+}
