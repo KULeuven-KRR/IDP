@@ -172,7 +172,10 @@ procedure mxCardFO(){
 
 procedure run(theory) {
 	if(allowed~=nil) then
-		if (not allowed()) then return 1; end
+		if (not allowed()) then 
+			print("NOT running this test in this context!")
+			return 1
+		end
 	end
 	
 	stdoptions.verbosity.solving=0
