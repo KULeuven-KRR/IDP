@@ -103,7 +103,7 @@ string PrologProgram::getFacts() {
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto symbol : openSymbols) {
-		Assert(isa<Predicate*>(symbol));
+		Assert(isa<Predicate>(*symbol));
 		if (_translator->isXSBBuiltIn(symbol->nameNoArity()) ||
 				_translator->isXSBCompilerSupported(symbol)) {
 			continue;
