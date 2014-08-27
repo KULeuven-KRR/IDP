@@ -26,10 +26,18 @@ void runTests2(const string& instancefile, const std::string& command="") {
 	string testfile2(getTestDirectory() + "printtest2.idp");
 	cerr << "Testing " << instancefile << "\n";
 	Status result = Status::FAIL;
+
+	ASSERT_NO_THROW(result=test( {instancefile, testfile}, "shouldPrint()"););
+	if(result == Status::FAIL){
+		cerr << "Ignoring this file\n";
+		return;
+	}
+
 	ASSERT_NO_THROW(result=test( {instancefile, testfile}, command););
 	ASSERT_EQ(Status::SUCCESS, result);
 	ASSERT_NO_THROW( result = test( {getTestDirectory() +"modelexpansion.idp", testfile2, "tmp.idp"}, "mxwithcp()"););
 	ASSERT_EQ(Status::SUCCESS, result);
+
 }
 
 
