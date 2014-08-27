@@ -15,3 +15,7 @@ theory T: V {
 structure S: V {
     T1={1..100000000}
 }
+
+procedure shouldNotCheck(){
+	return true
+}

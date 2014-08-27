@@ -35,7 +35,7 @@ class ReplaceVariableUsingEqualities: public TheoryMutatingVisitor {
 private:
 	std::map<PredForm*, Formula*> atomReplace;
 	std::map<Variable*, Term*> replacements;
-	varset removingvars, allowedvars;
+	varset removingvars;
 	uint replaced;
 
 public:
@@ -46,7 +46,6 @@ public:
 			atomReplace.clear();
 			replacements.clear();
 			removingvars.clear();
-			allowedvars.clear();
 			t = t->accept(this);
 		} while (replaced > 0);
 		return t;
@@ -71,23 +70,18 @@ protected:
 
 	Formula* visit(QuantForm* qf) {
 		auto oldrepl = replacements;
-		auto oldvars = allowedvars;
-		allowedvars.insert(qf->quantVars().cbegin(), qf->quantVars().cend());
-
-		checkAndAddReplacements(qf->subformula(), allowedvars, not qf->isUniv());
+		checkAndAddReplacements(qf->subformula(), qf->quantVars(), not qf->isUniv());
 		auto result = traverse(qf);
-
 		replacements = oldrepl;
-		allowedvars = oldvars;
 		return result;
 	}
 
 	QuantSetExpr* visit(QuantSetExpr* set) {
 		auto oldrepl = replacements;
 		auto oldrem = removingvars;
-
 		checkAndAddReplacements(set->getCondition(), set->quantVars(), true);
 		auto result = traverse(set);
+
 		auto quants = result->quantVars();
 		for (auto var : removingvars) {
 			quants.erase(var);
@@ -126,7 +120,7 @@ protected:
 		}
 	}
 
-	bool canReplaceFirstWithSecond(Term* left, Term* right, PredForm* pf, bool hasToBeEquality){
+	bool canReplaceFirstWithSecond(Term* left, Term* right, PredForm* pf, bool hasToBeEquality, const varset& allowedvars){
 		auto vt = dynamic_cast<VarTerm*>(left);
 		if (vt == NULL
 				|| not contains(allowedvars, vt->var())
@@ -158,10 +152,10 @@ protected:
 			}
 			auto left = pf->subterms()[0];
 			auto right = pf->subterms()[1];
-			if(canReplaceFirstWithSecond(right, left, pf, needeq)){
+			if(canReplaceFirstWithSecond(right, left, pf, needeq, allowedvars)){
 				swap(left,right);
 			}
-			if(not canReplaceFirstWithSecond(left, right, pf, needeq)){
+			if(not canReplaceFirstWithSecond(left, right, pf, needeq, allowedvars)){
 				continue;
 			}
 

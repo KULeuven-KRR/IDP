@@ -12,9 +12,10 @@ vocabulary V{
 	
 	Next(item):item // mapping to next in order
 	Prev(item):item // mapping to previous in order
-
-	InInitial(item)
-	AccWInitial(item):domain
+	
+// CURRENTLY DISABLED THESE SYMBOLS (WHICH ARE DEFINED BY RECURSION OVER AGGREGATES)
+// 	InInitial(item)
+// 	AccWInitial(item):domain
 }
 
 theory T:V{
@@ -40,12 +41,13 @@ theory T:V{
 		Prev(Smallest)=Smallest.
 	}
 	
+	/* CURRENTLY DISABLED THIS DEFINITION (WHICH HAS RECURSION OVER AGGREGATES)
 	// Calculating initial upper bound
 	{ 
 		InInitial(Smallest) <- MaxW >= W(Smallest).
 		InInitial(i) <- i~= Smallest & MaxW >= W(i)+AccWInitial(Prev(i)). 
 		AccWInitial(i)=sum{j:(Smaller(j,i) | i=j) & InInitial(j):W(j)}.
-	}
+	}*/
 }
 
 structure S:V{

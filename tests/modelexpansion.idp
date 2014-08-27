@@ -204,6 +204,9 @@ procedure run(theory) {
 }
 
 procedure check(solutions){
+	//avoid bootstrapping code while checking (too expensive to do it over and over again)
+	stdoptions.postprocessdefs = false
+	stdoptions.splitdefs = false
 	if(shouldNotCheck~=nil) then
 		print("NOTE: solutions unchecked because too expensive!")
 		return 1;
@@ -224,6 +227,10 @@ procedure check(solutions){
 	return 1
 }
 procedure checkmodelsandnonmodels() {
+	if(shouldNotCheck~=nil) then
+		print("NOTE: models unchecked because too expensive!")
+		return 1;
+	end
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.timeout=5
@@ -258,7 +265,6 @@ procedure nbmodelsOptionVerification() {
 	if getExpectedNbOfModels()<2 then return 1; end
 	stdoptions.nbmodels = getExpectedNbOfModels()-1
 	solutions = modelexpand(T, S, Vout)
-	print(#solutions..getExpectedNbOfModels()-1)
 	if(#solutions==getExpectedNbOfModels()-1) then
 		return 1
 	else 

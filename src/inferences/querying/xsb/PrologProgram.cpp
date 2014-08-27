@@ -23,8 +23,6 @@
 
 using namespace std;
 
-
-
 void PrologProgram::setDefinition(Definition* d) {
 	_definition = d;
 
@@ -81,6 +79,12 @@ string PrologProgram::getRanges() {
 
 string PrologProgram::getFacts() {
 	stringstream output;
+
+	// Always consider built-in sorts
+	for (auto name2sort : Vocabulary::std()->getSorts()) {
+		_sorts.insert(name2sort.second);
+	}
+
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
 			SortTable* st = _structure->inter((*it));
@@ -89,6 +93,7 @@ string PrologProgram::getFacts() {
 				_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
 				auto factname = _translator->to_prolog_sortname((*it));
 				for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
+
 					output << factname << "(" << _translator->to_prolog_term((*tuple).front()) << ").\n";
 				}
 			}
@@ -98,24 +103,16 @@ string PrologProgram::getFacts() {
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto symbol : openSymbols) {
+		Assert(isa<Predicate*>(symbol));
 		if (_translator->isXSBBuiltIn(symbol->nameNoArity()) ||
 				_translator->isXSBCompilerSupported(symbol)) {
 			continue;
 		}
 
-		auto isSort = false;
-		for (auto sort : _sorts) {
-			if (sort->pred() == symbol)
-				isSort = true;
-				continue;
+		if (not hasElem(_sorts, [&](const Sort* sort){return sort->pred() == symbol;}) ) {
+			_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
+			printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
 		}
-
-		if (isSort) {
-			continue;
-		}
-
-		_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
-		printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
 	}
 	return output.str();
 }

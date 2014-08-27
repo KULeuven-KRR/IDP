@@ -19,12 +19,8 @@ namespace packing {
 	}
 
 	procedure test(){
-		print(A)
-		print(B)
-		print(C)
 		if(D == nil) then return 0 end
 		if(E == nil) then return 0 end
-		print(F)
 		return 1
 	}
 }

@@ -580,6 +580,12 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 		return true;
 	}
 
+	// When parsing (throwErrors = true), don't make this cheap check, because
+	// the parser will have created a two-valued function table
+	if(not throwErrors and fi->approxTwoValued()){
+		return true;
+	}
+
 	// Check whether each input tuple maps to less than two output tuples
 	auto pt = fi->graphInter();
 	auto ct = pt->ct();

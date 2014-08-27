@@ -25,17 +25,28 @@ public:
 	}
 
 	void addToSortTable(SortTable* toAddTo, SortTable* toGetFrom) const {
-		for (auto it = toGetFrom->sortBegin(); not it.isAtEnd(); ++it) {
-			toAddTo->add(*it);
+		if (toAddTo->internTable() != toGetFrom->internTable()) {
+			for (auto it = toGetFrom->sortBegin(); not it.isAtEnd(); ++it) {
+				toAddTo->add(*it);
+			}
 		}
 	}
 
 	void addToPredInter(PredInter* toAddTo, PredInter* toGetFrom) const {
-		for (auto it = toGetFrom->ct()->begin(); not it.isAtEnd(); ++it) {
-			toAddTo->makeTrueAtLeast(*it);
+		auto toGetFromCT = toGetFrom->ct();
+		auto toAddToCT = toAddTo->ct();
+		if (not toGetFromCT->approxEqual(toAddToCT)) {
+			for (auto it = toGetFrom->ct()->begin(); not it.isAtEnd(); ++it) {
+				toAddTo->makeTrueAtLeast(*it);
+			}
 		}
-		for (auto it = toGetFrom->cf()->begin(); not it.isAtEnd(); ++it) {
-			toAddTo->makeFalseAtLeast(*it);
+
+		auto toGetFromCF = toGetFrom->cf();
+		auto toAddToCF = toAddTo->cf();
+		if (not toGetFromCF->approxEqual(toAddToCF)) {
+			for (auto it = toGetFrom->cf()->begin(); not it.isAtEnd(); ++it) {
+				toAddTo->makeFalseAtLeast(*it);
+			}
 		}
 	}
 

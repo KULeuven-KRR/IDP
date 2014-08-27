@@ -119,6 +119,9 @@ if(${BUILDTESTS})
 		#IF ADDING TESTS HERE, ALSO ADD THEM BELOW THE ELSE
 		addMXTest(bounds bounds.cpp) 
 		addMXTest(boundsNoLUP boundsNoLUP.cpp)
+		if(WITHXSB)
+		    addMXTest(xsbtest definitionWithXSBtests.cpp)
+		endif()
 		addMXTest(satbounds satbounds.cpp) 
 		addMXTest(satcp satcp.cpp)
 		addMXTest(cp cp.cpp) 
@@ -133,10 +136,6 @@ if(${BUILDTESTS})
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
         addMXTest(focard focard.cpp)
-		if(WITHXSB)
-		    addMXTest(xsbtest definitionWithXSBtests.cpp)
-			addMXTest(approxdefs approxdefsmx.cpp)
-		endif()
 
 		add_executable(slow ${MXTESTS}/slow.cpp ${MXINCLUDES})
 		addTest(slow)
@@ -157,7 +156,6 @@ if(${BUILDTESTS})
 			mxtests/bounds.cpp
 			if(WITHXSB)
 				mxtests/xsbmx.cpp
-				mxtests/approxdefsmx.cpp
 			endif()
 			mxtests/nobounds.cpp
 			mxtests/boundsNoLUP.cpp
@@ -173,9 +171,6 @@ if(${BUILDTESTS})
 			mxtests/satbounds.cpp
 			mxtests/satcp.cpp
 		)
-		if(WITHXSB)
-		    set(LONGERTESTS "${LONGERTESTS} mxtests/xsbmx.cpp")
-        endif()
         
         if(SPASS)
             set(LONGERTESTS "${LONGERTESTS} EntailmentTests.cpp")

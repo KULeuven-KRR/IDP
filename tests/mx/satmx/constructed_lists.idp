@@ -15,3 +15,7 @@ theory T: V {
 structure S: V {
 	arg = {1..100}
 }
+
+procedure shouldNotCheck(){
+	return true
+}

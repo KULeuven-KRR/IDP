@@ -117,7 +117,26 @@ void LTCTheorySplitter::createTheories(const Theory* theo, bool single_state_inv
 				//This is dangerous in case that SAME defintion also contains rules of the form !t: P(next(t)) <- psi(t).
 				//since only part of  the rules defining P will end up in the same definition!!!!
 				//Solution: explicitely split this rules in two, one with t=Start and one with t next t
-				handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar, true);
+
+				//NOTE: in case we are not in the special case, we do not wish to do this simplifications, since this might reduce the
+				//number of provable invariants
+				bool specialcase = false;
+				for(auto otherRule: def->rules()){
+					if(otherRule == rule){
+						continue;
+					}
+					auto otherHead = otherRule->head();
+					auto symbol = otherHead->symbol();
+					if(symbol != head->symbol() ){
+						continue;
+					}
+					auto otherInfo = info(otherHead);
+					if(otherInfo.containsNext){
+						specialcase=true;
+						break;
+					}
+				}
+				handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar, specialcase);
 
 			} else{
 				handleAndAddToConstruct(rule, initDef, biStateDef, single_state_invar);
