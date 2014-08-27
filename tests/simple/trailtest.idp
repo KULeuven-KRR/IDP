@@ -20,7 +20,7 @@ procedure main() {
 	print(tabletostring(trace))
 	if (#trace>5 and #trace<10 and
 		trace[1]["type"]=="assign" and 
-		trace[1]["dl"]==1) then
+		trace[1]["dl"]==0) then
 			
 		return 1
 	else 
