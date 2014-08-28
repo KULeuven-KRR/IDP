@@ -29,6 +29,7 @@ MetaRepr toMeta(Theory* theory) {
 	auto defnamespace = getGlobal()->getGlobalNamespace()->subspace("stdspace")->subspace("meta");
 	Assert(defnamespace != NULL);
 	auto voc = defnamespace->vocabulary("metavoc");
+	Assert(voc != NULL);
 	auto str = new Structure(createName(), voc, { });
 
 	UniqueStringNames<PFSymbol*> symbols;

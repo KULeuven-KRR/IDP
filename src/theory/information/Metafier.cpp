@@ -44,12 +44,11 @@ void addSymbol(PFSymbol* s, MetaInters& m, UniqueStringNames<PFSymbol*>& symbols
 	} else {
 		if (s->nrSorts() == 1 && s->sorts()[0]->pred() == s) {
 			auto sort = s->sorts()[0];
-			//auto sortd = createDomElem(unSorts.getUnique(sort));
 			for (auto p : sort->parents()) {
 				m.subtypeof->makeTrueExactly( { symbol, toDom(p, symbols) }, true);
 			}
 
-			if (sort->isConstructed()) { // TODO constructed types
+			if (sort->isConstructed()) {
 				for (auto f : sort->getConstructors()) {
 					m.constrFrom->makeTrueExactly( { symbol, toDom(f, symbols) }, true);
 					addSymbol(f, m, symbols);

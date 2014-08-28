@@ -106,7 +106,7 @@ UniqueStringNames<PFSymbol*> symbols;
 class ToMetaInference: public TheoryBase {
 public:
 	ToMetaInference()
-			: TheoryBase("tometa", "TODO.") {
+			: TheoryBase("tometa", "Transforms the given theory into a structure over the meta vocabulary.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 
@@ -120,7 +120,7 @@ public:
 class FromMetaInference: public TypedInference<LIST(Vocabulary*, Predicate*, Structure*)> {
 public:
 	FromMetaInference()
-			: TypedInference<LIST(Vocabulary*, Predicate*, Structure*)>("frommeta", "TODO.") {
+			: TypedInference<LIST(Vocabulary*, Predicate*, Structure*)>("frommeta", "Takes as input 1) a vocabulary V 2) the predicate symbol 'sentence' from the meta vocabulary and 3) a structure over the meta vocabulary. This returns the theory represented by the given structure. IMPORTANT: the structure you give as input should be obtained by (transforming the result of) the tometa inference. In between the tometa call and this call, there can currently be no other tometa calls.") {
 		setNameSpace(getTheoryNamespaceName());
 	}
 

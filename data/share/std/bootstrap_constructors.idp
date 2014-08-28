@@ -1,3 +1,9 @@
+//This file contains a second vocabulary for bootstrapping, using the approach with constructor functions. 
+//It is currently not used in code and not yet tested for completeness. Hence all contents in this file are 
+//very much "work in progress".
+
+
+
 namespace stdspace{
 	namespace meta{
 		vocabulary metavoc{

@@ -19,8 +19,10 @@ namespace stdspace{
 			
 			subtypeOf(Sort,Sort)
 			
-			
-			type Form
+			//The type "Form" represents all theory components: sentences, definitions, formulas,... 
+			//The name "Form" is used for possible future extensions where we allow definitions to occur anywhere in a formula.			
+			type Form 
+
 			
 			type SingleSubForm isa Form
 			subForm(SingleSubForm):Form
