@@ -41,7 +41,7 @@ struct MetaInters {
 	SortTable *functerms, *domterms, *varterms, *aggterms, *quantsets, *enumsets;
 	FuncInter *singleform, *qtype, *btype, *eqleft, *eqright, *asymbol, *aterms, *termsort, *domelem, *fsymbol, *fterms, *varelem, *aggfunc, *aggset, *rhead,
 			*rbody, *setform, *setterm;
-	PredInter *qvars, *rvars, *bsubforms, *rof, *setof, *setvars, *sentences;
+	PredInter *qvars, *rvars, *bsubforms, *ruleof, *setof, *setvars, *sentences;
 
 	const DomainElement *conj, *disj, *forall, *exists;
 	const DomainElement *sum, *min, *max, *prod, *card;
@@ -114,7 +114,7 @@ struct MetaInters {
 
 		rhead = str->inter(voc->func("head/1"));
 		rbody = str->inter(voc->func("body/1"));
-		rof = str->inter(voc->pred("ruleOf/2"));
+		ruleof = str->inter(voc->pred("ruleOf/2"));
 		rvars = str->inter(voc->pred("ruleVars/2"));
 
 		setform = str->inter(voc->func("setForm/1"));
@@ -228,7 +228,7 @@ public:
 		for (auto i = m.setof->ct()->begin(); not i.isAtEnd(); ++i) {
 			es2qsets[(*i)[1]].push_back((*i)[0]);
 		}
-		for (auto i = m.rof->ct()->begin(); not i.isAtEnd(); ++i) {
+		for (auto i = m.ruleof->ct()->begin(); not i.isAtEnd(); ++i) {
 			def2rules[(*i)[1]].push_back((*i)[0]);
 		}
 	}

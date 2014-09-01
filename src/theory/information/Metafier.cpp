@@ -191,7 +191,7 @@ void Metafier::visit(const Definition* d) {
 		ids.clear();
 		r->accept(this);
 		Assert(ids.size() == 1);
-		m.rof->makeTrueExactly( { ids.front(), id }, true);
+		m.ruleof->makeTrueExactly( { ids.front(), id }, true);
 	}
 	CLOSE
 }
