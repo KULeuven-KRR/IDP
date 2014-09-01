@@ -1,0 +1,95 @@
+/**
+* This file contains the vocabulary used for meta-representation of IDP theories
+* Do not adapt this file unless you know what you're doing
+*/
+
+namespace stdspace{
+	namespace meta{
+		vocabulary metavoc{
+			type Index isa nat // Pos 0 (ZERO) is first argument 
+			
+			type Symbol // Unique nb + orig name
+			type Pred isa Symbol
+			type Sort isa Pred
+			type Func isa Symbol
+			type Var
+			type Dom
+			arity(Symbol):Index // TODO allow reading in as tuples
+			name(Symbol):string
+			isPartial(Func)
+			constructedFrom(Sort, Func)
+			partial sort(Symbol, Index):Sort
+			outputSort(Func):Sort
+			varSort(Var):Sort
+			
+			subtypeOf(Sort,Sort)
+			
+			//The type "Form" represents all theory components: sentences, definitions, formulas,... 
+			//The name "Form" is used for possible future extensions where we allow definitions to occur anywhere in a formula.			
+			type Form 
+
+			
+			type SingleSubForm isa Form
+			subForm(SingleSubForm):Form
+			type Negation isa SingleSubForm
+			type Quant isa SingleSubForm
+			type QT constructed from { exists, forall }
+			quantType(Quant): QT
+			quantVars(Quant,Var)
+			
+			type BoolForm isa Form
+			subForms(BoolForm, Form)
+			type BT constructed from { conj, disj }
+			boolType(BoolForm): BT
+			
+			type Equiv isa Form
+			left(Equiv):Form
+			right(Equiv):Form
+			
+			type Atom isa Form
+			aSymbol(Atom): Symbol
+			
+			type Term
+			partial aTerms(Atom,Index):Term			
+			
+			termSort(Term):Sort
+			
+			type DomT isa Term
+			dom(DomT):Dom
+			
+			type FuncT isa Term
+			fSymbol(FuncT): Symbol
+			partial fTerms(FuncT,Index):Term
+			
+			type VarT isa Term
+			var(VarT):Var
+			
+			type AggT isa Term
+			type AF constructed from { card, sum, min, max, prod}
+			aggFunc(AggT):AF
+									
+			
+			type Rule
+			head(Rule): Form
+			body(Rule): Form
+			type Definition isa Form
+			ruleOf(Rule, Definition)
+			ruleVars(Rule,Var)
+			
+			
+			type Set
+			
+			type QuantSet isa Set
+			setForm(QuantSet):Form
+			setVars(QuantSet, Var)
+			setTerm(QuantSet):Term
+			
+			type EnumSet isa Set
+			setOf(QuantSet, EnumSet)
+			
+			aggSet(AggT):EnumSet		
+			
+			sentence(Form)
+		}
+	}
+}

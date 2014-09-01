@@ -3114,7 +3114,7 @@ void PredTable::setTable(InternalPredTable* table) {
 	_table = table;
 }
 
-void PredTable::add(const ElementTuple& tuple) {
+void PredTable::add(const ElementTuple& tuple, bool) {
 	Assert(arity() == tuple.size());
 	if (_table->contains(tuple, _universe)) {
 		return;
@@ -3443,7 +3443,7 @@ void SortTable::internTable(InternalSortTable* table) {
 	_table->incrementRef();
 }
 
-void SortTable::add(const ElementTuple& tuple) {
+void SortTable::add(const ElementTuple& tuple, bool) {
 	if (_table->contains(tuple)) {
 		return;
 	}
@@ -3498,8 +3498,8 @@ FuncTable::~FuncTable() {
 	_table->decrementRef();
 }
 
-void FuncTable::add(const ElementTuple& tuple) {
-	if (_table->contains(tuple) || not _universe.contains(tuple)) {
+void FuncTable::add(const ElementTuple& tuple, bool ignoresortsortchecks) {
+	if (_table->contains(tuple) || (not ignoresortsortchecks && not _universe.contains(tuple))) {
 		return;
 	}
 	InternalFuncTable* temp = _table;
@@ -4078,11 +4078,11 @@ void FuncInter::materialize() {
 	}
 }
 
-void FuncInter::add(const ElementTuple& tuple){
+void FuncInter::add(const ElementTuple& tuple, bool ignoresortchecks){
 	if(_functable!=NULL){
-		_functable->add(tuple);
+		_functable->add(tuple, ignoresortchecks);
 	}else{
-		_graphinter->makeTrueAtLeast(tuple, true);
+		_graphinter->makeTrueAtLeast(tuple, ignoresortchecks);
 	}
 }
 

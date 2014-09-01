@@ -1,0 +1,27 @@
+vocabulary V{
+	type X isa int
+	type Y isa X
+	P(X)
+	Q(X, Y)
+	f(X):X
+	partial c:X
+	type cc constructed from { a, f(X) }
+}
+theory T:V{
+	1 < c < 10.
+	!x: ?y: P(y) | (Q(x,f(c)) & P(1)).
+	{
+		f(x)=z <- Q(x,z) & f(c)=1.
+	}
+	P(x) <=> ~f(x)=x.
+	P(sum{x y: Q(x,y) : x+y}).
+}
+
+procedure main(){
+	print(T)
+	metastruc = tometa(T)
+	print(metastruc)
+	mv = getvocabulary(metastruc)
+	backT = frommeta(V, mv::sentence, metastruc)
+	print(backT)
+}

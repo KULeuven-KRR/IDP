@@ -1,0 +1,66 @@
+//This file contains a second vocabulary for bootstrapping, using the approach with constructor functions. 
+//It is currently not used in code and not yet tested for completeness. Hence all contents in this file are 
+//very much "work in progress".
+
+
+
+namespace stdspace{
+	namespace meta{
+		vocabulary metavoc{
+			type Index isa nat // Pos 0 (ZERO) is first argument 
+			
+			type Symbol // Unique nb + orig name
+			type Pred isa Symbol
+			type Sort isa Pred
+			type Func isa Symbol
+			type Var
+			type Dom
+			arity(Symbol):Index // TODO allow reading in as tuples
+			name(Symbol):string
+			isPartial(Func)
+			constructedFrom(Sort, Func)
+			partial sort(Symbol, Index):Sort
+			outputSort(Func):Sort
+			
+			subtypeOf(Sort,Sort)
+			
+			type AggFunc constructed from { card, sum, min, max, prod}
+			type formKind constructed from { conj, disj, forall, exists, def, neg, equiv, atom }
+			type termKind constructed from { dom, func, var, agg }
+			
+			type Form
+			type Term
+			Tkind(Term):termKind
+			Fkind(Form):formKind
+			Tsort(Term):Sort
+			Tvars(Term,Var)
+			Fvars(Form,Var)
+			partial Tagg(Term):AggFunc
+			partial Tterms(Term,Index):Term
+			partial Fforms(Form,Index):Form
+			partial Fterms(Form,Index):Term
+
+			partial Fsymbol(Form): Symbol
+			partial Tsymbol(Term): Symbol
+			partial Tdom(Term):Dom
+			
+			type Rule
+			partial Rhead(Rule): Form
+			partial Rbody(Rule): Form
+			Drules(Form, Rule)
+			Rvars(Rule,Var)
+			
+			type Set
+			partial Sform(Set):Form
+			partial Sterm(Set):Term
+			Svars(Set, Var)
+			Ssets(Set, Set)
+			partial Tset(Term):Set
+			
+			sentence(Form)
+			
+			// TODO subtypes instead of constructors?
+			// TODO other solution than partials?
+		}
+	}
+}

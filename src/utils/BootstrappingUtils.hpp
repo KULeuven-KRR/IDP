@@ -10,14 +10,15 @@
  ****************************************************************************/
 #pragma once
 
+#include "UniqueNames.hpp"
+
 class Structure;
 class Theory;
-template<class T>
-class UniqueNames;
 class Definition;
 class Rule;
 class PFSymbol;
 class Options;
+class Sort;
 
 namespace BootstrappingUtils {
 	/**
@@ -30,5 +31,18 @@ namespace BootstrappingUtils {
 	Structure* getDefinitionInfo(const Definition* d, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames, UniqueNames<const Definition*>& uniqueDefNames);
 	Structure* getDefinitionInfo(Definition* d, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames, UniqueNames<Definition*>& uniqueDefNames);
 
-	Options* setBootstrappingOptions(); //Sets the options for running bootstrapping applications. Returns backup of old options. When calling this method, you are responsible for deleting the options that are now set.
+	/**
+	 * Sets the options for running bootstrapping applications. Returns backup of old options.
+	 * When calling this method, you are responsible for reverting the options that are now set.
+	 */
+	Options* setBootstrappingOptions();
+
+	struct MetaRepr {
+		Vocabulary* origvoc;
+		Structure* metastructure;
+		UniqueStringNames<PFSymbol*> symbols;
+	};
+
+	MetaRepr toMeta(Theory* theory);
+	Theory* fromMeta(MetaRepr meta, Predicate* setOfSentences);
 }

@@ -281,6 +281,19 @@ void makeUnknownsFalse(PredInter* inter) {
 	inter->cfpf(new PredTable(InverseInternalPredTable::getInverseTable(inter->pt()->internTable()), inter->pt()->universe()));
 }
 
+void makeUnknownsFalse(Structure* structure){
+	for (auto pred : structure->vocabulary()->getPreds()) {
+		for (auto predToSet : pred.second->nonbuiltins()) {
+			makeUnknownsFalse(structure->inter(predToSet));
+		}
+	}
+	for (auto func : structure->vocabulary()->getFuncs()) {
+		for (auto funcToSet : func.second->nonbuiltins()) {
+			makeUnknownsFalse(structure->inter(funcToSet)->graphInter());
+		}
+	}
+}
+
 void makeTwoValued(Function* function, FuncInter* inter){
 	if (not inter->isConsistent()) {
 		throw IdpException("Error, trying to make an inconsistent structure two-valued.");

@@ -224,13 +224,12 @@ public:
 	std::string fqn_name() const; //!< Returns the full name for this symbol (namespace+symbolname+sort)
 	std::string nameNoArity() const; //!< Returns the name of the symbol (without /arity)
 	const ParseInfo& pi() const; //!< Returns the parse info of the symbol
-	std::size_t nrSorts() const; //!< Returns the number of sorts of the symbol
-	//!< (arity for predicates, arity+1 for functions)
+
+	virtual unsigned int arity() const = 0; // Returns the arity
 
 	// IMPORTANT: for overloaded symbols, sorts can be NULL
+	std::size_t nrSorts() const; // Returns the number of sorts of the symbol (arity for predicates, arity+1 for functions)
 	Sort* sort(std::size_t n) const; //!< Returns the n'th sort of the symbol
-
-	// IMPORTANT: for overloaded symbols, sorts can be NULL
 	const std::vector<Sort*>& sorts() const {
 		return _sorts;
 	}
@@ -308,7 +307,9 @@ public:
 	PFSymbol* parent() const {
 		return _parent;
 	}
-	unsigned int arity() const; //!< Returns the arity of the predicate
+	unsigned int arity() const {
+		return sorts().size();
+	}
 	bool builtin() const;
 	bool overloaded() const;
 	std::set<Sort*> allsorts() const;
@@ -382,12 +383,15 @@ public:
 		return _isConstructor;
 	}
 
+	virtual unsigned int arity() const {
+		return _insorts.size();
+	}
+
 	void partial(bool b); //!< Make the function total/partial if b is false/true
 	bool removeVocabulary(const Vocabulary*); //!< Removes a vocabulary from the list of vocabularies
 	void addVocabulary(const Vocabulary*); //!< Add a vocabulary to the list of vocabularies
 
 	const std::vector<Sort*>& insorts() const; //!< Return the input sorts of the function
-	unsigned int arity() const; //!< Returns the arity of the function
 	Sort* insort(unsigned int n) const; //!< Returns the n'th input sort of the function
 	Sort* outsort() const; //!< Returns the output sort of the function
 	bool partial() const; //!< Returns true iff the function is partial
@@ -562,6 +566,27 @@ public:
 		for(auto pn: getFuncs()){
 			for(auto p:pn.second->nonbuiltins()){
 				symbols.push_back(p);
+			}
+		}
+		return symbols;
+	}
+
+	std::vector<PFSymbol*> getNonOverloadedSymbols(){
+		std::vector<PFSymbol*> symbols;
+		for(auto pn: getPreds()){
+			for(auto p:pn.second->nonbuiltins()){
+				symbols.push_back(p);
+			}
+			if(pn.second->builtin() && not pn.second->overloaded()){
+				symbols.push_back(pn.second);
+			}
+		}
+		for(auto pn: getFuncs()){
+			for(auto p:pn.second->nonbuiltins()){
+				symbols.push_back(p);
+			}
+			if(pn.second->builtin() && not pn.second->overloaded()){
+				symbols.push_back(pn.second);
 			}
 		}
 		return symbols;

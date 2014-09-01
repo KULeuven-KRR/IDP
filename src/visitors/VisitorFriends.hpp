@@ -136,6 +136,7 @@ class ReplaceVariableUsingEqualities;
 		friend class Simplify;\
 		friend class RemoveQuantificationsOverSort;\
 		friend class CardConstrToFO;\
+		friend class Metafier;\
 		friend class SubstituteVarWithVar;
 
 class AbstractTheory;

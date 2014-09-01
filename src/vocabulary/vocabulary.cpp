@@ -672,10 +672,6 @@ Predicate::Predicate(PredGenerator* generator)
 			_overpredgenerator(generator) {
 }
 
-unsigned int Predicate::arity() const {
-	return sorts().size();
-}
-
 bool Predicate::builtin() const {
 	return _interpretation != 0;
 }
@@ -1194,10 +1190,6 @@ set<Sort*> Function::allsorts() const {
 
 const vector<Sort*>& Function::insorts() const {
 	return _insorts;
-}
-
-unsigned int Function::arity() const {
-	return _insorts.size();
 }
 
 Sort* Function::insort(unsigned int n) const {

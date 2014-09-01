@@ -73,6 +73,16 @@ procedure mxwithbounds(){
 	return run(T)
 }
 
+procedure mxwithmeta(){
+	stdoptions.groundwithbounds = true
+	stdoptions.liftedunitpropagation = true
+	metastruc = tometa(T)
+	mv = getvocabulary(metastruc)
+	T = frommeta(V, mv::sentence, metastruc)
+	stdoptions.timeout = 7
+	return run(T)
+}
+
 procedure mxwithxsb(){
 	stdoptions.xsb=true
 	stdoptions.groundwithbounds = true
@@ -171,6 +181,10 @@ procedure mxCardFO(){
 }
 
 procedure run(theory) {
+	if(theory == nil) then
+		//For backwards compatibility with tests calling run()
+		theory = T
+	end
 	if(allowed~=nil) then
 		if (not allowed()) then 
 			print("NOT running this test in this context!")
