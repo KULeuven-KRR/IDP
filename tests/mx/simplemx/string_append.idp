@@ -26,3 +26,7 @@ procedure getExpectedNbOfModels(){
 procedure shouldNotCheck(){
 	return true;
 }
+
+procedure doNotPrint(){
+	return true
+}

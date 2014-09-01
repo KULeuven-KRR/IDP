@@ -16,3 +16,12 @@ structure S: V {
 procedure getExpectedNbOfModels(){
 	return 2
 }
+
+procedure allowed(){
+	// do not run this test in case of lazy grounding
+	if 	stdoptions.tseitindelay == true then
+		return false
+	end
+	return true
+
+}

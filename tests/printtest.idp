@@ -9,3 +9,12 @@ procedure main(){
 	file:close()
 	return 1
 }
+
+procedure shouldPrint(){
+	if (doNotPrint ~= nil) then
+		if doNotPrint() then
+			return 0
+		end
+	end
+	return 1
+}

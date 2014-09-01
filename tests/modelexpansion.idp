@@ -172,7 +172,10 @@ procedure mxCardFO(){
 
 procedure run(theory) {
 	if(allowed~=nil) then
-		if (not allowed()) then return 1; end
+		if (not allowed()) then 
+			print("NOT running this test in this context!")
+			return 1
+		end
 	end
 	
 	stdoptions.verbosity.solving=0
@@ -233,7 +236,7 @@ procedure checkmodelsandnonmodels() {
 	end
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
-	stdoptions.timeout=5
+	stdoptions.timeout=10 //Higher timeout since lots of checks here
 	stdoptions.nbmodels=0
 	structures = nbModelsTwoValuedExtensions(S)
 	models = {}

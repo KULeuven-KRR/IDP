@@ -45,3 +45,6 @@ structure S : V {
   constant = { ->2 }
   constant2 = { ->3 }
 }
+procedure shouldNotCheck(){
+	return true;
+}

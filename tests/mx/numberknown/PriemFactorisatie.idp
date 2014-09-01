@@ -23,3 +23,12 @@ structure S:V{
 procedure getExpectedNbOfModels(){
 	return 1
 }
+
+procedure allowed(){
+	// do not run this test without CP since products will exceed max int
+	if 	stdoptions.cpsupport==false then
+		return false
+	end
+	return true
+
+}
