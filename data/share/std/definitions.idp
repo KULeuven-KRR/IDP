@@ -1,5 +1,6 @@
 /**
 * This file contains tools for boostrapping with definitions based on the dependency graph
+* Do not adapt this file unless you know what you're doing
 */
 
 

@@ -25,6 +25,7 @@
 void addSymbol(PFSymbol* s, MetaInters& m, UniqueStringNames<PFSymbol*>& symbols) {
 	auto symbol = toDom(s, symbols);
 
+	Assert(s->arity() >= 0); // Cast is done to int, but the relation "arities" has a nat type for the second argument
 	m.arities->add( { symbol, createDomElem((int) s->arity()) }, true);
 
 	m.name->add( { symbol, createDomElem(s->nameNoArity()) }, true);
@@ -43,6 +44,7 @@ void addSymbol(PFSymbol* s, MetaInters& m, UniqueStringNames<PFSymbol*>& symbols
 		m.outsort->add( { symbol, toDom(func->outsort(), symbols) }, true);
 	} else {
 		if (s->nrSorts() == 1 && s->sorts()[0]->pred() == s) {
+			// here we are sure it's a sort
 			auto sort = s->sorts()[0];
 			for (auto p : sort->parents()) {
 				m.subtypeof->makeTrueExactly( { symbol, toDom(p, symbols) }, true);
@@ -204,7 +206,7 @@ void Metafier::visit(const EqChainForm* eq) {
 }
 
 void Metafier::visit(const AggForm* af) {
-	auto ecf = new EqChainForm(af->sign(), true, { af->getBound(), af->getAggTerm() }, { af->comp() }, FormulaParseInfo());
+	auto ecf = new EqChainForm(af->sign(), true, { af->getBound(), af->getAggTerm() }, { af->comp() }, { });
 	ecf->accept(this);
 	delete ecf;
 }

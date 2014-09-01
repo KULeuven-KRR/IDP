@@ -1,3 +1,8 @@
+/**
+* This file contains the vocabulary used for meta-representation of IDP theories
+* Do not adapt this file unless you know what you're doing
+*/
+
 namespace stdspace{
 	namespace meta{
 		vocabulary metavoc{

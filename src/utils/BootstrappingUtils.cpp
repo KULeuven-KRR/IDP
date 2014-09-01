@@ -23,6 +23,9 @@ extern void parsefile(const std::string&);
 namespace BootstrappingUtils {
 
 MetaRepr toMeta(Theory* theory) {
+	// "bootstrap" is a reference to the file bootstrap.idp under install_directory/share/std that contains the vocabulary for meta representation
+	// If the name of this file changes, adapt it here
+	// The retrieved namespaces and vocabularies should correspond to the ones in this file
 	if (not getGlobal()->instance()->alreadyParsed("bootstrap")) {
 		parsefile("bootstrap");
 	}
@@ -73,6 +76,9 @@ Theory* fromMeta(MetaRepr meta, Predicate* setOfSentences) {
 template<class Def>
 Structure* getDefinitionInfo(const std::vector<Def>& defs, UniqueNames<PFSymbol*>& uniqueSymbNames, UniqueNames<Rule*>& uniqueRuleNames,
 		UniqueNames<Def>& uniqueDefNames) {
+	// "definition" is a reference to the file definition.idp under install_directory/share/std that contains the meta theories
+	// If the name of this file changes, adapt it here
+	// The corresponding namespaces and vocabularies should correspond to the ones in this file
 	if (not getGlobal()->instance()->alreadyParsed("definitions")) {
 		parsefile("definitions");
 	}

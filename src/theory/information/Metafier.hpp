@@ -265,7 +265,7 @@ public:
 		auto symbol = symbols.getOriginal(*symd->value()._string);
 		std::vector<Term*> terms;
 		auto ar = m.arities->value( { symd })->value()._int;
-		if(symbol->isFunction()){
+		if (symbol->isFunction()) {
 			ar++;
 		}
 		for (auto i = 0; i < ar; i++) {
@@ -310,8 +310,10 @@ public:
 			return AggFunction::PROD;
 		} else if (d == m.min) {
 			return AggFunction::MIN;
-		} else {
+		} else if (d == m.max) {
 			return AggFunction::MAX;
+		} else {
+			throw IdpException("Invalid code path: unexpected aggregate function encoding in meta-representation");
 		}
 	}
 
