@@ -30,6 +30,7 @@ class TsSet;
 class PFSymbol;
 struct GroundTerm;
 class AbstractGroundTheory;
+struct GroundEquivalence;
 
 /**
  * A ground theory which does not store the grounding, but directly writes it to its monitors.
@@ -112,6 +113,10 @@ public:
 		auto reif = new CPReification(tseitin, body);
 		printer().print(reif);
 		delete (reif);
+	}
+	
+	void polAdd(const GroundEquivalence& geq){
+		printer().print(geq);
 	}
 
 	void polAddOptimization(AggFunction, SetId) {

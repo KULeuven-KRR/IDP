@@ -66,6 +66,7 @@ protected:
 	}
 
 	void polAdd(const GroundClause& cl);
+	void polAdd(const GroundEquivalence& geq);
 	void polAdd(const TsSet& tsset, SetId setnr, bool weighted);
 	void polAdd(DefId defnr, const PCGroundRule& rule);
 	void polAdd(DefId defnr, AggGroundRule* rule);
@@ -79,7 +80,6 @@ protected:
 	void polAddOptimization(AggFunction function, SetId setid);
 	void polAddOptimization(VarId varid);
 
-	// FIXME probably already exists in transform for add?
 	void polAdd(Lit tseitin, TsType type, const GroundClause& rhs, bool conjunction);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator*) const {

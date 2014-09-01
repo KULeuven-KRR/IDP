@@ -16,6 +16,7 @@
 #include <sstream>
 
 typedef std::vector<Lit> GroundClause;
+struct GroundEquivalence;
 
 class PFSymbol;
 class AbstractGroundTheory;
@@ -98,6 +99,7 @@ public:
 	void polRecursiveDelete();
 
 	void polAdd(const GroundClause& cl);
+	void polAdd(const GroundEquivalence& geq);
 	void polAdd(Lit tseitin, AggTsBody* body);
 	void polAdd(Lit tseitin, CPTsBody* body);
 	void polAdd(const TsSet& tsset, SetId setnr, bool);
