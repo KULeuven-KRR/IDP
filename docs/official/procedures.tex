@@ -1,3 +1,4 @@
+
 \section{Procedures}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Declaring a procedure}
@@ -76,6 +77,8 @@ Using them is at your own risk.
 \subsubsection{inferences}
 The \code{inferences} namespace and all its procedures are included in the global namespace. Hence \code{inferences.xxx} should never be used. This namespace contains several inference methods:
 \begin{description}
+	\item[allmodels(theory,structure)] 
+		Returns all models of the theory that extend the given structure.
 	\item[calculatedefinitions(theory,structure)]
 		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or  nil if inconsistency is detected.
 	\item[ground(theory,structure)]
@@ -109,12 +112,16 @@ The \code{inferences} namespace and all its procedures are included in the globa
  		Apply model expansion to theory T, structure S. The structure can interpret a subvocabulary of the vocabulary of the theory.
  		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
 		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions. 
+	\item[onemodel(theory,structure)]
+		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrast to the standard modelexpansion which returns a list of structures).
 	\item[printcore(theory,structure)]
 		Finds a theory that is a minimal ``subset'' of the given theory that is unsat in the given structure, or, in other words, a ``core''; it then prints this theory with 
 		references to how it was obtained from the given theory.
 		A subset in this respect is a subset of all instantiated formulas in conjunctive context in the theory and instantiated rules 
 		(either all rules defining a specific domain atom/term or none of them).
 		Currently does not take constraints implied by the vocabulary (e.g., function constraints) or the structure (e.g., type interpretations) into account.
+	\item[printmodels(list)]
+		Prints a given list of models or prints unsatisfiable if the list is empty.
 	\item[query(query,structure)]
  		Generate all solutions to the given query in the given structure. The result is the set of element-tuples that certainly satisfy the query in the structure.
 	\item[refinedefinitions(theory,structure)]
@@ -242,25 +249,6 @@ The \code{vocabulary} namespace and all its procedures are included in the globa
 
 \end{description}
 
-
-
-
-
-\subsubsection{The mx library}
-The mx standard library file contains some useful commands for model expansion. It can be used by 
-\begin{lstlisting}
-	include <mx>
-\end{lstlisting}
-%All commands in the mx standard library file are defined in a namespace with the same name (and hence should be called by \code{mx::command(...)}.
-The following commands are supported by mx:
-\begin{description}
-	\item[onemodel(theory,structure)]
-		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrast to the standard modelexpansion which returns a list of structures).
-	\item[allmodels(theory,structure)] 
-		Returns all models of the theory that extend the given structure.
-	\item[printmodels(list)]
-		Prints a given list of models or prints unsatisfiable if the list is empty.
-\end{description}
 
 \subsubsection{The table\_utils library}
 The table\_utils standard library file can be include by 
