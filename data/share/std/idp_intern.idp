@@ -1,12 +1,5 @@
 // NOTE: the argument names are used literally in the help information, so they should be readable!
 
-namespace vocabulary{
-
-vocabulary emptyVocabulary {
-}
-
-}
-
 namespace stdspace{
 
 /***********
@@ -109,7 +102,7 @@ procedure sat(theory, structure) {
 	Opts = getoptions()
 	local oldnbmodels = Opts.nbmodels
 	Opts.nbmodels = 1
-	local solutions = modelexpandpartial(theory,structure,vocabulary::emptyVocabulary)
+	local solutions = modelexpandpartial(theory,structure,newvocabulary("empty"))
 	Opts.nbmodels = oldnbmodels
 	return #solutions>0
 }
