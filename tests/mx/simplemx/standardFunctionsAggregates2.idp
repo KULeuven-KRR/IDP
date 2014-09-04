@@ -18,3 +18,7 @@ procedure getExpectedNbOfModels(){
 	return 1
 }
 
+procedure shouldNotCheck(){
+	//Not checked because test  "checkmodelsandnonmodels" should not be ran on this instance (too many two-valued interpretations for buildbot)
+	return true
+}
