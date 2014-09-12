@@ -53,7 +53,7 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	//For domainterms, we can optimise: all "built-in" domain terms (int, str, float), instead of
 	//unnesting them as quantification over type "string, "int",... we can create a new type with one element in it, and quantify over that type
 	//It is important that this type is a subtype of the correct parent since parts of the system rely on
-	// well-typedness of all expressions. This also means that we cannot perform this optimsation for compounts.
+	// well-typedness of all expressions. This also means that we cannot perform this optimsation for compounds.
 	auto domterm = dynamic_cast<DomainTerm*>(term);
 	auto domelem = domterm->value();
 	auto domtype = domelem->type();
