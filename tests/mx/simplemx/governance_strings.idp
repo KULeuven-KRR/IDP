@@ -1,0 +1,53 @@
+vocabulary V {
+  type connectionType isa string
+  type printerType isa string
+  type propertyDate isa string
+  type propertyInt isa int
+  type propertyString isa string
+  type task isa string
+
+
+
+  before(task,task)
+  execute(task)
+  connection : connectionType
+  installationDate : propertyDate
+  partial printHost : propertyString
+  printerT : printerType
+  roomNumber : propertyInt
+}
+theory T : V {
+  (~(printerT  =  "inkjet") | (connection  =  "USB")).
+  ((printerT  =  "laser") <=> execute("configure network")).
+  ((? x[propertyString] : (printHost  =  x)) <=> (connection  =  "LAN")).
+  {
+    before("buy hardware","configure software") <- (((connection  =  "USB") & task("buy hardware")) & task("configure software")).
+    before("buy hardware","configure network") <- (((connection  =  "LAN") & task("buy hardware")) & task("configure network")).
+    before("configure network","configure software") <- (((connection  =  "LAN") & task("configure network")) & task("configure software")).
+    ! a[task] : execute(a) <- (? b[task] : (before(a,b) | before(b,a))).
+  }
+}
+structure S : V {
+  connectionType = { "LAN"; "USB" }
+  printerType = { "inkjet"; "laser" }
+  propertyDate = { "di"; "ma" }
+  propertyInt = { 1..2 }
+  propertyString = { "a"; "b" }
+  task = { "buy hardware"; "configure network"; "configure software" }
+  before<ct> = {  }
+  before<cf> = {  }
+  execute<ct> = {  }
+  execute<cf> = {  }
+  connection = "LAN"
+  installationDate<ct> = {  }
+  installationDate<cf> = {  }
+  printHost<ct> = {  }
+  printHost<cf> = {  }
+  printerT<ct> = {  }
+  printerT<cf> = {  }
+  roomNumber<ct> = {  }
+  roomNumber<cf> = {  }
+}
+procedure getExpectedNbOfModels() {
+  return 8
+}
