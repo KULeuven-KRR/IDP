@@ -1099,11 +1099,13 @@ void GrounderFactory::visit(const FuncTerm* t) {
 		if (FuncUtils::isIntSum(function, getConcreteStructure()->vocabulary())) {
 			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, is(function, STDFUNC::ADDITION) ? TwinTT::PLUS : TwinTT::MIN, ftable, domain, stg[0], stg[1]);
 		} else if (is(function, STDFUNC::UNARYMINUS) and FuncUtils::isIntFunc(function, _vocabulary)) {
-      auto zeroterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(0), TermParseInfo());
-			descend(zeroterm);
-			zeroterm->recursiveDelete();
-			auto zerogrounder = getTermGrounder();
-      _termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, TwinTT::MIN, ftable, domain, zerogrounder, stg[0]);
+			auto product = get(STDFUNC::PRODUCT, { get(STDSORT::INTSORT), get(STDSORT::INTSORT), get(STDSORT::INTSORT) }, getConcreteStructure()->vocabulary());
+			auto producttable = getConcreteStructure()->inter(product)->funcTable();
+			auto factorterm = new DomainTerm(get(STDSORT::INTSORT), createDomElem(-1), TermParseInfo());
+			descend(factorterm);
+			factorterm->recursiveDelete();
+			auto factorgrounder = getTermGrounder();
+			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, TwinTT::PROD, producttable, domain, factorgrounder, stg[0]);
 		} else if (FuncUtils::isIntProduct(function, getConcreteStructure()->vocabulary())) {
 			_termgrounder = new TwinTermGrounder(getGrounding()->translator(), function, TwinTT::PROD, ftable, domain, stg[0], stg[1]);
 		}
