@@ -58,19 +58,24 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	auto domelem = domterm->value();
 	auto domtype = domelem->type();
 	if (domtype == DomainElementType::DET_COMPOUND) {
-		return sort;
 	}
-	auto ist = new EnumeratedInternalSortTable( { domelem });
 
-	auto newsort = new Sort(new SortTable(ist));
+	Sort* newParent;
 	if (domtype == DomainElementType::DET_INT) {
-		newsort->addParent(get(STDSORT::INTSORT));
+		newParent = get(STDSORT::INTSORT);
 	} else if (domtype == DomainElementType::DET_STRING) {
-		newsort->addParent(get(STDSORT::STRINGSORT));
+		newParent = get(STDSORT::STRINGSORT);
 	} else if (domtype == DomainElementType::DET_DOUBLE) {
-		newsort->addParent(get(STDSORT::FLOATSORT));
+		newParent = get(STDSORT::FLOATSORT);
 	}
-	return newsort;
+	if (not SortUtils::isSubsort(sort,newParent)) {
+		return sort;
+	} else {
+		auto ist = new EnumeratedInternalSortTable( { domelem });
+		auto newsort = new Sort(new SortTable(ist));
+		newsort->addParent(newParent);
+		return newsort;
+	}
 
 }
 
