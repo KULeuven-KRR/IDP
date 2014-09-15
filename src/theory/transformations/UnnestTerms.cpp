@@ -10,6 +10,7 @@
  ****************************************************************************/
 
 #include "IncludeComponents.hpp"
+#include "structure/StructureComponents.hpp"
 #include "UnnestTerms.hpp"
 
 #include "errorhandling/error.hpp"
@@ -45,7 +46,32 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	if (_structure != NULL && SortUtils::isSubsort(term->sort(), get(STDSORT::INTSORT), _vocabulary)) {
 		sort = TermUtils::deriveSmallerSort(term, _structure);
 	}
-	return sort;
+
+	if (not isa<DomainTerm>(*term)) {
+		return sort;
+	}
+	//For domainterms, we can optimise: all "built-in" domain terms (int, str, float), instead of
+	//unnesting them as quantification over type "string, "int",... we can create a new type with one element in it, and quantify over that type
+	//It is important that this type is a subtype of the correct parent since parts of the system rely on
+	// well-typedness of all expressions. This also means that we cannot perform this optimsation for compounds.
+	auto domterm = dynamic_cast<DomainTerm*>(term);
+	auto domelem = domterm->value();
+	auto domtype = domelem->type();
+	if (domtype == DomainElementType::DET_COMPOUND) {
+		return sort;
+	}
+	auto ist = new EnumeratedInternalSortTable( { domelem });
+
+	auto newsort = new Sort(new SortTable(ist));
+	if (domtype == DomainElementType::DET_INT) {
+		newsort->addParent(get(STDSORT::INTSORT));
+	} else if (domtype == DomainElementType::DET_STRING) {
+		newsort->addParent(get(STDSORT::STRINGSORT));
+	} else if (domtype == DomainElementType::DET_DOUBLE) {
+		newsort->addParent(get(STDSORT::FLOATSORT));
+	}
+	return newsort;
+
 }
 
 /**

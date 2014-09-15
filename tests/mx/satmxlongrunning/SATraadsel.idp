@@ -23,15 +23,15 @@ theory T : V {
 	MAX[:Pos] % 2=1.
 
 	// Initial position
-	{ InitContains(p,A) <- p < MaxPos/2 + 0.5.
-	  InitContains(p,E) <- p = MaxPos/2 + 0.5.
-	  InitContains(p,B) <- p > MaxPos/2 + 0.5.
+	{ InitContains(p,A) <- p < MaxPos/2 + 1/2.
+	  InitContains(p,E) <- p = MaxPos/2 + 1/2.
+	  InitContains(p,B) <- p > MaxPos/2 + 1/2.
 	}
 
 	// Final position
-	{ ExitContains(p,B) <- p < MaxPos/2 + 0.5.
-	  ExitContains(p,E) <- p = MaxPos/2 + 0.5.
-	  ExitContains(p,A) <- p > MaxPos/2 + 0.5.
+	{ ExitContains(p,B) <- p < MaxPos/2 + 1/2.
+	  ExitContains(p,E) <- p = MaxPos/2 + 1/2.
+	  ExitContains(p,A) <- p > MaxPos/2 + 1/2.
 	}
 
 	// Allowed moves
