@@ -1,0 +1,56 @@
+IDP installeren op MAC OSX (10.9.4): Another 12-step program
+
+Dependencies:
+Bison 3.0.2
+Flex 2.5.37
+GCC 4.9.1 (Geen Clang)
+
+Optioneel: CMAKE-gui
+
+Stap 1:
+Geef aan waar de IDP Source staat: IDP-Source
+Geef aan in welke directory de binaries gebuild moeten worden: IDP-Build
+
+Stap 2:
+Vink 'Advanced' aan.
+
+Stap 3:
+Ontvink 'BUILDDOCUMENTATION' (Zodat we geen latex dependencies hebben) en 'BUILDTESTS' (\tests\CMakeLists.txt is verouderd en zorgt voor problemen).
+
+Stap 4:
+Pas CMAKE_BUILD_TYPE aan naar "Release"
+
+Stap 5:
+Pas CMAKE_CXX_COMPILER aan naar het pad naar g++ (versie >=4.9.1)
+Pas CMAKE_C_COMPILER aan naar het pad naar gcc (versie >=4.9.1)
+
+Stap 6:
+Pas CMAKE_INSTALL_PREFIX aan naar het pad waar je je idp installatie wilt (IDP-Install). Om linkingproblemen  en nood voor sudorechten te vermijden kies je hiervoor best een directory dat je hebt aangemaakt in je home-directory.
+
+Stap 7:
+Klik op Configure. Deze build zal falen, maar dit maakt extra opties beschikbaar om in te stellen.
+
+Stap 8:
+Pas BISON_EXECUTABLE aan naar het pad naar Bison (versie >= 3.0.2)
+
+Stap 9:
+Pas FLEX_EXECUTABLE aan naar het pad naar Flex (versie >= 2.4.37)
+Pas FLEX_INCLUDE_DIR aan naar het pad naar de include dir. Afhankelijk van hoe je Flex geïnstalleerd hebt, kan dit verschillen. Dit kan /usr/include zijn, maar wanneer je bijvoorbeeld homebrew gebruikt is dit <Homebrewdir>/Cellar/Flex/<Versienummer>/include.
+
+Stap 10:
+Ontvank WITHXSB.
+
+Stap 11:
+Klik op Configure.
+Klik vervolgens op Generate.
+
+Stap 12:
+Open terminal:
+	cd <IDP-Build>
+	make install -j 8
+
+Met -j kies je het aantal cores dat het compilatieproces zal gebruiken.
+Dit zal IDP installeren in je gekozen directory <IDP-Install>
+
+Stap 13 (Optioneel):
+Voeg de bin directory binnen je <IDP-Install> directory toe aan je $PATH variabele in .bash_profile, zodat het idp commando overal beschikbaar wordt.
