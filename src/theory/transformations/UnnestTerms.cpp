@@ -60,7 +60,7 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	if (domtype == DomainElementType::DET_COMPOUND) {
 	}
 
-	Sort* newParent;
+	Sort* newParent = NULL;
 	if (domtype == DomainElementType::DET_INT) {
 		newParent = get(STDSORT::INTSORT);
 	} else if (domtype == DomainElementType::DET_STRING) {
@@ -68,7 +68,8 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	} else if (domtype == DomainElementType::DET_DOUBLE) {
 		newParent = get(STDSORT::FLOATSORT);
 	}
-	if (not SortUtils::isSubsort(sort,newParent)) {
+	Assert(newParent != NULL);
+	if (not SortUtils::isSubsort(sort, newParent)) {
 		return sort;
 	} else {
 		auto ist = new EnumeratedInternalSortTable( { domelem });
@@ -76,7 +77,6 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 		newsort->addParent(newParent);
 		return newsort;
 	}
-
 }
 
 /**
