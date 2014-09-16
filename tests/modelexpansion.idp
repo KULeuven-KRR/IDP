@@ -244,6 +244,7 @@ procedure check(solutions){
 	return 1
 }
 procedure checkmodelsandnonmodels() {
+	local maxNbCheckedModels = 50
 	if(shouldNotCheck~=nil) then
 		print("NOTE: models unchecked because too expensive!")
 		return 1;
@@ -251,9 +252,9 @@ procedure checkmodelsandnonmodels() {
 	stdoptions.verbosity.solving=0
 	stdoptions.verbosity.grounding=0
 	stdoptions.timeout=10 //Higher timeout since lots of checks here
-	stdoptions.nbmodels=0
+	stdoptions.nbmodels=maxNbCheckedModels+1
 	structures = nbModelsTwoValuedExtensions(S)
-	if(#structures > 50) then
+	if(#structures > maxNbCheckedModels) then
 		print("NOTE: models unchecked because too expensive!")
 		return 1;
 	end
