@@ -1,0 +1,30 @@
+Om te kunnen developpen op mac:
+A) CCache
+    - Bij de normale gang van zaken zou je gewoon g++ en gcc als compilers gebruiken, en zouden de ccache wrappers daarvoor in het path staan.
+      Momenteel werkt dit niet (CMake test de compile capaciteiten van de opgegeven compiler en CCache faalt om een of andere reden).
+    - Workaround: 
+      creer een bestand g++ met als inhoud
+      #!/bin/bash
+      <ccache> <g++> $*
+      waar <ccache> en <g++> de paths zijn naar de juiste binaries.
+      Doe hetzelfde voor gcc. Maak deze twee bestanden executable en gebruik deze in CMake als c en c++ compiler.
+
+
+B) DEBUGGEN
+    - cd <installdir>/lib
+    - herlink de libraries in libidp.dylib
+      install_name_tool -change libidp.dylib ..lib/libidp.dylib libidp.dylib
+      install_name_tool -change libminisatid.3.10.0.dylib ..lib/libminisatid.3.10.0.dylib libidp.dylib
+      install_name_tool -change liblua.5.dylib ..lib/liblua.5.dylib libidp.dylib
+      install_name_tool -change liblinenoise.dylib ..lib/liblinenoise.dylib libidp.dylib
+      install_name_tool -change libtinythread.dylib ..lib/libtinythread.dylib libidp.dylib
+      install_name_tool -change libpbsolver.dylib ..lib/libpbsolver.dylib libidp.dylib
+    - cd <installdir>/bin
+    - herlink de libraries in kbs
+      install_name_tool -change libidp.dylib ..lib/libidp.dylib kbs
+      install_name_tool -change libminisatid.3.10.0.dylib ..lib/libminisatid.3.10.0.dylib kbs
+      install_name_tool -change liblua.5.dylib ..lib/liblua.5.dylib kbs
+      install_name_tool -change liblinenoise.dylib ..lib/liblinenoise.dylib kbs
+      install_name_tool -change libtinythread.dylib ..lib/libtinythread.dylib kbs
+      install_name_tool -change libpbsolver.dylib ..lib/libpbsolver.dylib kbs
+    - lldb kbs
