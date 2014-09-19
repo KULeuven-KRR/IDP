@@ -1067,7 +1067,7 @@ public:
 	}
 
 	void printNonOverloadedPredicate(const Predicate* p) {
-		output() << p->name().substr(0, p->name().find('/'));
+		output() << p->nameNoArity();
 		if (p->arity() > 0) {
 			output() << "(" << p->sort(0)->name();
 			for (unsigned int n = 1; n < p->arity(); ++n) {
