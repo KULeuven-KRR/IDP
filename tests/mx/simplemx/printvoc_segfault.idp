@@ -1,0 +1,19 @@
+vocabulary V{
+       type T1
+       type T2
+       P(T1)
+       P(T2)
+}
+theory T:V{
+	?x[T1]:true.
+}
+
+structure S:V{
+	T1={1}
+	T2={"jos"}
+}
+
+
+procedure getExpectedNbOfModels() {
+	return 4
+}
