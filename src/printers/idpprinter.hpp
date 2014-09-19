@@ -232,26 +232,28 @@ public:
 		for (auto it = v->firstSort(); it != v->lastSort(); ++it) {
 			printSortRecursively(it->second,printedsorts,v);
 		}
-		for (auto it = v->firstPred(); it != v->lastPred(); ++it) {
-			auto pred = it->second;
-			if (v != Vocabulary::std() and pred->builtin()) { // Only print builtins when printing the std voc
-				continue;
-			}
-			if(pred->nrSorts()==1 and pred==pred->sort(0)->pred()){ // Do not print sort-predicates
-				continue;
-			}
-			printTab();
-			visit(pred);
-			output() << "\n";
-		}
-		for (auto it = v->firstFunc(); it != v->lastFunc(); ++it) {
-			if (not it->second->builtin() || v == Vocabulary::std()) { // FIXME apparently, </2 etc still get printed?
+		auto symbols = v->getNonBuiltinNonOverloadedSymbols();
+		for (auto symbol : symbols) {
+			if (isa<Predicate>(*symbol)) {
+				auto pred = dynamic_cast<Predicate*>(symbol);
+				Assert(pred != NULL);
+				if (v != Vocabulary::std() and pred->builtin()) { // Only print builtins when printing the std voc
+					continue;
+				}
+				if (pred->nrSorts() == 1 and pred == pred->sort(0)->pred()) { // Do not print sort-predicates
+					continue;
+				}
 				printTab();
-				visit(it->second);
+				visit(pred);
+				output() << "\n";
+			} else {
+				auto func = dynamic_cast<Function*>(symbol);
+				Assert(func != NULL);
+				printTab();
+				visit(func);
 				output() << "\n";
 			}
 		}
-
 		unindent();
 		printTab();
 		output() << "}" << '\n';
@@ -1064,6 +1066,17 @@ public:
 		_printTermsAsBlock = backup;
 	}
 
+	void printNonOverloadedPredicate(const Predicate* p) {
+		output() << p->name().substr(0, p->name().find('/'));
+		if (p->arity() > 0) {
+			output() << "(" << p->sort(0)->name();
+			for (unsigned int n = 1; n < p->arity(); ++n) {
+				output() << "," << p->sort(n)->name();
+			}
+			output() << ")";
+		}
+	}
+
 	void visit(const Predicate* p) {
 		auto backup = _printTermsAsBlock;
 		_printTermsAsBlock = false;
@@ -1071,24 +1084,10 @@ public:
 		if (p->overloaded()) {
 			Predicate* p2 = const_cast<Predicate*>(p);
 			for(auto e: p2->nonbuiltins()) {
-				output() << e->name().substr(0, e->name().find('/'));
-				if (e->arity() > 0) {
-					output() << "(" << e->sort(0)->name();
-					for (unsigned int n = 1; n < e->arity(); ++n) {
-						output() << "," << e->sort(n)->name();
-					}
-					output() << ")";
-				}
+				printNonOverloadedPredicate(e);
 			}
 		} else {
-			output() << p->name().substr(0, p->name().find('/'));
-			if (p->arity() > 0) {
-				output() << "(" << p->sort(0)->name();
-				for (unsigned int n = 1; n < p->arity(); ++n) {
-					output() << "," << p->sort(n)->name();
-				}
-				output() << ")";
-			}
+			printNonOverloadedPredicate(p);
 		}
 		_printTermsAsBlock = backup;
 	}
