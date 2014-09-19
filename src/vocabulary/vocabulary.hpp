@@ -556,22 +556,22 @@ public:
 		return _name2sort;
 	}
 
-	std::vector<PFSymbol*> getNonBuiltinNonOverloadedSymbols(){
+	std::vector<PFSymbol*> getNonBuiltinNonOverloadedSymbols() const {
 		std::vector<PFSymbol*> symbols;
-		for(auto pn: getPreds()){
-			for(auto p:pn.second->nonbuiltins()){
+		for (auto pn : getPreds()) {
+			for (auto p : pn.second->nonbuiltins()) {
 				symbols.push_back(p);
 			}
 		}
-		for(auto pn: getFuncs()){
-			for(auto p:pn.second->nonbuiltins()){
+		for (auto pn : getFuncs()) {
+			for (auto p : pn.second->nonbuiltins()) {
 				symbols.push_back(p);
 			}
 		}
 		return symbols;
 	}
 
-	std::vector<PFSymbol*> getNonOverloadedSymbols(){
+	std::vector<PFSymbol*> getNonOverloadedSymbols() const{
 		std::vector<PFSymbol*> symbols;
 		for(auto pn: getPreds()){
 			for(auto p:pn.second->nonbuiltins()){
