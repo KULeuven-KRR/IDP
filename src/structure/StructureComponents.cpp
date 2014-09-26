@@ -4063,7 +4063,19 @@ const DomainElement* FuncInter::value(const ElementTuple& tuple) const{
 	if(approxTwoValued()){
 		return funcTable()->operator [](tuple);
 	}else{
-		throw notyetimplemented("Getting value of graphed funcinter");
+		for(auto i = graphInter()->ct()->begin() ; not i.isAtEnd() ; ++i ){
+			bool equal = true;
+			for(auto j = 0 ; j < tuple.size() ; j++){
+				if( (*i)[j] != tuple[j] ){
+					equal = false;
+					break;
+				}
+			}
+			if(equal){
+				return (*i)[tuple.size()];
+			}
+		}
+		return 0;
 	}
 }
 
