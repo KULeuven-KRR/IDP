@@ -941,7 +941,7 @@ void EnumeratedPredGenerator::addVocabulary(const Vocabulary* vocabulary) {
 }
 
 void EnumeratedPredGenerator::removeVocabulary(const Vocabulary* vocabulary) {
-	for (auto it = _overpreds.cbegin(); it != _overpreds.cend(); ++it) {
+	for (auto it = _overpreds.cbegin(); it != _overpreds.cend();) {
 		auto removed = (*it)->removeVocabulary(vocabulary);
 		if (removed) {
 			it = _overpreds.erase(it);
