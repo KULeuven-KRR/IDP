@@ -62,4 +62,26 @@ TEST(TableTest, InverseInverseInternalTableTest) {
 	ASSERT_TRUE(isa<InverseInternalPredTable>(*invinvinvtable));
 }
 
+TEST(TableTest, FunctionInterpretationTest) {
+	auto tab = new EnumeratedInternalPredTable();
+	ElementTuple x;
+	
+	x.push_back( getGlobal()->getGlobalDomElemFactory()->create(1) );
+	x.push_back( getGlobal()->getGlobalDomElemFactory()->create(2) );
+	
+	tab->add(x);
+	
+	Universe u;
+	u.addTable(TableUtils::createSortTable(-10, 10));
+	u.addTable(TableUtils::createSortTable(-5, 5));
+	
+	ElementTuple x0;
+	x0.push_back(x[0]);
+	 //Constructing funcinter via predinter to be sure to test the value of a graphed function
+	auto ftab = FuncInter(new PredInter(new PredTable(tab,u), true));
+
+	ASSERT_TRUE(ftab.value(x0)==x[1]);
+	
+}
+
 }

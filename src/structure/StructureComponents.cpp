@@ -4060,6 +4060,9 @@ void FuncInter::funcTable(FuncTable* ft) {
 }
 
 const DomainElement* FuncInter::value(const ElementTuple& tuple) const{
+	if(tuple.size() != this->universe().tables().size()-1){
+		throw new IdpException("Wrong number of arguments given while evaluating function");
+	}
 	if(approxTwoValued()){
 		return funcTable()->operator [](tuple);
 	}else{
