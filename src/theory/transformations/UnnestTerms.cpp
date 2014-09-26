@@ -58,6 +58,7 @@ Sort* UnnestTerms::deriveSort(Term* term) {
 	auto domelem = domterm->value();
 	auto domtype = domelem->type();
 	if (domtype == DomainElementType::DET_COMPOUND) {
+		return sort;
 	}
 
 	Sort* newParent = NULL;
