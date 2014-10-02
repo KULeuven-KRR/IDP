@@ -328,10 +328,12 @@ void DeriveSorts::check() {
 	for (auto var2sort : derivations) {
 		if (var2sort.second.size() > 1) {
 			stringstream ss;
-			ss << "Derived sort " << var2sort.first->sort()->name() << " for variable " << var2sort.first->name() << " as nearest parent of ";
-			printList(ss, var2sort.second, ", ", false);
-			ss << " and " << (*var2sort.second.rbegin())->name();
-			Warning::warning(ss.str());
+			auto var = var2sort.first;
+			auto sorts = var2sort.second;
+			ss << "Derived sort " << var->sort()->name() << " for variable " << var->name() << " as nearest parent of ";
+			printList(ss, sorts, ", ", false);
+			ss << " and " << (*sorts.rbegin())->name() << ".";
+			Warning::warning(ss.str(), var->pi());
 		}
 	}
 	derivations.clear();
