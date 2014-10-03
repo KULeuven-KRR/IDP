@@ -19,15 +19,6 @@ endif()
 
 MESSAGE(STATUS "${PROJECT_SOURCE_DIR}")
 
-if(WITHXSB)
-    include_directories (
-    	"${XSB_BUILD_DIR}/emu"
-    	"${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}"
-    )
-    addToCXX("-D WITHXSB")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
-endif()
-
 include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/loki/include"
 	"${PROJECT_SOURCE_DIR}/lib/safeint"
@@ -76,17 +67,16 @@ set(IDPFILES "${IDPFILES};${LIBGIDLHPPFILES};${LIBGIDLCPPFILES}")
 
 if(WITHXSB)
     set_source_files_properties(
-        ${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o PROPERTIES
+        ${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o PROPERTIES
         EXTERNAL_OBJECT TRUE  # Identifies this as an object file
         GENERATED TRUE  # Avoids need for file to exist at configure-time
     )
-    set(IDPFILES "${IDPFILES};${XSB_BUILD_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
+    set(IDPFILES "${IDPFILES};${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o")
 endif()
 
 add_library(idp ${IDPFILES})
 
 if(WITHXSB)
-    add_dependencies(idp xsb)
 endif()
 
 if(NOT CMAKE_COMPILER_IS_MINGW)
@@ -133,10 +123,28 @@ else()
 endif()
 
 install (FILES ${PROJECT_SOURCE_DIR}/data/var/config.idp DESTINATION var)
-install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua  
-		DESTINATION share/std)
+install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua
+         DESTINATION share/std)
 
 if(WITHXSB)
-install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P  
-		DESTINATION share/std)
+  install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P
+           DESTINATION share/std)
+  install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/bin/
+           DESTINATION bin/xsb/xsb-${XSB_VERSION}/bin FILES_MATCHING PATTERN "*"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/config/
+           DESTINATION bin/xsb/xsb-${XSB_VERSION}/config FILES_MATCHING PATTERN "*"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/syslib/
+           DESTINATION bin/xsb/xsb-${XSB_VERSION}/syslib FILES_MATCHING PATTERN "*"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/lib/
+           DESTINATION bin/xsb/xsb-${XSB_VERSION}/lib FILES_MATCHING PATTERN "*"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/build/
+           DESTINATION bin/xsb/xsb-${XSB_VERSION}/build FILES_MATCHING PATTERN "*"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/cmplib/
+           DESTINATION bin/xsb/xsb-${XSB_VERSION}/cmplib FILES_MATCHING PATTERN "*"
+           PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 endif()

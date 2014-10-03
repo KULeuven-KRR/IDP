@@ -26,13 +26,5 @@ documentation/generateddocs
 documentation/generateddocs/*
 docs/official/idp-manual.out
 .autotools
-lib/XSB/*
-lib/XSB/*/*
-lib/XSB/*/*/*
-lib/XSB/*/*/*/*
-lib/SPASS-3.7/doc/texinfo/script.info
-lib/SPASS-3.7/SPASS/config.h.in~
-lib/SPASS-3.7/autom4te.cache/
-lib/XSB/bin/chr_pp
 *~
 *.idp3_history
