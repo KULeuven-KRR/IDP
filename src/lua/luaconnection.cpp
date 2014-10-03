@@ -184,7 +184,12 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		if (err) {
 			stringstream ss;
 			ss << string(lua_tostring(state,-1));
-			//DFA of regex: .*\]:(.*): with the capture group as the line number
+			//The error message  is supposed to be of the form ".*\]:(.*):"
+			// where the capture group is the line number of the error within
+			// the procedure.
+			//The following code extracts that line number from the string.
+			//As regex are not properly supported in C++, a DFA-style matching
+			// is appropriate
 			auto s = ss.str();
 			auto i = 0;
 			while(s.at(i) != ']'){
