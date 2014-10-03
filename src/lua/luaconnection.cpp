@@ -180,13 +180,31 @@ void compile(UserProcedure* procedure, lua_State* state) {
 		ss << "return " << procedure->name() << "(...)\n";
 
 		// Compile
-		//clog << "compiling:\n" << ss.str() << "\n";
 		int err = luaL_loadstring(state, ss.str().c_str());
 		if (err) {
 			stringstream ss;
 			ss << string(lua_tostring(state,-1));
-			lua_pop(state, 1);
-			Error::error(ss.str(), procedure->pi());
+			//The error message  is supposed to be of the form ".*\]:(.*):"
+			// where the capture group is the line number of the error within
+			// the procedure.
+			//The following code extracts that line number from the string.
+			//As regex are not properly supported in C++, a DFA-style matching
+			// is appropriate
+			auto s = ss.str();
+			auto i = 0;
+			while(s.at(i) != ']'){
+				i++;
+			}
+			i+=2;
+			auto start = i;
+			while(s.at(i) != ':'){
+				i++;
+			}
+			// - 1 cause the start of the procedure is line 1 and already counted in the parsing location
+			int lineNb = stoi(s.substr(start,i-start)) - 1;
+			 
+			
+			Error::error(ss.str(), ParseInfo(procedure->pi().linenumber()+lineNb,1,procedure->pi().filename()));
 			return;
 		}
 		procedure->setRegistryIndex("idp_compiled_procedure_" + convertToString(UserProcedure::getCompileNumber()));
