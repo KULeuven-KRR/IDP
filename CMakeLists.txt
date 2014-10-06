@@ -191,6 +191,17 @@ if(WITHXSB)
     execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
                     OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
     file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
+    if (32BITS)
+      set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
+      set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=bits32)
+      set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install --config-tag=bits32)
+      set(XSB_CONFIG_STRING ${XSB_CONFIG_STRING}-bits32)
+    else()
+      set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC)
+      set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb)
+      set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install)
+    endif()
+
     include_directories (
         "${XSB_COPIED_SOURCE_DIR}/emu"
         "${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}"
@@ -198,9 +209,9 @@ if(WITHXSB)
     ExternalProject_Add(
       xsb
       SOURCE_DIR ${XSB_COPIED_SOURCE_DIR}/build
-      CONFIGURE_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC
-      BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb
-      INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install
+      CONFIGURE_COMMAND ${XSB_CONFIG_COMMAND}
+      BUILD_COMMAND ${XSB_BUILD_COMMAND}
+      INSTALL_COMMAND ${XSB_INSTALL_COMMAND}
       BUILD_IN_SOURCE 1
     )
 endif()
