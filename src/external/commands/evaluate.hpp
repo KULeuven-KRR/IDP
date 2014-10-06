@@ -45,10 +45,10 @@ public:
 	}
 };
 
-class EvaluateTermInference: public FormulaStructureBase {
+class EvaluateTermInference: public TermStructureBase {
 public:
 	EvaluateTermInference()
-			: FormulaStructureBase("value", "Gets the value of a variable-free term in a two-valued structure.") {
+			: TermStructureBase("value", "Gets the value of a variable-free term in a two-valued structure.") {
 		setNameSpace(getInferenceNamespaceName());
 	}
 
