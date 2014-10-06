@@ -1,0 +1,29 @@
+vocabulary V{
+	type city
+    type distance isa int
+    partial Road(city,city):distance
+    partial Path(city,city):distance
+    Start:city
+    End:city
+    Reaches(city,city)
+}
+theory T:V{
+    Reaches(Start,End).
+    !x y d:Path(x,y)=d=>Road(x,y)=d.
+   {       
+    	!x y:Reaches(x,y)<- ?d:Path(x,y)=d | Path(y,x)=d.
+        !x y:Reaches(x,y)<- ?z: Reaches(x,z) & Reaches(z,y).
+   }
+   sum{x,y,d:Path(x,y)=d:d}=<6.
+}
+structure S:V{
+	city= {Reno; Chicago; Fargo; Minnesota; Buffalo; Toronto; Winslow; Sarasota;
+Wichita; Tulsa; Ottawa; Oklahoma; Tampa; Panama; Mattawa}
+    Road={(Reno,Chicago,1);(Fargo,Buffalo,1);(Chicago,Minnesota,1);(Minnesota,Toronto,1);(Toronto,Buffalo,1);(Winslow,Sarasota,1);(Winslow,Buffalo,1);(Tampa,Oklahoma,1);(Panama,Mattawa,1);(Panama,Tampa,1);(Oklahoma,Tulsa,1);(Ottawa,Minnesota,1);(Tulsa,Buffalo,1);(Buffalo,Tulsa,1);(Reno,Panama,5)}
+    Start=Reno
+    End=Mattawa
+}
+
+procedure getExpectedNbOfModels(){
+	return 1
+}

@@ -1,0 +1,35 @@
+vocabulary V{
+	type groepnr isa int
+	type klas isa string
+	type leerkracht isa string
+	type vak isa string
+	
+	
+	type uur isa int
+	type vorm constructed from { s, m}
+	type splitsen constructed from { ja, nee}
+	
+	record(groepnr, leerkracht, vak, klas, vorm, uur, splitsen)
+	partial lengte(groepnr,vak):uur
+}
+
+theory T:V{
+	lengte(g,v)=u <=> u=max{u2: ? l k ms spl: record(g,l,v,k,ms,u2,spl) : u2}.
+}
+
+structure S:V{
+	record = {
+		50,"BEECA","GESCHIEDENIS","5HUMA",s,2,nee;
+		51,"BEECA","GESCHIEDENIS","5HUMB",s,2,nee;
+		74,"VISSP","ENGELS","5HUMA",m,0,nee;
+	}
+}
+
+procedure getExpectedNbOfModels() {
+  return 1
+}
+procedure shouldNotCheck(){
+	return true
+}
+
+

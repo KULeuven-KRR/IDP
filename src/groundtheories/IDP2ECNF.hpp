@@ -40,15 +40,17 @@ public:
 		_addedvarids.insert(varid);
 		auto domain = translator->domain(varid);
 		Assert(domain != NULL);
-		if (not domain->approxFinite() && domain->isRange()) {
-			Warning::warning("Approximating int as all integers in -2^32..2^32, as the solver does not support true infinity at the moment. Models might be lost.");
-			execute(MinisatID::IntVarRange(convert(varid), domain->first()->value()._int, domain->last()->value()._int));
-		}else if (domain->isRange()) {
+
+		if (domain->isRange()) {
+			if (not domain->approxFinite()) {
+				Warning::warning(
+						"Approximating int as all integers in -2^32..2^32, as the solver does not support true infinity at the moment. Models might be lost.");
+			}
 			// the domain is a complete range from minvalue to maxvalue.
 			auto nonden = translator->getNonDenoting(varid);
-			if(nonden==translator->falseLit()){
+			if (nonden == translator->falseLit()) {
 				execute(MinisatID::IntVarRange(convert(varid), domain->first()->value()._int, domain->last()->value()._int));
-			}else{
+			} else {
 				execute(MinisatID::IntVarRange(convert(varid), domain->first()->value()._int, domain->last()->value()._int, createLiteral(nonden)));
 			}
 		} else {
@@ -59,10 +61,10 @@ public:
 				w.push_back((MinisatID::Weight) (*it)->value()._int);
 			}
 			auto nonden = translator->getNonDenoting(varid);
-			if(nonden==translator->falseLit()){
-				execute(MinisatID::IntVarEnum(convert(varid), w, createLiteral(nonden)));
-			}else{
+			if (nonden == translator->falseLit()) {
 				execute(MinisatID::IntVarEnum(convert(varid), w));
+			} else {
+				execute(MinisatID::IntVarEnum(convert(varid), w, createLiteral(nonden)));
 			}
 		}
 	}
