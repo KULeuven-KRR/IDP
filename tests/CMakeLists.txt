@@ -119,7 +119,7 @@ if(${BUILDTESTS})
 		#IF ADDING TESTS HERE, ALSO ADD THEM BELOW THE ELSE
 		addMXTest(bounds bounds.cpp) 
 		addMXTest(boundsNoLUP boundsNoLUP.cpp)
-		if(WITHXSB)
+		if(XSBUSED)
 		    addMXTest(xsbtest definitionWithXSBtests.cpp)
 		endif()
 		addMXTest(satbounds satbounds.cpp) 
@@ -156,7 +156,7 @@ if(${BUILDTESTS})
 			mxtests/basic.cpp
             mxtests/focard.cpp
 			mxtests/bounds.cpp
-			if(WITHXSB)
+			if(XSBUSED)
 				mxtests/xsbmx.cpp
 			endif()
 			mxtests/nobounds.cpp
