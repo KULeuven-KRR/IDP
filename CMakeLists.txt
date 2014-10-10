@@ -174,19 +174,24 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
     set(XSB_INSTALL_URL "/bin/xsb/xsb-${XSB_VERSION}/")
     addToCXX("-D XSB_INSTALL_URL=\\\\\"\"${XSB_INSTALL_URL}/\\\\\"\" ") # This has a bunch of layers of \ characters, because it gets evaluated a lot... don't ask. Version below also works (less unnesting)
 #     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL2=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
-
     set(XSB_COPIED_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/XSB")
+    set(XSB_BUILD_DIR "${XSB_COPIED_SOURCE_DIR}/build")
+    add_custom_target(copy_xsb_source_code)
+    file(GLOB_RECURSE XSB_SOURCE_FILES ${PROJECT_SOURCE_DIR}/lib/XSB/*)
+    add_custom_command(
+        TARGET copy_xsb_source_code PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/lib/XSB  ${XSB_COPIED_SOURCE_DIR})
     alsoClean(${XSB_COPIED_SOURCE_DIR})
 
     set(XSB_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/xsbinstall")
     alsoClean(${XSB_INSTALL_DIR})
 
-    if (NOT EXISTS ${XSB_COPIED_SOURCE_DIR})
-        # copy XSB source directory
-        message(STATUS "Copying XSB source directory, this might take a while...")
-        file(COPY ${PROJECT_SOURCE_DIR}/lib/XSB DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-        message(STATUS "Copying XSB source directory, this might take a while... - done")
-    endif()
+#     if (NOT EXISTS ${XSB_COPIED_SOURCE_DIR})
+#         # copy XSB source directory
+#         message(STATUS "Copying XSB source directory, this might take a while...")
+#         file(COPY ${PROJECT_SOURCE_DIR}/lib/XSB DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#         message(STATUS "Copying XSB source directory, this might take a while... - done")
+#     endif()
 
     execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
                     OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
@@ -206,6 +211,7 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
         "${XSB_COPIED_SOURCE_DIR}/emu"
         "${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}"
     )
+    file(MAKE_DIRECTORY ${XSB_BUILD_DIR}/dummy) # Needed to stop complaining from adding XSB project - souce dir specified has to be non-empty
     ExternalProject_Add(
       xsb
       SOURCE_DIR ${XSB_COPIED_SOURCE_DIR}/build
@@ -214,6 +220,7 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
       INSTALL_COMMAND ${XSB_INSTALL_COMMAND}
       BUILD_IN_SOURCE 1
     )
+    add_dependencies(xsb copy_xsb_source_code)
 else()
     message(STATUS "compile with XSB support: OFF")
 endif()
