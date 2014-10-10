@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: struct_manager.h,v 1.29 2011/05/22 18:18:54 tswift Exp $
+** $Id: struct_manager.h,v 1.29 2011-05-22 18:18:54 tswift Exp $
 ** 
 */
 

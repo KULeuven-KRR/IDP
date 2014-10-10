@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: call_xsb_i.h,v 1.18 2012/03/19 15:19:59 dwarren Exp $
+** $Id: call_xsb_i.h,v 1.18 2012-03-19 15:19:59 dwarren Exp $
 ** 
 */
 
@@ -27,7 +27,7 @@
 /* load argument registers with fields of a term, and set pcreg to
    term's entry point, to effect an execute */
 #if !defined(WIN_NT) || defined(CYGWIN)
-inline
+//inline
 #endif
 int prolog_call0(CTXTdeclc Cell term)
 {
@@ -63,7 +63,7 @@ int prolog_call0(CTXTdeclc Cell term)
 /* fill argument registers with subfields of a term, to prepare for an
    execute */
 #if !defined(WIN_NT) || defined(CYGWIN)
-inline
+//inline
 #endif
 int prolog_code_call(CTXTdeclc Cell term, int value)
 {

@@ -28,10 +28,7 @@
  *
  * -------------------------------------------------------------------------- **
  *
- * $Log: ubi_BinTree.h,v $
- * Revision 1.9  2010/08/19 15:03:37  spyrosh
- * Roll back to state as of Aug 16, 2010.
- *
+ * $Log: not supported by cvs2svn $
  * Revision 1.4  2007/08/08 17:50:53  dwarren
  * Fix problem with --enable-fast-floats compilation.
  * Almost all these changes were due to the fact that cell_xsb.h

@@ -37,6 +37,10 @@
 :- export exchange_definitions/2.
 :- export update/4, get_fact_clref/2, update_clref/4.  %% hackery...
 :- export check_dynamic_options/2.
+:- export retract_fact/1.
+:- export system_retractall/1.
+:- export system_retract_fact/1.
+:- export t_assert_2/2.
 
 :- import append/3, memberchk/2,comma_member/2 from basics.
 
@@ -50,6 +54,8 @@
 
 :- import instantiation_error/3 , permission_error/4, misc_error/1, 
 	  type_error/4 from error_handler.
+:- import check_nonvar/3 from error_handler.
+:- import check_nonvar_comma_list/3 from error_handler.
 :- import domain_error/5,domain_error/4,check_callable/3 from error_handler.
 :- import check_nonvar/3 from error_handler.
 :- import check_nonvar_comma_list/3 from error_handler.
@@ -61,7 +67,7 @@
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2,
 	  conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
 	  psc_set_ep/2, unload_seg/1, code_call/3, db_retract0/3, term_set_arg/4, term_new_mod/3,
-	  psc_init_info/1
+	  psc_init_info/1, intern_term/2
      from machine.
 :- import db_get_last_clause/4 from machine.
 :- import dynamic_code_function/5 from machine.
@@ -69,6 +75,8 @@
 :- import psc_get_incr/2 from machine.
 :- import buff_set_word/3, term_psc/2 from machine.
 :- import get_attributes/2 from machine.
+:- import db_retract_fact/3 from dbclause.
+:- import dynamic_code_function/6 from machine.
 
 :- import obsolete/2 from obsolete.
 
@@ -76,7 +84,7 @@
 
 :- import (table)/1 from standard.
 :- import '_$multifile'/1 from standard.
-:- import call_c/1 from standard.
+:- import call/1, call_c/1 from standard.
 :- import (=..)/2, functor/3, integer/1, callable/1, arg/3,
          goal_cut_trans/3, goal_cut_untrans/2, abort/1, check_arity_integer/3,
          is_most_general_term/1, atomic/1, warning/1

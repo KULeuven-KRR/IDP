@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: complete_local.h,v 1.42 2013/04/19 13:46:34 tswift Exp $
+** $Id: complete_local.h,v 1.42 2013-04-19 13:46:34 tswift Exp $
 **
 */
 #ifndef __COMPLETE_LOCAL_H__

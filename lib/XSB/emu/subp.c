@@ -54,6 +54,7 @@
 #include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
+#include "tries.h"
 #include "debug_xsb.h"
 #include "error_xsb.h"
 
@@ -80,6 +81,9 @@
 #include "tr_utils.h"
 #include "system_defs_xsb.h"
 #include "builtin.h"
+#include "struct_intern.h"
+#include "cell_xsb_i.h"
+
 /*======================================================================*/
 extern xsbBool quotes_are_needed(char *string);
 
@@ -693,21 +697,6 @@ void intercept(CTXTdeclc Psc psc) {
 #define FLOAT_MASK 0xfffffff8
 #endif
 
-
-inline float getfloatval(Cell w)
-{
-    FloatConv converter;
-    converter.i = w & FLOAT_MASK;
-    return converter.f;
-}
-
-inline Cell makefloat(float f)
-{
-    FloatConv converter;
-    converter.f = f;
-    return (Cell)(( converter.i & FLOAT_MASK ) | XSB_FLOAT);
-}
-
 inline int sign(Float num)
 {
   if (num==0.0) return 0;
@@ -883,25 +872,34 @@ int key_compare(CTXTdeclc const void * t1, const void * t2)
 /* no idea why we keep them here.                                       */
 /*======================================================================*/
 
-void print_aqatom(FILE *file, char *string) {
+void print_aqatom(FILE *file, int charset, char *string) {
   int loc = 0;
 
-  fprintf(file,"'");
-  while (string[loc] != '\0') {
-    if (string[loc] == '\'') fprintf(file,"'");
-    fprintf(file,"%c",string[loc++]);
+  if (charset == UTF_8) {
+    fprintf(file,"'");
+    while (string[loc] != '\0') {
+      if (string[loc] == '\'') fprintf(file,"'");
+      fprintf(file,"%c",string[loc++]);
+    }
+    fprintf(file,"'");
+  } else {
+    write_string_code(file,charset,(byte *)"'");
+    while (*string != '\0') {
+      if (*string == '\'') write_string_code(file,charset,(byte *)"'");
+      PutCode(utf8_char_to_codepoint((byte **)&string),charset,file);
+    }
+    write_string_code(file,charset,(byte *)"'");
   }
-  fprintf(file,"'");
 }
 
 /*======================================================================*/
 /* print an atom, quote it if necessary.				*/
 /*======================================================================*/
 
-void print_qatom(FILE *file, char *string)
+void print_qatom(FILE *file, int charset, char *string)
 {
-  if (quotes_are_needed(string)) print_aqatom(file, string);
-  else fprintf(file, "%s", string);
+  if (quotes_are_needed(string)) print_aqatom(file, charset, string);
+  else write_string_code(file,charset,(byte *)string);
 }
 
 /*======================================================================*/
@@ -909,23 +907,30 @@ void print_qatom(FILE *file, char *string)
 /* if necessary.							*/
 /*======================================================================*/
 
-void print_dqatom(FILE *file, char *string)
-{
-  int loc = 0;
-
-  fprintf(file,"\"");
-  while (string[loc] != '\0') {
-    if (string[loc] == '"') fprintf(file,"\"");
-    fprintf(file,"%c",string[loc++]);
+void print_dqatom(FILE *file, int charset, char *string) {
+  if (charset == UTF_8) {
+    int loc = 0;
+    fprintf(file,"\"");
+    while (string[loc] != '\0') {
+      if (string[loc] == '"') fprintf(file,"\"");
+      fprintf(file,"%c",string[loc++]);
+    }
+    fprintf(file,"\"");
+  } else {
+    write_string_code(file,charset,(byte *)"\"");
+    while (*string != '\0') {
+      if (*string == '"') write_string_code(file,charset,(byte *)"\"");
+      PutCode(utf8_char_to_codepoint((byte **)&string),charset,file);
+    }
+    write_string_code(file,charset,(byte *)"\"");
   }
-  fprintf(file,"\"");
 }
 
 /*======================================================================*/
 /* print an operator.							*/
 /*======================================================================*/
 
-void print_op(FILE *file, char *string, int pos)
+void print_op(FILE *file, int charset, char *string, int pos)
 {
   char *s;
   int need_blank = 0;
@@ -937,12 +942,12 @@ void print_op(FILE *file, char *string, int pos)
   }
   if (need_blank) {
     switch (pos) {
-      case 1: print_qatom(file, string); putc(' ', file); break;
-      case 2: putc(' ', file);
-	      print_qatom(file, string); putc(' ', file); break;
-      case 3: putc(' ', file); print_qatom(file, string); break;
+    case 1: print_qatom(file, charset, string); putc(' ', file); break;
+    case 2: putc(' ', file);
+      print_qatom(file, charset, string); putc(' ', file); break;
+    case 3: putc(' ', file); print_qatom(file, charset, string); break;
     }
-  } else fprintf(file, "%s", string);
+  } else write_string_code(file,CURRENT_CHARSET,(byte *)string);
 }
 
 /* ----- The following is also called from the Prolog level ----------- */

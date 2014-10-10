@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: auxlry.h,v 1.40 2013/05/01 17:04:46 tswift Exp $
+** $Id: auxlry.h,v 1.41 2013-05-06 21:10:23 dwarren Exp $
 ** 
 */
 
@@ -33,7 +33,7 @@ extern double real_time(void);
 extern void get_date(int *year, int *month, int *day,
 		    int *hour, int *minute, int *second);
 
-#define ihash(val, size) ((word)(val) % (size))
+#define ihash(val, size) ((UInteger)(val) % (size))
 
 #ifndef MULTI_THREAD
 extern int asynint_val;
@@ -60,6 +60,7 @@ extern Exec_Mode xsb_mode;
 //extern int max_threads_glc;
 
 #define fileptr(xsb_filedes)  open_files[xsb_filedes].file_ptr
+#define charset(xsb_filedes)  open_files[xsb_filedes].charset
 
 /* This would yield a meaningful message in case of segfault */
 #define SET_FILEPTR(stream, xsb_filedes) \
@@ -70,9 +71,25 @@ extern Exec_Mode xsb_mode;
     if ((stream==NULL) && (xsb_filedes != 0)) \
 	xsb_abort("No stream associated with file descriptor %d in an I/O predicate", xsb_filedes);
 
+#define SET_FILEPTR_CHARSET(stream, charset, xsb_filedes)	\
+  if (xsb_filedes < 0 || xsb_filedes >= MAX_OPEN_FILES)			\
+    xsb_abort("Invalid file descriptor %d in an I/O predicate",		\
+	      xsb_filedes);						\
+  stream = fileptr(xsb_filedes);					\
+  if ((stream==NULL) && (xsb_filedes != 0))				\
+    xsb_abort("No stream associated with file descriptor %d in an I/O predicate", xsb_filedes);	\
+  charset = charset(xsb_filedes);
+
+
 extern void gdb_dummy(void);
 
 /* round N to the next multiple of P2, P2 must be a power of 2 */
+
+#ifdef DARWIN 
+#define SQUASH_LINUX_COMPILER_WARN(VAR) 
+#else
+#define SQUASH_LINUX_COMPILER_WARN(VAR) VAR = VAR;
+#endif
 
 #define ROUND(N,P2)	((N + (P2-1)) & ~(P2-1))
 

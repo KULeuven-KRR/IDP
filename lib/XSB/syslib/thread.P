@@ -312,28 +312,28 @@ thread_yield :-
 /*---------------*/
 
 abolish_private_tables :-
-	thread_request( ABOLISH_PRIVATE_TABLES, _,_,_, _, _, _, _,_).
+	thread_request( ABOLISH_PRIVATE_TABLES, _,_,_, _, _, _, _, _).
 
 abolish_all_private_tables :-
-	thread_request( ABOLISH_ALL_PRIVATE_TABLES, _,_,_, _, _, _, _,_).
+	thread_request( ABOLISH_ALL_PRIVATE_TABLES, _, _, _, _, _, _, _, _).
 
 /*---------------*/
 
 abolish_shared_tables :-
-	thread_request( ABOLISH_SHARED_TABLES, _,_,_, _, _, _, _,_).
+	thread_request( ABOLISH_SHARED_TABLES, _, _, _, _, _, _, _, _).
 
 abolish_all_shared_tables :-
-	thread_request( ABOLISH_ALL_SHARED_TABLES, _,_,_, _, _, _, _,_).
+	thread_request( ABOLISH_ALL_SHARED_TABLES, _, _, _, _, _, _, _, _).
 
 set_xsb_ready :- 
-	thread_request( SET_XSB_READY, _,_,_, _, _, _, _,_).
+	thread_request( SET_XSB_READY, _,_,_, _, _, _, _, _).
 
-usleep(X) :-
-	thread_request( XSB_USLEEP,X ,_,_, _, _, _, _,_).
+usleep(Miliseconds) :-
+	thread_request( XSB_USLEEP, Miliseconds, _, _, _, _, _, _, _).
 
 thread_sleep(Seconds) :-
-%	Microseconds is Seconds * 1000000,
-	thread_request( XSB_USLEEP, Seconds,_,_, _, _, _, _,_).
+	Miliseconds is round(Seconds*1000), 
+	thread_request( XSB_USLEEP, Miliseconds, _, _, _, _, _, _, _).
 
 
 /* ==================================================================  */
@@ -402,36 +402,43 @@ thread_call(Goal, Handler) :-
 %	writeln(thread_call(Goal, Handler)),
 	catch(Goal,Ball,thread_call_handler(Ball,Handler)),
 	thread_request( XSB_SET_EXIT_STATUS, THREAD_SUCCEEDED, _, _, _, _, _, _ ,_),
-	call(Handler).
+	catch((Handler -> true; true), _, true).
 thread_call(_Goal,Handler) :-
 	thread_request( XSB_SET_EXIT_STATUS, THREAD_FAILED, _, _, _, _, _, _ ,_),
-	call(Handler),
+	catch((Handler -> true; true), _, true),
 	fail.
 
 %:- import writeln/1 from standard.
 thread_call_handler(Ball, Handler) :- 
 %	writeln(thread_call_handler(Ball, Handler)),
 	assert_status_ball(Ball),
-	call(Handler),
+	catch((Handler -> true; true), _, true),
 	retract_status_ball,
 	throw(Ball).
 
 :- import get_backtrace/2 from error_handler.
-assert_status_ball(thread_exit(Term)):- 
+assert_status_ball(thread_exit(Term)) :-
+%	writeln(thread_exit_reached),
 	thread_request( XSB_SET_EXIT_STATUS, THREAD_EXITED, _, _, _, _, _, _ ,_),
 	thread_self(Id),asserta('_$thread_exit_ball'(Id,exited(Term))).
-assert_status_ball(error(thread_cancel,Msg,BT)):- !,
+assert_status_ball(error(thread_cancel,Msg,BT)) :- !,
 %	writeln(thread_cancel_reached),
 	thread_request( XSB_SET_EXIT_STATUS, THREAD_CANCELLED, _, _, _, _, _, _ ,_),
 	get_backtrace(BT,ReadBT),
 	thread_self(Id),
 	asserta('_$thread_exit_ball'(Id,cancelled(error(thread_cancel,Msg,ReadBT)))).
-assert_status_ball(error(Error,Msg,BT)):- 
+assert_status_ball(error(Error,Msg,BT)) :-
+%	writeln(thread_error_reached),
 	thread_request( XSB_SET_EXIT_STATUS, THREAD_EXCEPTION, _, _, _, _, _, _ ,_),
 	get_backtrace(BT,ReadBT),thread_self(Id),
 	asserta('_$thread_exit_ball'(Id,exception(error(Error,Msg,ReadBT)))).
+assert_status_ball(Ball) :-
+%	writeln(thread_other_reached(Ball)),
+	thread_request( XSB_SET_EXIT_STATUS, THREAD_EXCEPTION, _, _, _, _, _, _ ,_),
+	thread_self(Id),
+	asserta('_$thread_exit_ball'(Id,exception(Ball))).
 
-retract_status_ball:- 
+retract_status_ball :-
 	thread_self(Id),retractall('_$thread_exit_ball'(Id,_)).
 
 /* store thread flag predicate in THREAD_RUN flag */

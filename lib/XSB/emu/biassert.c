@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: biassert.c,v 1.202 2013/01/09 20:15:33 dwarren Exp $
+** $Id: biassert.c,v 1.203 2013-05-06 21:10:23 dwarren Exp $
 ** 
 */
 
@@ -57,10 +57,14 @@
 #include "thread_xsb.h"
 #include "debug_xsb.h"
 #include "biassert_defs.h"
+#include "struct_intern.h"
+#include "term_psc_xsb_i.h"
+#include "ptoc_tag_xsb_i.h"
+#include "cell_xsb_i.h"
 
 /* --- routines used from other files ---------------------------------	*/
 
-extern Cell val_to_hash(Cell);
+extern Integer val_to_hash(Cell);
 
 extern int xsb_profiling_enabled;
 extern void add_prog_seg(Psc, byte *, size_t);
@@ -138,10 +142,11 @@ PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
   else return pred_ep;
 }
 
-/* To just print assert-generated code: 1. uncomment following define,
-   2. change def of xsb_dbgmsg in debug_xsb to call xsb_dbgmsg1, and
+/* To just print assert-generated code: 
+   1. uncomment following define of LOG_ASSERT
+   2. change def of xsb_dbgmsg in debug_xsb.h to call xsb_dbgmsg1, and
    3. include def of xsb_dbgmsg1 in error_xsb.c */
-/* #define LOG_ASSERT 0*/
+/*#define LOG_ASSERT 0*/
 
 /* #ifdef DEBUG */
 /* I hope we can trust any decent C compiler to compile away
@@ -484,13 +489,14 @@ static void assertcmp_printerror(CTXTdeclc int num)
 {
     switch (num) {
     case ERR_FUNCTOR:
-	xsb_abort("[Assert] functor expected");
-	break;
+      xsb_throw_error(CTXTc "Functor expected","[Assert]");
+      break;
     case ERR_REGISTER:
-	xsb_abort("[Assert] need too many registers");
-	break;
+      xsb_throw_error(CTXTc "Too many registers required; see assert/3 for large terms",
+		      "[Assert]");
+      break;
     default: 
-	xsb_abort("[Assert] error occured in assert_cmp");
+      xsb_throw_error(CTXTc "Error occured in assert_cmp","[Assert]");
     }
 }
 
@@ -518,7 +524,7 @@ static int inst_queue_empty(struct instruction_q *inst_queue)
     return (inst_queue->inst_queue_top == inst_queue->inst_queue_bottom);
 }
 
-static void inst_queue_push(struct instruction_q *inst_queue,
+static void inst_queue_push(CTXTdeclc struct instruction_q *inst_queue,
 			    Cell opcode, Cell arg1, Cell arg2)
 {
     inst_queue->inst_queue[inst_queue->inst_queue_top].opcode = opcode;
@@ -526,7 +532,7 @@ static void inst_queue_push(struct instruction_q *inst_queue,
     inst_queue->inst_queue[inst_queue->inst_queue_top].arg2 = arg2;
     inst_queue->inst_queue_top = (inst_queue->inst_queue_top+1) % INST_QUEUE_SIZE;
     if (inst_queue->inst_queue_top == inst_queue->inst_queue_bottom)
-      xsb_abort("instruction queue overflow in assert");
+      xsb_throw_error(CTXTc "instruction queue overflow in assert","[Assert]");
 }
 
 static void inst_queue_pop(struct instruction_q *inst_queue,
@@ -548,25 +554,25 @@ static void inst_queue_rem(struct instruction_q *inst_queue,
     inst_queue->inst_queue_bottom = (inst_queue->inst_queue_bottom+1) % INST_QUEUE_SIZE;
 }
 
-static void inst_queue_add(struct instruction_q *inst_queue,
+static void inst_queue_add(CTXTdeclc struct instruction_q *inst_queue,
 			   Cell opcodep, Cell arg1p, Cell arg2p)
 {
     if (inst_queue->inst_queue_bottom == 0) inst_queue->inst_queue_bottom = INST_QUEUE_SIZE;
     inst_queue->inst_queue_bottom--;
     if (inst_queue->inst_queue_top == inst_queue->inst_queue_bottom)
-      xsb_abort("instruction queue overflow in assert");
+      xsb_throw_error(CTXTc "instruction queue overflow in assert","[Assert]");
     inst_queue->inst_queue[inst_queue->inst_queue_bottom].opcode = opcodep;
     inst_queue->inst_queue[inst_queue->inst_queue_bottom].arg1 = arg1p;
     inst_queue->inst_queue[inst_queue->inst_queue_bottom].arg2 = arg2p;
     inst_queue->inst_queue_added++;
 }
 
-static void inst_queue_rotate(struct instruction_q *inst_queue) {
+static void inst_queue_rotate(CTXTdeclc struct instruction_q *inst_queue) {
   prolog_term T0, T1;
   Cell Argno;
   while (inst_queue->inst_queue_added--) {
     inst_queue_rem(inst_queue,&Argno,&T0,&T1);
-    inst_queue_push(inst_queue,Argno,T0,T1);
+    inst_queue_push(CTXTc inst_queue,Argno,T0,T1);
   }
 }
 
@@ -654,7 +660,7 @@ static int is_frozen_var(CTXTdeclc prolog_term T0, int regster, RegStat Reg, int
 	}
       } else {
 	*occs = ONLY_OCC;
-	regster = -1;  /* dummy, non-0 */
+	regster = 255;  /* dummy, non-0 */
       }
       c2p_int(CTXTc regster, p2p_arg(T0,1));
     } else {
@@ -737,6 +743,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
     assertcmp_printerror(CTXTc Argno);
     return FALSE;
   }
+  XSB_Deref(Clause);
   if (isconstr(Clause) && get_str_psc(Clause)==if_psc) { 
     Head = p2p_arg(Clause, 1);
     Body = p2p_arg(Clause, 2);
@@ -788,13 +795,14 @@ static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
   
   inst_queue_init(flatten_queue);
   
+  XSB_Deref(T0);
   if (isointeger(T0)) {
     dbgen_instB_ppvw(getnumcon, Argno, oint_val(T0)); /* getnumcon */
   } else if (isstring(T0)) {
     dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
   } else if (isinternstr(T0)) {
-    //printf("gen getinternstr: %s/%d\n", get_name(get_str_psc(T0)),get_arity(get_str_psc(T0)));
-    dbgen_instB_ppvw(getinternstr, Argno, (Cell)T0);  /* getinternstr */
+    //    printf("gen getinternstr: "); printterm(stdout,T0,20); printf("\n");
+    dbgen_instB_ppvw(getinternstr, Argno, (Cell)T0);
   } else if (isfloat(T0)) {
     dbgen_instB_ppvw(getfloat, Argno, T0); /* getfloat */
   } else if (isref(T0)) {
@@ -807,7 +815,7 @@ static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
     }
   } else {
     inst_queue_init(flatten_queue);
-    inst_queue_push(flatten_queue, Argno, T0, 0);
+    inst_queue_push(CTXTc flatten_queue, Argno, T0, 0);
     if (isattv(T0)) {
       T0 = p2p_arg(T0, 0);		/* the VAR part of the attv */
       freeze_var(CTXTc T0,Argno,Reg);
@@ -831,8 +839,8 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
     inst_queue_pop(flatten_queue, &Argno, &T0, &T1);
     Reg->RegArrayInit[Argno] = 1;	/* Reg is initted */
     if (islist(T0)) {
-      T1 = p2p_car(T0);
-      T2 = p2p_cdr(T0);
+      T1 = p2p_car(T0); XSB_Deref(T1);
+      T2 = p2p_cdr(T0); XSB_Deref(T2);
       if (unibld && isref(T1) && isref(T2) && T1!=T2 /* not same var */) {
 	int Rt1, Rt2;
 	Rt1 = reg_get(CTXTc Reg, RVAR);
@@ -848,7 +856,7 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
 	flatten_queue->inst_queue_added = 0;
 	db_geninst(CTXTc unibld, p2p_car(T0), FALSE, Reg, flatten_queue);
 	db_geninst(CTXTc unibld, p2p_cdr(T0), TRUE, Reg, flatten_queue);
-	inst_queue_rotate(flatten_queue);
+	inst_queue_rotate(CTXTc flatten_queue);
       }
     } else if (isconstr(T0)) {
       if (unibld || !istop) {dbgen_instB_ppvw(getstr, Argno, get_str_psc(T0));}   /* getstr */
@@ -862,7 +870,7 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
 	}
 	db_geninst(CTXTc unibld, p2p_arg(T0,(int)Argno), TRUE, Reg, flatten_queue);
       }
-      inst_queue_rotate(flatten_queue);
+      inst_queue_rotate(CTXTc flatten_queue);
     }
     else { /* is_attv(T0) */
       T1 = cell(clref_val(T0) + 1);	/* the ATTR part of the attv */
@@ -881,15 +889,20 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, int isLast,
   int Rt, occs;
   
  begin_db_geninst:
+  XSB_Deref(Sub);
   if (isinteger(Sub)) /* NOT isointeger; boxed *must* be handled as structures here! */ {
     if (unibld) {dbgen_instB_pppw(uninumcon, int_val(Sub));}
     else {dbgen_instB_pppw(bldnumcon, int_val(Sub));}
   } else if (isstring(Sub)) {
     if (unibld) {dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));}
     else {dbgen_instB_pppw(bldcon, (Cell)p2c_string(Sub));}
-    /*  } else if (isinternstr(Sub)) {
-    if (unibld) {dbgen_instB_pppw(uniinternstr, (Cell)Sub);}
-    else {dbgen_instB_pppw(bldinternstr, (Cell)Sub);} ***/
+    } else if (isinternstr(Sub)) {
+    if (unibld) {
+      dbgen_instB_pppw(uniinternstr, (Cell)Sub);
+    }
+    else {
+      dbgen_instB_pppw(bldinternstr, (Cell)Sub);
+      }
   } else if (isnil(Sub)) {
     if (unibld) {dbgen_instB_ppp(uninil);}
     else {dbgen_instB_ppp(bldnil);}
@@ -924,7 +937,7 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, int isLast,
       Rt = reg_get(CTXTc Reg, TVAR);
       dbgen_instB_ppv(bldtvar, Rt);
     }
-    inst_queue_add(flatten_queue, Rt, Sub, 0);
+    inst_queue_add(CTXTc flatten_queue, Rt, Sub, 0);
       
     Sub = p2p_arg(Sub, 0);		/* the VAR part of the attv */
     freeze_var(CTXTc Sub,Rt,Reg);
@@ -952,7 +965,7 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, int isLast,
 	} else dbgen_instB_ppv(bldtvar, Rt);
     }
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-    inst_queue_add(flatten_queue, Rt, Sub, 0);
+    inst_queue_add(CTXTc flatten_queue, Rt, Sub, 0);
   }
 }
 
@@ -964,50 +977,51 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
   struct instruction_q flatten_queue_lc;
   struct instruction_q *flatten_queue = &flatten_queue_lc;
 
+  XSB_Deref(T0);
   if (isref(T0)) {
     Rt = reg_get(CTXTc Reg, RVAR);
     freeze_var(CTXTc T0,Rt,Reg);
     dbgen_instB_pvv(puttvar, Rt, Rt);
-    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
   } else if ((Rt = is_frozen_var(CTXTc T0,NVAR,Reg,&occs))) {
     //    if (occs == FIRST_OCC_OF_MORE || occs == ONLY_OCC) {
     //      dbgen_instB_pvv(puttvar, Rt, Rt);
     //    } 
-    //    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    //    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
     if (occs == ONLY_OCC) {
-      inst_queue_push(inst_queue, puttvar, Argno, Argno);
+      inst_queue_push(CTXTc inst_queue, puttvar, Argno, Argno);
     } else {
       if (occs == FIRST_OCC_OF_MORE) {
 	dbgen_instB_pvv(puttvar, Rt, Rt);
       }
-      inst_queue_push(inst_queue, movreg, Rt, Argno);
+      inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
     }
   } else if (isointeger(T0)) {
-    inst_queue_push(inst_queue, putnumcon, oint_val(T0), Argno);
+    inst_queue_push(CTXTc inst_queue, putnumcon, oint_val(T0), Argno);
   } else if (isfloat(T0)) {
-    inst_queue_push(inst_queue, putnumcon, p2c_float_as_int(T0), 
+    inst_queue_push(CTXTc inst_queue, putnumcon, p2c_float_as_int(T0), 
 		    Argno);
   } else if (isnil(T0)) {
-    inst_queue_push(inst_queue, putnil, 0, Argno);
+    inst_queue_push(CTXTc inst_queue, putnil, 0, Argno);
   } else if (isstring(T0)) {
-    inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
+    inst_queue_push(CTXTc inst_queue, putcon, (Cell)p2c_string(T0), Argno);
   } else if (isattv(T0)) {
     prolog_term T1;
     
     Rt = reg_get(CTXTc Reg, RVAR);
-    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
 
     T1 = p2p_arg(T0, 0);		/* the VAR part of the attv */
     freeze_var(CTXTc T1,Rt,Reg);
 
     inst_queue_init(flatten_queue);
-    inst_queue_push(flatten_queue, Rt, T0, 0);  /*???dsw*/
+    inst_queue_push(CTXTc flatten_queue, Rt, T0, 0);  /*???dsw*/
     db_genterms(CTXTc 1, flatten_queue, Reg);
   } else {  /* structure */
     Rt = reg_get(CTXTc Reg, RVAR);  /* can't release, (till after move) */
-    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
     inst_queue_init(flatten_queue);
-    inst_queue_push(flatten_queue, Rt, T0, 0);
+    inst_queue_push(CTXTc flatten_queue, Rt, T0, 0);
     db_genterms(CTXTc 0, flatten_queue, Reg);
   }
 }
@@ -1053,18 +1067,18 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
     case puttvar:  
       if (target_is_not_source(inst_queue,(int)T0))
 	{dbgen_instB_pvv(Opcode, Arg, T0);}
-      else inst_queue_push(inst_queue, Opcode, Arg, T0);
+      else inst_queue_push(CTXTc inst_queue, Opcode, Arg, T0);
       break;
     case putnil:
       if (target_is_not_source(inst_queue,(int)T0))
 	{dbgen_instB_ppv(Opcode, T0);}
-      else inst_queue_push(inst_queue, Opcode, Arg, T0);
+      else inst_queue_push(CTXTc inst_queue, Opcode, Arg, T0);
       break;
     case putcon:
     case putnumcon:
       if (target_is_not_source(inst_queue,(int)T0))
 	{dbgen_instB_ppvw(Opcode, T0, Arg);}
-      else inst_queue_push(inst_queue, Opcode, Arg, T0);
+      else inst_queue_push(CTXTc inst_queue, Opcode, Arg, T0);
       break;
     case movreg:
       if (Arg==T0) break;
@@ -1072,14 +1086,14 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
 	dbgen_instB_pvv(movreg, Arg, T0); /* movreg */
 	reg_release(Reg,(int)Arg);
       } else if (source_is_not_target(inst_queue,(int)Arg)) /* assume target is source */
-	inst_queue_push(inst_queue, movreg, Arg, T0);
+	inst_queue_push(CTXTc inst_queue, movreg, Arg, T0);
       /* delay the instruction at the end */
       /* else if (Arg>T0) {dbgen_instB_pvv(movreg,Arg,T0);} movreg */
       else {
 	R0 = reg_get(CTXTc Reg, TVAR);
 	dbgen_instB_pvv(movreg, Arg, R0); /* movreg */
 	reg_release(Reg,(int)Arg);
-	inst_queue_push(inst_queue, movreg, R0, T0);
+	inst_queue_push(CTXTc inst_queue, movreg, R0, T0);
 	/* dbgen_instB_pvv(movreg, R0, T0); */ /* movreg */
       }
       break;
@@ -1407,6 +1421,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 
   xsb_dbgmsg((LOG_ASSERT,"Now add clref to chain:"));
 
+  XSB_Deref(Indexes);
   get_indexes( Indexes, Index, &NI ) ;
 
   MakeClRef( Clause,
@@ -1414,6 +1429,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 	     //	     IC_CELLS(NI) + ((asrtBuff->Size+0xf)&~0x7)/sizeof(Cell) ) ;
 	     IC_CELLS(NI) + ((asrtBuff->Size+0x7)&~0x7)/sizeof(Cell) ) ;
 
+  XSB_Deref(Head);
   if (xsb_profiling_enabled)
     add_prog_seg(get_str_psc(Head),(byte *)Clause,ClRefSize(Clause));
 
@@ -1556,21 +1572,22 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
    }
 }
 
-static int hash_val(int Ind, prolog_term Head, int TabSize )
+static Integer hash_val(int Ind, prolog_term Head, int TabSize )
 /* return -1 if cannot hash to this Ind (var) */
 {
-  int Hashval = 0 ;
+  Integer Hashval = 0 ;
   int i, j ;
   prolog_term Arg ;
   int index_max;
 
+  XSB_Deref(Head);
   if (Ind <= 0xff) {  /* handle usual case specially */
     Arg = p2p_arg(Head,Ind) ;
     /* The following line is a hack and should be taken out
      * when the compiler change for indexing []/0 is made. */
-    if (isnil(Arg)) Hashval = ihash(0, TabSize);
+    if (isnil(Arg)) {Hashval = ihash(0, TabSize);}
     else if (isref(Arg) || isattv(Arg)) Hashval = -1;
-    else Hashval = ihash(val_to_hash(Arg), TabSize);
+    else {Hashval = ihash(val_to_hash(Arg), TabSize);}
   } else {   /* handle joint indexes */
     for (i = 2; i >= 0; i--) {
       j = (Ind >> (i*8)) & 0xff;
@@ -1799,7 +1816,8 @@ static void find_usable_index(prolog_term Head, ClRef *s,
 /* pointer to the beginning of the clause		       */
 
 #define CheckSOBClause(H, Ind, sob, Level )			\
-{    int h, t ;							\
+{    int t ;							\
+     Integer h;							\
      ClRef cl ;				    			\
      if (ClRefSOBOpCode(sob) != fail) {				\
        t = (int)ClRefHashSize(sob);				\
@@ -3718,7 +3736,7 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   if (!prref) return TRUE;
 
   if (flags[NUM_THREADS] != 1) {
-    xsb_abort("Cannot abolish a predicate when more than 1 thread is active");
+    xsb_throw_error(CTXTc "Cannot abolish a predicate when more than 1 thread is active","[Abolish]");
   }
 
   if (get_tabled(psc)) {
@@ -3742,7 +3760,7 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   }
   else {
-    xsb_abort("Cannot abolish a predicate with active backtrack points: use retractall");
+    xsb_throw_error(CTXTc "Cannot abolish a predicate with active backtrack points: use retractall","[Abolish]");
   }
   return TRUE;
 }
@@ -3851,9 +3869,6 @@ void init_call_cleanup(void) {
   //	  * (pb) (get_ep(psc) + 0x10),* (CPtr) (get_ep(psc) + 0x14));
   call_cleanup_gl = (CPtr) (get_ep(psc) +  ZOOM_FACTOR * 0x10);
 }
-
-#include "term_psc_xsb_i.h"
-#include "ptoc_tag_xsb_i.h"
 
 #ifdef MULTI_THREAD
 extern struct shared_interned_trie_t* shared_itrie_array;
@@ -4008,7 +4023,11 @@ xsbBool dynamic_code_function( CTXTdecl )
 /* Trie Assert and Retract                                       */
 /*===============================================================*/
 
-inline CPtr trie_asserted_clref(CPtr prref)
+// Problems with clang
+#if !defined(DARWIN) 
+inline 
+#endif
+CPtr trie_asserted_clref(CPtr prref)
 {
   CPtr Clref;
 
@@ -4023,7 +4042,8 @@ inline CPtr trie_asserted_clref(CPtr prref)
 
 /*---------------------------------------------------------------*/
 /* used for debugging trie_assert */
-
+/* TLS: added DEBUG_VERBOSE statement to quiet clang */
+#ifdef DEBUG_VERBOSE
 static inline void print_bytes(CPtr x, int lo, int hi)
 {
   int i;
@@ -4036,6 +4056,7 @@ static inline void print_bytes(CPtr x, int lo, int hi)
 	     (char *)inst_table[try_type_instr_fld(x)][0],
 	     (char *)inst_table[code_to_run(x)][0] ));
 }
+#endif
 
 /*----------------------------------------------------------------*/
 

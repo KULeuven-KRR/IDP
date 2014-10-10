@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: token_defs_xsb.h,v 1.10 2010/08/19 15:03:37 spyrosh Exp $
+** $Id: token_defs_xsb.h,v 1.10 2010-08-19 15:03:37 spyrosh Exp $
 ** 
 */
 
@@ -78,3 +78,7 @@
 #define ENDCL   EOLN            /* end of clause token */
 #define RREAL	16		/* radix number(real) - overflowed */
 #define RDIGIT	17		/* radix number(int) */
+
+#define LATIN_1    1
+#define UTF_8      2     
+#define CP1252     3

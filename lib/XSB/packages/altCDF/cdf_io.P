@@ -52,6 +52,8 @@
 :- import slash/1 from machine.
 :- import variant/2 from subsumes.
 
+:- import assert_mti/1 from usermod.  % cdf_config.P  mti
+
 :- comment(module, "These routines load CDF files from a disk file
 system into memory, save them from memory to disk, and merge
 information into a CDF state.  Both intensional and extensional
@@ -148,6 +150,7 @@ dump_intensional_rules_1(Dir) :-
   	concat_atom([DirS,'cdf_intensional.P'],File),
 	tell(File),
 	write_component_intensional(_Comp),
+	write_intensional_dlTables,  % dlTables not by component, fix if nec.
 	told.
 
 write_component_intensional(Comp):-
@@ -160,7 +163,7 @@ write_component_intensional(Comp):-
 	compdlrule(Comp,DLHead,DLBody),
 	write_canonical('<='(DLHead,DLBody)), writeln('.'),
 	fail.
-write_component_intensional(_).
+write_component_intensional(_Comp).
 
 write_intensional_dlTables :-
 	for(Arity,2,11),  %%DSW MAX dlTable
@@ -229,6 +232,7 @@ reload_extensional(Dir):-
 	seeing(OldF),
 	see(File),
 	abolish_cdf_tables,
+%%	(Dir='C:\\XSBSYS\\XSBCVS\\lib\\cdfdb_extractor\\cv_base\\bearings_antifriction_eic/'->debugger:leash([]),debugger:show(['Call']),trace;true),
 	reload_extensional,
 	seen,
 	see(OldF).
@@ -256,49 +260,49 @@ information is then retracted.").
 /* TLS: question: should this do an assert or a newExtTerm? */
 merge_intensional_rules :-
 	 isa_int(CCid,PCid),\+ isa_ext(CCid,PCid),
-	 asserta(isa_ext(CCid,PCid)),
+	 assert_mti(isa_ext(CCid,PCid)),
 	 fail
 	 ;
 	 retractall(isa_int(_,_)),
 
 	 allAttr_int(SCid,RCid,TCid), \+allAttr_ext(SCid,RCid,TCid),
-	 asserta(allAttr_ext(SCid,RCid,TCid)),
+	 assert_mti(allAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
 	 retractall(allAttr_int(_,_,_)),
 
 	 classHasAttr_int(SCid,RCid,TCid), \+classHasAttr_ext(SCid,RCid,TCid),
-	 asserta(classHasAttr_ext(SCid,RCid,TCid)),
+	 assert_mti(classHasAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
 	 retractall(classHasAttr_int(_,_,_)),
 
 	 hasAttr_int(SCid,RCid,TCid),  \+hasAttr_ext(SCid,RCid,TCid),
-	 asserta(hasAttr_ext(SCid,RCid,TCid)),
+	 assert_mti(hasAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
 	 retractall(hasAttr_int(_,_,_)),
 
 	 necessCond_int(Class,Form),\+ necessCond_ext(Class,Form),
-	 asserta(necessCond_ext(Class,Form)),
+	 assert_mti(necessCond_ext(Class,Form)),
 	 fail
 	 ;
 	 retractall(necessCond_int(_,_)),
 
 	 coversAttr_int(SCid,RCid,TCid),  \+coversAttr_ext(SCid,RCid,TCid),
-	 asserta(coversAttr_ext(SCid,RCid,TCid)),
+	 assert_mti(coversAttr_ext(SCid,RCid,TCid)),
 	 fail
 	 ;
 	 retractall(coversAttr_int(_,_,_)),
 
 	 minAttr_int(SCid,RCid,TCid,N),  \+minAttr_ext(SCid,RCid,TCid,N),
-	 asserta(minAttr_ext(SCid,RCid,TCid,N)),
+	 assert_mti(minAttr_ext(SCid,RCid,TCid,N)),
 	 fail
 	 ;
 	 retractall(minAttr_int(_,_,_,_)),
 
 	 maxAttr_int(SCid,RCid,TCid,N),  \+maxAttr_ext(SCid,RCid,TCid,N),
-	 asserta(maxAttr_ext(SCid,RCid,TCid,N)),
+	 assert_mti(maxAttr_ext(SCid,RCid,TCid,N)),
 	 fail
 	 ;
 	 retractall(maxAttr_int(_,_,_,_)).
@@ -374,7 +378,7 @@ read_intensional_rules_1(Name):-
 	read_intensional_rules_2(T,Name),
 	!.
 
-read_intensional_rules_2(end_of_file,_Name).
+read_intensional_rules_2(end_of_file,_Name) :- !.
 read_intensional_rules_2('<='(Head,Body),Name):- !,
 	newDLRule(Head,Body,Name),
 	fail.

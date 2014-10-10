@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: foreign.P,v 1.65 2012/09/27 02:25:58 kifer Exp $
+** $Id: foreign.P,v 1.65 2012-09-27 02:25:58 kifer Exp $
 ** 
 */
 
@@ -30,6 +30,7 @@
 #include "flag_defs_xsb.h"
 #include "psc_defs.h"
 #include "extensions_xsb.h"
+#include "char_defs.h"
 
 
 /* need ldoption at compile time for ELF systems, so compile_H is done 1st. */
@@ -109,10 +110,11 @@ foreign_module_library_extension(Configuration,Extension) :-
 %% LdOptions: Loader options
 %% CompCom: compiler command--for testing?
 %% TempFile: Directory
-compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
+compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	xsb_configuration(compiler_flags, XSB_CC_Opts),
 	xsb_configuration(loader_flags, LD_Opts),
+	escape_path(OrigBase,Base),
 	retractall(current_compiled_module(_)),
 	assert(current_compiled_module(Base)),
 	cc_name(Options, CC_Name),
@@ -183,9 +185,9 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
 	    ; str_sub('apple-darwin', Configuration)
-	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption])
+	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption))
+	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts,' ',XSB_CC_Opts])),
@@ -202,7 +204,8 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 			   TempObj, ' ', CC_Opts,' ',XSB_CC_Opts])
 
 		),
-		xsb_configuration(config_dir,ConfigDir),
+		xsb_configuration(config_dir,OrigConfigDir),
+		escape_path(OrigConfigDir,ConfigDir),
 		(  TempObj = ''
 		-> message(shell(['sh ',ConfigDir,'/makedef.sh ',
 			       Obj])),
@@ -257,10 +260,12 @@ cc_name(Options, CC_Name) :-
 cc_options(CC_Name, Options, CC_Opts) :-
 	xsb_configuration(emudir, Emudir),
 	xsb_configuration(config_dir, ConfigDir),
+	escape_path(Emudir,EscEmudir),
+	escape_path(ConfigDir,EscConfigDir),
 	(   memberchk(cc_opts(CC_Opts1), Options)
 	->  fmt_write_string(CC_Opts2, '-I%s -I%s %s',
-			     args(Emudir,ConfigDir,CC_Opts1))
-	;   fmt_write_string(CC_Opts2, '-I%s -I%s', args(Emudir, ConfigDir))
+			     args(EscEmudir,EscConfigDir,CC_Opts1))
+	;   fmt_write_string(CC_Opts2, '-I%s -I%s', args(EscEmudir, EscConfigDir))
 	),
 	(  str_sub(gcc,CC_Name) %% gcc, egcc, kgcc, and friends
 	-> str_cat(' -Wall -fPIC ', CC_Opts2, CC_Opts)
@@ -314,6 +319,24 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	;   abort(('File ', HFile, ' for foreign module does not exist'))
 	),
 	!.
+
+escape_path(Path,Path) :-
+	xsb_configuration(configuration, Configuration),
+	str_sub('windows', Configuration),
+	!.
+escape_path(Path,PathEsc) :-
+	atom_codes(Path,PathList),
+	escape_chars(PathList,PathListEsc),
+	atom_codes(PathEsc,PathListEsc).
+
+escape_chars([],[]) :- !.
+escape_chars([Ch|Rest],[CH_BACKSLASH,Ch|RestEsc]) :-
+	memberchk(Ch,[CH_SPACE,CH_COLON]),
+	!,
+	escape_chars(Rest,RestEsc).
+escape_chars([Ch|Rest],[Ch|RestEsc]) :-
+	escape_chars(Rest,RestEsc).
+
 
 read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 	read(Clause),

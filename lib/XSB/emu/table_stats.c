@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: table_stats.c,v 1.42 2012/07/04 15:10:46 tswift Exp $
+** $Id: table_stats.c,v 1.42 2012-07-04 15:10:46 tswift Exp $
 ** 
 */
 
@@ -301,6 +301,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
     NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
   trieassert_used =
     NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+  SQUASH_LINUX_COMPILER_WARN(trieassert_used) ; 
 
   printf("\n"
 	 "Table Space Usage (excluding asserted and interned tries) \n");
@@ -514,6 +515,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   abtht = hash_statistics(&smAssertBTHT);
   trieassert_alloc = NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
   trieassert_used = NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+  SQUASH_LINUX_COMPILER_WARN(trieassert_used) ; 
 
   printf("  Current Total Allocation:   %12"UIntfmt" bytes\n"
   	 "  Current Total Usage:        %12"UIntfmt" bytes\n",

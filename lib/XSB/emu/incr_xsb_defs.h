@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: incr_xsb_defs.h,v 1.15 2012/10/30 23:16:01 tswift Exp $
+** $Id: incr_xsb_defs.h,v 1.15 2012-10-30 23:16:01 tswift Exp $
 ** 
 */
 #define GET_AFFECTED_CALLS         1

@@ -56,6 +56,7 @@
 #include "tables.h"
 #include "flags_xsb.h"
 #include "tst_utils.h"
+#include "tables_i.h"
 
 static void simplify_neg_succeeds(CTXTdeclc VariantSF);
 extern void simplify_pos_unsupported(CTXTdeclc NODEptr);
@@ -364,6 +365,7 @@ void *simpl_var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
 
   parent = branchRoot;
   std_var_num = (int)Trail_NumBindings;
+  SQUASH_LINUX_COMPILER_WARN(std_var_num) ; 
   while ( ! TermStack_IsEmpty ) {
 
     TermStack_Pop(symbol);

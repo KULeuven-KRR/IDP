@@ -45,7 +45,7 @@ if it finds an error (and doesn''t try again to read another term.)
 file_read_foe(File, Answer, Variables) :-
 	xsb_stream_lock(File),
 	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
-	read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
+	read_tokens(File, 10, Tokens, Variables, _Pos),	% 10 is the first char
 	read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
 	read_all(LeftOver),			% precedence
 	Answer = Term,
@@ -66,7 +66,7 @@ file_read_fapoe(File, Answer, Variables) :-
 %	    term_psc('_$synerr'(_), Psc), 
 	    get_synerr_psc(Psc),
 	    psc_set_prop(Psc, -1),
-	    read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
+	    read_tokens(File, 10, Tokens, Variables, _Pos),	% 10 is the first char
 	    ( read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
 	      read_all(LeftOver)			% precedence
 	    ; read_syntax_error(Psc,Tokens), 
@@ -80,7 +80,8 @@ file_read_fapoe(File, Answer, Variables) :-
 
 file_read(+File, -Answer, -Variables) Support for the ISO family of
 read predicates.  It explicitly throws a syntax error if the tokens
-cannot be parsed.
+cannot be parsed. If the errors_with_position flag is on then the error
+message will be Message-P, where P is the position of the first bad token
 
 ************/
 
@@ -90,15 +91,16 @@ file_read(File, Answer, Variables) :-
 %	    term_psc('_$synerr'(_), Psc), 
 	    get_synerr_psc(Psc),
 	    psc_set_prop(Psc, -1),
-	    read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
+	    read_tokens(File, 10, Tokens, Variables, Positions),	% 10 is the first char
 	    ( read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
 	      read_all(LeftOver)			% precedence
-	    ; iso_read_syntax_error(Psc,Tokens),
+	    ; iso_read_syntax_error(Psc,Tokens,Positions),
 	      Term = Term			% To avoid an uninitialized variable
 	    ),
 	!,
 	Answer = Term,
 	xsb_stream_unlock(File).
+
 
 #ifndef MULTI_THREAD
 get_synerr_psc(Psc):- term_psc('_$synerr'(_), Psc).
@@ -710,14 +712,15 @@ print_token(X)			:-    read_writecon(X).
 
 %--------------------------------------------------------------------------
 
-iso_read_syntax_error(Psc,Tokens):- 
+% Last arg is list of token start positions
+iso_read_syntax_error(Psc,Tokens,Positions):- 
 	psc_prop(Psc, After),
 	length(Tokens,L),				
 	Length is L - After,		     
-        iso_read_display_list(Tokens, Length, PrintList,Tail,Remaining),
+    iso_read_display_list(Tokens, Length, PrintList,Tail,Remaining),
 	Tail = [' <--- HERE? ************ 
 ++                              '|T1],
-        iso_read_display_list(Remaining, After, PrintList1,NewTail,_Remaining),
+    iso_read_display_list(Remaining, After, PrintList1,NewTail,_Remaining),
 	SpaceLength is 2*Length,
 	make_spaces(SpaceLength,SpaceList,T2),
 	T1 = SpaceList,
@@ -725,7 +728,13 @@ iso_read_syntax_error(Psc,Tokens):-
 	NewTail = [],
 	cvt_strings(PrintList,PrintListNoStr),
 	concat_atom(PrintListNoStr,NewMessage),
-	syntax_error(NewMessage).			     
+	( current_prolog_flag(errors_with_position,on) -> 
+		(Index is Length + 1,
+		ith(Index,Positions,Position),
+		syntax_error(NewMessage-Position)) 
+		;
+		syntax_error(NewMessage)).		
+
 
 cvt_strings([],[]).
 cvt_strings([T|Ts],NTs) :-
@@ -813,14 +822,16 @@ read_writecon(X) :- file_write0(STDERR, X).
 /*									    */
 /*==============================================================*/
 
-read_tokens(File, Char, TokenList, Dict) :-
+% Version with extra arg returning a list of token char start positions
+read_tokens(File, Char, TokenList, Dict, Positions) :-
 %	read_next_token(Char, Type, Value, NextChar),	      % Prolog Version
+	file_pos(File,Pos1),
 	read_next_token_c(File, Char, Type, Value, NextChar), % C Version
-	( Type == tk_eoc -> TokenList = []
-	; ( Type == tk_eof -> TokenList = [atom(end_of_file)]
+	( Type == tk_eoc -> (TokenList = [], Positions = [])
+	; ( Type == tk_eof -> (TokenList = [atom(end_of_file)], Positions = [Pos1])
 	  ; read_proc_token(Type, Value, Token, Dict),
-	    TokenList = [Token|Rest],
-	    read_tokens(File, NextChar, Rest, Dict)
+	    TokenList = [Token|Rest], Positions = [Pos1|RestPositions], 
+	    read_tokens(File, NextChar, Rest, Dict, RestPositions)
           )
 	).
 

@@ -36,6 +36,10 @@ macro(addToCXX ARGUMENT)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ARGUMENT}")
 endmacro()
 
+macro(alsoClean ARGUMENT)
+    set(ADDITIONAL_CLEAN_FILES_TO_CLEAN "${ADDITIONAL_CLEAN_FILES_TO_CLEAN};${ARGUMENT}")
+endmacro()
+
 ### Fix for newest ubuntu+gcc
 IF("${CMAKE_SYSTEM}" MATCHES "Linux")
 	addToCXX("-Wl,--no-as-needed")
@@ -135,6 +139,7 @@ endif()
 message(STATUS "IDP CXX flags: ")
 message(STATUS "${CMAKE_CXX_FLAGS}")
 message(STATUS "build idp shared ${BUILD_SHARED_LIBS}")
+
 if(BUILD_IDP_STATIC)
 	message(STATUS "build idp allstatic")
 	SET(STATIC_LUA ON CACHE BOOL "Build lua static library") # only this works correctly
@@ -162,26 +167,65 @@ endif()
 
 #XSB
 option(WITHXSB  "Compile with XSB support" ON)
-if(WITHXSB)
-    execute_process(COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/config.guess 
-    				OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
+if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in currently unfixable segfaults
+    message(STATUS "compile with XSB support: ON")
+    addToCXX("-D WITHXSB")
+    set(XSB_VERSION "3.5.0")
+    set(XSB_INSTALL_URL "/bin/xsb/xsb-${XSB_VERSION}/")
+    addToCXX("-D XSB_INSTALL_URL=\\\\\"\"${XSB_INSTALL_URL}/\\\\\"\" ") # This has a bunch of layers of \ characters, because it gets evaluated a lot... don't ask. Version below also works (less unnesting)
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL2=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
+    set(XSB_COPIED_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/XSB")
+    set(XSB_BUILD_DIR "${XSB_COPIED_SOURCE_DIR}/build")
+    add_custom_target(copy_xsb_source_code)
+    file(GLOB_RECURSE XSB_SOURCE_FILES ${PROJECT_SOURCE_DIR}/lib/XSB/*)
+    add_custom_command(
+        TARGET copy_xsb_source_code PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/lib/XSB  ${XSB_COPIED_SOURCE_DIR})
+    alsoClean(${XSB_COPIED_SOURCE_DIR})
+
+    set(XSB_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/xsbinstall")
+    alsoClean(${XSB_INSTALL_DIR})
+
+#     if (NOT EXISTS ${XSB_COPIED_SOURCE_DIR})
+#         # copy XSB source directory
+#         message(STATUS "Copying XSB source directory, this might take a while...")
+#         file(COPY ${PROJECT_SOURCE_DIR}/lib/XSB DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#         message(STATUS "Copying XSB source directory, this might take a while... - done")
+#     endif()
+
+    execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
+                    OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
     file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
-    set(XSB_BUILD_DIR "${PROJECT_SOURCE_DIR}/lib/XSB")
+    if (32BITS)   # Currently never used, since it's filtered out in the top-level if above
+      set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
+      set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=bits32)
+      set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install --config-tag=bits32)
+      set(XSB_CONFIG_STRING ${XSB_CONFIG_STRING}-bits32)
+    else()
+      set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC)
+      set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb)
+      set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install)
+    endif()
+
+    include_directories (
+        "${XSB_COPIED_SOURCE_DIR}/emu"
+        "${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}"
+    )
+    file(MAKE_DIRECTORY ${XSB_BUILD_DIR}/dummy) # Needed to stop complaining from adding XSB project - souce dir specified has to be non-empty
     ExternalProject_Add(
       xsb
-      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/XSB/build
-      CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/ -with-optimization=fPIC
-      BUILD_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/makexsb
-      INSTALL_COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/makexsb install
+      SOURCE_DIR ${XSB_COPIED_SOURCE_DIR}/build
+      CONFIGURE_COMMAND ${XSB_CONFIG_COMMAND}
+      BUILD_COMMAND ${XSB_BUILD_COMMAND}
+      INSTALL_COMMAND ${XSB_INSTALL_COMMAND}
       BUILD_IN_SOURCE 1
     )
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/xsb-3.4.0/bin/ DESTINATION bin/xsb/xsb-3.4.0/bin FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/xsb-3.4.0/config/ DESTINATION bin/xsb/xsb-3.4.0/config FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/xsb-3.4.0/syslib/ DESTINATION bin/xsb/xsb-3.4.0/syslib FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/xsb-3.4.0/lib/ DESTINATION bin/xsb/xsb-3.4.0/lib FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/xsb-3.4.0/build/ DESTINATION bin/xsb/xsb-3.4.0/build FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/xsbinstall/xsb-3.4.0/cmplib/ DESTINATION bin/xsb/xsb-3.4.0/cmplib FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    set(XSB_INSTALL_URL "/bin/xsb/xsb-3.4.0/")
+    add_dependencies(xsb copy_xsb_source_code)
+else()
+    message(STATUS "compile with XSB support: OFF")
+    if(WITHXSB AND 32BITS)
+        message(STATUS "  .. because currently 32 bit compilation is not supported with XSB")
+    endif()
 endif()
 
 #REST
@@ -226,3 +270,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 message(STATUS "source package name: ${CPACK_SOURCE_PACKAGE_FILE_NAME}")
 message(STATUS "source package ignores: ${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
+
+message(STATUS "make clean cleans the following additional files:")
+message(STATUS "${ADDITIONAL_CLEAN_FILES_TO_CLEAN}")
+SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${ADDITIONAL_CLEAN_FILES_TO_CLEAN}")

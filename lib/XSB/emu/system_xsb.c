@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: system_xsb.c,v 1.69 2013/01/04 14:56:22 dwarren Exp $
+** $Id: system_xsb.c,v 1.69 2013-01-04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -33,6 +33,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <ctype.h>
+#include <time.h>
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -111,7 +112,7 @@ int sys_syscall(CTXTdeclc int callno)
   case SYS_exit: {
     int exit_code;
     exit_code = (int)ptoc_int(CTXTc 3);
-    xsb_mesg("\nXSB exited with exit code: %d", exit_code);
+    xsb_error("\nXSB exited with exit code: %d", exit_code);
     exit(exit_code); break;
   }
   case SYS_getpid :
@@ -193,6 +194,10 @@ int sys_syscall(CTXTdeclc int callno)
 
   case STATISTICS_2: {
     get_statistics(CTXT);
+    break;
+  }
+  case SYS_epoch_seconds: {
+    ctop_int(CTXTc 3,(Integer)time(0));
     break;
   }
   default: xsb_abort("[SYS_SYSCALL] Unknown system call number, %d", callno);
@@ -401,18 +406,18 @@ xsbBool sys_system(CTXTdeclc int callno)
 
     if (toproc_needed) {
       toprocess_fptr = fdopen(pipe_to_proc[1], "w");
-      toproc_stream =  xsb_intern_fileptr(toprocess_fptr,callname,"pipe","w"); 
+      toproc_stream =  xsb_intern_fileptr(toprocess_fptr,callname,"pipe","w",CURRENT_CHARSET); 
       ctop_int(CTXTc 3, toproc_stream);
     }
     if (fromproc_needed) {
       fromprocess_fptr = fdopen(pipe_from_proc[0], "r");
-      fromproc_stream =  xsb_intern_fileptr(fromprocess_fptr,callname,"pipe","r"); 
+      fromproc_stream =  xsb_intern_fileptr(fromprocess_fptr,callname,"pipe","r",CURRENT_CHARSET); 
       ctop_int(CTXTc 4, fromproc_stream);
     }
     if (fromstderr_needed) {
       fromproc_stderr_fptr = fdopen(pipe_from_stderr[0], "r");
       fromproc_stderr_stream
-	= xsb_intern_fileptr(fromproc_stderr_fptr,callname,"pipe","r"); 
+	= xsb_intern_fileptr(fromproc_stderr_fptr,callname,"pipe","r",CURRENT_CHARSET); 
       ctop_int(CTXTc 5, fromproc_stderr_stream);
     }
     ctop_int(CTXTc 6, pid_or_status);
@@ -789,7 +794,7 @@ static void concat_array(CTXTdeclc char *array[], char *separator,
     space_left -= separator_size;
     idx++;
   }
-  if (space_left < 0) {
+  if (space_left <= 0) {           // TLS: changed < to <= to fix compiler error on Mac
     xsb_resource_error(CTXTc "spawn_process/shell buffer",
 		       "spawn_process/shell",5) ;
   }
@@ -1172,7 +1177,9 @@ static int file_copy(char *source, char *dest)
     }
     if (flags[LOG_ALL_FILES_USED]) {
       char current_dir[MAX_CMD_LEN];
-      getcwd(current_dir, MAX_CMD_LEN-1);
+      char *dummy; /*to squash warnings */
+      dummy = getcwd(current_dir, MAX_CMD_LEN-1);
+      SQUASH_LINUX_COMPILER_WARN(dummy) ; 
       xsb_log("%s: %s\n",current_dir,source);
     }
     if (dest_exists) {

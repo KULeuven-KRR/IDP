@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cvarstring.c,v 1.5 2010/11/07 14:56:37 tswift Exp $
+** $Id: cvarstring.c,v 1.6 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -34,6 +34,7 @@
 #include "varstring_xsb.h"
 extern char *xsb_executable_full_path(char *);
 extern char *strip_names_from_path(char*, int);
+extern struct varstr_ops VarStrOps;
 
 /* context.h is necessary for the type of a thread context. */
 #include "context.h"

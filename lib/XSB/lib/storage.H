@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: storage.H,v 1.16 2010/08/19 15:03:38 spyrosh Exp $
+** $Id: storage.H,v 1.16 2010-08-19 15:03:38 spyrosh Exp $
 ** 
 */
 
@@ -28,6 +28,7 @@
 	storage_reclaim_space/1,
 	incr_storage_update/1,
 	storage_find_fact/2,
+	storage_find_fact/3,
 	storage_find_keypair/3,
 	storage_handle/4,
 	%% this is for debugging/profiling

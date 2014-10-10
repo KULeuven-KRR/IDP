@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: psc_xsb.h,v 1.52 2012/02/18 04:46:55 kifer Exp $
+** $Id: psc_xsb.h,v 1.53 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -88,12 +88,12 @@ struct psc_rec {
   byte env;			/* 0&0x3 - visible; 1&0x3 - local; 2&0x3 - unloaded;  */
   				/* 0xc0, 2 bits for spy */
 				/* 0x20 - shared, 0x10 for determined; 0x8 - tabled */
-  byte incr;                    /* Only first 2 bits used: 1 incremental; 0 is non-incremental, 2: opaque */
+  byte incr;                    /* Only first 2 bits used: 1 incremental; 0 is non-incremental, 2: opaque; 4 for INTERN */
   byte entry_type;		/* see psc_defs.h */
   byte arity; 
   char *nameptr;
-  struct psc_rec *data;      /* psc of module, if pred; otw data */
-  byte *ep;                     /* entry point (initted to next word) */
+  struct psc_rec *data;      /* psc of module, if pred in non-usermod module, otw filename pred loaded from */
+  byte *ep;                     /* entry point (initted to next word) if pred; filename of pred loaded from if module */
   word load_inst;               /* byte-code load_pred, or jump, or call_forn */
   struct psc_rec *this_psc;     /* BC arg: entry-point or foreign entry point */
 };
@@ -132,6 +132,7 @@ typedef struct psc_pair *Pair;
 #define  get_private(psc)	((psc)->env & ~T_SHARED & T_SHARED_DET)
 
 #define  get_incr(psc)           (((psc)->incr & T_INCR) == INCREMENTAL)  
+#define  get_intern(psc)	 ((psc)->incr & T_INTERN)
 #define  get_opaque(psc)         (((psc)->incr & T_INCR) == OPAQUE)  
 #define  get_nonincremental(psc) (((psc)->incr & T_INCR) == NONINCREMENTAL) 
 
@@ -145,8 +146,8 @@ typedef struct psc_pair *Pair;
 #define  set_spy(psc, spy)	(psc)->env = ((psc)->env & ~T_SPY) | spy
 #define  set_shared(psc, shar)	(psc)->env = ((psc)->env & ~T_SHARED) | shar
 #define  set_tabled(psc, tab)	(psc)->env = ((psc)->env & ~T_TABLED) | tab
-  //#define  set_incr(psc,val)      ((psc)->incr = ((psc)->incr & 3) | val)  /* incremental */
 #define  set_incr(psc,val)      ((psc)->incr = ((psc)->incr & ~3) | val)  /* incremental */
+#define  set_intern(psc,val)    ((psc)->incr = ((psc)->incr & ~T_INTERN) | val)  /* val 0 or T_INTERN */
 #define  set_arity(psc, ari)	((psc)->arity = ari)
 #define  set_length(psc, len)	((psc)->length = len)
 #define  set_ep(psc, val)	do {(psc)->ep = val;     \
@@ -168,6 +169,7 @@ typedef struct psc_pair *Pair;
 /*======================================================================*/
 
 extern Pair link_sym(Psc, Psc);
+extern Pair search_in_usermod(int, char *);
 extern Pair insert_module(int, char *);
 extern Pair insert(char *, byte, Psc, int *);
 extern void set_psc_ep_to_psc(Psc, Psc);

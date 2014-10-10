@@ -19,9 +19,10 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gc_mark.h,v 1.42 2013/01/04 14:56:22 dwarren Exp $
+** $Id: gc_mark.h,v 1.43 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
+//#define NO_STRING_GC
 
 #ifndef MULTI_THREAD
 extern Structure_Manager smTSTN;
@@ -34,6 +35,7 @@ extern ClRef db_get_clause_code_space(PrRef, ClRef, CPtr *, CPtr *);
 extern void mark_findall_strings(CTXTdecl);
 extern void mark_open_filenames();
 extern void mark_hash_table_strings(CTXTdecl);
+extern int is_interned_rec(Cell);
 
 #ifdef INDIRECTION_SLIDE
 #define TO_BUFFER(ptr) \
@@ -92,6 +94,38 @@ do { \
 #define cp_mark(i)         cp_marks[i] |= MARKED
 #define cp_clear_mark(i)   cp_marks[i] &= ~MARKED
 
+void mark_interned_term(CTXTdeclc Cell interned_term) {
+  int celltag, i, arity;
+  Cell subterm;
+
+  if (!isinternstr(interned_term)) {printf("ERROR: calling mark_interned_term\n"); return;}
+
+ begin_mark_interned_term:
+  celltag = cell_tag(interned_term);
+  if (celltag == XSB_LIST) {
+    subterm = get_list_head(interned_term);
+    if (isinternstr(subterm)) mark_interned_term(CTXTc subterm);
+    else if (isstring(subterm)) mark_string(string_val(subterm),"intern");
+    subterm = get_list_tail(interned_term);
+    if (isinternstr(subterm)) {
+      interned_term = subterm;
+      goto begin_mark_interned_term;
+    } else if (isstring(subterm)) mark_string(string_val(subterm),"intern");
+  } else if (celltag == XSB_STRUCT) {
+    arity = get_arity(get_str_psc(interned_term));
+    for (i = 1; i < arity; i++) {
+      subterm = get_str_arg(interned_term,i);
+      if (isinternstr(subterm)) mark_interned_term(CTXTc subterm);
+      else if (isstring(subterm)) mark_string(string_val(subterm),"intern");
+    }
+    subterm = get_str_arg(interned_term,arity);
+    if (isinternstr(subterm)) {
+      interned_term = subterm;
+      goto begin_mark_interned_term;
+    } else if (isstring(subterm)) mark_string(string_val(subterm),"intern");
+  } else printf("GC ERROR; in mark_interned_term\n");
+}
+
 /*=========================================================================*/
 /*
 hp_pointer_from_cell() returns the address,tag pair if a cell points
@@ -113,7 +147,10 @@ inline static CPtr hp_pointer_from_cell(CTXTdeclc Cell cell, int *tag)
   CPtr retp;
 
   // unlikely to be right....  don't know what to do here...
-  if (isinternstr(cell)) {return NULL;}
+  if (isinternstr(cell)) {
+    if (!is_interned_rec(cell)) printf("GC: interned str not found %p\n", (void *)cell);
+    return NULL;
+  }
   t = cell_tag(cell) ;
 
   /* the use of if-tests rather than a switch is for efficiency ! */
@@ -266,9 +303,11 @@ static int mark_cell(CTXTdeclc CPtr cell_ptr)
 
 
   if (tag == XSB_LIST || tag == XSB_ATTV) {
-    if (isinternstr(cell_val)) { // need to go in and mark strings if string gc
-      // printf("not gc interned list\n");
-      goto pop_more;  // ignore for now
+    if (isinternstr(cell_val)) {
+      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
+	if (!is_interned_rec(cell_val)) printf("GC: interned str not found %p\n", (void *)cell_val);
+	mark_interned_term(CTXTc cell_val);
+      }
     } else {
       cell_ptr = clref_val(cell_val) ;
       if (mark_overflow)
@@ -280,8 +319,10 @@ static int mark_cell(CTXTdeclc CPtr cell_ptr)
 
   if (tag == XSB_STRUCT) {
     if (isinternstr(cell_val)) {
-      //printf("not gc interned str\n");
-      goto pop_more;  // ignore for now
+      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
+	if (!is_interned_rec(cell_val)) printf("GC: interned str not found %p\n", (void *)cell_val);
+	mark_interned_term(CTXTc cell_val);
+      }
     } else {
       p = (CPtr)cell_val ;
       cell_ptr = ((CPtr)(cs_val(cell_val))) ;
@@ -370,37 +411,45 @@ static int mark_root(CTXTdeclc Cell cell_val)
 
     case XSB_STRUCT : 
       if (isinternstr(cell_val)) {  // interned term ignore for now
-	return(0);
+	if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
+	  if (!is_interned_rec(cell_val)) printf("GC: interned str not found %p\n", (void *)cell_val);
+	  mark_interned_term(CTXTc cell_val);
+	}
+	return 0;
+      } else {
+	cell_ptr = ((CPtr)(cs_val(cell_val))) ;
+	if (!points_into_heap(cell_ptr)) return(0) ;
+	i = cell_ptr - heap_bot ; 
+	if (h_marked(i)) return(0) ; 
+	/* now check that at i, there is a Psc */
+	v = *cell_ptr ;
+	pointer_from_cell(CTXTc v,&tag,&whereto) ;
+	/* v must be a PSC - the following tries to test this */
+	switch (tag) {
+	case XSB_REF: 
+	case XSB_REF1 :
+	  if (whereto != TO_NOWHERE) return(0) ;
+	  break ;
+	default: xsb_warn("Encountered bad STR pointer in GC marking; ignored\n");
+	  return(0);
+	}
+	TO_BUFFER(cell_ptr);
+	h_mark(i) ; m = 1 ; 
+	cell_val = *cell_ptr;
+	arity = get_arity((Psc)(cell_val)) ;
+	while (arity--) m += mark_cell(CTXTc ++cell_ptr) ;
+	return(m) ;
       }
-      cell_ptr = ((CPtr)(cs_val(cell_val))) ;
-      if (!points_into_heap(cell_ptr)) return(0) ;
-      i = cell_ptr - heap_bot ; 
-      if (h_marked(i)) return(0) ; 
-      /* now check that at i, there is a Psc */
-      v = *cell_ptr ;
-      pointer_from_cell(CTXTc v,&tag,&whereto) ;
-      /* v must be a PSC - the following tries to test this */
-      switch (tag) {
-      case XSB_REF: 
-      case XSB_REF1 :
-	if (whereto != TO_NOWHERE) return(0) ;
-	break ;
-      default: xsb_warn("Encountered bad STR pointer in GC marking; ignored\n");
-	return(0);
-      }
-      TO_BUFFER(cell_ptr);
-      h_mark(i) ; m = 1 ; 
-      cell_val = *cell_ptr;
-      arity = get_arity((Psc)(cell_val)) ;
-      while (arity--) m += mark_cell(CTXTc ++cell_ptr) ;
-      return(m) ;
-      
     case XSB_LIST: 
+      if (isinternstr(cell_val)) {  // interned list ignore for now
+	if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
+	  if (!is_interned_rec(cell_val)) printf("GC: interned str not found %p\n", (void *)cell_val);
+	  mark_interned_term(CTXTc cell_val);
+	}
+	return 0;
+      } // fall through for regular lists!
     case XSB_ATTV:
       /* the 2 cells will be marked iff neither of them is a Psc */
-      if (isinternstr(cell_val)) {  // interned list ignore for now
-	return(0);
-      }
       cell_ptr = clref_val(cell_val) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
       v = *cell_ptr ;
@@ -885,7 +934,8 @@ size_t mark_heap(CTXTdeclc int arity, size_t *marked_dregs)
     for (pStruct = (BType)SMBlk_FirstStruct(pBlock); 		\
 	 pStruct < (BType)SM_NextStruct(SM); 			\
 	 pStruct = (BType)SMBlk_NextStruct(pStruct,SM_StructSize(SM))) { \
-      if (isstring(BTN_Symbol(pStruct)) && (*(((Integer *)pStruct)+1) != FREE_TRIE_NODE_MARK)) {\
+      if (isstring(BTN_Symbol(pStruct)) &&				\
+	  (*(((Integer *)pStruct)+1) != FREE_TRIE_NODE_MARK)) {		\
         mark_string(string_val(BTN_Symbol(pStruct)),"trie 1");  \
       }								\
     }								\
@@ -948,7 +998,7 @@ void mark_trie_strings(CTXTdecl) {
   mark_trie_strings_for(smTSTN,TSTNptr,pTSTNStruct,apTSTNStruct);
 }
 
-void mark_code_strings(int pflag, CPtr inst_addr, CPtr end_addr) {
+void mark_code_strings(CTXTdeclc int pflag, CPtr inst_addr, CPtr end_addr) {
   int  current_opcode, oprand;
 
   //  printf("buffer\n");
@@ -967,12 +1017,14 @@ void mark_code_strings(int pflag, CPtr inst_addr, CPtr end_addr) {
 	break;
       case G:
 	printf("gc optype G\n");
-      case C:  /* also interned terms in code */
+      case C:
 	if (pflag) printf("    %s\n",*(char **)inst_addr);
-	if (current_opcode != getinternstr && current_opcode != uniinternstr && current_opcode != bldinternstr) {
-	  mark_string(*(char **)inst_addr,"code");
-	  inst_addr ++;
-	}
+	mark_string(*(char **)inst_addr,"code");
+	inst_addr ++;
+	break;
+      case H: // internstr
+	mark_interned_term(CTXTc *(CPtr)inst_addr);
+	inst_addr ++;
 	break;
       default:
 	break;
@@ -1006,7 +1058,7 @@ void mark_atom_and_code_strings(CTXTdecl) {
 	  if (prref) {
 	    clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
 	    while (clref) {
-	      mark_code_strings(0,code_beg,code_end);
+	      mark_code_strings(CTXTc 0,code_beg,code_end);
 	      clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
 	    }
 	  }
@@ -1029,7 +1081,7 @@ void mark_atom_and_code_strings(CTXTdecl) {
 	  clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
 	  while (clref) {
 	    //	    printf("  mark code from %s/%d(%s), %p\n", string, get_arity(pair_psc(pair_ptr)), get_name(pair_psc(mod_pair_ptr)), clref);
-	    mark_code_strings(0,code_beg,code_end);
+	    mark_code_strings(CTXTc 0,code_beg,code_end);
 	    clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
 	  }
 	}

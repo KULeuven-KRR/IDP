@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: socket_xsb.c,v 1.50 2011/06/06 20:20:29 dwarren Exp $
+** $Id: socket_xsb.c,v 1.50 2011-06-06 20:20:29 dwarren Exp $
 ** 
 */
 
@@ -857,6 +857,7 @@ xsbBool xsb_socket_request(CTXTdecl)
     SYS_MUTEX_UNLOCK(MUTEX_SOCKETS);
 
     if (tv) mem_dealloc((struct timeval *)tv,sizeof(struct timeval),LEAK_SPACE);
+    SQUASH_LINUX_COMPILER_WARN(connectname_found) ; 
     return set_error_code(CTXTc ecode, 7, "SOCKET_SELECT");
   }
 
@@ -1040,6 +1041,7 @@ static void select_destroy(CTXTdeclc char *connection_name)
     xsb_abort("[SOCKET_SELECT_DESTROY] connection `%s' doesn't exist", 
 	      connection_name);
   
+  SQUASH_LINUX_COMPILER_WARN(connectname_found) ; 
 }
 
 /* utility function to check whether there is empty slot left to connect */

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: sub_tables_xsb_i.h,v 1.28 2011/10/16 19:20:34 tswift Exp $
+** $Id: sub_tables_xsb_i.h,v 1.28 2011-10-16 19:20:34 tswift Exp $
 ** 
 */
 

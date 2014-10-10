@@ -182,10 +182,12 @@ assert(Clause,AZL,Index1,ErrPred) :-
 			LBody =.. [LinkPred|GArgs],
 			assert0((NHead:-LBody),1,1,'assert/1')
 		),
-		assert0((LHead:-Body),AZL,Index1,ErrPred)
+		(Body == true -> NClause = LHead ; NClause = (LHead:-Body)),
+		assert0(NClause,AZL,Index1,ErrPred)
 	 ;	(Head = Mod:BHead
 		 ->	term_new_mod(Mod,BHead,NHead),
-			assert0((NHead:-Body),AZL,Index1,ErrPred)
+			(Body == true -> NClause = NHead ; NClause = (NHead:-Body)),
+			assert0(NClause,AZL,Index1,ErrPred)
 		 ;	assert0(Clause,AZL,Index1,ErrPred)
 		)
 	).
@@ -246,19 +248,28 @@ assert0(Clause, AZL, Index1,_ErrPred) :-
 			),
 			AZLI is AZLLC + AZLF
 		),
-	code_to_buff(Nclause,AZLI),
+	code_to_buff(Nclause,PSC,AZLI),
 	AZ is AZLI /\ 1,
 	assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize) ).
 
+code_to_buff(Clause0,AZ) :-
+	term_psc(Clause0,PSC),
+	code_to_buff(Clause0,PSC,AZ).
+
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */
-code_to_buff(Clause,AZ) :-
+code_to_buff(Clause0,PSC,AZ) :-
+	psc_get_incr(PSC,Val),
+	(Val =:= 4		%=T_INTERN
+	 ->	intern_term(Clause0,Clause)
+	 ;	Clause = Clause0
+	),
 	(AZ =< 1
 	 ->	assert_code_to_buff(Clause), fail
 	 ;	set_var_occurrences(Clause),
 		assert_code_to_buff(Clause), fail
 	).
-code_to_buff(_,_).
+code_to_buff(_,_,_).
 
 set_var_occurrences(Term) :-
 	(atomic(Term)
@@ -337,7 +348,10 @@ cut_transform((Head:-Body),(Nhead:-Nbody)) :- !,
 	Head =.. Hlist,
 	append(Hlist,[Cutpoint],Nhlist),
 	Nhead =.. Nhlist,
-	goal_cut_trans(Body,Nbody,Cutpoint).
+	(var(Body) % goal_cut_trans does not check top-level var.
+	 ->	Nbody = call(Body)
+	 ;	goal_cut_trans(Body,Nbody,Cutpoint)
+	).
 cut_transform(Head,Head). /* leave unchanged, Arity is one less */
 
 /*======================================================================*/
@@ -362,8 +376,6 @@ cut_transform(Head,Head). /* leave unchanged, Arity is one less */
 
  */
 
-:- import check_nonvar/3 from error_handler.
-:- import check_nonvar_comma_list/3 from error_handler.
 dynamic(Spec):- 
 	check_nonvar(Spec,(dynamic)/1,1),
 	dynamic_1(Spec).
@@ -423,6 +435,8 @@ exec_pre_dynamic_option(private,PredList) :- !,
 	thread_private(PredList).
 exec_pre_dynamic_option(shared,PredList) :- !,
 	thread_shared(PredList).
+exec_pre_dynamic_option(intern,PredList) :- !,
+	set_predlist_incremental(PredList,T_INTERN).
 
 set_predlist_incremental((Pred,Preds),Option):- !,
 	set_predlist_incremental(Pred,Option),
@@ -491,6 +505,22 @@ check_dynamic_option(opaque,Options,PredCList) :- !,
 	    misc_error(('Cannot declare ',PredCList,
 	           ' as dynamic with options opaque and incremental'))
 	 ;  true).
+check_dynamic_option(intern,Options,PredCList) :- !,
+	(comma_member(incremental,Options)
+	 ->	misc_error(('Cannot declare ',PredCList,
+			    ' as dynamic with options intern and incremental'))
+	 ;	true
+	),
+	(comma_member(tabled,Options)
+	 ->	misc_error(('Cannot declare ',PredCList,
+			    ' as dynamic with options intern and tabled'))
+	 ;	true
+	),
+	(comma_member(opaque,Options)
+	 ->	misc_error(('Cannot declare ',PredCList,
+			    ' as dynamic with options intern and opaque'))
+	 ;	true
+	).
 check_dynamic_option(Option,_,_PredCList) :- !,
 	domain_error(dynamic_option,Option,(dynamic)/1,1,
 	'must be one of tabled,variant,incremental,opaque,private,shared').
@@ -555,9 +585,6 @@ retract(Rule) :-	% changed for multifile predicates (9/2008)
 
 % need to add check_if_trie_assert
 % optimize get_dynamic_pred_ep.
-:- export retract_fact/1.
-:- import db_retract_fact/3 from dbclause.
-:- import dynamic_code_function/6 from machine.
 
 /* TLS: retract_fact is significantly faster than retract -- I'll try
    to integrate some of its savings with retract at some point, but
@@ -613,7 +640,6 @@ retractall0(Fact) :-
 	 ;	true
 	).
 
-:- export system_retractall/1.
 system_retractall(Fact):- 
 	get_dynamic_pred_ep(Fact,'retractall/1',PredEP,PSC),
 	db_retractall(Fact, PredEP,PSC).
@@ -841,12 +867,10 @@ trie_assert_builtin(_Clause,_PSC,_Arity,_Prref,_Flag) :-
 
 /* These predicates are intended to be used only experimentally, for get_unifiable_returns */
 
-:- export system_retract_fact/1.
 system_retract_fact(Rule) :-	
 	get_dynamic_pred_ep(Rule,'retract/1',PredEP,PSC),
 	db_retract(Rule, true, PredEP,PSC).
 
-:- export t_assert_2/2.
 t_assert_2(Clause, Flag) :- 
 	conpsc(Clause, PSC),
 	psc_arity(PSC, Arity),

@@ -64,7 +64,6 @@ char *
 load_page (char *source, curl_opt options, curl_ret *ret_vals)
 {
   CURL *curl;
-  CURLcode ret;
   char * EMPTY_STRING = "";
   char * source_enc;
   char * url = NULL;
@@ -72,12 +71,11 @@ load_page (char *source, curl_opt options, curl_ret *ret_vals)
 
   /* First step, init curl */
   curl = curl_easy_init ();
-  if (!curl)
-    {
-      printf ("couldn't init curl\n");
-      return 0;
-    }
-
+  if (!curl) {
+    fprintf(stderr,"curl: couldn't initialize\n");
+    return NULL;
+  }
+  
   memset (&result, 0, sizeof (result));
   result.size = 1024;
   result.data = (char *) calloc (result.size, sizeof (char));
@@ -126,7 +124,7 @@ load_page (char *source, curl_opt options, curl_ret *ret_vals)
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, options.post_data);
 
   /* Allow curl to perform the action */
-  ret = curl_easy_perform (curl);
+  curl_easy_perform (curl);
 
   curl_easy_getinfo (curl, CURLINFO_EFFECTIVE_URL, &url);
   ret_vals->url_final = (char *) malloc ((strlen(url) + 1) * sizeof(char));

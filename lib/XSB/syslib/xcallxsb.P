@@ -28,6 +28,9 @@
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
 
+:- import ensure_loaded/1 from consult.
+?- ensure_loaded(xsbbrat).
+
 :- c_callloop.
 
 c_callloop :-

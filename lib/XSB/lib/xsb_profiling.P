@@ -3,7 +3,7 @@
 **
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1993-1998
+** Copyright (C) The Research Foundation of SUNY, 1993-2013
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -22,6 +22,11 @@
 ** 
 */
 
+
+:- compiler_options([xpp_on,sysmod,optimize]).
+
+#include "flag_defs_xsb.h"
+
 /* This call can only be used if XSB has been compiled with
 XSB_PROFILING defined.  profile_call(Goal) will call Goal and then
 print out a profile of percentage of time spent in each predicate.  It
@@ -34,26 +39,34 @@ profile_call(Goal) :-
 	(prof_cmd(1)		% start profiling
 	 ->	(catch(Goal,Ball,handle_profile_catch(Ball))
 		 ;
-		 prof_cmd(2),fail
+		 prof_cmd(2),
+		 print_profile(fail,T0,Goal),
+		 fail
 		),
 		prof_cmd(2),	% stop profiling
-		cputime(T1),
-		Time is T1-T0,
-		telling(OF),tell(userout),write('PROFILE FOR: '),write_term(Goal,[max_depth(3)]),
-		write('  Total cputime: '),write(Time),writeln(' seconds'),
-		dump_profile,
-		tell(OF)
+		print_profile(succeed,T0,Goal)
 	 ;	call(Goal),	% profiling not enabled (xsb -p)
 		cputime(T1),
 		Time is T1-T0,
 		telling(OF),tell(userout),write('PROFILE FOR: '),write_term(Goal,[max_depth(3)]),
-		write('  Total cputime: '),write(Time),writeln(' seconds')
+		write('  Total cputime: '),write(Time),writeln(' seconds'),
+		tell(OF)
 	).
 
 handle_profile_catch(Ball) :-
 	prof_cmd(2),
 	writeln('Throw out of profiling. Profiling turned off.'),
 	throw(Ball).
+
+print_profile(Fail,T0,Goal) :-
+	cputime(T1),
+	Time is T1-T0,
+	telling(OF),tell(userout),write('PROFILE FOR: '),write_term(Goal,[max_depth(3)]),
+	(Fail == fail -> write(' FAILED') ; true),
+	write('  Total cputime: '),write(Time),writeln(' seconds'),
+	dump_profile,
+	tell(OF).
+
 
 get_profile_tuple(Node,Tuple,NNode) :- prof_cmd(3,Node,Tuple,NNode).
 
@@ -177,29 +190,29 @@ gen_mode_term(Arity,Term,ModeTerm) :-
 
 %profile_unindexed_calls(X): X=off, X=on, X=once, X=Skel
 profile_unindexed_calls(off) :- !,
-	stat_set_flag(98,0).  % set off
+	stat_set_flag(LOG_UNINDEXED,0).  % set off
 profile_unindexed_calls(on) :- !,
-	stat_set_flag(98,2).
+	stat_set_flag(LOG_UNINDEXED,2).
 profile_unindexed_calls(once) :- !,
-	stat_set_flag(98,1).
+	stat_set_flag(LOG_UNINDEXED,1).
 profile_unindexed_calls(M:P/A) :- !,
 	functor(Term,P,A),
 	term_new_mod(M,Term,MTerm),
 	term_psc(MTerm,PSC),
-	stat_set_flag(98,PSC).
+	stat_set_flag(LOG_UNINDEXED,PSC).
 profile_unindexed_calls(P/A) :- !,
 	functor(Term,P,A),
 	term_psc(Term,PSC),
-	stat_set_flag(98,PSC).
+	stat_set_flag(LOG_UNINDEXED,PSC).
 profile_unindexed_calls(M:Term) :- !,
 	term_new_mod(M,Term,MTerm),
 	term_psc(MTerm,PSC),
-	stat_set_flag(98,PSC).
+	stat_set_flag(LOG_UNINDEXED,PSC).
 profile_unindexed_calls(Term) :-
 	compound(Term),	% cant index 0-ary predicate
 	!,
 	term_psc(Term,PSC),
-	stat_set_flag(98,PSC).
+	stat_set_flag(LOG_UNINDEXED,PSC).
 profile_unindexed_calls(Term) :-
 	warning(('Illegal parameter to profile_unindexed_calls: ',
 		 Term,'; must be (off,on,once,term_spec)')).

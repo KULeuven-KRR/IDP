@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: choice.h,v 1.45 2012/02/29 16:20:37 tswift Exp $
+** $Id: choice.h,v 1.45 2012-02-29 16:20:37 tswift Exp $
 ** 
 */
 #ifndef __CHOICE_H__

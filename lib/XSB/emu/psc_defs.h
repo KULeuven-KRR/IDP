@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: psc_defs.h,v 1.21 2010/09/05 18:47:17 tswift Exp $
+** $Id: psc_defs.h,v 1.22 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -75,6 +75,7 @@ I've forgotten.  */
 #define T_TABLED_UNDETERMINED 12
 
 #define T_INCR       3
+#define T_INTERN     4  /* if clauses to be interned for dynamic pred */
 
 /* Global module */
 

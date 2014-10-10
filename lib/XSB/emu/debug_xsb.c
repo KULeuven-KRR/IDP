@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: debug_xsb.c,v 1.106 2013/05/01 17:56:36 tswift Exp $
+** $Id: debug_xsb.c,v 1.107 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -54,6 +54,7 @@
 #include "thread_xsb.h"
 #include "tr_utils.h"
 #include "tst_utils.h"
+#include "cell_xsb_i.h"
 
 #if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
 #include "subp.h"
@@ -73,7 +74,7 @@ void print_subgoal(CTXTdeclc FILE *, VariantSF);
 #define MAXFLOATLEN 24
 #define MAXINTLEN 21
 
-static void print_term(FILE *fp, Cell term, byte car, long level)
+void print_term(FILE *fp, Cell term, byte car, long level)
 {
   unsigned short i, arity;
   Psc psc;
@@ -201,7 +202,7 @@ int sprint_quotedname(char *buffer, int size,char *string)
   }
 }
 
-inline int get_int_print_width(Integer num) {
+static inline int get_int_print_width(Integer num) {
   if (abs((int)num) < 100) return 2;
   else if (abs((int)num) < 10000) return 4;
   else return MAXINTLEN;
@@ -714,6 +715,20 @@ void print_registers(CTXTdeclc FILE *fp, Psc psc,long depth) {
   //  fflush(fp);
 }
 
+void print_n_registers(CTXTdeclc FILE *fp, int arity , long depth) {
+  int i;
+
+  if (arity != 0) fprintf(fp, "(");
+  for (i=1; i <= arity; i++) {
+    printterm(fp, cell(reg+i), depth);
+    //    fflush(fp);
+    if (i < arity) fprintf(fp, ",");
+  }
+  //  if (arity != 0) fprintf(fp, ")\n"); else fprintf(fp, "\n");
+  if (arity != 0) fprintf(fp, ")"); 
+  //  fflush(fp);
+}
+
 /*------------------------------------------------------------------*/
 /* These variables are global, so in principle, you could run the
    instruction debugger with multiple active threads.  It hasn't been
@@ -1061,7 +1076,7 @@ static void print_term_of_subgoal(CTXTdeclc FILE *fp, byte car, int *i)
       break;
     }
     args = get_arity((Psc)cs_val(term));
-    write_quotedname(fp,     get_name((Psc)cs_val(term)));
+    write_quotedname(fp, CURRENT_CHARSET, get_name((Psc)cs_val(term)));
     /*    fprintf(fp, "%s", get_name((Psc)cs_val(term))); */
     if (args > 0) fprintf(fp, "(");
     for (j = args; j > 0; j--) {
@@ -1104,7 +1119,7 @@ static void print_term_of_subgoal(CTXTdeclc FILE *fp, byte car, int *i)
   }
   break;
   case XSB_STRING:
-    write_quotedname(fp,string_val(term));
+    write_quotedname(fp,CURRENT_CHARSET,string_val(term));
   /*    fprintf(fp, "%s", string_val(term));*/
     break;
   case XSB_INT:
@@ -1215,6 +1230,32 @@ static int sprint_term_of_subgoal(CTXTdeclc forestLogBuffer fl_buf, int size,byt
 
 /*----------------------------------------------------------------------*/
 
+void print_subgoal_callnode_leaf(CTXTdeclc FILE *fp, callnodeptr cn)
+{
+  BTNptr leaf;
+  int  i = 0;
+  Psc  psc = TIF_PSC((TIFptr) callnode_tif_ptr(cn));
+
+  for (leaf = callnode_leaf_ptr(cn); leaf != NULL; leaf = Parent(leaf)) {
+    cell_array[i++] = BTN_Symbol(leaf);
+  }
+  write_quotedname(fp,CURRENT_CHARSET,get_name(psc));
+  /*  fprintf(fp, "%s", get_name(psc)); */
+  if (get_arity(psc) > 0) {
+    fprintf(fp, "(");
+    for (i = i-2; i >= 0 ; i--) {
+      print_term_of_subgoal(CTXTc fp, CAR, &i);
+      if (i > 0) fprintf(fp, ", ");
+    }
+    fprintf(fp, ")");
+  }
+}
+
+void print_callnode(CTXTdeclc FILE *fp, callnodeptr cn) {
+  if (cn -> goal)  print_subgoal(CTXTc stddbg,cn->goal);
+  else print_subgoal_callnode_leaf(CTXTc stddbg, cn); 
+}
+
 void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
 {
   BTNptr leaf;
@@ -1224,7 +1265,7 @@ void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
   for (leaf = subg_leaf_ptr(subg); leaf != NULL; leaf = Parent(leaf)) {
     cell_array[i++] = BTN_Symbol(leaf);
   }
-  write_quotedname(fp,     get_name(psc));
+  write_quotedname(fp,CURRENT_CHARSET,get_name(psc));
   /*  fprintf(fp, "%s", get_name(psc)); */
   if (get_arity(psc) > 0) {
     fprintf(fp, "(");
@@ -1715,9 +1756,10 @@ void print_tables(CTXTdecl)
       if (subg != NULL)
 	fprintf(stddbg, EOSUBG);
       if (i == 10) {
-	int retcode;
+	int retcode; /* to squash warnings */
 	fprintf(stddbg, "more (y/n)?  ");
 	retcode = scanf("%c", &ans);
+	SQUASH_LINUX_COMPILER_WARN(retcode) ;
 	skip_to_nl();
 	i = 0;
       }

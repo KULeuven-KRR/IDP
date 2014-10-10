@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: bineg_xsb_i.h,v 1.53 2013/04/17 22:02:34 tswift Exp $
+** $Id: bineg_xsb_i.h,v 1.53 2013-04-17 22:02:34 tswift Exp $
 ** 
 */
 

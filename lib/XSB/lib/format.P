@@ -34,7 +34,7 @@
 %:- import write/1, nl/0,writeln/1 from standard.
 
 :- import  put_code/2, nl/1, write/2, writeq/2, print/2,
-	write_canonical/2, current_output/1, 'C'/3,
+	write_canonical/2, current_output/1, 'C'/3, % C/2 used in -->
 	atom_codes/2, xsb_configuration/2
 	from usermod.
 
@@ -451,9 +451,16 @@ fmt_print(0'
 	  , Xs, _, _, Stream) :- !,
 	nl(Stream),
 	fmt_print(Xs, 0, 0' , Stream).
+/*
+%% This is wrong! It causes the legitimate things like
+%% format:format('foo\\nbar',[]).
+%% to output
+%% foo
+%% bar
 fmt_print(92, [110|Xs], _, _, Stream) :- !,
 	nl(Stream),
 	fmt_print(Xs, 0, 0' , Stream).
+*/
 fmt_print(C, Xs, Tab, Fill, Stream) :-
 	Char is truncate(C),
 	put_code(Stream,Char),
@@ -605,10 +612,17 @@ putn_list(Str,N, []) :- !,
 	N1 is N-1,
 	put_code(Str,0' ),
 	putn_list(Str,N1, []).
+/*
+%% This is wrong! It causes the legitimate things like
+%% format:format('~s',["foo\\nbar"]).
+%% to output
+%% foo
+%% bar
 putn_list(Str,N, [92,110|Chars]) :-
 	N1 is N-2,
 	nl(Str),
 	putn_list(Str,N1, Chars).
+*/
 putn_list(Str,N, [C|Chars]) :-
 	N1 is N-1,
 	Char is truncate(C),
@@ -648,8 +662,11 @@ preproc_newlines(H,T):-
 preproc_newlines1('','').
 preproc_newlines1([],[]).
 preproc_newlines1([H],[H]):-!.
+/*
+%% This one seems to have an effect only on windows.
 preproc_newlines1([92,110|Tin],[10|Tout]):- !,  %\n
 	preproc_newlines1(Tin,Tout).
+*/
 preproc_newlines1([H|Tin],[H|Tout]):- 
 	preproc_newlines1(Tin,Tout).
 

@@ -43,8 +43,11 @@ DSW: 3/04 rewritten to single pass for efficiency
 */
  
 concat_atom(L,A) :-
-	c_atom(L,[],AC),
-	atom_codes(A,AC).
+	(atom(A)
+	 ->	split_atom(A,L)
+	 ;	c_atom(L,[],AC),
+		atom_codes(A,AC)
+	).
 
 c_atom(A,L0,L) :-
 	(A == []
@@ -107,6 +110,30 @@ c_atom(A,S,L0,L) :-
 		)
 	).
 
+
+/* split_atom(Atom,AtomVarList) is the converse of concat_atom (with
+arguments in reverse order).  It takes an atom Atom and a list of
+atoms or variables AtomVarList, and binds the variables so that
+concat_atom(AtomVarList,Atom) is true.  */
+
+split_atom(Atom,AtomVarList) :-
+	atom_codes(Atom,AtomC),
+	safe_atom_codes_all(AtomVarList,AtomCList),
+	split_all_c(AtomCList,AtomC),
+	safe_atom_codes_all(AtomVarList,AtomCList).
+
+split_all_c([],[]).
+split_all_c([XC|AtomCs],AtomC) :-
+	append(XC,Rest,AtomC),
+	split_all_c(AtomCs,Rest).
+
+safe_atom_codes_all([],[]).
+safe_atom_codes_all([X|R],[Y|S]) :-
+	(var(X),var(Y)
+	 ->	true
+	 ;	atom_codes(X,Y)
+	),
+	safe_atom_codes_all(R,S).
 
 %% Get substring of String beginning at from and ending at To.
 %% Negative "To" counts from the end. Unbount "To" means use the end of string

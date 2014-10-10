@@ -20,7 +20,7 @@
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 **
-** $Id: flag_defs_xsb.h,v 1.52 2013/02/14 22:03:54 tswift Exp $
+** $Id: flag_defs_xsb.h,v 1.52 2013-02-14 22:03:54 tswift Exp $
 **
 */
 
@@ -151,6 +151,8 @@ interrupt flag
 					>2 is psc to print backtrace on unindexed access to that psc, every time. */ 
 #define LOG_ALL_FILES_USED	  99  /* log all files at open */
 #define EXCEPTION_ACTION         100
+#define CHARACTER_SET            101
+#define ERRORS_WITH_POSITION     102
 
 #define MAX_FLAGS		 120
 
@@ -169,6 +171,8 @@ interrupt flag
 #define NOBANNER          2   /* don't display XSB banner */
 #define QUIETLOAD    	  3   /* don't display "module loaded" msgs */
 #define NOPROMPT    	  5   /* display no prompt--useful in spawned
+				 subprocesses */
+#define NOFEEDBACK    	  7   /* display no feedback--useful in spawned
 				 subprocesses */
 
 #define DEFAULT_PRIVATE   0

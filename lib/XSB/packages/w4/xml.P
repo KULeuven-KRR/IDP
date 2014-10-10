@@ -30,7 +30,7 @@
 :- import filename2uri/3 from iri.
 
 :- import absolute_filename/2 from builtins.
-:- import time/1 from builtins.
+:- import x_time/1 from builtins.
 
 :- export parse_xml_document/3.
 :- export parse_xml_document/4.
@@ -70,12 +70,12 @@ parse_xml_document( Name, DocURI, Encoding, Document ) :-
 	parse_xml_document( Name, DocURI, Encoding, Document, _ ).
 
 parse_xml_document( Name, DocURI, Encoding, Document, time(LoadTime,ParseTime) ) :-
-	time(TStart),
+	x_time(TStart),
 	read_xml_document( Name, Encoding, XMLText ),
-	time(TRead),
+	x_time(TRead),
 	baseIRI( DocURI, Name, BaseURI ),
 	xml_document( XMLText, BaseURI, Encoding, Document ),
-	time(TEnd),
+	x_time(TEnd),
 	LoadTime is TRead - TStart,
 	ParseTime is TEnd - TRead.
 

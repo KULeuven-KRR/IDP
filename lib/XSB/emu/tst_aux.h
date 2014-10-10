@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tst_aux.h,v 1.21 2013/01/09 20:15:34 dwarren Exp $
+** $Id: tst_aux.h,v 1.21 2013-01-09 20:15:34 dwarren Exp $
 ** 
 */
 
@@ -348,6 +348,7 @@ extern DynamicStack tstSymbolStack;
 #define SymbolStack_PushPath(Leaf) {  		\
    BTNptr root;					\
    SymbolStack_PushPathRoot(Leaf,root);		\
+   root = root;  /* to squash warnings */       \
  }
 
 /*=========================================================================*/

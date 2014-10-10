@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: sgmlconfig.P,v 1.15 2011/08/06 05:54:38 kifer Exp $
+** $Id: sgmlconfig.P,v 1.16 2013-05-06 21:10:26 dwarren Exp $
 ** 
 */
 
@@ -102,8 +102,8 @@
 	path_sysop(newerthan,ModuleO,ModuleSourceFile),
 	path_sysop(newerthan,ConfigSharedMod,ModuleSourceFile)
     %% module compiled and is current, so just load
-    -> [Basename]
-    
+    -> consult(Basename)
+
     %% If Module isn't compiled or is old --- recompile
     ;
 	'_$_make_sgmlH'(CC, CC_opts),

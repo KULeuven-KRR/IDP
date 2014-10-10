@@ -33,11 +33,11 @@
 #include "fetch_file.c"
 #include "parser.c"
 #include "charmap.c"
-#include "util.c"
+#include "sgmlutil.c"
 #include "xmlns.c"
 #include "model.c"
 #include "error_term.h"
-#include "util.h"
+#include "sgmlutil.h"
 #include "basic_defs.h"
 
 #ifndef WIN_NT
@@ -251,11 +251,10 @@ DllExport int call_conv pl_new_sgml_parser()
 
 int unify_parser( prolog_term t, dtd_parser *p)
 {
-  prolog_term tmp, tmp1;
+  prolog_term tmp1;
 
   /*Temporary prolog terms to create the output terms*/
   tmp1 = p2p_new(CTXT);
-  tmp = p2p_new(CTXT);
 
   /*Create the prolog term*/
   c2p_functor(CTXTc "sgml_parser", 1, tmp1);
@@ -274,11 +273,10 @@ int unify_parser( prolog_term t, dtd_parser *p)
 int unify_dtd( prolog_term t, dtd * d)
 {
   /*Temporary prolog term to create the output term*/
-  prolog_term tmp, tmp1, tmp2;
+  prolog_term tmp, tmp1;
 
-  tmp1 = p2p_new(CTXT);
   tmp = p2p_new(CTXT);
-  tmp2 = p2p_new(CTXT);
+  tmp1 = p2p_new(CTXT);
 
   /*dtd_struct/2 if doctype is specified*/
 
@@ -569,7 +567,7 @@ DllExport int call_conv pl_set_sgml_parser()
 	{
 	  temp_term = p2p_arg( options, 1);
 
-	  (p->location.line = p2c_int( temp_term));
+	  (p->location.line = (int)p2c_int( temp_term));
 	}
       /*Set the current character position to parse*/
       else if ( streq( funcname, "charpos"))
@@ -605,7 +603,7 @@ DllExport int call_conv pl_set_sgml_parser()
 
 	  temp_term =p2p_arg(options, 1);
 
-	  val=p2c_int( temp_term);
+	  val=(int)p2c_int( temp_term);
 
 	  if ( val )
 	    p->flags &= ~SGML_PARSER_NODEFS;
@@ -656,6 +654,9 @@ DllExport int call_conv pl_set_sgml_parser()
  * Allocate error term on C side
  * Input : Prolog variable
  * Output : none
+  This doesn't work with XSB garbage colleciton, since the location of
+  a variable might change!  Must statically allocate enough memory
+  with -m ???
  **/
 
 DllExport int call_conv pl_allocate_error_term()
@@ -710,7 +711,9 @@ DllExport int call_conv pl_sgml_parse()
   size_t content_length = 0;
 
   char *str, *source=NULL, fname[MAXSTRLEN], *tmpsource=NULL;
+
   check_thread_context
+
 
   parser = reg_term(CTXTc 1);
   options = reg_term(CTXTc 2);
@@ -791,7 +794,6 @@ DllExport int call_conv pl_sgml_parse()
 
 	  /*Source is a url*/
 	  if ( !strcmp("url", tmpstr)){
-
 	    temp_term2 = p2p_arg(temp_term1, 1);
 	    tmpsource = p2c_string(temp_term2);
 	    source = malloc( strlen(tmpsource));
@@ -857,15 +859,11 @@ DllExport int call_conv pl_sgml_parse()
       else if ( !strcmp(str,"content_length")) {
 	/*Temporary prolog term to parse the options list*/
 	prolog_term temp_term1, temp_term2;
-	char * tmp;
 
 	temp_term1 = p2p_arg( head, 1);
-	tmp = p2c_functor( temp_term1);
 	temp_term2 = p2p_arg( temp_term1, 1);
-	tmp = p2c_functor( temp_term2);
 	content_length = p2c_int( temp_term2);
 	has_content_length = TRUE;
-
       }
       /*Sets how much of the current input should be parsed*/
       else if( !strcmp(str,"parse")) {
@@ -1037,7 +1035,7 @@ DllExport int call_conv pl_sgml_parse()
       if (its_a_url == 0)
 	fclose(in);
       return TRUE;
-    }
+  }
 
   return TRUE;
 }
@@ -1815,6 +1813,7 @@ on_end(dtd_parser *p, dtd_element *e)
 
   /* Temp prolog terms used to delete the ununified parts of the output term */
   prolog_term tmp;
+
 
   tmp = p2p_new(CTXT);
   c2p_nil(CTXTc tmp);

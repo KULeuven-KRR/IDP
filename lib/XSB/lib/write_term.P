@@ -241,7 +241,7 @@ printable_char(B) :-
 
 %% Print hooks
 
-:- multifile portray_attribute/2.
+%%:- multifile portray_attribute/2. %not used now
 
 :- pred(portray_attribute(Attr, Var) : nonvar * var # "@em{A user
 defined predicate.} When an attributed variable @var{Var} is about to

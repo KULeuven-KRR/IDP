@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: url_encode.h,v 1.1 2011/04/15 03:11:03 kifer Exp $
+** $Id: url_encode.h,v 1.1 2011-04-15 03:11:03 kifer Exp $
 ** 
 */
 

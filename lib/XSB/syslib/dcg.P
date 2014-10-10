@@ -175,9 +175,25 @@ dcg_body(RHS, In, Out, Goal) :-
 dcg_body_var(Phrase, In, Out, phrase(Phrase, In, Out)).
 
 
-dcg_list_of_terminals([H], In, Out, 'C'(In,H,Out)).
+/**dcg_list_of_terminals([H], In, Out, 'C'(In,H,Out)).
 dcg_list_of_terminals([H|L], In, Out, ','('C'(In,H,Mid), Goal)) :-
      dcg_list_of_terminals(L, Mid, Out, Goal).
+**/
+dcg_list_of_terminals([H], In, Out, Module:Goal) :- !,
+	dcg_terminal_functor(Module,F),
+	Goal =.. [F,In,H,Out].
+dcg_list_of_terminals([H|L], In, Out, ','( Module:G, Goal)) :-
+	dcg_terminal_functor(Module,F),
+	G =.. [F,In,H,Mid],
+    dcg_list_of_terminals(L, Mid, Out, Goal).
+
+:- dynamic dcg_terminal_functor/2.
+dcg_terminal_functor(dcg,'C').
+
+% callers of this should clean up after usage, by calling set_dcg_terminal_functor(dcg,'C') 
+set_dcg_terminal_functor(Module,F) :- atom(Module), atom(F), 
+	retractall(dcg_terminal_functor(_,_)), assert(dcg_terminal_functor(Module,F)).
+
 
 /*----------------------------------------------------------------------*/
 /*  'C'(S1, T, S2)	: S1 is connected to S2 by the terminal T.	*/

@@ -1,4 +1,4 @@
-/*  $Id: bounds.pl,v 1.5 2010/08/19 15:03:38 spyrosh Exp $
+/*  $Id: bounds.pl,v 1.5 2010-08-19 15:03:38 spyrosh Exp $
 
     Part of SWI-Prolog
 

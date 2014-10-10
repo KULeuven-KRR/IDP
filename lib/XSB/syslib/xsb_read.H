@@ -44,5 +44,8 @@
 :- import length/2 from basics.
 :- import xsb_stream_lock/1, xsb_stream_unlock/1 from file_io.
 %%:- import xsb_thread_self/1 from thread.  %% needed for mt?
+:- import current_prolog_flag/2 from curr_sym.
+:- import file_put/2,file_pos/2 from file_io.
+:- import length/2, ith/3 from basics.
 
 /* -------------------- end of file file_read.H ----------------------- */

@@ -318,8 +318,8 @@ We now turn to the formalization of the algorithm sketched in
 Example~\ref{ex:type1cc}.  To start, we begin by formalizing the
 construction of local class expressions and formulas in
 Figure~\ref{fig:lcelcf}.  Construction of both local class expressions
-for an identifier $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $ begins with obtaining all of the facts relevant
-to $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $, as described by the routine {\sf getRelevantFacts($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $)}.
+for an identifier $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $ begins with obtaining all of the facts relevant
+to $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $, as described by the routine {\sf getRelevantFacts($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $)}.
 This routine begins with a transformation that is purely technical.
 In most parts of CDF an object is designated via an object identifier
 $oid(I)$, but in class expressions an object is cast into a singleton
@@ -336,10 +336,10 @@ relevant sufficiency rules using those class identifiers that occur
 directly in those rules (Definition~\ref{def:suffic}).  And finally,
 it finds an irredundant basis for that set.
 
-A local class expression for a given class or object identifier, $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $,
+A local class expression for a given class or object identifier, $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $,
 is constructed by the routine {\sf LocalClassExpression(Id)}, which
-begins by calling {\sf getRelevantFacts($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $)} to obtain the set of
-facts $\cF$ relevant to $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $.  Each fact in $\cF$ is translated to a
+begins by calling {\sf getRelevantFacts($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $)} to obtain the set of
+facts $\cF$ relevant to $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $.  Each fact in $\cF$ is translated to a
 class expression, and the class expressions cojoined together to form
 a class expression $CE$.  If an object identifier, say $oid(I)$ occurs
 in $CE$, all occurrences of $oid(I)$ are replaced by $cid(I)$.  In
@@ -399,8 +399,8 @@ In a more general case, $\cO$ will also contain object identifiers,
 and the above argument, while it becomes more complicated, remains
 essentially the same, so that the local class formula is
 $TH(\cO)$-equivalent to the instance axioms applied to all facts in
-{\sf getRelevantFacts($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $)}.  In addition, it is an easy induction to
-show that for any identifier $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $ in a CDF instance, {\sc
+{\sf getRelevantFacts($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $)}.  In addition, it is an easy induction to
+show that for any identifier $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $ in a CDF instance, {\sc
 localClassFormula(Id)} is logically equivelent to
 $localClassExpression(Id)^{\cI}[X_0]$
 %
@@ -424,9 +424,9 @@ Details can be added to this argument to show:
 
 %--------------------------------------------------------------------------
 \begin{lemma} \label{lem:localce}
-Let $\cO$ be a well-typed, acceptable CDF instance, $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $ be an object
+Let $\cO$ be a well-typed, acceptable CDF instance, $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $ be an object
 or class identifier in $\cO$, $\cO_{Id}$ be {\sf
-getRelevantFacts($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $)}, and $\cO_{isa}$ be the {\tt isa/2} facts
+getRelevantFacts($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $)}, and $\cO_{isa}$ be the {\tt isa/2} facts
 in $\cO$.
 \begin{itemize}
 \item $TH(\cO_{Id} \cup \cO_{isa}) \vdash \cO_{Id}^{\cI}
@@ -442,19 +442,19 @@ $TH(\cO_{Id} \cup \cO_{isa}) \vdash \cO_{Id}^{\cI}
 
 \paragraph*{Combining Local Class Formulas to Check Consistency}
 The algorithm for checking consistency of an object or class
-identifier $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $ in a CDF instance $\cO$ is presented schematically in
+identifier $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $ in a CDF instance $\cO$ is presented schematically in
 Figure~\ref{fig:type1cc}.  We assume that $\cO$ is well-typed and
 acceptable.  The algorithm begins with a call {\sf
-checkIdConsistency(\{$Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $\})}.  As indicated in the previous
-discussion, {\sf checkIdConsistency(\{$Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $\}} first transforms
-information about $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $ into a local class expression; then checks
+checkIdConsistency(\{$Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $\})}.  As indicated in the previous
+discussion, {\sf checkIdConsistency(\{$Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $\}} first transforms
+information about $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $ into a local class expression; then checks
 consistency of the local class expression, and constructs new local
 class expressions as needed.  Note that {\sf
-localClassExpression($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $)} automatically transforms object
+localClassExpression($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $)} automatically transforms object
 identifiers into classes with uniqueness constraints, so {\sf
-checkIdConsistency(\{$Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $\})} can be applied to object identifiers as
+checkIdConsistency(\{$Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $\})} can be applied to object identifiers as
 well as class identifiers.  In addition, as Figure~\ref{fig:lcelcf}
-indicates, {\sf localClassExpression($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $)} also handles class
+indicates, {\sf localClassExpression($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $)} also handles class
 identifiers with uniqueness constraints.
 
 %------------------------------------------------------------------------------------
@@ -470,7 +470,7 @@ foo\=foo\=foo\=foo\=foo\=foo\=foooo\=foooooooooooooooo \=fooooooooo\=\kill
 \> \> 	{\rm /* Assume consistency is being checked with respect to a
 		well-typed, acceptable CDF instance $\cO$ */} \\
 \> \> 	Let $CSExpr$ be $\bigwedge_{Id \in CSet} \{$ 
-			LocalClassExpr($Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $) $\}$,  \\
+			LocalClassExpr($Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $) $\}$,  \\
 \> \> 	If checkCeConsistency($CSExpr$,$Structure$) succeeds  \\
 \> \> \> 	    checkContexts($Structure$) \\
 \> \>     Else emit cdf warning and abort \\
@@ -555,7 +555,7 @@ $\vdash_{inh}$ relation (Definition~\ref{def:redund}).  This
 terminology is not used outside of this section.
 %------------------
 \begin{definition}
- Let $\cO$ be a CDF instance.  An identifier $Id: consist.tex,v 1.4 2010/08/19 15:03:38 spyrosh Exp $ {\em directly
+ Let $\cO$ be a CDF instance.  An identifier $Id: consist.tex,v 1.4 2010-08-19 15:03:38 spyrosh Exp $ {\em directly
  depends on} an identifier $Id_{targ}$ if $\cO \vdash_{inh} f$, and
  $f$ is {\tt hasAttr(Id,R,Id$_{targ}$)}, {\tt
  allAttr(Id,R,Id$_{targ}$)}, {\tt maxAttr(Id,R,Id$_{targ}$)}, or {\tt

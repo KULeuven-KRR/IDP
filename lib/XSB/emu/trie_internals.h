@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: trie_internals.h,v 1.48 2012/11/16 21:50:18 tswift Exp $
+** $Id: trie_internals.h,v 1.49 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -95,10 +95,13 @@
  */
 
 
-#define TN_SetInstr(pTN,Symbol,TrieType)			\
+#define TN_SetInstr(pTN,Symbol,Intrn,TrieType)			\
    switch( TrieSymbolType(Symbol) ) {				\
    case XSB_STRUCT:						\
-     TN_Instr(pTN) = (byte)trie_try_str;			\
+     if (Intrn)	{						\
+       TN_Instr(pTN) = (byte)trie_try_numcon;	}		\
+     else 							\
+       TN_Instr(pTN) = (byte)trie_try_str;			\
      break;							\
    case XSB_INT:						\
    case XSB_STRING:						\
@@ -119,7 +122,10 @@
      }								\
      break;							\
    case XSB_LIST:						\
-     TN_Instr(pTN) = (byte)trie_try_list;			\
+     if (Intrn) {						\
+       TN_Instr(pTN) = (byte)trie_try_numcon; }			\
+     else 							\
+       TN_Instr(pTN) = (byte)trie_try_list;			\
      break;							\
    default:							\
      xsb_abort("Trie Node creation: Bad tag in symbol %lx",	\
@@ -152,7 +158,7 @@
 
 #define TN_UpgradeInstrTypeToSUCCESS(pTN,SymbolTag)	\
    if ( SymbolTag == XSB_STRING || SymbolTag == XSB_INT	\
-        || SymbolTag == XSB_FLOAT )			\
+	|| SymbolTag == XSB_FLOAT || isinternstr(TN_Symbol(pTN)) ) \
      TN_Instr(pTN) += 0x4
 
 
@@ -284,8 +290,8 @@ enum Types_of_Trie_Nodes {
 #define IsEscapeNode(pTSC)	(TSC_Instr(pTSC) == trie_proceed)
 
 /* We could also have defined these this way...
-#define IsTrieRoot(pTSC)	(TSC_Instr(pTSC) == trie_root)
-#define IsHashHeader(pTSC)	(TSC_Instr(pTSC) == hash_opcode)
+-- #define IsTrieRoot(pTSC)	(TSC_Instr(pTSC) == trie_root)
+-- #define IsHashHeader(pTSC)	(TSC_Instr(pTSC) == hash_opcode)
 */
 
 /*
@@ -478,10 +484,10 @@ extern int ctrace_ctr;
  *                            ----------
  */
 
-#define TN_Init(TN,TrieType,NodeType,Symbol,Parent,Sibling) {	\
+#define TN_Init(TN,TrieType,NodeType,Symbol,Intrn,Parent,Sibling) {	\
 								\
    if ( NodeType != TRIE_ROOT_NT ) {				\
-     TN_SetInstr(TN,Symbol,TrieType);				\
+     TN_SetInstr(TN,Symbol,Intrn,TrieType);			\
      TN_ResetInstrCPs(TN,Sibling);				\
    }								\
    else								\
@@ -489,7 +495,7 @@ extern int ctrace_ctr;
    TN_Status(TN) = VALID_NODE_STATUS;				\
    TN_TrieType(TN) = TrieType;					\
    TN_NodeType(TN) = NodeType;					\
-   TN_Symbol(TN) = Symbol;					\
+   if (Intrn) TN_Symbol(TN) = Intrn; else TN_Symbol(TN) = Symbol;\
    TN_Parent(TN) = Parent;					\
    TN_Child(TN) = NULL;						\
    TN_Sibling(TN) = Sibling;					\
@@ -646,13 +652,13 @@ extern Structure_Manager smTSTHT;
 #endif
 
 extern BTNptr new_btn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
-		      BTNptr Parent, BTNptr Sibling);
+		      Cell intrn_item, BTNptr Parent, BTNptr Sibling);
 
-#define New_BTN(BTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
-   BTN = new_btn(CTXTc TrieType,NodeType,Symbol,(BTNptr)Parent,(BTNptr)Sibling)
+#define New_BTN(BTN,TrieType,NodeType,Symbol,intrn_item,Parent,Sibling)	\
+  BTN = new_btn(CTXTc TrieType,NodeType,Symbol,(Cell)intrn_item,(BTNptr)Parent,(BTNptr)Sibling)
 
 #define CreateEscapeBTN(pBTN,TrieType,Parent) {				\
-   New_BTN(pBTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\
+    New_BTN(pBTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,NULL,Parent,NULL);	\
    BTN_Instr(pBTN) = trie_proceed;					\
  }
 

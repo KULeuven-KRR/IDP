@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gc_profile.h,v 1.18 2012/10/03 19:15:21 tswift Exp $
+** $Id: gc_profile.h,v 1.18 2012-10-03 19:15:21 tswift Exp $
 ** 
 */
 

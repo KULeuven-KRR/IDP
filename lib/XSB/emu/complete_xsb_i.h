@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: complete_xsb_i.h,v 1.51 2012/02/12 22:49:12 tswift Exp $
+** $Id: complete_xsb_i.h,v 1.51 2012-02-12 22:49:12 tswift Exp $
 ** 
 */
 

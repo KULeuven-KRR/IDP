@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: pathname_xsb.c,v 1.44 2012/10/12 16:42:57 tswift Exp $
+** $Id: pathname_xsb.c,v 1.44 2012-10-12 16:42:57 tswift Exp $
 ** 
 */
 
@@ -217,6 +217,7 @@ char *expand_filename(char *filename) {
 	    SLASH, filename);
     return rectify_pathname(aux_filename, absolute_filename);
   }
+  SQUASH_LINUX_COMPILER_WARN(dummy) ; 
 }
 
 /* strip names from the back of path 
@@ -556,6 +557,9 @@ char *existing_file_extension(char *basename)
 
   strcpy(filename, basename); strcat(filename, ".pl");
   if (! stat(filename, &fileinfo) && not_a_dir(fileinfo)) return "pl";
+
+  strcpy(filename, basename); strcat(filename, ".prolog");
+  if (! stat(filename, &fileinfo) && not_a_dir(fileinfo)) return "prolog";
 
   strcpy(filename, basename);
   if (! stat(filename, &fileinfo) && not_a_dir(fileinfo)) return ""; /* no extension */

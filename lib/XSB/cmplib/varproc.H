@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: varproc.H,v 1.10 2011/06/25 02:54:47 dwarren Exp $
+** $Id: varproc.H,v 1.10 2011-06-25 02:54:47 dwarren Exp $
 ** 
 */
 

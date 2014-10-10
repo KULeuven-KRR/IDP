@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: auxlry.P,v 1.33 2011/12/22 21:24:46 tswift Exp $
+** $Id: auxlry.P,v 1.33 2011-12-22 21:24:46 tswift Exp $
 ** 
 */
 
@@ -74,7 +74,16 @@ set_global_compiler_options(Options) :-
 /*	Compiler option setting.					*/
 /*================================================================*/
 
-setoptions(_) :- current_option(Option), conset(Option, 0), fail.
+setoptions(_) :-
+	current_option(Option),
+	conset(Option, 0),
+	%% must unset 'preprocessing_done'.
+	%% Otherwise, if one does compile(foo,[xpp_on]) twice in the same XSB
+	%% session then the second compile/2 fails since preprocessing_is_done/0
+	%% is true and so enqueue_preprocessor/2 won't initialize
+	%% the preprocessor queue (will leave it empty).
+	unset_preprocessing_done,
+	fail.
 setoptions(_) :- 
 	'_$global_compiler_options'(Options), 
 	setoptions1(Options), 

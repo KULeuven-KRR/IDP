@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: psc_xsb.c,v 1.60 2013/01/04 21:34:45 dwarren Exp $
+** $Id: psc_xsb.c,v 1.61 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -72,11 +72,11 @@ extern size_t last_assert_space_size;
 
 DllExport char* call_conv string_find(const char *str, int insert) {
 
-  char **ptr, *str0;
+  char **ptr, *str0, **sptr;
 
   //  printf("interning %s\n",str);
   SYS_MUTEX_LOCK_NOERROR( MUTEX_STRING ) ;
-  ptr = (char **)string_table.table + hash(str, 0, string_table.size);
+  sptr = ptr = (char **)string_table.table + hash(str, 0, string_table.size);
   while (*ptr) {
     str0 = *ptr + CHAR_PTR_SIZE;
     if (strcmp(str, str0) == 0)
@@ -84,6 +84,8 @@ DllExport char* call_conv string_find(const char *str, int insert) {
     ptr = (char **)(*ptr);
   }
   
+  //  if (strcmp(str,"Batch: tuning_batch_2_0")==0) printf("string_find notfound tuningbat_2_0, %p\n",sptr);
+
   if (insert) {
     str0 = (char *)mem_alloc(CHAR_PTR_SIZE + strlen(str) + 1,STRING_SPACE);
     *ptr = str0;
@@ -101,6 +103,7 @@ DllExport char* call_conv string_find(const char *str, int insert) {
 
 exit_string_find:
   SYS_MUTEX_UNLOCK_NOERROR( MUTEX_STRING ) ;
+  //  if (strcmp(str,"Batch: tuning_batch_2_0")==0) printf("string_find tuningbat_2_0, %d, %p, %p, %p\n",insert,str,str0,sptr);
   return str0;
 }
 
@@ -115,6 +118,7 @@ char *string_find_safe(char *str) {
       return str0;
     ptr = (char *)(((Integer)(*(void **)ptr)) & ~1);
   }
+  //  printf("string_find_safe: not found '%s'\n",str);
   return NULL;
 }
 
@@ -301,6 +305,12 @@ static Pair search(int arity, char *name, Pair *search_ptr)
     return NULL;
 } /* search */
 
+Pair search_in_usermod(int arity, char *name) {
+  Pair *search_ptr;
+  search_ptr = (Pair *)(symbol_table.table +
+			hash(name, arity, symbol_table.size));
+  return search(arity,name,search_ptr);
+}
 
 /* === insert0: search/insert to a given chain ========================	*/
 
@@ -354,6 +364,11 @@ Pair insert_module(int type, char *name)
     new_pair = insert0(name, 0, (Pair *)&flags[MOD_LIST], &is_new);
     if (is_new) {
 	set_type(new_pair->psc_ptr, type);
+	new_pair->psc_ptr->env = 0;
+	new_pair->psc_ptr->incr = 0;
+	set_data(new_pair->psc_ptr,0);
+	set_ep(new_pair->psc_ptr,0);
+	new_pair->psc_ptr->this_psc = 0;
     } else {	/* set loading bit: T_MODU - loaded; 0 - unloaded */
       set_type(new_pair->psc_ptr, get_type(new_pair->psc_ptr) | type);
     }

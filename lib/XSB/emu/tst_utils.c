@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tst_utils.c,v 1.46 2013/02/14 21:47:47 tswift Exp $
+** $Id: tst_utils.c,v 1.47 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -42,10 +42,9 @@
 #include "choice.h"
 #include "inst_xsb.h"
 #include "error_xsb.h"
+#include "cell_xsb_i.h"
 
 /* ======================================================================= */
-
-extern void printterm(FILE *, Cell, int);   /* prints to stddbg */
 
 #ifdef BITS64
 #ifdef WIN_NT
@@ -350,6 +349,8 @@ static void symstkPrintNextTerm(CTXTdeclc FILE *fp, xsbBool list_recursion) {
     break;
   }
 }
+
+extern int sprint_quotedname(char *buffer, int size,char *string);
 
 static int symstkSPrintNextTerm(CTXTdeclc char * buffer, xsbBool list_recursion) {
   int ctr = 0;

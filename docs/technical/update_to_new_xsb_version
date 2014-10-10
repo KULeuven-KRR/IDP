@@ -1,0 +1,7 @@
+There is a complete copy of XSB's source inside IDP's source code in the directory idp/lib/XSB
+
+If you want to update your XSB version, you have to do the following:
+- Remove the old XSB source folder in idp/lib/XSB and place the new code there
+- Update the version number (if necessary) in XSB_VERSION in idp/CMakeLists.txt
+- In your build directory, run "make clean"
+- In your build directory, run cmake again (with the same parameters)

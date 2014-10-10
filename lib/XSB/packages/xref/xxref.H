@@ -22,7 +22,7 @@
    close/1, (;)/2 from standard.
 :- import load_dync/1 from consult.
 :- import cd/1, cwd/1 from shell.
-:- import file_open/3, file_close/1 from file_io.
+:- import /*file_open/3, */ file_close/1 from file_io.
 :- import file_read/2 from xsb_read.
 :- import sort/2, findall/3 from setof.
 :- import standard_symbol/3 from std_xsb.

@@ -1,4 +1,4 @@
-/*  $Id: c_aggregate.pl,v 1.4 2013/05/01 17:04:46 tswift Exp $
+/*  $Id: c_aggregate.pl,v 1.4 2013-05-01 17:04:46 tswift Exp $
 
     Part of SWI-Prolog
 

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: file_modes_xsb.h,v 1.7 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: file_modes_xsb.h,v 1.7 2010-08-19 15:03:36 spyrosh Exp $
 ** 
 */
 
@@ -29,3 +29,9 @@
 #define OSTRINGR     3	  /* open as a string (for reading) */
 #define OSTRINGW     4	  /* open as a string (for writing) */
 
+/* TLS: these are ports, rather than file descriptors, therefore using
+   the Prolog defines.
+*/
+
+#define STDIN 0
+#define STDOUT 1

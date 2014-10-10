@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: emudef.h,v 1.92 2013/01/04 14:56:21 dwarren Exp $
+** $Id: emudef.h,v 1.93 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -170,10 +170,10 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
 
 
 /*======================================================================*/
+
 #define nunify_with_internstr(OP1,OP2)					\
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
-    /* op1 is FREE */							\
     if (islist(OP2)) {							\
       bind_list((CPtr)(OP1), (CPtr)OP2);				\
     } else {								\
@@ -181,8 +181,11 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
     }									\
   } else if (isinternstr(OP1)) {					\
     if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;			\
-  } else if (unify(CTXTc OP1,OP2)) {XSB_Next_Instr();} 			\
-  else Fail1;								\
+  } else {								\
+    if (unify(CTXTc OP1,OP2)) {						\
+      XSB_Next_Instr();							\
+    } else Fail1;							\
+  }
 
 /*======================================================================*/
 

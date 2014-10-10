@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tp_goal.P,v 1.9 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: tp_goal.P,v 1.9 2010-08-19 15:03:36 spyrosh Exp $
 ** 
 */
 
@@ -38,7 +38,7 @@
 
 tgoalargs([],_,Pil,Pil,T,T,_Tabled).
 tgoalargs([Arg|Args],N,Pil,Pilr,Tin,Tout,Tabled) :-
-	((\+ reg_unchanged(Arg,N),rval_needed(Arg,Args,N)) % (reg is not released)
+	((\+ reg_unchanged(Arg,N), rval_needed(Arg,Args,N)) % (reg is not released)
 	 ->	getreg(Tin,Nreg), T1 = [Nreg|Tin],
 		Pil = [movreg(N,Nreg)|Pil1],
 		load_from_nreg_struct(Arg,Narg,N,Nreg),
@@ -50,8 +50,11 @@ tgoalargs([Arg|Args],N,Pil,Pilr,Tin,Tout,Tabled) :-
 	tgoalargs(Nargs,N1,Pil2,Pilr,T2,Tout,Tabled).
 
 % check to see if we are indeed going to overwrite this register
+% i.e., value already there and so no instruction will be generated...
+% but if anonymous variable, puttvar r,r, so check occurrences (DSW 10/2013)
 reg_unchanged(varocc(_Vid,Prag),N) :-
-	vprag_type1(Prag,t), vprag_loc(Prag,N).
+	vprag_type1(Prag,t), vprag_loc(Prag,N),
+	vprag_occ(Prag,Occ), \+ (Occ = v ; Occ = f).
 
 % check to see if contents of register we are about to overwrite are needed.
 rval_needed(structure(_,Sargs),_Args,N) :- rval_needed(Sargs,N).

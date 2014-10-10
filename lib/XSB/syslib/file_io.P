@@ -81,10 +81,21 @@ file_close(IOport) :-
 	file_function(FILE_CLOSE,IOport,NOFORCE_FILE_CLOSE).
 file_close(IOport,Force) :-
 	file_function(FILE_CLOSE,IOport,Force).
+% obsolete -- specify byte or code
 file_get(IOport,Char) :-
-	file_function(FILE_GET, IOport, Char).
+	file_function(FILE_GET_BYTE, IOport, Char).
+file_get_byte(IOport,Char) :-
+	file_function(FILE_GET_BYTE, IOport, Char).
+file_get_code(IOport,Char) :-
+	file_function(FILE_GET_CODE, IOport, Char).
+file_get_char(IOport,Char) :-
+	file_function(FILE_GET_CHAR, IOport, Char).
 file_put(IOport,Char) :-
-	file_function(FILE_PUT, IOport, Char).
+	file_function(FILE_PUT_BYTE, IOport, Char).
+file_put_code(IOport,Char) :-
+	file_function(FILE_PUT_CODE, IOport, Char).
+file_put_char(IOport,Char) :-
+	file_function(FILE_PUT_CHAR, IOport, Char).
 file_clearerr(IOport) :-
 	file_function(FILE_CLEARERR, IOport, _).
 tmpfile_open(IOport) :-
@@ -328,7 +339,9 @@ path_sysop(isabsolute,Filename) :- !,
 path_sysop(expand,Filename,ExpandedName) :- !,
 	expand_filename(Filename,ExpandedName).
 path_sysop(cwd_ancestordir,BaseName,ExpandedName) :- !,
-	cwd(CurrDir),
+	cwd(CurrDir0),		% cwd returns name without trailing slash
+	slash(Slash),
+	concat_atom([CurrDir0,Slash],CurrDir),
 	(get_ancestor(CurrDir,BaseName,ExpandedName)
 	 ->	true
 	 ;	(getenv([BaseName,'_HOME'],FileName)
@@ -342,6 +355,8 @@ path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/2, ', X)
 
 get_ancestor(CurrDir,BaseName,AncDir) :-
 	CurrDir \== '',
+	CurrDir \== '/',
+	CurrDir \== '\\',
 	CurrDir1 = [CurrDir,'/.'],
 	path_sysop(basename,CurrDir1,CurrDirName),
 	(CurrDirName = BaseName
@@ -489,28 +504,39 @@ print_openfiles:- file_function(PRINT_OPENFILES,_,_,_,_,_,_).
 
 peek_code(S_or_A,Code):- 
 	check_open_stream_or_alias(S_or_A,peek_code/1,1,_Mode,Str),
-	file_function(FILE_PEEK,Str,Ret,_Y,_Z, _,_),
+	file_function(FILE_PEEK_CODE,Str,Ret,_Y,_Z, _,_),
 	Ret = Code.
 
 peek_code(Code):- 
 	stat_flag(CURRENT_INPUT, Str),
-	file_function(FILE_PEEK,Str,Ret,_Y,_Z, _,_),
+	file_function(FILE_PEEK_CODE,Str,Ret,_Y,_Z, _,_),
+	Ret = Code.
+
+peek_byte(S_or_A,Code):- 
+	check_open_stream_or_alias(S_or_A,peek_code/1,1,_Mode,Str),
+	file_function(FILE_PEEK_BYTE,Str,Ret,_Y,_Z, _,_),
+	Ret = Code.
+
+peek_byte(Code):- 
+	stat_flag(CURRENT_INPUT, Str),
+	file_function(FILE_PEEK_BYTE,Str,Ret,_Y,_Z, _,_),
 	Ret = Code.
 
 % TLS: need char_conversion table.
 peek_char(S_or_A,Char):- 
 	check_open_stream_or_alias(S_or_A,peek_char/1,1,_Mode,Str),
-	file_function(FILE_PEEK,Str,Ret,_Y,_Z, _,_),
-	(Ret >= 0 -> 
-	    atom_codes(Char,[Ret])
-	 ;  Char = Ret).
+	file_function(FILE_PEEK_CHAR,Str,C,_Y,_Z, _,_),
+	Char = C.
+%	(Ret >= 0 -> 
+%	    atom_codes(Char,[Ret])
+%	 ;  Char = Ret).
 
 peek_char(Char):- 
 	stat_flag(CURRENT_INPUT, Str),
-	file_function(FILE_PEEK,Str,Ret,_Y,_Z, _,_),
-	(Ret >= 0 -> 
-	    atom_codes(Char,[Ret])
-	 ;  Char = Ret).
+	file_function(FILE_PEEK_CHAR,Str,C,_Y,_Z, _,_), Char = C.
+%	(Ret >= 0 -> 
+%	    atom_codes(Char,[Ret])
+%	 ;  Char = Ret).
 	
 %-----------
 

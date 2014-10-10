@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: configure.in,v 1.242 2012/09/29 02:08:25 kifer Exp $
+## $Id: configure.in,v 1.242 2012-09-29 02:08:25 kifer Exp $
 ##
 ##
 
@@ -122,10 +122,8 @@ AC_ARG_WITH(dynamic-libraries,
                           	libraries are automatically added to the XSB 
                           	library search path, so they could be loaded at
                           	run time])
-AC_ARG_WITH(xpath-libdir,
-[  --with-xpath-libdir=DIR      the location of the libxml2.so library is at DIR])
-AC_ARG_WITH(xpath-incdir,
-[  --with-xpath-incdir=DIR      the location of the include files for libxml2 is at DIR])
+AC_ARG_WITH(xpath-dir,
+[  --with-xpath-dir=DIR         the location of the libxml2 library is at DIR])
 AC_ARG_WITH(curl-libdir,
 [  --with-curl-libdir=DIR       the location of the libcurl.so is at DIR])
 AC_ARG_WITH(curl-incdir,
@@ -929,13 +927,10 @@ fi
 if test -d "$topdir/packages/xpath"; then
    cd "$topdir/packages/xpath"
    echo "***Configuring XPath support"
-   if test -n "$with_xpath_incdir" ; then
-      xpath_prefix_option="--prefix="$with_xpath_incdir"
+   if test -n "$with_xpath_dir" ; then
+      xpath_prefix_option="--prefix=$with_xpath_dir"
    fi
-   if test -n "$with_xpath_libdir" ; then
-      xpath_exec_prefix_option="--exec-prefix="$with_xpath_libdir"
-   fi
-    ./configure $xpath_exec_prefix_option $xpath_prefix_option > /dev/null
+    ./configure $xpath_prefix_option > /dev/null
     cd "$build_dir"
 fi
 
@@ -1376,8 +1371,15 @@ case "$canonical" in
                     LDFLAGS="${LDFLAGS} -lpthread"
                 fi
         ;;
-    *-rhapsody* | *-darwin* )
-                CFLAGS="-faltivec -fPIC ${CFLAGS} "
+#    *-rhapsody* | *-darwin* )
+#                CFLAGS="-faltivec -fPIC ${CFLAGS} "
+#                AC_DEFINE(DARWIN)
+#                AC_DEFINE(FOREIGN_ELF)
+#        	DYNMOD_LDFLAGS="-dynamiclib -single_module -nostartfiles"
+#        	DYNMOD_SHAREDLIB_EXTENSION=jnilib
+#        ;;
+    *-darwin* )
+                CFLAGS=" -fPIC ${CFLAGS} "
                 AC_DEFINE(DARWIN)
                 AC_DEFINE(FOREIGN_ELF)
         	DYNMOD_LDFLAGS="-dynamiclib -single_module -nostartfiles"

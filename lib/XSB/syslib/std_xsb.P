@@ -240,6 +240,8 @@ standard_symbol(gc_tables, 1, standard).
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
 standard_symbol(get_attr, 3, machine).		
+standard_symbol(get_byte, 1, standard).		% ISO
+standard_symbol(get_byte, 2, standard).		% ISO
 standard_symbol(get_char, 1, standard).		% ISO
 standard_symbol(get_char, 2, standard).		% ISO
 standard_symbol(get_code, 1, standard).		% ISO
@@ -343,6 +345,8 @@ standard_symbol(peek_char,1,file_io).		%ISO
 standard_symbol(peek_char,2,file_io).		%ISO
 standard_symbol(peek_code,1,file_io).		%ISO
 standard_symbol(peek_code,2,file_io).		%ISO
+standard_symbol(peek_byte,1,file_io).		%ISO
+standard_symbol(peek_byte,2,file_io).		%ISO
 standard_symbol(phrase, 2, dcg).
 standard_symbol(phrase, 3, dcg).
 standard_symbol(predicate_property, 2, curr_sym).

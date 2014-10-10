@@ -19,7 +19,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: Makefile,v 1.26 2011/03/28 12:47:32 dwarren Exp $
+## $Id: Makefile,v 1.26 2011-03-28 12:47:32 dwarren Exp $
 ## 
 ##
 

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: io_builtins_xsb.c,v 1.104 2013/01/09 20:15:34 dwarren Exp $
+** $Id: io_builtins_xsb.c,v 1.104 2013-01-09 20:15:34 dwarren Exp $
 ** 
 */
 
@@ -63,6 +63,7 @@
 #include "deref.h"
 #include "findall.h"
 #include "heap_defs_xsb.h"
+#include "cell_xsb_i.h"
 
 //extern FILE *logfile;
 
@@ -102,6 +103,7 @@ char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
 	    xsb_abort("[%s] in argument value %d. Expected %c, got %c.", Label, i,current_fmt_spec->type,ch_type); \
         }
 
+/* these should incorporate the charset of the target file */
 #define PRINT_ARG(arg) switch (current_fmt_spec->size) { \
         case 1: fprintf(fptr, current_fmt_spec->fmt, arg); \
 	        break; \
@@ -627,7 +629,7 @@ xsbBool fmt_read(CTXTdecl)
       cont = 1; /* don't leave the loop */
       break;
     case '.': /* last format substring (and has no conversion spec) */
-      curr_assignment = fscanf(fptr,  current_fmt_spec->fmt);
+      curr_assignment = fscanf(fptr,  current_fmt_spec->fmt, "");
       if (isref(Arg))
 	xsb_warn("[FMT_READ] More arguments than format specifiers");
       goto EXIT_READ;
@@ -705,7 +707,7 @@ xsbBool fmt_read(CTXTdecl)
      strings. The leftover format specifiers are ignored. */
   /* last format substr without conversion spec */
   if (current_fmt_spec->type == '.')
-    curr_assignment = fscanf(fptr, current_fmt_spec->fmt);
+    curr_assignment = fscanf(fptr, current_fmt_spec->fmt, "");
   /* last format substr with assignment suppression (spec size=0) */
   if (current_fmt_spec->size == 0)
     dummy = fscanf(fptr, aux_fmt.string, &curr_chars_consumed);
@@ -721,6 +723,8 @@ xsbBool fmt_read(CTXTdecl)
 
  EXIT_READ_FALSE:
   mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec),LEAK_SPACE);
+
+  SQUASH_LINUX_COMPILER_WARN(dummy) ; 
   return FALSE;
 }
 #undef FmtBuf
@@ -762,7 +766,7 @@ CPtr init_term_buffer(CTXTdeclc int *findall_chunk_index) {
 
 #define free_term_buffer() findall_free(CTXTc findall_chunk_index)
 
-static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, Cell prologvar, int findall_chunk_index)
+static int read_can_error(CTXTdeclc int stream, int prevchar, Cell prologvar, int findall_chunk_index)
 {
   char *ptr;
 
@@ -785,7 +789,7 @@ static int read_can_error(CTXTdeclc FILE *filep, STRFILE *instr, int prevchar, C
     case TK_INTFUNC	: fprintf(stderr,"%d ", *(int *)ptr); break;
     case TK_REALFUNC	: fprintf(stderr,"%f ", *(double *)ptr); break;
     }
-    token = GetToken(CTXTc filep,instr,prevchar);
+    token = GetToken(CTXTc stream,prevchar);
     prevchar = token-> nextch;
   }
   if (token->type == TK_EOC)
@@ -845,24 +849,15 @@ struct vartype rc_vars[MAXVAR];
 
 int read_canonical(CTXTdecl)
 {
-  FILE *filep;
-  STRFILE *instr;
-  Integer tempfp;
+  int tempfp;
   
-  tempfp = ptoc_int(CTXTc 1);
+  tempfp = (int)ptoc_int(CTXTc 1);
   if (tempfp == -1000) {
     prevpsc = 0;
     return TRUE;
   }
 
-  if ((tempfp < 0) && (tempfp >= -MAXIOSTRS)) {
-    instr = strfileptr(tempfp);
-    filep = NULL;
-  } else {
-    instr = NULL;
-    SET_FILEPTR(filep, tempfp);
-  }
-  ctop_addr(3,read_canonical_term(CTXTc filep, instr, 1));
+  ctop_addr(3,read_canonical_term(CTXTc tempfp, 1));
   return TRUE;
 }
 
@@ -880,7 +875,7 @@ Cell read_canonical_return_var(CTXTdeclc int code) {
 
 /* copied from emuloop.c and added param */
 #ifndef FAST_FLOATS
-inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value)
+static inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value)
 {
     Float tempFloat = value;
     new_heap_functor((*h),box_psc);
@@ -892,18 +887,18 @@ inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value)
 }
 #else
 inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value) {
-  bld_float(addr,value);
+static   bld_float(addr,value);
 }
 #endif
 
 /* read canonical term, and return prev psc pointer, if valid */
-Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_location_code)
+Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 {
   int findall_chunk_index;
   int funtop = 0;
   int optop = 0;
   int cvarbot = MAXVAR-1;
-  int prevchar, arity, i, size;
+  int prevchar, arity, i, size, charset;
   CPtr h;
   int j, op1;
   Integer retpscptr;
@@ -915,6 +910,9 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
   prolog_term term;
   Cell prologvar = read_canonical_return_var(CTXTc return_location_code);
   
+  if (stream >= 0) charset = charset(stream);
+  else charset = UTF_8;
+
   if (opstk_size == 0) {
     opstk = 
       (struct opstktype *)mem_alloc(INIT_STK_SIZE*sizeof(struct opstktype),READ_CAN_SPACE);
@@ -930,7 +928,7 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 
   prevchar = 10;
   while (1) {
-    token = GetToken(CTXTc filep,instr,prevchar); // dswdebug
+    token = GetToken(CTXTc stream,prevchar); // dswdebug
 	prevchar = token->nextch;
 	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
 	    if (token->type == TK_PUNC) {
@@ -1000,13 +998,13 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 		      optop = op1+1;
 		    }
 		  } else {
-  		    return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index); /* ')' ends a list? */
+  		    return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index); /* ')' ends a list? */
 		  }
 		} else if (*token->value == ']') {	/* end of list */
 		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN || funstk[funtop].funtyp == FUNCOMMALIST)
-			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+			return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
 		  ensure_term_space(h,2);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
@@ -1055,9 +1053,9 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 		} else if (*token->value == '|') {
 		  postopreq = FALSE;
 		  if (funstk[funtop-1].funtyp != FUNLIST) 
-			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+			return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
 		  funstk[funtop-1].funtyp = FUNDTLIST;
-		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+		} else return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
       } else {  /* check for neg numbers and backpatch if so */
 		if (opstk[optop-1].typ == TK_ATOM && 
 				!strcmp("-",string_val(opstk[optop-1].op))) {
@@ -1075,8 +1073,8 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 			opstk[optop-1].typ = TK_FUNC;
 			bld_boxedfloat_here(CTXTc &h, &opstk[optop-1].op, -float_temp);
 #endif
-		  } else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
-		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+		  } else return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
+		} else return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
       }
     } else {  /* must be an operand */
       switch (token->type) {
@@ -1084,7 +1082,7 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 		if (*token->value == '[') {
 		  if(token->nextch == ']') {
 		        if (optop >= opstk_size) expand_opstk;
-			token = GetToken(CTXTc filep,instr,prevchar);
+			token = GetToken(CTXTc stream,prevchar);
 			/* print_token(token->type,token->value); */
 			prevchar = token->nextch;
 			opstk[optop].typ = TK_ATOM;
@@ -1114,8 +1112,8 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 		funtop++;
 
 		if (token->nextch != '(')
-			return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
-		token = GetToken(CTXTc filep,instr,prevchar);
+			return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
+		token = GetToken(CTXTc stream,prevchar);
 		/* print_token(token->type,token->value); */
 		prevchar = token->nextch;
 		break;
@@ -1194,11 +1192,14 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 	  postopreq = TRUE;
 	  break;
 	} else {
+	  int code; /* utf-8 code nfz */
 	  CPtr this_term, prev_tail;
-	  char *charptr = token->value;
+	  byte *charptr = (byte *)token->value;
 	  ensure_term_space(h,2);
 	  this_term = h;
-	  cell(h) = makeint((int)*charptr); charptr++;
+	  code = char_to_codepoint(charset,&charptr);  /* nfz */
+	  cell(h) = makeint(code);                  /* nfz */
+	  //	  cell(h) = makeint((int)*charptr); charptr++;
 	  h++;
 	  prev_tail = h;
 	  h++;
@@ -1206,7 +1207,9 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 	  while (*charptr != 0) {
 	    ensure_term_space(h,2);
 	    cell(prev_tail) = makelist(h);
-	    cell(h) = makeint((int)*charptr); charptr++;
+	    code = char_to_codepoint(charset,&charptr); /* nfz */
+	    cell(h) = makeint(code);                 /* nfz */
+	    //	    cell(h) = makeint((int)*charptr); charptr++;
 	    h++;
 	    prev_tail = h;
 	    h++;
@@ -1225,15 +1228,15 @@ Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_lo
 	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
 	unify(CTXTc prologvar,makestring(string_find("end_of_file",1)));
 	return 0;
-      default: return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+      default: return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
       }
     }
     if (funtop == 0) {  /* term is finished */
-      token = GetToken(CTXTc filep,instr,prevchar);
+      token = GetToken(CTXTc stream,prevchar);
       /* print_token(token->type,token->value); */
       prevchar = token->nextch; /* accept EOF as end_of_clause */
       if (token->type != TK_EOF && token->type != TK_EOC) 
-	return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
+	return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
 
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	if (isnonvar(prologvar)) 
@@ -1498,12 +1501,12 @@ void next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state
    whether a file pointer is present or not, rather than a file and
    I/O mode, as below. */
 
-int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode)
+int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode, int charset)
 {
   int i;
   char mode = '\0';
 
-  /*printf("xsb_intern_fileptr %x %s %s %s\n",fptr,context,name,strmode);*/
+  /*printf("xsb_intern_fileptr %x %s %s %s %d\n",fptr,context,name,strmode,charset);*/
 
   if (!fptr) return -1;
 
@@ -1528,7 +1531,8 @@ int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode)
     open_files[i].file_ptr = fptr;
     open_files[i].file_name = string_find(name,1);
     open_files[i].io_mode = mode;
-  return i;
+    open_files[i].charset = charset;
+    return i;
   }
 }
 
@@ -1599,7 +1603,9 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode,int open
     if (!fptr) {*ioport = 0; return -1;}
     if (flags[LOG_ALL_FILES_USED]) {
       char current_dir[MAX_CMD_LEN];
-      getcwd(current_dir, MAX_CMD_LEN-1);
+      char *dummy; /* to squash warnings */
+      dummy = getcwd(current_dir, MAX_CMD_LEN-1);
+      SQUASH_LINUX_COMPILER_WARN(dummy) ; 
       xsb_log("%s: %s\n",current_dir,addr);
     }
     if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode)) {
@@ -1607,6 +1613,7 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode,int open
       open_files[first_null].file_ptr = fptr;
       open_files[first_null].file_name = string_find(addr,1);
       open_files[first_null].io_mode = mode;
+      open_files[first_null].charset = CURRENT_CHARSET;
       *ioport = first_null;
       return 0;
     }  else {
@@ -1684,25 +1691,42 @@ xsbBool string_contains_quotes(char *string) {
 }
 
 // TLS: changed return val to int so I can use it w. sprintf.
+// int double_quotes(char *string, char *new_string)
+// {
+//   int ctr = 0, nctr = 0;
+// 
+//   while (string[ctr] != '\0') {
+//     if (string[ctr] == '\'') {
+//       new_string[nctr] = '\'';
+//       nctr++;
+//     } else if (string[ctr] == '\\') {
+//       char ch = string[ctr+1];
+//       if (ch == 'a' || ch == 'b' || ch == 'f' || ch == 'n' || 
+// 	  ch == 'r' || ch == 's' || ch == 't' || ch == 'v' || ch == 'x' || 
+// 	  ch == '0' || ch == '1' || ch == '2' || ch == '3' || 
+// 	  ch == '4' || ch == '5' || ch == '6' || ch == '7' || 
+// 	  ch == '\\' || ch == '"' || ch == '`') {
+//         new_string[nctr] = '\\';
+//         nctr++;
+//       }
+//     }
+//     new_string[nctr] = string[ctr];
+//     nctr++; ctr++;
+//   }
+//   new_string[nctr] = '\0';
+//   return nctr;
+// }
+
+// always double '\'
 int double_quotes(char *string, char *new_string)
 {
   int ctr = 0, nctr = 0;
 
   while (string[ctr] != '\0') {
-    if (string[ctr] == '\'') {
-      new_string[nctr] = '\'';
+    if (string[ctr] == '\'' || string[ctr] == '\\') {
+      new_string[nctr] = string[ctr];
       nctr++;
-    } else if (string[ctr] == '\\') {
-      char ch = string[ctr+1];
-      if (ch == 'a' || ch == 'b' || ch == 'f' || ch == 'n' || 
-	  ch == 'r' || ch == 's' || ch == 't' || ch == 'v' || ch == 'x' || 
-	  ch == '0' || ch == '1' || ch == '2' || ch == '3' || 
-	  ch == '4' || ch == '5' || ch == '6' || ch == '7' || 
-	  ch == '\\' || ch == '"' || ch == '`') {
-        new_string[nctr] = '\\';
-        nctr++;
-      }
-    }
+    } 
     new_string[nctr] = string[ctr];
     nctr++; ctr++;
   }
@@ -1710,25 +1734,30 @@ int double_quotes(char *string, char *new_string)
   return nctr;
 }
 
-void write_quotedname(FILE *file, char *string)
+void write_quotedname(FILE *file, int charset, char *string)
 {
   if (*string == '\0') 
-    fprintf(file,"''");
+    //    fprintf(file,"''");
+    write_string_code(file,charset,(byte *)"''");
   else {
     if (!quotes_are_needed(string)) {
-      fprintf(file,"%s",string);
+      write_string_code(file,charset,(byte *)string);
     }
     else {
       size_t neededlen = 2*strlen(string)+1;
       if (neededlen < 1000) {
 	char lnew_string[1000];
       	double_quotes(string,lnew_string);
-	fprintf(file,"\'%s\'",lnew_string);
+	write_string_code(file,charset,(byte *)"\'");
+	write_string_code(file,charset,(byte *)lnew_string);
+	write_string_code(file,charset,(byte *)"\'");
       } else {
 	char* new_string;
 	new_string  = (char *)mem_alloc(neededlen,LEAK_SPACE);
 	double_quotes(string,new_string);
-	fprintf(file,"\'%s\'",new_string);
+	write_string_code(file,charset,(byte *)"\'");
+	write_string_code(file,charset,(byte *)new_string);
+	write_string_code(file,charset,(byte *)"\'");
 	mem_dealloc(new_string,neededlen,LEAK_SPACE);
       }
     }
@@ -1826,7 +1855,7 @@ int call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fla
      }
      else if (isboxedfloat(prologterm))
      {
-       sprintf(wcan_buff->string,"%1.15g",boxedfloat_val(prologterm));
+       sprintf(wcan_buff->string,"%1.18g",boxedfloat_val(prologterm));
        wcan_buff->length = (int)strlen(wcan_buff->string);
        if (!strchr(wcan_buff->string,'.')) {
 	 char *eloc = strchr(wcan_buff->string,'e');
@@ -1936,10 +1965,10 @@ char *canonical_term(CTXTdeclc Cell prologterm, int letter_flag) {
   return wcan_string->string;
 }
 
-void print_term_canonical(CTXTdeclc FILE *fptr, Cell prologterm, int letterflag)
+void print_term_canonical(CTXTdeclc FILE *fptr, int charset, Cell prologterm, int letterflag)
 {
   write_canonical_term(CTXTc prologterm, letterflag);
-  fprintf(fptr, "%s", wcan_string->string);
+  write_string_code(fptr,charset,(byte *)wcan_string->string);
 }
 
 #undef wcan_string

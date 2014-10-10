@@ -325,10 +325,11 @@ through when I get to the tokenizer.  */
 
 %ISO 
 get_char(S_or_A,Char):- 
-	get_code(S_or_A,Code),
-	(Code == -1 -> 
-	    Char = Code
-	  ; atom_codes(Char,[Code])).
+	check_open_stream_or_alias(S_or_A,get_char/2,1,input,Str),
+	file_get_char(Str,Char).
+%	(Code == -1 -> 
+%	    Char = Code
+%	  ; atom_codes(Char,[Code])).
 
 %ISO
 get_char(Char):- 
@@ -341,18 +342,37 @@ get_char(Char):-
 get_code(S_or_A,C) :- 
 	check_open_stream_or_alias(S_or_A,get_code/2,1,input,Str),
 	(var(C) -> 
-	    file_get(Str,C)
+	    file_get_code(Str,C)
 	 ; (integer(C) -> 
-	        file_get(Str,C)
+	        file_get_code(Str,C1),C1 = C
 	     ;  domain_error(integer_or_variable,C,get_code/2,2) ) ).
 
 %ISO
 get_code(C) :- 
-	(var(C) -> 
-	    get0(C)
+	 stat_flag(CURRENT_INPUT, Str), 
+	 (var(C) -> 
+	    file_get_code(Str,C)
 	 ; (integer(C) -> 
-	        get0(C)
+        	file_get_code(Str,C1),C1 = C
 	     ;  domain_error(integer_or_variable,C,get_code/1,1) ) ).
+
+%ISO
+get_byte(S_or_A,C) :- 
+	check_open_stream_or_alias(S_or_A,get_byte/2,1,input,Str),
+	(var(C) -> 
+	    file_get_byte(Str,C)
+	 ; (integer(C) -> 
+	        file_get_byte(Str,C1),C1 = C
+	     ;  domain_error(integer_or_variable,C,get_byte/2,2) ) ).
+
+%ISO
+get_byte(C) :- 
+	 stat_flag(CURRENT_INPUT, Str), 
+	 (var(C) -> 
+	    file_get_byte(Str,C)
+	 ; (integer(C) -> 
+        	file_get_byte(Str,C1),C1 = C
+	     ;  domain_error(integer_or_variable,C,get_byte/1,1) ) ).
 
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
@@ -361,7 +381,7 @@ char_blank(Ch) :- Ch >= 0, Ch =< 9.
 char_blank(Ch) :- Ch >= 11, Ch =< 32.
 
 get0(C) :- stat_flag(CURRENT_INPUT, Str), 
-	   file_get(Str, C0), C = C0.
+	   file_get_code(Str, C0), C = C0.
 
 % Not in manual.
 skip(C) :- get0(C0), (C0=C ; skip(C)).
@@ -369,38 +389,42 @@ skip(C) :- get0(C0), (C0=C ; skip(C)).
 %ISO
 put_char(S_or_A,C):- 
 	check_open_stream_or_alias(S_or_A,put_char/2,1,output,Str),
-	atom_codes(C,L),
-	(L = [L1] -> 
-	    true 
-	  ; domain_error(character_or_variable,C,put_char/2,2) ),
-	file_put(Str,L1).
+	file_put_char(Str,C).
+%	atom_codes(C,L),
+%	(L = [L1] -> 
+%	    true 
+%	  ; domain_error(character_or_variable,C,put_char/2,2) ),
+%	file_put(Str,L1).
 
 %ISO
 put_char(C):- 			
-	atom_codes(C,L),
-	(L = [L1] -> 
-	    true 
-	  ; domain_error(character_or_variable,C,put_char/1,1) ),
-	put(L1).
+        stat_flag(CURRENT_OUTPUT, Str), 
+	file_put_char(Str,C).
+%	atom_codes(C,L),
+%	(L = [L1] -> 
+%	    true 
+%	  ; domain_error(character_or_variable,C,put_char/1,1) ),
+%	put(L1).
 
 %ISO
 put_code(S_or_A,C):- 
 	check_open_stream_or_alias(S_or_A,put_code/2,1,output,Str),
 	(integer(C) -> 
-	        file_put(Str,C)
+	        file_put_code(Str,C)
 	 ;  domain_error(integer_or_variable,C,put_code/2,2) ).
 
 %ISO
 put_code(C):- 
+	 stat_flag(CURRENT_OUTPUT, Str), 
 	(integer(C) -> 
-	        put(C)
+	        file_put_code(Str,C)
 	 ;  domain_error(integer_or_variable,C,put_code/1,1) ).
 
 
 % TLS: changed definition of put so that stream-based version (w. mutexes) is used. 
 %put(C) :- put(C).
 
-put(C):- stat_flag(CURRENT_OUTPUT, Str), file_put(Str, C).
+put(C):- stat_flag(CURRENT_OUTPUT, Str), file_put_code(Str, C).
 
 
 tab(N) :- tab(N).
@@ -414,14 +438,8 @@ file_exists(F) :-
 	expand_filename(F, EF),
 	machine_file_exists(EF).
 
-:- import peek_code/1, peek_code/2 from file_io.
-% Just for ISO compatability
-get_byte(C):- get_code(C).
-get_byte(S,C):- get_code(S,C).
-peek_byte(C):- peek_code(C).
-peek_byte(S,C):- peek_code(S,C).
-put_byte(C):- put_code(C).
-put_byte(S,C):- put_code(S,C).
+put_byte(C):- put(C).
+put_byte(S,C):- file_put(S,C).
 
 %---------------------%
 % Term I/O Predicates %
@@ -726,7 +744,9 @@ hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
 % Type conversion Predicates %
 %----------------------------%
 
-atom_length(A, N) :- str_len(A, N).
+%atom_length(A, N) :- str_len(A, N).
+atom_length(A, N) :-  file_function(ATOM_LENGTH, A, NN), NN=N.
+
 
 atom_chars(A, L) :- atom_chars(A, L).
 atom_codes(A, L) :- atom_codes(A, L).
@@ -1086,10 +1106,13 @@ exec_table_option(private,Pred) :- !,
 	thread_private(Pred).
 exec_table_option(shared,Pred) :- !,
 	thread_shared(Pred).
+exec_table_option(intern,PredSpec) :- !,
+	( PredSpec = P/N -> functor(Term,P,N); Term = PredSpec ),
+	set_tif_property(Term,intern,1).
 exec_table_option(Option,_Pred) :- !,
 	domain_error(table_option,Option,(table)/1,1,
 	['must be one of ',
-	 'dynamic,dyn,subsumptive,variant,incremental,nonincremental,opaque,private,shared,approximate']).
+	 'dynamic,dyn,subsumptive,variant,incremental,nonincremental,opaque,private,shared,approximate,intern']).
 
 %--------
 :- import approximate/1 from usermod.
@@ -1235,10 +1258,46 @@ check_table_option(shared,Options,PredCList,_HasDyn) :- !,
 	           ' as tabled with options shared and opaque'))
 	 ;  true).
 check_table_option(answer_abstract(_),_Options,_PredCList,_HasDyn) :- !. % should work with anything.
+check_table_option(intern,Options,PredCList,_HasDyn) :- !,
+	(comma_member(subgoal_abstract(X),Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and ',subgoal_abstract(X)))
+	 ;	true
+	),
+	(comma_member(dynamic,Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and dynamic'))
+	 ;	true
+	),
+	(comma_member(subsumptive,Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and subsumptive'))
+	 ;	true
+	),
+	(comma_member(approximate(X1),Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and ',approximate(X1)))
+	 ;	true
+	),
+	(comma_member(incremental,Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and incremental'))
+	 ;	true
+	),
+	(comma_member(opaque,Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and opaque'))
+	 ;	true
+	),
+	(comma_member(answer_abstract(X2),Options)
+	 ->	table_error(('Cannot declare ',PredCList,
+		     ' as tabled with options intern and ',answer_abstract(X2)))
+	 ;	true
+	).
 check_table_option(Option,_Options,_PredCList,_HasDyn) :- !,
 	domain_error(table_option,Option,(table)/1,1,
 	['must be one of ',
-	'answer_abstract,subgoal_abstract,approximate,dyn,dynamic,subsumptive,variant,incremental,nonincremental,opaque,private,shared']).
+	'answer_abstract,subgoal_abstract,approximate,dyn,dynamic,subsumptive,variant,incremental,nonincremental,opaque,private,shared,intern']).
 
 use_incremental_tabling(PredList):-
 	abort(['use_incremental_dynamic/1 is now obsolete.  Use table ',
@@ -1575,7 +1634,7 @@ X @>= Y :- X @>= Y.
 '=:='(X,Y) :- X =:= Y.
 '=\='(X,Y) :- X =\= Y.
 
-'?='(X,Y):- (X == Y ; X \= Y),!.
+'?='(X,Y):- (X == Y -> true ; X \= Y).
 
 
 			/*****************************/

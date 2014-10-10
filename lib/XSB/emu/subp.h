@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: subp.h,v 1.25 2011/11/09 02:28:19 dwarren Exp $
+** $Id: subp.h,v 1.25 2011-11-09 02:28:19 dwarren Exp $
 ** 
 */
 
@@ -29,10 +29,10 @@ extern void intercept(CTXTdeclc Psc);
 extern void init_interrupt(void);
 extern void print_statistics(CTXTdeclc int);
 extern void statistics_inusememory(CTXTdeclc int);
-extern void print_qatom(FILE *, char *);
-extern void print_aqatom(FILE *, char *);
-extern void print_dqatom(FILE *, char *);
-extern void print_op(FILE *, char *, int);
+extern void print_qatom(FILE *, int, char *);
+extern void print_aqatom(FILE *, int, char *);
+extern void print_dqatom(FILE *, int, char *);
+extern void print_op(FILE *, int, char *, int);
 extern void remove_incomplete_tables_reset_freezes(CTXTdeclc int);
 
 extern xsbBool unify(CTXTdeclc Cell, Cell);

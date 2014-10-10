@@ -25,7 +25,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: emuMakefile.in,v 1.76 2013/01/04 15:02:16 dwarren Exp $
+## $Id: emuMakefile.in,v 1.76 2013-01-04 15:02:16 dwarren Exp $
 ##
 
 
@@ -103,7 +103,7 @@ DEPEND = makedepend
 #
 
 
-SRCS =	auxlry.c biassert.c builtin.c cinterf.c conc_compl.c \
+SRCS =	auxlry.c biassert.c builtin.c call_xsb.c cinterf.c conc_compl.c \
 	debug_xsb.c dis.c dynload.c dynamic_stack.c deadlock.c \
 	emuloop.c error_xsb.c findall.c function.c \
 	hash_xsb.c hashtable_xsb.c \
@@ -126,7 +126,7 @@ SRCS =	auxlry.c biassert.c builtin.c cinterf.c conc_compl.c \
 ORASRCS = $(SRCS) orastuff.c
 
 
-OBJS =	auxlry.o biassert.o builtin.o cinterf.o conc_compl.o \
+OBJS =	auxlry.o biassert.o builtin.o call_xsb.o cinterf.o conc_compl.o \
 	debug_xsb.o dis.o dynload.o dynamic_stack.o deadlock.o \
 	emuloop.o error_xsb.o findall.o function.o \
 	hash_xsb.o  hashtable_xsb.o \

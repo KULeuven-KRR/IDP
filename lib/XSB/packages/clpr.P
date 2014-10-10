@@ -18,13 +18,13 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: clpr.P,v 1.11 2010/08/19 15:03:38 spyrosh Exp $
+** $Id: clpr.P,v 1.11 2010-08-19 15:03:38 spyrosh Exp $
 ** 
 */
 
 :- import bootstrap_package/2 from packaging.
 
-:- export {}/1, entailed/1, maximize/1, minimize/1, sup/2, inf/2, sup/4, inf/4,
+:- export {}/1, entailed/1, maximize/1, minimize/1, sup/2, inf/2, sup/4, inf/4, filter_varlist/4,
 	bb_inf/3, bb_inf/5, clpr_portray_hook/1.
 
 {F}:- nf_r:{F}.

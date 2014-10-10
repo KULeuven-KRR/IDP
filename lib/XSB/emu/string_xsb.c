@@ -48,6 +48,7 @@
 
 #include "sp_unify_xsb_i.h"
 #include "string_xsb.h"
+#include "token_xsb.h"
 
 extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
@@ -171,6 +172,11 @@ xsbBool str_match(CTXTdecl)
 }
 
 
+#define reposistion_by_chars(char_ptr_ptr,num_chars) \
+  { Integer i;					       \
+    for(i = num_chars; i > 0; i--)		       \
+      utf8_char_to_codepoint((byte **)char_ptr_ptr);    \
+  }
 
 
 /* XSB string substitution entry point
@@ -189,7 +195,8 @@ xsbBool substring(CTXTdecl)
   prolog_term input_term, output_term;
   prolog_term beg_offset_term, end_offset_term;
   char *input_string=NULL;    /* string where matches are to be found */
-  Integer beg_offset=0, end_offset=0, input_len=0, substring_len=0;
+  char * substring_start;  char * substring_end;
+  Integer beg_offset=0, end_offset=0, input_len=0, substring_bytelen=0,substring_charlen=0;
   int conversion_required=FALSE;
 
   XSB_StrSet(&output_buffer,"");
@@ -204,7 +211,8 @@ xsbBool substring(CTXTdecl)
   } else
     xsb_abort("[SUBSTRING] Arg 1 (the input string) must be an atom or a character list");
 
-  input_len = strlen(input_string);
+  //  input_len = strlen(input_string);
+  input_len = utf8_nchars((byte *)input_string);
 
   /* arg 2: beginning offset */
   beg_offset_term = reg_term(CTXTc 2);
@@ -236,8 +244,15 @@ xsbBool substring(CTXTdecl)
     xsb_abort("[SUBSTRING] Arg 4 (the output string) must be an unbound variable");
 
   /* do the actual replacement */
-  substring_len = end_offset-beg_offset;
-  XSB_StrAppendBlk(&output_buffer, input_string+beg_offset, (int)substring_len);
+  substring_charlen = end_offset-beg_offset;
+  substring_start = input_string;
+  reposistion_by_chars(&substring_start,beg_offset);
+  substring_end = substring_start;
+  reposistion_by_chars(&substring_end,substring_charlen);
+  substring_bytelen = substring_end - substring_start;
+
+  //  XSB_StrAppendBlk(&output_buffer, input_string+beg_offset, (int)substring_len);
+  XSB_StrAppendBlk(&output_buffer, substring_start, (int)substring_bytelen);
   XSB_StrNullTerminate(&output_buffer);
   
   /* get result out */

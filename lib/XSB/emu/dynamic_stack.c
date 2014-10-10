@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: dynamic_stack.c,v 1.15 2011/08/06 19:14:20 tswift Exp $
+** $Id: dynamic_stack.c,v 1.15 2011-08-06 19:14:20 tswift Exp $
 ** 
 */
 
@@ -36,6 +36,7 @@
 #include "cell_xsb.h"
 #include "tst_aux.h"  /* needs cell_xsb.h */
 #include "error_xsb.h"
+#include "tries.h"
 #include "debug_xsb.h"
 #include "flags_xsb.h"
 #include "memory_xsb.h"

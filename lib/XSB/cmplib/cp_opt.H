@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cp_opt.H,v 1.15 2012/02/01 20:06:42 dwarren Exp $
+** $Id: cp_opt.H,v 1.15 2012-02-01 20:06:42 dwarren Exp $
 ** 
 */
 

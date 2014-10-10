@@ -1,4 +1,4 @@
-				/* File:      binding.h
+/* File:      binding.h
 ** Author(s): Jiyang Xu, Terrance Swift, Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: binding.h,v 1.26 2011/11/11 18:21:39 dwarren Exp $
+** $Id: binding.h,v 1.26 2011-11-11 18:21:39 dwarren Exp $
 ** 
 */
 
@@ -61,7 +61,7 @@
 #include "xsb_config.h"
 #include "basictypes.h"
 #include "box_defines.h"
-
+#include "memory_xsb.h"
 
 #define PRE_IMAGE_TRAIL
 

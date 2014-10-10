@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cell_xsb.h,v 1.48 2013/01/09 20:15:33 dwarren Exp $
+** $Id: cell_xsb.h,v 1.49 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -99,8 +99,8 @@
 #else
 #define FLOAT_MASK 0xfffffff8
 #endif
-extern inline float getfloatval(Cell);
-extern inline Cell makefloat(float);
+//extern inline float getfloatval(Cell);
+//extern inline Cell makefloat(float);
 extern inline int sign(Float);
 
 #define isref(cell)  (!((word)(cell)&0x3))
@@ -219,8 +219,19 @@ extern unsigned long enc[], dec[];
 #define isconstr(dcell) (cell_tag(dcell)==XSB_STRUCT)	/* dcell -> xsbBool */
 #define islist(dcell) (cell_tag(dcell)==XSB_LIST)	/* dcell -> xsbBool */
 #define isstr(dcell) (isconstr(dcell) || islist(dcell))
-#define isinternstr(dcell) (isstr(dcell) &&				\
-			    (clref_val(dcell)<(CPtr)glstack.low || clref_val(dcell)>(CPtr)glstack.high))
+/**#define isinternstr0(dcell)						\
+   (isstr(dcell) && (clref_val(dcell)<(CPtr)glstack.low || clref_val(dcell)>(CPtr)glstack.high)) **/
+/* perhaps this added test of hash bucket link as addr causes faster failure, and most calls fail */
+#define isinternstr0(dcell)						\
+  (isstr(dcell) && !(*(clref_val(dcell)-1)&3) && (clref_val(dcell)<(CPtr)glstack.low || clref_val(dcell)>(CPtr)glstack.high))
+/* multi-threaded engine has pointers from one heap to another at times; so more care needed */
+#ifndef MULTI_THREAD
+//#define isinternstr(dcell) isinternstr0(dcell)
+#define isinternstr(dcell) (isinternstr0(dcell) && isinternstr_really((prolog_term)(dcell)))
+#else
+#define isinternstr(dcell) (isinternstr0(dcell) && isinternstr_really((prolog_term)(dcell)))
+#endif
+
 #define isattv(dcell) (cell_tag(dcell)==XSB_ATTV)	/* dcell -> xsbBool */
 
 #define is_attv_or_ref(cell) (isref(cell) || isattv(cell))
@@ -289,7 +300,7 @@ extern unsigned long enc[], dec[];
 //    Float variable, and returns this Float.
 
 #ifdef BITS64
-extern inline Float make_float_from_ints(UInteger);
+//extern inline Float make_float_from_ints(UInteger);
 
 // EXTRACT_FLOAT_FROM_16_24_24 works by first merging the three ints together into 
 //    two Integers (assuming high-order 16 bits are in the first, middle-24 bits in the 
@@ -302,7 +313,7 @@ extern inline Float make_float_from_ints(UInteger);
 
 #else
 
-extern inline Float make_float_from_ints(UInteger, UInteger);
+//extern inline Float make_float_from_ints(UInteger, UInteger);
 
 #define EXTRACT_FLOAT_FROM_16_24_24(highInt, middleInt, lowInt)	\
       (make_float_from_ints(  (((((UInteger) highInt) & LOW_16_BITS_MASK) <<16) | (((UInteger) middleInt) >> 8)), \
@@ -380,7 +391,7 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
 #ifndef FAST_FLOATS
 //Note: anything that includes cell_xsb.h in the multithreaded must includes
 //context.h as well, since bld_boxedfloat references hreg.
-extern inline void bld_boxedfloat(CTXTdeclc CPtr, Float);
+//extern inline void bld_boxedfloat(CTXTdeclc CPtr, Float);
 #endif /*FAST_FLOATS*/
    
 #endif /* __CELL_XSB_H__ */

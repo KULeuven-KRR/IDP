@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cp_opt.P,v 1.26 2012/12/18 17:20:37 dwarren Exp $
+** $Id: cp_opt.P,v 1.27 2013-05-14 13:19:05 dwarren Exp $
 ** 
 */
 
@@ -235,7 +235,7 @@ generate_agg_clauses(po(OpSpec),Sym,PredTerm,Var1,ExistVarList,Pred1Term,Var,ClL
 	functor(PredTerm,Pred,Arity),
 	(spec_skel(OpSpec,OpSpec1,2)
 	 ->	true
-	 ;	syntax_error(['Improper join specification in tabling declaration for ',Pred,'/',Arity])
+	 ;	syntax_error(['Improper po specification in tabling declaration for ',Pred,'/',Arity])
 	),
 	sym_propin(tabled,Sym),
 	copy_term(OpSpec1,OpSpec2),
@@ -250,7 +250,7 @@ generate_agg_clauses(po(OpSpec),Sym,PredTerm,Var1,ExistVarList,Pred1Term,Var,ClL
 		\+ ('_$$get_returns'(Cs,OSkel,Leaf),
 		    (OVar == Var1 ; OpSpec1)
 		   ),
-		findall(Leaf,('_$$get_returns'(Cs,OSkel,Leaf),OpSpec2),Leaves),
+		findall(Leaf,('_$$get_returns'(Cs,OSkel,Leaf),once(OpSpec2)),Leaves),
 		('_$member'(Leaf,Leaves),
 		 delete_return(Cs,Leaf),
 		 fail
@@ -261,8 +261,10 @@ generate_agg_clauses(po(OpSpec),Sym,PredTerm,Var1,ExistVarList,Pred1Term,Var,ClL
 	parse_preddef_closed(PredTerm,Body,ClList2,SymTab),
 	globalize('/',2,SymTab),
 	globalize(var,0,SymTab),
+	ensure_imported(once/1,standard,SymTab),
 	ensure_imported(breg_retskel/4,machine,SymTab),
 	ensure_imported(excess_vars/4,setof,SymTab),
+	ensure_imported(findall/3,setof,SymTab),
 	ensure_imported('_$member'/2,basics,SymTab),
 	ensure_imported(copy_term/2,basics,SymTab),  % but problems with sysmod?
 	ensure_imported(instantiation_error/3,error_handler,SymTab),

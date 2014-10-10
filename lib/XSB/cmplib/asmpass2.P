@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: asmpass2.P,v 1.17 2011/06/21 17:58:26 dwarren Exp $
+** $Id: asmpass2.P,v 1.17 2011-06-21 17:58:26 dwarren Exp $
 ** 
 */
 
@@ -34,10 +34,12 @@
 /*======================================================================*/
 
 asm_gendata(OStr,SymList) :- 
-	member(Sym, SymList),	% Non-deterministically get a symbol
-	asm_putsym(OStr,Sym),
-	fail.		% reclaim space (remove all choice points left)
-asm_gendata(_,_).
+	(member(Sym, SymList),	% Non-deterministically get a symbol
+	 asm_putsym(OStr,Sym),
+	 fail			% reclaim space (remove all choice points left)
+	 ;
+	 true
+	).
 
 asm_putsym(OStr,Sym) :-
 	sym_name(Sym, Name, Arity), str_len(Name, L),

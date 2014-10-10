@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: token_xsb.h,v 1.15 2011/06/05 19:24:03 tswift Exp $
+** $Id: token_xsb.h,v 1.15 2011-06-05 19:24:03 tswift Exp $
 ** 
 */
 
@@ -27,16 +27,29 @@
 #define _TOKEN_XSB_H_
 
 #include "token_defs_xsb.h"
+#include "flags_xsb.h"
 
 #define strgetc(p) (--(p)->strcnt>=0? ((int)*(p)->strptr++): -1)
 #define strpeekc(p) ((p)->strcnt>=0? ((int)*(p)->strptr): -1)
 
 #define GetC(card,instr) (instr ? strgetc(instr) : getc(card))
 
+#define PutCode(codepoint,charset,file) {	\
+    int cp = codepoint;				\
+    if (cp < 128) putc(cp,file);		\
+    else {					\
+      byte s[5], *ch_ptr, *ch_ptr0;		\
+      ch_ptr0 = s;				\
+      ch_ptr = codepoint_to_str(cp,charset,s);	\
+      while (ch_ptr0 < ch_ptr)			\
+	putc(*ch_ptr0++,file);			\
+    }						\
+  }
+
 struct strbuf {
   Integer strcnt;
-  char *strptr;
-  char *strbase;
+  byte *strptr;
+  byte *strbase;
 #ifdef MULTI_THREAD
   int owner;
 #endif
@@ -49,13 +62,37 @@ extern STRFILE *iostrs[MAXIOSTRS];
 #define strfileptr(desc) iostrs[iostrdecode(desc)]
 #define InitStrLen	10000
 
+#define io_port_to_fptrs(io_port,fptr,sfptr,charset)	\
+    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {	\
+      sfptr = strfileptr(io_port);			\
+      fptr = NULL;					\
+      charset = UTF_8;					\
+    } else {						\
+      sfptr = NULL;					\
+      SET_FILEPTR(fptr, io_port);			\
+      charset = charset(io_port);			\
+    }
+
+#define CURRENT_CHARSET (int)flags[CHARACTER_SET]
+
 #ifndef MULTI_THREAD
 extern struct xsb_token_t *token;
 #endif
 #include "context.h"
-extern struct xsb_token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
+extern struct xsb_token_t *GetToken(CTXTdeclc int, int);
 
 extern int intype(int);
+extern int GetCode(int, FILE *, STRFILE *);
+extern int GetCodeP(int);
+extern void unGetC(int, FILE *, STRFILE *);
+extern byte *codepoint_to_str(int, int, byte *);
+extern byte *utf8_codepoint_to_str(int, byte *);
+//extern int utf8_strgetc(STRFILE *, int );
+extern int strungetc(STRFILE *);
+extern int utf8_nchars(byte *);
+extern int char_to_codepoint(int, byte **);
+extern int utf8_char_to_codepoint(byte **);
+extern void write_string_code(FILE *, int, byte *);
 
 #endif /* _TOKEN_XSB_H_ */
 

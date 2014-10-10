@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cut_xsb.h,v 1.32 2012/02/19 19:17:55 tswift Exp $
+** $Id: cut_xsb.h,v 1.32 2012-02-19 19:17:55 tswift Exp $
 ** 
 */
 

@@ -8,6 +8,7 @@
 * make install
 * make package
 * This last one creates the releasable files
+* For compiling in 32bits, make sure you have "g++-multilib" if your architecture is native 64bits
 
 
 ** For Windows **

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: term_psc_xsb_i.h,v 1.9 2013/01/19 19:19:24 tswift Exp $
+** $Id: term_psc_xsb_i.h,v 1.9 2013-01-19 19:19:24 tswift Exp $
 ** 
 */
 

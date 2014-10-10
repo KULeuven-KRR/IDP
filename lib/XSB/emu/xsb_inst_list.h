@@ -45,9 +45,9 @@ XSB_INST(0x23, unitvar_getlist_uninumcon, _unitvar_getlist_uninumcon, R,A,A, X);
 XSB_INST(0x24, bldtval_putlist_bldnumcon, _bldtval_putlist_bldnumcon, R,A,A, X);
 XSB_INST(0x25, bldtvar_list_numcon, _bldtvar_list_numcon, R,A,A, X);
 XSB_INST(0x26, getkpvars, _getkpvars, A,V,R, X);
-XSB_INST(0x27, getinternstr, _getinternstr, PP, R, C,X); // S instead of C?
-XSB_INST(0x28, uniinternstr, _uniinternstr, PPP, C, X,X);
-XSB_INST(0x29, bldinternstr, _bldinternstr, PPP, C, X,X);
+XSB_INST(0x27, getinternstr, _getinternstr, PP, R, H,X); // H for interned_term
+XSB_INST(0x28, uniinternstr, _uniinternstr, PPP, H, X,X);
+XSB_INST(0x29, bldinternstr, _bldinternstr, PPP, H, X,X);
 
 XSB_INST(0x2a, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x2b, no_inst, _no_inst, PPP,X,X,X);
@@ -163,12 +163,11 @@ XSB_INST(0x91, trie_trust_fail, _trie_trust_fail,X,X,X,X);
 XSB_INST(0x92, trie_try_fail, _trie_try_fail,X,X,X,X);
 XSB_INST(0x93, trie_retry_fail, _trie_retry_fail,X,X,X,X);
 XSB_INST(0x94, trie_fail, _trie_fail,X,X,X,X);
-//XSB_INST(0x94, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x95, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x96, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x97, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x98, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x99, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0x99, completed_trie_member, _completed_trie_member, X,X,X,X);
 XSB_INST(0x9a, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x9b, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x9c, no_inst, _no_inst, PPP,X,X,X);

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: parse.P,v 1.136 2013/05/01 17:04:45 tswift Exp $
+** $Id: parse.P,v 1.136 2013-05-01 17:04:45 tswift Exp $
 ** 
 */
 
@@ -53,22 +53,23 @@ parse(Modname, PFile, HFile, Module) :-
 	stat_flag(CURRENT_INPUT,Str),
 	filestack_push(Str),
 	filename_push(PFile),
-	conset(needs_restart, 0),  % reset, if an error left it dirty
-	(Modname == user
-	 ->	set_symbol_hash_table_size(1,Module0),
+	conset(needs_restart, 0),          %% reset, if an error left it dirty
+	(Modname == user,
+	 PFile == 'user.P'  % PM: ensure that we're not trying to load a real file
+	->	set_symbol_hash_table_size(1,Module0),
 		see(userin), parse_clauses(user, Module0)
-	 ; file_exists(PFile)
-	 ->	file_size(PFile,FileSize),
+	; file_exists(PFile)
+	->	file_size(PFile,FileSize),
 		set_symbol_hash_table_size(FileSize,Module0),
 		(file_exists(HFile)
-		 ->	parse1(Modname,HFile,Module0)
-		 ;	Module0 = Module0	% init (lamp variable)
+		->	parse1(Modname,HFile,Module0)
+		;	Module0 = Module0 % init (lamp variable)
 		),
 %%%	        standard:writeln(parsing_pfile),
 		parse1(Modname,PFile,Module0)
-%%%             standard:writeln(parse(Module0))
-	    ;   existence_error('file/module',PFile,compile/1,1)
-%%%	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
+%%%             ,standard:writeln(parse(Module0))
+	;   existence_error('file/module',PFile,compile/1,1)
+%%%	; 	error(('Cannot find the file ', PFile)), fail, Module0=Module0
 	),
 	conset(needs_restart, 0),  % clean up this var
 	module_close(Module0,Module), 
@@ -134,8 +135,9 @@ parse1(Modname, File, Module) :-
 %% Otherwise, pass it through the C preprocessor
 open_or_xpp_file(File) :- open_or_xpp_file(File,_).
 open_or_xpp_file(File,XPP_process) :-
+	unset_preprocessing_done,
 	%% sometimes need to clear out xpp_on, esp. when compiling external
-	(\+xpp_is_on, \+xpp_is_off -> set_xpp_off; true), %% clear out xpp
+	(\+xpp_is_on, \+xpp_is_off -> set_xpp_off ; true), %% clear out xpp
 	(xpp_is_off -> 
 	    open(File,read,Istr),
 	    filestack_push(Istr),
@@ -196,7 +198,9 @@ xpp_process_file(FileName,XPP_process,IOportFromProc,Make_XPP_Command) :-
 	; true
 	),
 #ifdef DEBUG_GPP
-	fmt_write_string(XPP_command_msg, '[%s]', FullXPP_command),
+	fmt_write_string(XPP_command_msg,
+			 '[%s: Preprocessing with %s]',
+			 args(XPP_Name,FullXPP_command)),
 #else
         ((integer(FileName) ; var(FileName))
 	-> XPP_command_msg = ('[',XPP_Name,': Preprocessing input stream]')
@@ -239,7 +243,9 @@ gpp_process_file(FileName, XPP_process, IOportFromProc) :-
 
 apply_preprocessors(File,OutPort,XPP_process) :-
 	InPort = File,
-	pipeline_preprocessors_in_queue(File,InPort,OutPort,XPP_process).
+	unset_preprocessing_done,
+	pipeline_preprocessors_in_queue(File,InPort,OutPort,XPP_process),
+	set_preprocessing_done.
 
 %% InPort - input port to processor's process, can be a file
 %% OutPort - input port from processor's process
@@ -423,6 +429,14 @@ preprocessor_name(XPP_Call,_) :-
 
 %% maintain preprocessor queue
 %% If preprocessor is on the queue, ignore.
+enqueue_preprocessor(_Preprocessor) :-
+	%% If immediately after preprocessing, don't enqueue. What may happen
+	%% is that we may encounter compiler_options([xpp_on(foobar)]) after
+	%% preprocessing, and this would enque 'foobar' again (in the
+	%% post-processed program). But this then will be applied to the next
+	%% file, which may not have had the 'foobar' preprocessor specified.
+	preprocessing_is_done,
+	!.
 enqueue_preprocessor(Preprocessor) :-
 	preprocessor_queue(Preprocessor,_),
 	!.
@@ -445,7 +459,7 @@ dequeue_preprocessor(Name,Options) :-
 		 Name, '(', Options, ')'))
 	),
 	!,
-	retract(preprocessor_queue(Name,Options)).
+	retractall(preprocessor_queue(Name,Options)).
 
 get_xpp_call_file(XPP_call,File) :- arg(1,XPP_call,File).
 get_xpp_call_preprocessor(XPP_call,Preproc_name) :- arg(2,XPP_call,Preproc_name).
@@ -457,6 +471,10 @@ xpp_is_on :- conget(xpp_on,1).
 xppdump_is_on :- conget(xpp_dump,1).
 set_xpp_off :- conset(xpp_on,0), conset(xpp_dump,0).
 
+set_preprocessing_done   :- conset(xpp_preprocessing_done,1).
+unset_preprocessing_done :- conset(xpp_preprocessing_done,0).
+preprocessing_is_done    :- conget(xpp_preprocessing_done,1).
+
 /*======================================================================*/
 /* parse_clauses(+ModName, #module(#SymTab,#DcList,#ClList,#QrList))	*/
 /*======================================================================*/
@@ -464,8 +482,11 @@ parse_clauses(ModName, Module) :-
 	my_read(Clause, VariableList),
 	singleton_check(Clause, VariableList),
 	check_compilable_clause(Clause),
-	expand_term(Clause, Expanded_Clause),
-%%	(Clause \== Expanded_Clause -> standard:write(userout,'     Clause: '),standard:writeq(userout,Clause),standard:nl(userout),standard:write(userout,'expanded to: '),standard:writeq(userout,Expanded_Clause),standard:nl(userout) ; true),
+	expand_term(Clause, Expanded_Clause0),
+	(Expanded_Clause0 = [_|_]
+	 ->	standardize_vars_apart(Expanded_Clause0,Expanded_Clause)
+	 ;	Expanded_Clause = Expanded_Clause0
+	),
 	(Clause == end_of_file
 	 ->	(Expanded_Clause \== end_of_file
 		 ->	parse_clause(Expanded_Clause,Module,ModName)
@@ -475,7 +496,7 @@ parse_clauses(ModName, Module) :-
 		parse_clause(Expanded_Clause, Module,ModName),
 		%% stop parsing clauses, if needs_restart parsing
 		(conget(needs_restart, 1) 
-		 ->	(ModName = user
+		 ->	(ModName == user
 			 ->	warning('Module "user" cannot be preprocessed')
 			 ;	ModName = xsb_configuration
 			 ->	warning('Module "xsb_configuration" cannot be preprocessed')
@@ -486,6 +507,11 @@ parse_clauses(ModName, Module) :-
 	).
 parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
 	syntax_error(('Clauses of ', M, ' cannot be parsed.')).
+
+standardize_vars_apart([],[]).
+standardize_vars_apart([C|Cs],[NC|NCs]) :-
+	copy_term(C,NC),
+	standardize_vars_apart(Cs,NCs).
 
 my_read(Term, Vars) :-
 	stat_flag(CURRENT_INPUT, File),
@@ -564,6 +590,7 @@ parse_clause(Cl, module(SymTab,DcList,ClList,QrList),ModName) :-
 	 ->	parse_preddef_chk_dyn(H, B, ClList, QrList, ModName, SymTab)
 	 ; Cl = (':-'(Directive))
 	 ->	transform_directive(Directive,ModName,SymTab,PDirective),
+	        
 		parse_directive(PDirective,QrList,SymTab,ModName, 
 		                  module(SymTab,DcList,ClList,QrList))
 	 ; Cl = ('?-'(Q))
@@ -624,6 +651,8 @@ transform_slash_to_skel(Spec,ModName,SymTab,Skel) :-
 	(sym_prop((multifile),Sym)
 	 ->	get_p_mod(Pred,ModName,P_Mod),
 		functor(Skel,P_Mod,Arity)
+	 ; Arity =:= 0
+	 ->	conpsc(Skel0,PSC),term_new(PSC,Skel)
 	 ;	Skel = Skel0
 	).
 
@@ -638,18 +667,24 @@ transform_slash_to_skel(Spec,ModName,SymTab,Skel) :-
 /*	inserting any symbols to the symbol table (non-backtrackable	*/
 /*	insert).							*/
 /*======================================================================*/
-parse_directive(if(Condition), _QrList,_SymTab,_ModName,_ModStruct) :- !, 	
+parse_directive(if(Condition), _QrList,_SymTab,ModName,ModStruct) :- !, 	
+        conset(conditional_compile,1),
         (cond_call(Condition) -> 
-          true
-	; skip_over_condition(1)).
+          conset(conditional_compile,2)
+	; skip_over_condition(1,Newclause),
+  	  parse_clause(Newclause, ModStruct, ModName) ).
 % if reading the elseif from normal parsing, we've already taken another branch.
 parse_directive(elif(Condition), QrList,SymTab,ModName,ModStruct):- !,
 	parse_directive(elseif(Condition), QrList,SymTab,ModName,ModStruct).
-parse_directive(elseif(_), _QrList,_SymTab,_ModName,_ModStruct):- !,
-	skip_over_condition(1).
+parse_directive(elseif(Condition), _QrList,_SymTab,_ModName,_ModStruct):- !,
+        conget(conditional_compile,X),
+	(X == 1 -> 
+           (cond_call(Condition) -> conset(conditional_compile,2) ; skip_over_condition(1,_))
+	  ; skip_over_condition(1,_)).
 parse_directive(else, QrList,SymTab,ModName,ModStruct):- !,
 	parse_directive(elseif(true), QrList,SymTab,ModName,ModStruct).
-parse_directive(endif, _QrList,_SymTab,_ModName,_ModStruct):- !.
+parse_directive(endif, _QrList,_SymTab,_ModName,_ModStruct):- !,
+	conset(conditional_compile,0).
 parse_directive(module(ModIn,X,_Dialect), _QrList,SymTab,ModName,_ModStruct) :- !, 	
 	console_writeln(module(ModIn,X,_Dialect)),
 	parse_directive(module(ModIn,X), _QrList,SymTab,ModName,_ModStruct).
@@ -708,7 +743,10 @@ parse_directive(include(FileIn), _QrList,_SymTab,ModName,ModStruct) :- !,
 		(search_module(File, _Dir, _Newame, Ext, Base, _Obj) ->
 		    concat_atom([Base,'.',Ext],PFile),
 		    parse1(ModName,PFile,ModStruct)
-		;   existence_error('file/module',File,compile/1,1))
+		;   
+% TLS: existence errors may not work here if we're inside an if / then / else.
+		    existence_error('file/module',File,compile/1,1))
+%		    warning(('Cannot find include file ',File,' ignoring ')))
 	).
 % for compiled-code indexing
 parse_directive(index(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
@@ -769,7 +807,10 @@ parse_directive(compiler_options(Options),_QrList,_SymTab,_ModName,_ModStruct) :
 	%% compiler options turns xpp_on on. So, we indicate 
 	%% interest in restarting. It might turn into a restart 
 	%% request if xpp_on is subsequently set.
-	(xpp_is_off ->  conset(migh_need_restart,1) ;   true),
+	(xpp_is_off
+	->  conset(migh_need_restart,1)
+	;   true
+	),
 	check_file_compiler_options(Options),
 	setoptions1(Options).
 parse_directive(comment(_,_),_QrList,_SymTab,_ModName,_ModStruct) :- !.
@@ -842,24 +883,32 @@ parse_multifile(Skel,QrList,SymTab,ModName) :-
 
 %-----------
 % code for conditional compilation
+:- import console_writeln/1 from standard.
 
-skip_over_condition(N):- 
+skip_over_condition(N,Cl_fin):- 
 	my_read(Cl, _),
+%	console_writeln(soc(Cl)),
 	(	Cl = (':-'(endif)) ->
-		true
+		Cl = Cl_fin
 	;	Cl = (':-'(elseif(Condition))), cond_call(Condition) ->
-		true
+		Cl = Cl_fin
+	;	Cl = (':-'(else)) ->
+		Cl = Cl_fin
 	;	Cl = (':-'(elif(Condition))), cond_call(Condition) ->
-		true
+		Cl = Cl_fin
 	;	Cl = (':-'(if(_Call))) -> 
 		misc_error('XSB does not support nested conditional compilation.')
-	;	skip_over_condition(N)
+	;	skip_over_condition(N,Cl_fin)
 	).
 
 cond_call(Call):- 
 	check_cond_call(Call),
-	call(Call).
+	(Call = 'NOWARN'(Call2) -> true
+	; Call2 = Call
+	),
+	call(Call2).
 
+check_cond_call('NOWARN'(_)):- !.
 check_cond_call(\+(Goal)):- !,check_cond_call(Goal).
 check_cond_call(current_prolog_flag(Type,_Val)):- !,
 	\+ xsb_flag(Type,_).     % XSB flags are fluent as opp. to ISO.
@@ -924,9 +973,18 @@ parse_preddef(H, B, List, SymTab) :-
 
 parse_preddef_sym(H, B, List, PredSym, SymTab) :- 
 	trans_head(H, goal(_, ArgList), SymTab, 0, VidMed),
-	trans_goals(B, Body, SymTab, VidMed, _VidOut),
+	trans_goals(B, Body, SymTab, VidMed, VidOut),
+	ensure_gensym_num_larger(VidOut),
 	add_new_clause(clause(PredSym,K,ArgList, Body), List,K),
 	sym_propin(pred, PredSym).
+
+ensure_gensym_num_larger(Num) :-
+	gennum(VNum),
+	(VNum > Num
+	 ->	true
+	 ;	prepare(Num)
+	).
+
 
 /*======================================================================*/
 /* process queries --- same as process regular clauses, but adding	*/
@@ -1255,13 +1313,31 @@ trans_goal(Term, Goal, SymTab, VidIn, VidOut) :-
 		 ->	Goal = inlinegoal(P, A, ArgList)
 		 ;	Goal = goal(Sym, ArgList), sym_insert(P, A, _Prop, SymTab, Sym)
 		),
-		Term =.. [P|RawArgs]
+		Term =.. [P|RawArgs0],
+		fix_for_0_ary_preds(P,A,RawArgs0,RawArgs)
 	),
 	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
 	 
 trans_head(Term, goal(_Sym, ArgList), SymTab, VidIn, VidOut) :-
 	Term =.. [_|RawArgs],
         trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
+
+% fix for 0-ary preds.
+fix_for_0_ary_preds(Pred,Arity,Args,FixedArgs) :-
+	standard_metapredicate(Pred,Arity,ArgNo),
+	ith(ArgNo,Args,String),
+	atom(String),
+	!,
+	conpsc(String,PSC),term_new(PSC,PString),
+	replace_ith(Args,ArgNo,PString,FixedArgs).
+fix_for_0_ary_preds(_,_,Args,Args).
+
+replace_ith([],_,_,[]) :- !, throw(error(parser,'Bad Metapredicate')).
+replace_ith([_|Args],1,Repl,[Repl|Args]) :- !.
+replace_ith([A|Args],N,Repl,[A|RArgs]) :-
+	N1 is N-1,
+	replace_ith(Args,N1,Repl,RArgs).
+
 
 /*======================================================================*/
 /* trans_args(+RawArgList, -ArgList, #SymTab, +VidIn, -VidOut)		*/
