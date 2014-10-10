@@ -223,6 +223,9 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
     add_dependencies(xsb copy_xsb_source_code)
 else()
     message(STATUS "compile with XSB support: OFF")
+    if(WITHXSB AND 32BITS)
+        message(STATUS "  .. because currently 32 bit compilation is not supported with XSB")
+    endif()
 endif()
 
 #REST
