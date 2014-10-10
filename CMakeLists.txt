@@ -167,8 +167,8 @@ endif()
 
 #XSB
 option(WITHXSB  "Compile with XSB support" ON)
-message(STATUS "compile with XSB support ${WITHXSB}")
-if(WITHXSB)
+if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in currently unfixable segfaults
+    message(STATUS "compile with XSB support: ON")
     addToCXX("-D WITHXSB")
     set(XSB_VERSION "3.5.0")
     set(XSB_INSTALL_URL "/bin/xsb/xsb-${XSB_VERSION}/")
@@ -191,7 +191,7 @@ if(WITHXSB)
     execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
                     OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
     file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
-    if (32BITS)
+    if (32BITS)   # Currently never used, since it's filtered out in the top-level if above
       set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
       set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=bits32)
       set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install --config-tag=bits32)
@@ -214,6 +214,8 @@ if(WITHXSB)
       INSTALL_COMMAND ${XSB_INSTALL_COMMAND}
       BUILD_IN_SOURCE 1
     )
+else()
+    message(STATUS "compile with XSB support: OFF")
 endif()
 
 #REST
