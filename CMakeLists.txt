@@ -13,7 +13,7 @@ project (idp)
 
 ### The version number
 set (idp_VERSION_MAJOR 3)
-set (idp_VERSION_MINOR 3)
+set (idp_VERSION_MINOR 4)
 set (idp_VERSION_PATCH 0)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
@@ -51,9 +51,11 @@ include(cmake/rpathhandling.cmake)
 ### Target properties helper 
 include(cmake/settargetproperties.cmake)
 
+addToCXX("-static-libstdc++")
+
 if(CMAKE_COMPILER_IS_MINGW)
 	message(STATUS "Mingw compiler")
-	addToCXX("-static-libgcc -static-libstdc++ ")
+	addToCXX("-static-libgcc")
 	addToCXX("-Wl,--stack,4194304")
 endif()
 
