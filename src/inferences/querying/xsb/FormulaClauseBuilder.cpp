@@ -143,10 +143,7 @@ void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
 	auto term = new EnumSetExpression(generateNewEnumSetExprName(), _translator, SetUtils::approxTwoValued(e,_pp->structure()));
 	enter(term);
 	for (uint i = 0; i < e->getSubSets().size(); ++i) {
-		auto subf = e->getSets()[i]->getCondition();
-		auto subt = e->getSets()[i]->getTerm();
-		subf->accept(this);
-		subt->accept(this);
+		e->getSets()[i]->accept(this);
 	}
 	term->arguments(PrologTerm::vars2terms(term->variables()));
 	leave();
@@ -154,14 +151,11 @@ void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
 }
 
 void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
-	auto term = new QuantSetExpression(generateNewQuantSetExprName(), _translator, SetUtils::approxTwoValued(q,_pp->structure()));
-	term->quantifiedVariables(_translator->prologVars(q->quantVars()));
-	enter(term);
-	q->getSubFormula()->accept(this);
-	q->getSubTerm()->accept(this);
-	term->arguments(PrologTerm::vars2terms(term->variables()));
-	leave();
-	_parent->addVariables(term->variables());
+	q->getCondition()->accept(this);
+	q->getTerm()->accept(this);
+	for (auto var : q->quantVars()) {
+		_parent->addVariable(createPrologVar(var));
+	}
 }
 
 //
@@ -193,7 +187,24 @@ void FormulaClauseBuilder::visit(const AggForm* a) {
 	a->getBound()->accept(this);
 	a->getAggTerm()->accept(this);
 	leave();
-	term->arguments(PrologTerm::vars2terms(term->variables()));
+
+	list<PrologVariable*> args = list<PrologVariable*>();
+	for (auto var : term->variables()) {
+		bool add = true;
+		for (auto quantset : a->getAggTerm()->set()->getSets()) {
+			for (auto quantvar : quantset->quantVars()) {
+				auto compvar = createPrologVar(quantvar);
+				// TODO: a better check is possible (maintain mapping of Variable => PrologVariable)
+				if (compvar == var) {
+					add = false;
+				}
+			}
+		}
+		if (add) {
+			args.push_back(var);
+		}
+	}
+	term->arguments(PrologTerm::vars2terms(args));
 	_parent->addVariables(term->variables());
 }
 
@@ -204,7 +215,6 @@ void FormulaClauseBuilder::visit(const AggTerm* a) {
 	a->set()->accept(this);
 	// TODO: what does this vars thing actually do? it's immediatly re-set as the variables of term (see 6 lines ahead)
 	auto vars = list<PrologVariable*>(term->variables());
-
 	for (auto it = a->freeVars().begin(); it != a->freeVars().end(); ++it) {
 		auto var = createPrologVar(*it);
 		term->instantiatedVariables().insert(var);

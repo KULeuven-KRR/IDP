@@ -1,0 +1,16 @@
+vocabulary V {
+  type Clause isa nat
+  type Var isa nat
+  Q(Clause,Var)
+  P(Clause,Clause)
+}
+
+theory T : V {
+  {
+    !c1 c2: P(c1,c2) <- #{v: Q(c1,v)}=#{v: Q(c2,v)}. 
+  }
+}
+
+structure S : V {
+  Q={0,0;0,1;1,0;1,2}
+}
