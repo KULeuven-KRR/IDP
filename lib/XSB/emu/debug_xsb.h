@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: debug_xsb.h,v 1.39 2013/05/01 17:54:56 tswift Exp $
+** $Id: debug_xsb.h,v 1.39 2013-05-01 17:54:56 tswift Exp $
 ** 
 */
 
@@ -105,6 +105,8 @@ extern void printCyclicTerm(Cell);
 extern void mark_cyclic(Cell);
 extern int  sprint_delay_list(forestLogBuffer, CPtr);
 void print_local_stack_nonintr(char *);
+extern void print_callnode(FILE *, callnodeptr);
+extern void print_subgoal(FILE *, VariantSF);
 #else
 extern void print_delay_list(struct th_context * ,FILE *, CPtr);
 extern void print_registers(struct th_context * ,FILE *,Psc,long);
@@ -118,11 +120,14 @@ extern void printCyclicTerm(struct th_context *,Cell);
 extern void mark_cyclic(struct th_context *,Cell);
 extern int sprint_delay_list(struct th_context *, forestLogBuffer, CPtr);
 void print_local_stack_nonintr(struct th_context *,char *);
+extern void print_callnode(struct th_context *, FILE *, callnodeptr);
+extern void print_subgoal(struct th_context *,FILE *, VariantSF);
 #endif
 
 extern int sprint_quotedname(char *, int,char *);
 extern int sprintTerm(forestLogBuffer, Cell);
 extern int ctrace_ctr;
+extern void printterm(FILE *, Cell, long);
 
 /* dbg_* macros */
 #ifdef DEBUG_VERBOSE
@@ -163,12 +168,7 @@ extern int ctrace_ctr;
    if (LOG_LEVEL <= cur_log_level)                    \
       printAnswerTemplate(FP,PAT,S)
 extern void print_completion_stack(void);
-extern void printterm(FILE *, Cell, int);
 #else
-
-#ifndef MULTI_THREAD
-extern void print_subgoal(FILE *, VariantSF);
-#endif 
 
 #define xsb_dbgmsg(a)
 //#define xsb_dbgmsg(a) xsb_dbgmsg1 a

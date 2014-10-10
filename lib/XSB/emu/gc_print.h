@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gc_print.h,v 1.17 2011/05/22 15:12:25 tswift Exp $
+** $Id: gc_print.h,v 1.17 2011-05-22 15:12:25 tswift Exp $
 ** 
 */
 

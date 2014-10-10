@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: std_cases_xsb_i.h,v 1.37 2012/02/24 21:06:49 dwarren Exp $
+** $Id: std_cases_xsb_i.h,v 1.37 2012-02-24 21:06:49 dwarren Exp $
 ** 
 */
 

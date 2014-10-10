@@ -322,7 +322,7 @@ load_pred1(PSC) :-
 	        handle_undefined_pred(ModName,Name,Arity)
 	    )
 	;
-	    handle_undefined_pred(usermod,Name,Arity)
+	    handle_undefined_pred('usermod',Name,Arity)
 	).
 
 handle_undefined_pred(ModName,Name,Arity) :-
@@ -389,20 +389,23 @@ load(ModName) :-
 	 ->	local_fmt_write(STDMSG, "[ load module %s ]\n", arg(ModName))
 	 ;	true
 	),
-	(search_file(ModName, [FileName_O,FileName_P,FileName_PL,FileName_H,FileName_C,FileName_CPP],
-		     [XSB_OBJ_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,'.pl',XSB_HDR_EXTENSION_ATOM,'.c','.cpp']),
+	(search_file(ModName, [FileName_O,FileName_P,FileName_PL,FileName_PROLOG,FileName_H,FileName_C,FileName_CPP],
+		     [XSB_OBJ_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,'.pl','.prolog',XSB_HDR_EXTENSION_ATOM,'.c','.cpp']),
 	 (local_file_exists(FileName_O),ObjExists=1 ; local_file_exists(FileName_P),ObjExists=0,Type='P' ;
 	  local_file_exists(FileName_PL),ObjExists=0,Type=pl ;
+	  local_file_exists(FileName_PROLOG),ObjExists=0,Type=prolog ;
 	  local_file_exists(FileName_C),ObjExists=0,Type=c ; local_file_exists(FileName_CPP),ObjExists=0,Type=cpp)
 	 ->	(ObjExists =:= 1
 		 ->	(system_mod(FileName_O)	% DONT CHECK TIME but load byte-code regardless if in XSB system 
 			 ->	load_object_file(FileName_O) % (allows self recompile, could just exempt cmplib and syslib)
-			 ;	check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_H,FileName_C,FileName_CPP,ModName)
+			 ;	check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_PROLOG,FileName_H,FileName_C,FileName_CPP,ModName)
 			)
 		 ;	(Type=='P'
 			 ->	compile_and_load(FileName_P,ModName) % no byte-code file, compile sourcefile
 			 ; Type==pl
 			 ->	compile_and_load(FileName_PL,ModName) % no byte-code file, compile sourcefile
+			 ; Type==prolog
+			 ->	compile_and_load(FileName_PROLOG,ModName) % no byte-code file, compile sourcefile
 			 ; Type == c
 			 ->	compile_and_load(FileName_C,ModName) % no byte-code, compile C sourcefile
 			 ; Type == cpp
@@ -413,7 +416,7 @@ load(ModName) :-
 		existence_error(module,ExpandedModName,load,1)
 	).
 
-check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_H,FileName_C,FileName_CPP,ModName) :-
+check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_PROLOG,FileName_H,FileName_C,FileName_CPP,ModName) :-
 	(local_file_exists(FileName_P)
 	 ->	(local_newerthan(FileName_P,FileName_O) % check if source is newer
 		 ->	compile_and_load(FileName_P,ModName)
@@ -426,6 +429,13 @@ check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_H,FileName_C,Fil
 		 ->	compile_and_load(FileName_PL,ModName)
 		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
 		 ->	compile_and_load(FileName_P,ModName)
+		 ;	load_object_file(FileName_O) % load byte-code, it's newest
+		)
+	 ; local_file_exists(FileName_PROLOG)
+	 ->	(local_newerthan(FileName_PROLOG,FileName_O) % check if source is newer
+		 ->	compile_and_load(FileName_PROLOG,ModName)
+		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
+		 ->	compile_and_load(FileName_PROLOG,ModName)
 		 ;	load_object_file(FileName_O) % load byte-code, it's newest
 		)
 	 ; local_file_exists(FileName_C)

@@ -19,9 +19,10 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: emuloop.c,v 1.239 2013/05/02 17:36:53 dwarren Exp $
+** $Id: emuloop.c,v 1.240 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
+//#define GC_TEST
 
 #include "xsb_config.h"
 #include "xsb_debug.h"
@@ -82,6 +83,17 @@
 #include "builtin.h"
 #include "call_graph_xsb.h" /* incremental evaluation */
 #include "cinterf.h"
+#include "struct_intern.h"
+#include "ptoc_tag_xsb_i.h"
+#include "cell_xsb_i.h"
+#include "tables_i.h"
+
+#ifndef MULTI_THREAD
+BTNptr NodePtr, Last_Nod_Sav;
+Cell *trieinstr_unif_stk;
+CPtr trieinstr_unif_stkptr;
+Integer  trieinstr_unif_stk_size = DEFAULT_ARRAYSIZ;
+#endif
 
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
@@ -93,6 +105,10 @@
 #ifndef MULTI_THREAD
 CPtr	ans_var_pos_reg;
 #endif
+
+
+//int instr_flag = 0;    // Used for switching on PIL_TRACE
+// CPtr hreg_pos; // for debugging iso incremental tables.  Can be removed once these are stable.
 
 //#define MULTI_THREAD_LOGGING
 #ifdef MULTI_THREAD_LOGGING
@@ -154,11 +170,14 @@ void check_stack_invariants(CTXTdecl);
 #define debug_inst(t_pcreg, t_ereg) { \
   }
 
-#define XSB_Debug_Instr                                    \
-  if (flags[PIL_TRACE]) {                                 \
-    debug_inst(CTXTc lpcreg, ereg);                      \
-    xctr++; \
-  }
+#define XSB_Debug_Instr                                    
+/*  if (instr_flag) {							\
+    printf("%d: %s\n",++xctr,(char *)inst_table[(int) *(lpcreg)][0]);	\
+    debug_inst(CTXTc lpcreg, ereg);					\
+    if (hreg < hreg_pos || hfreg < hreg_pos) printf("!1 hreg %p hfreg %p\n",hreg,hfreg); \
+    if (hreg < hreg_pos) printf("!2 hreg %p %p\n",hreg,hfreg);		\
+    }
+*/
 
 #else
 
@@ -319,53 +338,6 @@ static void *instr_addr_table[256];
 #define POST_LPCREG_DECL
 #endif
 
-
-//Below is the implementation of the inline functions for creating and manipulating boxed floats,
-// declared in cell_xsb.h. They only exist if the FAST_FLOATS tag is undefined. Otherwise, they
-// are defined as Cell-based macros. See cell_xsb.h for details.
-#ifndef FAST_FLOATS
-
-inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value)
-{
-    Float tempFloat = value;
-    new_heap_functor(hreg,box_psc);
-    bld_int(hreg,((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ));
-    //    printf("high %x %x %x",FLOAT_HIGH_16_BITS(tempFloat),
-    //	   FLOAT_MIDDLE_24_BITS(tempFloat),FLOAT_LOW_24_BITS(tempFloat));
-    hreg++;
-    bld_int(hreg,FLOAT_MIDDLE_24_BITS(tempFloat)); hreg++;
-    bld_int(hreg,FLOAT_LOW_24_BITS(tempFloat)); hreg++;
-    cell(addr) = makecs(hreg-4);
-}
-
-#ifdef BITS64
-
-inline Float make_float_from_ints(UInteger high)
-{
-  FloatToIntsConv converter;
-  converter.int_vals.high = high;
-  return converter.float_val;
-}
-
-#else 
-
-//the function below assumes that the Float type will be exactally twice the size of the 
-//   UInteger type. See basictypes.h for the declaration of converter types.
-inline Float make_float_from_ints(UInteger high, UInteger low)
-{
-  FloatToIntsConv converter;
-  converter.int_vals.high = high;
-  converter.int_vals.low = low;
-  return converter.float_val;
-  }
-
-#endif /* BITS64 */
-#else
-inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
-  bld_float(addr,value);
-}
-#endif
-
 /*----------------------------------------------------------------------*/
 /* The following macros work for all CPs.  Make sure this remains	*/
 /* the case...								*/
@@ -421,7 +393,6 @@ char *xsb_default_segfault_msg =
 
 extern int xsb_profiling_enabled;
 extern Psc psc_from_code_addr(byte *);
-extern void printterm(FILE *, Cell, long);
 
 Integer length_dyntry_chain(byte *codeptr) {
   Integer chainlen = 0;
@@ -571,6 +542,7 @@ contcase:     /* the main loop */
 	builtin_table[(int) *(lpcreg+3)][1] + 1;
   }
 #endif
+  //  printf("%x\n",*lpcreg);
   switch (*lpcreg) {
 #endif
     
@@ -649,7 +621,6 @@ contcase:     /* the main loop */
     Op1(Register(get_xxr));
     Op2(get_xxxc);
     ADVANCE_PC(size_xxxX);
-    /*printf("called getinternstr\n");*/
     nunify_with_internstr(op1,op2);
   XSB_End_Instr()
 
@@ -835,7 +806,6 @@ contcase:     /* the main loop */
       op1 = *(sreg++);
       nunify_with_internstr(op1,op2);
     }
-    printf("called uniinternstr\n");
   XSB_End_Instr()
 
   XSB_Start_Instr(uninil,_uninil) /* PPP */
@@ -1104,7 +1074,6 @@ contcase:     /* the main loop */
     Def1op
     Op1(get_xxxc);
     ADVANCE_PC(size_xxxX);
-    printf("called bldinternstr\n");
     new_heap_node(hreg, (Cell)op1);
   XSB_End_Instr()
 
@@ -1474,6 +1443,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(switchonbound,_switchonbound) /* PPR-L-L */
     Def3ops
     /* op1 is register, op2 is hash table offset, op3 is modulus */
+    Integer hash_temp;
     Op1(get_xxr);
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
@@ -1512,8 +1482,11 @@ contcase:     /* the main loop */
     op2 = (Cell)(*(byte **)(lpcreg+sizeof(Cell)));
     op3 = *(CPtr *)(lpcreg+sizeof(Cell)*2);
     /* doc tls -- op2 + (op1%size)*4 */
-    lpcreg =
-      *(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
+    hash_temp = ihash((Cell)op1, (Cell)op3);
+    if (hash_temp < 0) printf("Bad Hash6");
+    lpcreg = 
+      *(byte **)((byte *)op2 + hash_temp * sizeof(Cell));
+      //      *(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
   XSB_End_Instr()
 
 /*******************************************************************

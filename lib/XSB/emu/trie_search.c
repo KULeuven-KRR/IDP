@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: trie_search.c,v 1.19 2010/12/07 21:08:02 tswift Exp $
+** $Id: trie_search.c,v 1.19 2010-12-07 21:08:02 tswift Exp $
 ** 
 */
 

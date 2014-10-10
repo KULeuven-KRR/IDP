@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: dis.c,v 1.36 2011/05/18 19:21:40 dwarren Exp $
+** $Id: dis.c,v 1.37 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -42,6 +42,9 @@
 #include "flags_xsb.h"
 #include "tries.h"
 #include "tab_structs.h"
+#include "cell_xsb_i.h"
+
+extern void print_term(FILE *, Cell, byte, long);
 
 /* --------------- The following are working variables ----------------	*/
 
@@ -183,6 +186,10 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 	   }
 	   else
 	     fprintf(fd, ", 0x%lx", cell(loc_pcreg++));
+	   break;
+	 case H:
+	   fprintf(fd, ", ");
+	   print_term(fd, cell(loc_pcreg++), 1, (long)flags[WRITE_DEPTH]);
 	   break;
 	 case C:
 	 case L:

@@ -233,37 +233,38 @@ get_backtrace_list([],[]).
 get_backtrace_list([Psc|Pscs],[Mod:Name/Arity|Preds]) :-
 	(Psc =:= 0
 	 ->	Mod = (?), Name = (?), Arity = (?)
-	 ;	psc_data(Psc,ModPscOrFile),
-		(integer(ModPscOrFile)
-		 ->	(ModPscOrFile =:= 0
-			 ->	Mod = usermod % 0 also means usermod
-			 ;	psc_name(ModPscOrFile,Mod)
-			)
-		 ;	Mod = usermod
-		),
+	 ;	psc_modname_filename(Psc,Mod,_),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity)
 	),
 	get_backtrace_list(Pscs,Preds).
 
+psc_modname_filename(Psc,ModName,FileName) :-
+	psc_data(Psc,ModPscOrFile),
+	(integer(ModPscOrFile)
+	 ->	(ModPscOrFile =:= 0
+		 ->	ModName = usermod, % 0 also means usermod
+			FileName = unknown
+		 ;	psc_name(ModPscOrFile,ModName),
+			psc_ep(ModPscOrFile,FileName)
+			%,standard:writeln(userout,mf(ModPscOrFile,FileName))
+		)
+	 ;	ModName = usermod,
+		FileName = ModPscOrFile
+	).
+
 /* get backtrace as printable list of atoms */
 get_mod_pred_arity_list([], []).
 get_mod_pred_arity_list([Psc|Pscs], [ModPred|ModPreds]) :-
 	(Psc =:= 0
-	 ->	ModPred = '... unknown/?'
-	 ;	psc_data(Psc,ModPscOrFile),
-		(integer(ModPscOrFile)
-		 ->	(ModPscOrFile =:= 0
-			 ->	ModName = usermod % 0 also means usermod
-			 ;	psc_name(ModPscOrFile,ModName)
-			)
-		 ;	ModName = usermod
-		),
+	 ->	ModPred = '... unknown/?',
+		FileName = unknown
+	 ;	psc_modname_filename(Psc,ModName,FileName),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity),
 		(ModName == usermod
-		 ->	concat_atom(['... ',Name,'/',Arity],ModPred)
-		 ;	concat_atom(['... ',ModName,':',Name,'/',Arity],ModPred)
+		 ->	concat_atom(['... ',Name,'/',Arity,'  From ',FileName],ModPred)
+		 ;	concat_atom(['... ',ModName,':',Name,'/',Arity,'  From ',FileName],ModPred)
 		)
 	),
 	get_mod_pred_arity_list(Pscs, ModPreds).
@@ -272,36 +273,44 @@ get_mod_pred_arity_list([Psc|Pscs], [ModPred|ModPreds]) :-
 list pair, with car=forward continuation, cdr=backward continuation.
 backward is [] if xsb not started with -p option */
 
-print_backtrace([[]]) :- !.  % if empty, don't print anything
-print_backtrace([For|Back]) :-
-	messageln('Forward Continuation...',STDERR),
-	print_mod_pred_arity_list(For),
+print_backtrace(BT) :- print_backtrace(BT,STDERR).
+
+print_backtrace([[]],_Stream) :- !.  % if empty, don't print anything
+print_backtrace([],_Stream) :- !.  % if empty, don't print anything
+print_backtrace([For|Back],Stream) :-
+	messageln('Forward Continuation...',Stream),
+	print_mod_pred_arity_list(For,Stream),
 	(Back == []
 	 ->	true
-	 ;	messageln('Backward Continuation...',STDERR),
-		print_mod_pred_arity_list(Back)
+	 ;	messageln('Backward Continuation...',Stream),
+		print_mod_pred_arity_list(Back,Stream)
 	).
 
-print_mod_pred_arity_list([]).
-print_mod_pred_arity_list([Psc|Pscs]) :-
+print_mod_pred_arity_list([],_Stream).
+print_mod_pred_arity_list([Psc|Pscs],Stream) :-
 	(Psc =:= 0
-	 ->	messageln('... unknown/?',STDERR)
-	 ;	psc_data(Psc,ModPscOrFile),
+	 ->	messageln(['... unknown/?','  From  unknown'],Stream)
+	 ;
+/*	 psc_data(Psc,ModPscOrFile),
 		(integer(ModPscOrFile)
 		 ->	(ModPscOrFile =\= 0
-			 ->	psc_name(ModPscOrFile,ModName)
-			 ;	ModName = unknown
+			 ->	psc_name(ModPscOrFile,ModName),
+				psc_ep(ModPscOrFile,FileName)
+			 ;	ModName = unknown,
+				FileName = unknown
 			)
-		 ;	ModName = usermod
-		),
+		 ;	ModName = usermod,
+		 	FileName = ModPscOrFile
+		), **/
+		psc_modname_filename(Psc,ModName,FileName),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity),
 		(ModName \== usermod
-		 ->	messageln(['... ',ModName,':',Name,'/',Arity],STDERR)
-		 ;	messageln(['... ',Name,'/',Arity],STDERR)
+		 ->	messageln(['... ',ModName,':',Name,'/',Arity,'  From ',FileName],Stream)
+		 ;	messageln(['... ',Name,'/',Arity,'  From ',FileName],Stream)
 		)
 	),
-	print_mod_pred_arity_list(Pscs).
+	print_mod_pred_arity_list(Pscs,Stream).
 %-----------------------------------------------------------------------
 
 % ISO-compatable (and other) convenience predicates

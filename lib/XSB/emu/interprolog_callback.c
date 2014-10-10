@@ -106,6 +106,8 @@ Java_com_xsb_interprolog_NativeEngine_put_1bytes
 		newVar = p2p_new(CTXT);
 		newVar2 = p2p_arg(reg_term(CTXTc 1),3);
 		newVar2 = p2p_new(CTXT);
+		newVar = newVar; /* to squash warnings */
+		newVar2 = newVar2; /* to squash warnings */
 	}
 	head = p2p_car(p2p_arg(reg_term(CTXTc 1),1));
 	tail = p2p_cdr(p2p_arg(reg_term(CTXTc 1),1));

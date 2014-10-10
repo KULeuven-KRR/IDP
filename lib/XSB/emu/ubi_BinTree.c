@@ -26,10 +26,7 @@
  *
  * -------------------------------------------------------------------------- **
  *
- * $Log: ubi_BinTree.c,v $
- * Revision 1.7  2010/08/19 15:03:37  spyrosh
- * Roll back to state as of Aug 16, 2010.
- *
+ * $Log: not supported by cvs2svn $
  * Revision 1.2  2005/07/18 21:54:26  crojo
  * *** empty log message ***
  *
@@ -196,7 +193,7 @@
 
 static char ModuleID[] = "ubi_BinTree\n\
 \t$Revision: 1.7 $\n\
-\t$Date: 2010/08/19 15:03:37 $\n\
+\t$Date: 2010-08-19 15:03:37 $\n\
 \t$Author: spyrosh $\n";
 
 /* ========================================================================== **

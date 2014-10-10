@@ -84,7 +84,7 @@ config_logger :-
    log_exit(config_logger,'config_logger/0','exiting').
 ").
 
-%$Id: xsb_logger.P,v 1.6 2010/08/19 15:03:38 spyrosh Exp $
+%$Id: xsb_logger.P,v 1.6 2010-08-19 15:03:38 spyrosh Exp $
 %---------------------------------------------------------------------%
 % Log levels between 0-999 with sys being highest at 999. 
 % log_level(Level, Level_num, Level_name, Level_pred).

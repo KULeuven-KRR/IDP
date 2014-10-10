@@ -104,7 +104,10 @@ interpreter_cmd_goal(_) :-
 	    %% make CmdGoalStream the current input stream;
 	    %% push the old stream on cmd_line_argument stack
 	    push_stdin(cmd_line_argument, CmdGoalStream),
-            file_nl(STDMSG)
+	    (	banner_control(noprompt)
+	    ->	true
+            ; file_nl(STDMSG)
+	    )
         ),
         fail.
 
@@ -156,7 +159,7 @@ process_query1(X, []) :-	%% no printable variables appeared in the input
 	 ->	Ans = yes
 	 ;	Ans = undefined
 	),
-	file_nl(STDFDBK), file_write(STDFDBK, Ans), file_nl(STDFDBK),
+	print_final_truth_value(Ans),
 	fail.
 process_query1(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
@@ -176,7 +179,7 @@ process_query1(X, Vars) :-
 	no_more,
 	close_open_tables(non_memory_error),
 	!,
-	file_nl(STDFDBK), file_write(STDFDBK, yes), file_nl(STDFDBK),
+	print_final_truth_value(yes),
 	fail.
 
 no_more :-
@@ -194,7 +197,8 @@ call_query(X) :-
 	; stat_set_flag(HIDE_STATE, 0), fail   %% expose when backtrack to user
 	).
 call_query(_) :- 
-	file_nl(STDMSG), file_write(STDFDBK, no), file_nl(STDFDBK), fail.
+	print_final_truth_value(no),
+	fail.
 
 %% hidden version of call
 '_$call'(Y) :- 
@@ -390,3 +394,9 @@ print_debug_state :-
 	).
 
 
+%% prints yes, no, undefined at the very end
+print_final_truth_value(_Message) :-
+	banner_control(nofeedback),
+	!.
+print_final_truth_value(Message) :-
+	file_nl(STDMSG), file_write(STDFDBK, Message), file_nl(STDFDBK).

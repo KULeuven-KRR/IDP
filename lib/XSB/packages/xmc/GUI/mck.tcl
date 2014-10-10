@@ -2,7 +2,7 @@
 
 # Author: Venkat
 # Author: Yifei Dong
-# $Id: mck.tcl,v 1.4 2010/08/19 15:03:40 spyrosh Exp $
+# $Id: mck.tcl,v 1.4 2010-08-19 15:03:40 spyrosh Exp $
 
 
 #load the XSB interface for TCL

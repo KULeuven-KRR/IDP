@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: foreign.H,v 1.25 2010/10/07 01:21:40 kifer Exp $
+** $Id: foreign.H,v 1.25 2010-10-07 01:21:40 kifer Exp $
 ** 
 */
 
@@ -55,7 +55,8 @@
    from parse.
 :- import shell/1 from shell.
 :- import read/1, see/1, seen/0, open/3, close/1, tell/1, told/0, repeat/0,
-	  write/2, atom/1, file_exists/1, cputime/1, abort/1, seeing/1, telling/1
+	atom_codes/2,
+	write/2, atom/1, file_exists/1, cputime/1, abort/1, seeing/1, telling/1
      from standard.
 :- import str_sub/2 from string.
 :- import concat_atom/2 from string.

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: varstring.c,v 1.29 2011/05/18 19:21:41 dwarren Exp $
+** $Id: varstring.c,v 1.29 2011-05-18 19:21:41 dwarren Exp $
 ** 
 */
 

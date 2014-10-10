@@ -1,4 +1,4 @@
-/*  $Id: parser.h,v 1.5 2011/08/06 05:54:39 kifer Exp $
+/*  $Id: parser.h,v 1.5 2011-08-06 05:54:39 kifer Exp $
 
     Part of SWI-Prolog
 
@@ -24,7 +24,7 @@
 
 #ifndef SGML_PARSER_H_INCLUDED
 #define SGML_PARSER_H_INCLUDED
-#include "util.h"
+#include "sgmlutil.h"
 
 		 /*******************************
 		 *	      CALL-BACK		*

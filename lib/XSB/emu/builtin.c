@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: builtin.c,v 1.399 2013/04/17 22:02:34 tswift Exp $
+** $Id: builtin.c,v 1.400 2013-05-06 21:10:24 dwarren Exp $
 **
 */
 
@@ -133,11 +133,13 @@
 #include "table_inspection_defs.h"
 
 #include "unify_xsb.h"
+#include "token_xsb.h"
+#include "cell_xsb_i.h"
 
 int mem_flag;
 
 /*======================================================================*/
-extern struct xsb_token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
+extern struct xsb_token_t *GetToken(CTXTdeclc int, int);
 
 extern int  sys_syscall(CTXTdeclc int);
 extern xsbBool sys_system(CTXTdeclc int);
@@ -153,6 +155,7 @@ extern int prolog_call0(CTXTdeclc Cell);
 extern int prolog_code_call(CTXTdeclc Cell, int);
 
 extern void init_psc_ep_info(Psc psc);
+extern Integer intern_term_size(CTXTdeclc Cell);
 
 int is_cyclic(CTXTdeclc Cell);
 int ground_cyc(CTXTdeclc Cell, int);
@@ -325,6 +328,19 @@ DllExport prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int regnum,const char 
   return FALSE;
 }
 
+Psc get_mod_for_psc(Psc psc) {
+  Cell psc_data = (Cell)get_data(psc);
+  if (isstring(psc_data)) return global_mod;
+  else return (Psc)psc_data;
+}
+
+char *get_filename_for_psc(Psc psc) {
+  struct psc_rec *psc_data = get_data(psc);
+  if (IsNULL(psc_data)) return "unknown";
+  if (isstring((Cell)psc_data)) return string_val((Cell)psc_data);
+  return string_val(get_ep(psc_data));
+}
+
 inline Cell iso_ptoc_callable(CTXTdeclc int regnum,const char * PredString)
 {
   /* reg is global array in register.h in the single-threaded engine
@@ -414,7 +430,6 @@ DllExport char* call_conv iso_ptoc_string(CTXTdeclc int regnum,char * PredString
 
   /* XSB_Deref and then check the type */
   XSB_Deref(addr);
-
   switch (cell_tag(addr)) {
   case XSB_FREE:
   case XSB_REF1:
@@ -636,22 +651,6 @@ inline static void ctop_constr(CTXTdeclc int regnum, Pair psc_pair)
   else xsb_abort("[CTOP_CONSTR] Argument %d of illegal type: %s",regnum,canonical_term(CTXTc addr, 0));
 }
 
-/*
- *  Bind the variable pointed to by the "regnum"th argument register to the
- *  term at address "term".  Make an entry in the trail for this binding.
- */
-inline  void ctop_tag(CTXTdeclc int regnum, Cell term)
-{
-  register Cell addr = cell(reg+regnum);
-
-  XSB_Deref(addr);
-  if (isref(addr)) {
-    bind_copy(vptr(addr), term);
-  }
-  else
-    xsb_abort("[CTOP_TAG] Argument %d of illegal type: %s",regnum,canonical_term(CTXTc addr, 0));
-}
-
 
 /*
  *  For encoding object pointer, like PSC, PSC-PAIR and Subgoal frames.
@@ -660,26 +659,26 @@ inline  void ctop_tag(CTXTdeclc int regnum, Cell term)
 
 /* --------------------------------------------------------------------	*/
 
-Cell  val_to_hash(Cell term)
+UInteger val_to_hash(Cell term)
 {
-  Cell value;
+  UInteger value;
 
   switch(cell_tag(term)) {
     case XSB_INT:
-      value = (Cell)int_val(term);
+      value = int_val(term);
       break;
     case XSB_FLOAT:
-      value = (Cell)int_val(term);
+      value = int_val(term);
       break;
     case XSB_LIST:
-      value = (Cell)(list_pscPair);
+      value = (UInteger)list_pscPair;
       break;
     case XSB_STRUCT:
       //to make a hash val for a boxed int, we take the int value inside the box and cast it
       //to a Cell.
       if (isboxedinteger(term))
       {
-          value = (Cell)boxedint_val(term);
+          value = boxedint_val(term);
           break;
       }
       //to make a hash val for a boxed float, we take the int values inside the 3 boxes for
@@ -693,10 +692,10 @@ Cell  val_to_hash(Cell term)
       }
       //but if this structure isn't any special boxed representation, then we use its PSC as
       //a hash value.
-      value = (Cell)get_str_psc(term);
+      value = (UInteger)get_str_psc(term);
       break;
     case XSB_STRING:
-      value = (Cell)(string_val(term));
+      value = (UInteger)string_val(term);
       break;
     default: xsb_abort("[term_hash/3] Indexing on illegal argument: (%p)",term);
       value = 0;
@@ -707,27 +706,27 @@ Cell  val_to_hash(Cell term)
 
 /* -------------------------------------------------------------------- */
 
-Cell  det_val_to_hash(Cell term)
+UInteger  det_val_to_hash(Cell term)
 {
-  Cell value;
+  UInteger value;
   Psc psc;
 
   switch(cell_tag(term)) {
     case XSB_INT:
-      value = (Cell)int_val(term);
+      value = int_val(term);
       break;
     case XSB_FLOAT:
-      value = (Cell)int_val(term);
+      value = int_val(term);
       break;
     case XSB_LIST:
-      value = (Cell)(list_pscPair);
+      value = (UInteger)list_pscPair;
       break;
     case XSB_STRUCT:
       //to make a hash val for a boxed int, we take the int value inside the box and cast it
       //to a Cell.
       if (isboxedinteger(term))
       {
-          value = (Cell)boxedint_val(term);
+          value = boxedint_val(term);
           break;
       }
       //to make a hash val for a boxed float, we take the int values inside the 3 boxes for
@@ -751,6 +750,8 @@ Cell  det_val_to_hash(Cell term)
       value = 0;
       break;
   }
+  // TLS: not sure what this was for, but it will never evaluate to true.
+  //  if ((UInteger)value < 0) printf("Bad Hash4");
   return value;
 }
 
@@ -773,12 +774,14 @@ int ground(Cell temp)
     return TRUE;
 
   case XSB_LIST:
+    if (isinternstr_really(temp)) return TRUE;
     if (!ground(get_list_head(temp)))
       return FALSE;
     temp = get_list_tail(temp);
     goto groundBegin;
 
   case XSB_STRUCT:
+    if (isinternstr_really(temp)) return TRUE;
     arity = (int) get_arity(get_str_psc(temp));
     if (arity == 0) return TRUE;
     for (j=1; j < arity ; j++)
@@ -966,9 +969,10 @@ CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, struct ltrail *templ_trail, 
   case XSB_FREE:
   case XSB_REF1:
     cell(varlist) = makelist(hreg);
-    cell(hreg++) = term;
+    cell(hreg) = term;
     local_bind_var(term,var_trail);
-    return (CPtr)hreg++;
+    hreg += 2;
+    return (CPtr)hreg-1;
   case XSB_STRUCT: {
     int i, arity;
     Psc psc;
@@ -1049,17 +1053,6 @@ inline static void xsb_fprint_variable(CTXTdeclc FILE *fptr, CPtr var)
     if (var >= top_of_localstk && var <= (CPtr)glstack.high)
       fprintf(fptr, "_l%" Cellfmt , ((Cell)glstack.high-(Cell)var+1)/sizeof(CPtr));
     else fprintf(fptr, "_%p", var);   /* Should never happen */
-  }
-}
-
-void xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var)
-{
-  if (var >= (CPtr)glstack.low && var <= top_of_heap)
-    sprintf(sptr, "_h%" Cellfmt, ((Cell)var-(Cell)glstack.low+1)/sizeof(CPtr));
-  else {
-    if (var >= top_of_localstk && var <= (CPtr)glstack.high)
-      sprintf(sptr, "_l%" Cellfmt, ((Cell)glstack.high-(Cell)var+1)/sizeof(CPtr));
-    else sprintf(sptr, "_%p", var);   /* Should never happen */
   }
 }
 
@@ -1439,7 +1432,7 @@ int builtin_call(CTXTdeclc byte number)
       xsb_warn(str);
       return FALSE;
     }
-    ctop_int(CTXTc 2, (Integer)(isstring(get_data(psc))?global_mod:get_data(psc)));
+    ctop_int(CTXTc 2, (Integer)(get_mod_for_psc(psc)));
     break;
   }
   case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
@@ -1468,7 +1461,9 @@ int builtin_call(CTXTdeclc byte number)
   case PSC_EP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
     Psc psc = (Psc)ptoc_addr(1);
-    ctop_int(CTXTc 2, (Integer)get_ep(psc));
+    /* ep contains filename ptr if its a module psc */
+    if (isstring(get_ep(psc))) ctop_string(CTXTc 2, string_val(get_ep(psc)));
+    else ctop_int(CTXTc 2, (Integer)get_ep(psc));
     break;
   }
   case PSC_SET_EP: {	       /* R1: +PSC; R2: +int */
@@ -1787,8 +1782,7 @@ int builtin_call(CTXTdeclc byte number)
 	  psc = get_str_psc(goal);
 	}
       } else {
-	if (isstring(get_data(psc))) modpsc = global_mod;
-	else modpsc = get_data(psc);
+	modpsc = get_mod_for_psc(psc);
       }
       if (isstring(goal)) {
 	for (i = 1; i <= k; i++) {
@@ -2009,14 +2003,7 @@ int builtin_call(CTXTdeclc byte number)
   case FILE_GETTOKEN: {    /* R1: +File, R2: +PrevCh, R3: -Type; */
                                 /* R4: -Value, R5: -NextCh */
 
-    int tmpval = (int)ptoc_int(CTXTc 1);
-    if ((tmpval < 0) && (tmpval >= -MAXIOSTRS))
-      token = GetToken(CTXTc NULL,strfileptr(tmpval), (int)ptoc_int(CTXTc 2));
-    else {
-      FILE* fptr;
-      SET_FILEPTR(fptr, tmpval);
-      token = GetToken(CTXTc fptr, NULL, (int)ptoc_int(CTXTc 2));
-    }
+    token = GetToken(CTXTc (int)ptoc_int(CTXTc 1),(int)ptoc_int(CTXTc 2));
     if (token->type == TK_ERROR) {
       //      pcreg = (pb)&fail_inst;
       return FALSE;
@@ -2051,9 +2038,10 @@ int builtin_call(CTXTdeclc byte number)
 
   case FILE_PUTTOKEN: {	/* R1: +File, R2: +Type, R3: +Value; */
     FILE* fptr;
-    int tmpval = (int)ptoc_int(CTXTc 1);
+    int io_port = (int)ptoc_int(CTXTc 1);
+    int charset;
     //    SYS_MUTEX_LOCK(MUTEX_IO);
-    SET_FILEPTR(fptr,tmpval);
+    SET_FILEPTR_CHARSET(fptr,charset,io_port);
     switch (ptoc_int(CTXTc 2)) {
     case XSB_FREE   : {
       CPtr var = (CPtr)ptoc_tag(CTXTc 3);
@@ -2068,7 +2056,9 @@ int builtin_call(CTXTdeclc byte number)
     case XSB_INT    : 
 
       fprintf(fptr, "%" Intfmt, (Integer)ptoc_int(CTXTc 3)); break;
-    case XSB_STRING : fprintf(fptr, "%s", ptoc_string(CTXTc 3)); break;
+    case XSB_STRING : 
+      write_string_code(fptr,charset,(byte *)ptoc_string(CTXTc 3));
+      break;
     case XSB_FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(CTXTc 3)); break;
     case TK_INT_0  : {
       int tmp = (int) ptoc_int(CTXTc 3);
@@ -2088,14 +2078,14 @@ int builtin_call(CTXTdeclc byte number)
       fwrite(&ftmp, 8, 1, fptr);
       break;
     }
-    case TK_PREOP  : print_op(fptr, ptoc_string(CTXTc 3), 1); break;
-    case TK_INOP   : print_op(fptr, ptoc_string(CTXTc 3), 2); break;
-    case TK_POSTOP : print_op(fptr, ptoc_string(CTXTc 3), 3); break;
-    case TK_QATOM  : print_qatom(fptr, ptoc_string(CTXTc 3)); break;
-    case TK_AQATOM : print_aqatom(fptr, ptoc_string(CTXTc 3)); break;
-    case TK_QSTR   : print_dqatom(fptr, ptoc_string(CTXTc 3)); break;
-    case TK_TERML  : print_term_canonical(CTXTc fptr, ptoc_tag(CTXTc 3), 1); break;
-    case TK_TERM   : print_term_canonical(CTXTc fptr, ptoc_tag(CTXTc 3), 0); break;
+    case TK_PREOP  : print_op(fptr, charset, ptoc_string(CTXTc 3), 1); break;
+    case TK_INOP   : print_op(fptr, charset, ptoc_string(CTXTc 3), 2); break;
+    case TK_POSTOP : print_op(fptr, charset, ptoc_string(CTXTc 3), 3); break;
+    case TK_QATOM  : print_qatom(fptr, charset, ptoc_string(CTXTc 3)); break;
+    case TK_AQATOM : print_aqatom(fptr, charset, ptoc_string(CTXTc 3)); break;
+    case TK_QSTR   : print_dqatom(fptr, charset, ptoc_string(CTXTc 3)); break;
+    case TK_TERML  : print_term_canonical(CTXTc fptr, charset, ptoc_tag(CTXTc 3), 1); break;
+    case TK_TERM   : print_term_canonical(CTXTc fptr, charset, ptoc_tag(CTXTc 3), 0); break;
     default : //printf("flg: %ld\n",(long)ptoc_int(CTXTc 2));
       xsb_abort("[FILE_PUTTOKEN] Unknown token type %ld",(long)ptoc_int(CTXTc 2));
     }
@@ -2109,11 +2099,12 @@ int builtin_call(CTXTdeclc byte number)
     ctop_addr(3, pair_psc(sym));
     break;
   }
-  case TERM_HASH:		/* R1: +Term	*/
+  case TERM_HASH: {		/* R1: +Term	*/
 				/* R2: +Size (of hash table) */
 				/* R3: -HashVal */
     ctop_int(CTXTc 3, ihash(det_val_to_hash(ptoc_tag(CTXTc 1)),ptoc_int(CTXTc 2)));
     break;
+  }
   case UNLOAD_SEG:	/* R1: -Code buffer */
     unload_seg((pseg)ptoc_int(CTXTc 1));
     break;
@@ -2235,10 +2226,11 @@ int builtin_call(CTXTdeclc byte number)
     /* TLS: file_writequoted is intended for use within l_write.  Do
        not use it directly -- as it should have its streams locked. */
   case FILE_WRITEQUOTED: {
-    FILE* fptr;
-    int   tmpval = (int)ptoc_int(CTXTc 1);
-    SET_FILEPTR(fptr, tmpval);
-    write_quotedname(fptr ,ptoc_string(CTXTc 2));
+    FILE *fptr;
+    int   io_port = (int)ptoc_int(CTXTc 1);
+    int   charset;
+    SET_FILEPTR_CHARSET(fptr,charset,io_port);
+    write_quotedname(fptr,charset,ptoc_string(CTXTc 2));
     break;
   }
   case GROUND:
@@ -2352,7 +2344,9 @@ int builtin_call(CTXTdeclc byte number)
   case NEXT_BUCKET: {     /* R1: +Index of Symbol Table Bucket. */
     /* R2: -Next Index (0 if end of Hash Table) */
     size_t value = ptoc_int(CTXTc 1);
-    if ( ((unsigned int)value >= (symbol_table.size - 1)) || (value < 0) )
+    // TLS: fixing clang errors:
+    //    if ( ((unsigned int)value >= (symbol_table.size - 1)) || (value < 0) )
+    if  ((unsigned int)value >= (symbol_table.size - 1))
       ctop_int(CTXTc 2, 0);
     else
       ctop_int(CTXTc 2, (value + 1));
@@ -2475,9 +2469,10 @@ case WRITE_OUT_PROFILE:
 	if (isref(ovar) || isattv(ovar)) {
 	  if (isattv(ovar)) ovar = dec_addr(ovar);
 	  cell(tanslist) = makelist(hreg);
-	  bld_ref(hreg++,ovar);
+	  bld_ref(hreg,ovar);
 	  local_bind_var(ovar, &var_trail);
-	  tanslist = hreg++;
+	  tanslist = hreg+1;
+	  hreg += 2;
 	  startvlist = get_list_tail(startvlist);
 	  XSB_Deref(startvlist);
 	} else {xsb_error("Excess_vars: arg 3 must be a list of variables"); break;}
@@ -3009,9 +3004,16 @@ case WRITE_OUT_PROFILE:
 
   case INTERN_TERM:
   {
+    Integer termsize;
     prolog_term term;
-    //printf("i\n");
-    term = intern_term(CTXTc ptoc_tag(CTXTc 1));
+    
+    term = ptoc_tag(CTXTc 1);
+    XSB_Deref(term);
+    if (!isinternstr_really(term)) {
+      termsize = intern_term_size(CTXTc term);
+      check_glstack_overflow(2,pcreg,termsize*sizeof(Cell));
+      term = intern_term(CTXTc ptoc_tag(CTXTc 1));
+    }
     if (term) {
       //printf("o %p\n",term);
       return unify(CTXTc term, ptoc_tag(CTXTc 2));
@@ -3027,7 +3029,7 @@ case WRITE_OUT_PROFILE:
 				      catch - try to recover */
     char *type = ptoc_string(CTXTc 1);
     switch (*type) {
-    case 'w': /* warn: Warn and wuit */
+    case 'w': /* warn: Warn and exit */
       xsb_default_segfault_handler = xsb_segfault_quitter;
       break;
     case 'n': /* none: Don't handle segfaults */
@@ -3138,8 +3140,8 @@ case WRITE_OUT_PROFILE:
     if (isref(attv)) {		/* attv is a free var */
       if (!isnil(atts)) {
 	bind_attv((CPtr)attv, hreg);
-	bld_free(hreg); hreg++;
-	bld_copy(hreg, atts); hreg++;
+	bld_free(hreg);
+	bld_copy(hreg+1, atts); hreg += 2;
       }
     }
     else if (isattv(attv)) {	/* attv is already an attv */
@@ -3154,8 +3156,8 @@ case WRITE_OUT_PROFILE:
 |	     bld_copy(attv_attr,atts);
 	***/
 	bind_attv((CPtr)dec_addr(attv), hreg);
-	bld_free(hreg); hreg++;
-	bld_copy(hreg, atts); hreg++;
+	bld_free(hreg); 
+	bld_copy(hreg+1, atts); hreg += 2;
       }
     }
     else xsb_abort("[PUT_ATTRIBUTES] Argument 1 is nonvar: %s",canonical_term(CTXTc attv, 0));
@@ -3395,13 +3397,14 @@ void retrieve_prof_table(CTXTdecl) { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt), r4
   arg3 = ptoc_tag(CTXTc 3);
   bind_cs((CPtr)arg3,hreg);
   new_heap_functor(hreg,p3psc);
-  pscptrloc = hreg++;
-  modpscptrloc = hreg++;
+  pscptrloc = hreg;
+  modpscptrloc = hreg+1;
+  hreg += 2;
   if (i < psc_profile_count_num) {
     follow(hreg++) = makeint(psc_profile_count_table[i].prof_count);
     apsc = psc_profile_count_table[i].psc;
     bld_oint(pscptrloc,(Integer)(apsc));
-    bld_oint(modpscptrloc,(Integer)(isstring(get_data(apsc))?global_mod:get_data(apsc)));
+    bld_oint(modpscptrloc,(Integer)(get_mod_for_psc(apsc)));
     ctop_int(CTXTc 4,i+1);
   } else if (i == psc_profile_count_num) {
     follow(hreg++) = makeint(prof_gc_count);
@@ -3441,8 +3444,9 @@ int print_xsb_backtrace(CTXTdecl) {
     // print forward continuation
     fprintf(stdout,"Forward Continuation...\n");
     tmp_psc = psc_from_code_addr(pcreg);
-    if (tmp_psc) fprintf(stdout,"... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),pcreg);
-    else fprintf(stdout,"...unknown/?,  pc=%p\n",pcreg);
+    if (tmp_psc) fprintf(stdout,"... %s/%d  From %s\n",get_name(tmp_psc),get_arity(tmp_psc),
+			 get_filename_for_psc(tmp_psc));
+    else fprintf(stdout,"... unknown/?   pc=%p\n",pcreg);
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
     instruction = *(tmp_cpreg-2*sizeof(Cell));
@@ -3451,12 +3455,14 @@ int print_xsb_backtrace(CTXTdecl) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
 	if (called_psc != tmp_psc) {
-	  fprintf(stdout,"..* %s/%d,  pc=%p\n",get_name(called_psc),get_arity(called_psc),get_ep(called_psc));
+	  fprintf(stdout,"..* %s/%d  From %s\n",get_name(called_psc),get_arity(called_psc),
+		  get_filename_for_psc(called_psc));
 	}
       }
       tmp_psc = psc_from_code_addr(tmp_cpreg);
-      if (tmp_psc) fprintf(stdout,"... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),tmp_cpreg);
-      else fprintf(stdout,"... unknown/?,  pc=%p\n",tmp_cpreg);
+      if (tmp_psc) fprintf(stdout,"... %s/%d  From %s\n",get_name(tmp_psc),get_arity(tmp_psc),
+			   get_filename_for_psc(tmp_psc));
+      else fprintf(stdout,"... unknown/?   pc=%p\n",tmp_cpreg);
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
       instruction = *(tmp_cpreg-2*sizeof(Cell));
@@ -3467,9 +3473,10 @@ int print_xsb_backtrace(CTXTdecl) {
     tmp_breg = breg;
     while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg)) {
       tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
-      if (tmp_psc) fprintf(stdout,"... %s/%d,  pc=%p, hreg=%p\n",
-			  get_name(tmp_psc),get_arity(tmp_psc),cp_pcreg(tmp_breg),cp_hreg(tmp_breg));
-      else fprintf(stdout,"... unknown/?,  i=%x, pc=%p\n",*cp_pcreg(tmp_breg),cp_pcreg(tmp_breg));
+      if (tmp_psc) fprintf(stdout,"... %s/%d  From %s\n",
+			   get_name(tmp_psc),get_arity(tmp_psc),
+			   get_filename_for_psc(tmp_psc));
+      else fprintf(stdout,"... unknown/?   i=%x, pc=%p\n",*cp_pcreg(tmp_breg),cp_pcreg(tmp_breg));
       tmp_breg = cp_prevbreg(tmp_breg);
     }
   } else {
@@ -3486,7 +3493,8 @@ int print_xsb_backtrace(CTXTdecl) {
 	   (backtrace_length++ < MAX_BACKTRACE_LENGTH)) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
-	fprintf(stdout,"... %s/%d\n",get_name(called_psc),get_arity(called_psc));
+	fprintf(stdout,"... %s/%d  From %s\n",get_name(called_psc),get_arity(called_psc),
+		get_filename_for_psc(called_psc));
       }
       if (!tmp_ereg) {
 	fprintf(stdout,"... error in backtrace \n");
@@ -3510,18 +3518,20 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
   int backtrace_cnt = 0;
 
   if (heap_local_overflow(MAX_BACKTRACE_LEN*2*sizeof(Cell)) 
-      || !flags[BACKTRACE]) {
+      || !pflags[BACKTRACE]) {
     return makenil;
   }
 
   backtrace = makelist(hreg);
-  forward = hreg++;
-  backward = hreg++;
+  forward = hreg;
+  backward = hreg+1;
+  hreg += 2;
   if (xsb_profiling_enabled) {
     tmp_psc = psc_from_code_addr(pcreg);
     follow(forward) = makelist(hreg);
-    threg = hreg++;
-    forward = hreg++;
+    threg = hreg;
+    forward = hreg+1;
+    hreg += 2;
     bld_oint(threg,tmp_psc);
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
@@ -3534,15 +3544,17 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
 	if (called_psc != tmp_psc) {
 	  follow(forward) = makelist(hreg);
-	  threg = hreg++;
-	  forward = hreg++;
+	  threg = hreg;
+	  forward = hreg+1;
+	  hreg += 2;
 	  bld_oint(threg,called_psc);
 	}
       }
       tmp_psc = psc_from_code_addr(tmp_cpreg);
       follow(forward) = makelist(hreg);
-      threg = hreg++;
-      forward = hreg++;
+      threg = hreg;
+      forward = hreg+1;
+      hreg += 2;
       bld_oint(threg,tmp_psc);
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
@@ -3555,8 +3567,9 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
 	   && (pb)top_of_localstk > (pb)top_of_heap + 48) {
       tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
       follow(backward) = makelist(hreg);
-      threg = hreg++;
-      backward = hreg++;
+      threg = hreg;
+      backward = hreg+1;
+      hreg += 2;
       bld_oint(threg,tmp_psc);
       tmp_breg = cp_prevbreg(tmp_breg);
     }
@@ -3571,8 +3584,9 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
 	follow(forward) = makelist(hreg);
-	threg = hreg++;
-	forward = hreg++;
+	threg = hreg;
+	forward = hreg+1;
+	hreg += 2;
 	bld_oint(threg,called_psc);
       }
       tmp_cpreg = *((byte **)tmp_ereg-1);

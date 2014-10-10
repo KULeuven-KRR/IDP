@@ -18,7 +18,7 @@
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
-## $Id: configure.in,v 1.7 2011/05/18 06:15:06 kifer Exp $
+## $Id: configure.in,v 1.7 2011-05-18 06:15:06 kifer Exp $
 ## 
 ##
 
@@ -44,15 +44,9 @@ topdir=`echo "${build_dir}" | sed 's,/[[^/]][[^/]]*/*/[[^/]][[^/]]*/*$,,'`
 AC_CONFIG_AUX_DIR("$topdir/build")
 
 dnl Check configuration for a Unix variant
-if test -z "$with_config"; then
-echo '
-- You did not tell me what kind of host system you want to configure.
-- I will attempt to guess the kind of system this is.
-' 1>&6
-    AC_CANONICAL_HOST
-    canonical=$host
-    configuration=$host_alias
-fi
+AC_CANONICAL_HOST
+canonical=$host
+configuration=$host_alias
 
 
 # make sure new files are readable 
@@ -74,15 +68,12 @@ case "$canonical" in
      *)  # Unix
 	xpath_config_prog="./xml2-config"  # we keep our own copy for Unix
 	
-	if test "$exec_prefix" != "NONE" ; then
-    	   exec_prefix_option="--exec-prefix=$exec_prefix"
-	fi
 	if test "$prefix" != "NONE" ; then
     	   prefix_option="--prefix=$prefix"
         fi
 
-	xmllib_ccflags=`sh $xpath_config_prog $exec_prefix_option $prefix_option --cflags`
-	ldflags="`sh $xpath_config_prog $exec_prefix_option $prefix_option --libs`"
+	xmllib_ccflags=`sh $xpath_config_prog $prefix_option --cflags`
+	ldflags="`sh $xpath_config_prog $prefix_option --libs`"
 	;;
 esac
 

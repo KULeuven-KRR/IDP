@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: findall.h,v 1.10 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: findall.h,v 1.11 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -72,6 +72,7 @@ typedef struct {
   CPtr   current_chunk ; /* most recent alloc chunk for this solution list */
   CPtr   top_of_chunk ;	 /* where next template can be copied to 
 			    points inside current_chunk */
+  CPtr   termptr ;       /* pointer to root of term stored */
   int size ;		 /* size is the size of the solution list - init = 1
 			    when entry not active, size = the next free entry 
 			    the last free entry, has size = -1, for overflow

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: wrapping.P,v 1.17 2010/08/19 15:03:38 spyrosh Exp $
+** $Id: wrapping.P,v 1.17 2010-08-19 15:03:38 spyrosh Exp $
 **
 */
 
@@ -480,7 +480,7 @@ out_precall(Var,'+',atom,InPos,_) :-
                                                      args(Var,Var)),nl.
 out_precall(Var,'+',chars,InPos,_) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
-        fmt_write('   if (!is_charlist(%sIn,&%ssize)) return FALSE;',
+        fmt_write('   if (!is_charlist(%sIn,(int*)&%ssize)) return FALSE;',
 	                                             args(Var,Var)),nl,
 	fmt_write('   %s = (char *) malloc((%ssize+1)*sizeof(char));',
                                                      args(Var,Var)),nl,
@@ -494,7 +494,7 @@ out_precall(Var,'+',term,InPos,_) :-
 	fmt_write('   %s = extern_reg_term(%d);',args(Var,InPos)),nl.
 out_precall(Var,'+',chars(Size),InPos,_) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
-        fmt_write('   if (!is_charlist(%sIn,&%ssize)) return FALSE;',
+        fmt_write('   if (!is_charlist(%sIn,(int*)&%ssize)) return FALSE;',
 	                                             args(Var,Var)),nl,
 	fmt_write('   extern_p2c_chars(%sIn,%s,%d);',args(Var,Var,Size)),nl,
 	fmt_write('   %s[%d] = (char) NULL;',args(Var,Size)),nl.
@@ -519,7 +519,7 @@ out_precall(Var,'+',atomptr,InPos,_) :-
                                                      args(Var,Var)),nl.
 out_precall(Var,'+',charsptr,InPos,_) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
-        fmt_write('   if (!is_charlist(%sIn,&%ssize)) return FALSE;',
+        fmt_write('   if (!is_charlist(%sIn,(int*)&%ssize)) return FALSE;',
 	                                             args(Var,Var)),nl,
 	fmt_write('   %s=%sTemp=(char *)malloc((%ssize+1)*sizeof(char));',
                                                    args(Var,Var,Var)),nl,
@@ -553,7 +553,7 @@ out_precall(Var,'-',termptr,_,OutPos) :-
 
 out_precall(Var,'+-',chars(Size),InPos,OutPos) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
-        fmt_write('   if (!is_charlist(%sIn,&%ssize)) return FALSE;',
+        fmt_write('   if (!is_charlist(%sIn,(int*)&%ssize)) return FALSE;',
 	                                             args(Var,Var)),nl,
 	fmt_write('   extern_p2c_chars(%sIn,%s,%d);',args(Var,Var,Size)),nl,
 	fmt_write('   %s[%d] = (char) NULL;',args(Var,Size)),nl,
@@ -588,7 +588,7 @@ out_precall(Var,'+-',atomptr,InPos,OutPos) :-
         fmt_write('   if(!is_var(%sOut)) return FALSE;',args(Var)),nl.
 out_precall(Var,'+-',charsptr,InPos,OutPos) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
-        fmt_write('   if (!is_charlist(%sIn,&%ssize)) return FALSE;',
+        fmt_write('   if (!is_charlist(%sIn,(int*)&%ssize)) return FALSE;',
 	                                             args(Var,Var)),nl,
 	fmt_write('   %s=%sTemp=(char *)malloc((%ssize+1)*sizeof(char));',
                                                    args(Var,Var,Var)),nl,

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: storage.P,v 1.20 2010/09/08 19:38:47 kifer Exp $
+** $Id: storage.P,v 1.20 2010-09-08 19:38:47 kifer Exp $
 ** 
 */
 
@@ -392,7 +392,17 @@ incr_storage_delete_keypair(StorageName,Key, Deleted):-
 storage_find_fact(StorageName,Fact) :-
 	storage_handle(StorageName,NON_INCREMENTAL_TRIE,H,_),
 	!,
-	find_in_trie(Fact, H, _).
+	find_in_trie(Fact,H,_).
+
+%% The StredFact is the fact as it is stored in the trie
+%% In contrast, Fact may unify with what is in the trie,
+%% so it may be different from StredFact
+storage_find_fact(StorageName,Fact,StoredFact) :-
+	storage_handle(StorageName,NON_INCREMENTAL_TRIE,H,_),
+	!,
+	find_in_trie(Fact,H,Leaf),
+	intern:trie_interned(StoredFact,H,Leaf,_).
+
 
 
 storage_find_keypair(StorageName,Key,Value) :-

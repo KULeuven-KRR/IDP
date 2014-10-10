@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: modes.H,v 1.16 2010/08/19 15:03:35 spyrosh Exp $
+** $Id: modes.H,v 1.16 2010-08-19 15:03:35 spyrosh Exp $
 ** 
 */
 

@@ -20,7 +20,7 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- * $Id: stdcheaders.h,v 1.3 2010/08/19 15:03:39 spyrosh Exp $
+ * $Id: stdcheaders.h,v 1.3 2010-08-19 15:03:39 spyrosh Exp $
  ***************************************************************************/
 
 #include <sys/types.h>

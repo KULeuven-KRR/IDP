@@ -1,5 +1,5 @@
 /* File:      io_builtins_xsb_i.h
-** Author(s): davulcu, kifer
+** Author(s): davulcu, kifer, swift, zhou
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1999
@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: io_builtins_xsb_i.h,v 1.67 2013/01/04 14:56:22 dwarren Exp $
+** $Id: io_builtins_xsb_i.h,v 1.68 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -27,7 +27,6 @@
    in-lined file_function (to speed up file_get/put). */
 
 
-#include "file_modes_xsb.h"
 
 #if (defined(CYGWIN))
 #include <fcntl.h>
@@ -37,11 +36,13 @@
 #include <io.h>
 #endif
 
+#include "file_modes_xsb.h"
+
 /* protected by MUTEX IO */
 STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
 
 extern char   *expand_filename(char *filename);
-extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
+extern int xsb_intern_fileptr(FILE *, char *, char *, char *, int);
 
 static FILE *stropen(CTXTdeclc char *str)
 {
@@ -50,7 +51,7 @@ static FILE *stropen(CTXTdeclc char *str)
   STRFILE *tmp;
   char *stringbuff;
 
-  for (i=0; i<MAXIOSTRS; i++) {
+  for (i=1; i<MAXIOSTRS; i++) { /* 0 reserved for static use from C */
     if (iostrs[i] == NULL) break;
   }
   if (i>=MAXIOSTRS) return FALSE;
@@ -62,8 +63,8 @@ static FILE *stropen(CTXTdeclc char *str)
   strcpy(stringbuff,str);
 
   tmp->strcnt = len;
-  tmp->strptr = stringbuff;
-  tmp->strbase = stringbuff;
+  tmp->strptr = (byte *)stringbuff;
+  tmp->strbase = (byte *)stringbuff;
 #ifdef MULTI_THREAD
   tmp->owner = xsb_thread_id;
 #endif
@@ -88,12 +89,6 @@ int unset_fileptr(FILE *stream) {
   return(-1);
 }
 
-/* TLS: these are ports, rather than file descriptors, therefore using
-   the Prolog defines.  Should they be moved into a different .h file? 
-*/
-
-#define STDIN 0
-#define STDOUT 1
 
 /* file_flush, file_pos, file_truncate, file_seek */
 
@@ -107,7 +102,7 @@ Best to put locks AFTER SET_FILEPTR to avoid problems with mutexes
 inline static xsbBool file_function(CTXTdecl)
 {
   FILE *fptr;
-  int io_port, mode;
+  int io_port, mode, charset;
   size_t size, value, offset, length;
   STRFILE *sfptr;
   XSB_StrDefine(VarBuf);
@@ -321,6 +316,7 @@ inline static xsbBool file_function(CTXTdecl)
 	open_files[io_port].file_name = NULL;
 	open_files[io_port].io_mode = '\0';
 	open_files[io_port].stream_type = 0;
+	open_files[io_port].charset = CURRENT_CHARSET;
 	if (pflags[CURRENT_INPUT] == (Cell) io_port) 
 	  { pflags[CURRENT_INPUT] = STDIN;}
 	if (pflags[CURRENT_OUTPUT] == (Cell) io_port) 
@@ -329,25 +325,20 @@ inline static xsbBool file_function(CTXTdecl)
       }
       break;
     }
-  case FILE_GET:	/* file_function(6, +IOport, -IntVal) */
+  case FILE_GET_BYTE:  /* file_function(6, +IOport, -IntVal) */
     io_port = (int)ptoc_int(CTXTc 2);
-    if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
-      XSB_STREAM_LOCK(io_port);
-      sfptr = strfileptr(io_port);
-      ctop_int(CTXTc 3, strgetc(sfptr));
-    } else {
-      SET_FILEPTR(fptr, io_port);
-      XSB_STREAM_LOCK(io_port);
-      ctop_int(CTXTc 3, getc(fptr));
-    }
+    io_port_to_fptrs(io_port,fptr,sfptr,charset);
+    XSB_STREAM_LOCK(io_port);
+    ctop_int(CTXTc 3, GetC(fptr,sfptr));
     XSB_STREAM_UNLOCK(io_port);
     break;
-  case FILE_PUT:   /* file_function(7, +IOport, +IntVal) */
+  case FILE_PUT_BYTE:   /* file_function(7, +IOport, +IntVal) */
     io_port = (int)ptoc_int(CTXTc 2);
     XSB_STREAM_LOCK(io_port);
     SET_FILEPTR(fptr, io_port);
     /* ptoc_int(CTXTc 3) is char to write */
     value = ptoc_int(CTXTc 3);
+    //    printf("val %d value wc %d\n",value,sizeof(wchar_t));
     putc((int)value, fptr);
 #ifdef WIN_NT
     if (io_port==2 && value=='\n') fflush(fptr); /* hack for Java interface */
@@ -379,7 +370,7 @@ inline static xsbBool file_function(CTXTdecl)
     pterm = reg_term(CTXTc 4);
     if (islist(pterm))
       addr = 
-	p_charlist_to_c_string(CTXTc pterm,&VarBuf,"FILE_WRITE_LINE","input string");
+	p_charlist_to_c_string(CTXTc pterm,&VarBuf,"FILE_PUTBUF","input string");
     else if (isstring(pterm))
       addr = string_val(pterm);
     else {
@@ -411,7 +402,7 @@ inline static xsbBool file_function(CTXTdecl)
     SET_FILEPTR(fptr, io_port);
     XSB_StrSet(&VarBuf,"");
 
-    do {
+    do {   /* fix for char-set! */
       if (fgets(buf, MAX_IO_BUFSIZE, fptr) == NULL && feof(fptr)) {
 	eof=TRUE;
 	break;
@@ -458,7 +449,7 @@ inline static xsbBool file_function(CTXTdecl)
 	  xsb_exit("No space for line buffer");
 //	printf("frll: expand buffer line_buff(%p,%d)\n",line_buff,line_buff_len);
       }
-      *(line_buff+line_buff_disp) = c = getc(fptr);
+      *(line_buff+line_buff_disp) = c = getc(fptr);  // fix for charset!!
       if (c == EOF) break;
       line_buff_disp++;
     } while (c != '\n');
@@ -472,9 +463,10 @@ inline static xsbBool file_function(CTXTdecl)
     else {
       new_list = makelist(hreg);
       for (i = 0; i < line_buff_disp; i++) {
-	follow(hreg++) = makeint(*(unsigned char *)atomname);
+	follow(hreg) = makeint(*(unsigned char *)atomname);
 	atomname++;
-	top = hreg++;
+	top = hreg+1;
+	hreg += 2;
 	follow(top) = makelist(hreg);
       }
       follow(top) = makenil;
@@ -668,7 +660,8 @@ inline static xsbBool file_function(CTXTdecl)
 	  dest_xsb_fileno = 
 	    xsb_intern_fileptr(dest_fptr,"FILE_CLONE",
 			       open_files[src_xsb_fileno].file_name,
-			       &open_files[src_xsb_fileno].io_mode);
+			       &open_files[src_xsb_fileno].io_mode,
+			       open_files[src_xsb_fileno].charset);
 	  c2p_int(CTXTc dest_xsb_fileno, dest_fptr_term);
 	} else {
 	  /* error */
@@ -738,7 +731,7 @@ inline static xsbBool file_function(CTXTdecl)
 
     SYS_MUTEX_LOCK( MUTEX_IO );
     /* xsb_intern_file will return -1, if fdopen fails */
-    i = xsb_intern_fileptr(fptr, "FD2IOPORT","created from fd",mode);
+    i = xsb_intern_fileptr(fptr, "FD2IOPORT","created from fd",mode,CURRENT_CHARSET);
     ctop_int(CTXTc 3, i);
     open_files[i].stream_type = PIPE_STREAM;
     SYS_MUTEX_UNLOCK( MUTEX_IO );
@@ -765,7 +758,7 @@ inline static xsbBool file_function(CTXTdecl)
     SYS_MUTEX_LOCK( MUTEX_IO );
     if ((fptr = tmpfile())) 
       ctop_int(CTXTc 2, xsb_intern_fileptr(fptr, "TMPFILE_OPEN",
-					 "TMPFILE","wb+"));
+					   "TMPFILE","wb+",CURRENT_CHARSET));
     else
       ctop_int(CTXTc 2, -1);
     SYS_MUTEX_UNLOCK( MUTEX_IO );
@@ -892,7 +885,7 @@ inline static xsbBool file_function(CTXTdecl)
     }
   }
 
-  case FILE_PEEK: {
+  case FILE_PEEK_BYTE: {
     int bufchar;
 
     io_port = (int)ptoc_int(CTXTc 2);
@@ -940,6 +933,117 @@ inline static xsbBool file_function(CTXTdecl)
     putc(CH_NEWLINE,fptr);
 #endif
     break;
+
+  case FILE_GET_CODE: {	/* file_function(6, +IOport, -IntVal) */
+    int code;
+    io_port = (int)ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
+    code = GetCodeP(io_port);
+    ctop_int(CTXTc 3, code);
+    XSB_STREAM_UNLOCK(io_port);
+    break;
+  }
+  case FILE_PUT_CODE:   /* file_function(7, +IOport, +IntVal) */
+    io_port = (int)ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
+    SET_FILEPTR_CHARSET(fptr, charset,io_port);
+    value = ptoc_int(CTXTc 3);
+    PutCode((int)value,charset,fptr);
+#ifdef WIN_NT
+    if (io_port==2 && value=='\n') fflush(fptr); /* hack for Java interface */
+#endif
+    XSB_STREAM_UNLOCK(io_port);
+    break;
+  case FILE_GET_CHAR:	{
+    int read_codepoint;
+    io_port = (int)ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
+    read_codepoint = GetCodeP(io_port);
+    if (read_codepoint == EOF) 
+      ctop_string(CTXTc 3, "end_of_file");
+    else {
+      char s[5],*ch_ptr;
+      ch_ptr = (char *) utf8_codepoint_to_str(read_codepoint, (byte *)s); /* internal is always utf8 */
+      *ch_ptr = '\0';
+      ctop_string(CTXTc 3,s);
+    }
+    XSB_STREAM_UNLOCK(io_port);
+    break;
+  }
+  case FILE_PUT_CHAR: {
+    byte *ch_ptr;
+
+    io_port = (int)ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
+    SET_FILEPTR_CHARSET(fptr, charset, io_port);
+    ch_ptr = (byte *)iso_ptoc_string(CTXTc 3,"put_char/[1,2]");
+    PutCode(utf8_char_to_codepoint(&ch_ptr),charset,fptr);
+    break; 
+  }
+
+  case FILE_PEEK_CODE: {
+    int bufcode;
+    io_port = (int)ptoc_int(CTXTc 2);
+    io_port_to_fptrs(io_port,fptr,sfptr,charset);
+    XSB_STREAM_LOCK(io_port);
+    bufcode = GetCodeP(io_port);
+    if (bufcode == EOF) 
+      bufcode = -1;
+    else {
+      byte s[5],*ch_ptr;
+      ch_ptr = codepoint_to_str(bufcode, charset, s);
+      while (ch_ptr>s){
+	ch_ptr--;
+	unGetC(*ch_ptr,fptr,sfptr); 
+      }
+    }
+    ctop_int(CTXTc 3, bufcode);
+    XSB_STREAM_UNLOCK(io_port);
+    break;
+  }
+
+ case FILE_PEEK_CHAR:	{  // these 2 cases can be consolidated! (and sim above)
+    int read_codepoint;
+    io_port = (int)ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
+    read_codepoint = GetCodeP(io_port);
+    if (read_codepoint == EOF) 
+      ctop_string(CTXTc 3, "end_of_file");
+    else {
+      char s[5],*ch_ptr,ss[5];
+      ch_ptr = (char *)utf8_codepoint_to_str(read_codepoint,(byte *) s); /* internal char always utf8 */
+      *ch_ptr = '\0';
+      io_port_to_fptrs(io_port,fptr,sfptr,charset);
+      if (charset == UTF_8) {
+	while (ch_ptr>s){
+	  ch_ptr--;                   
+	  unGetC(*ch_ptr,fptr,sfptr); 
+	}
+      } else {
+	ch_ptr = (char *) codepoint_to_str(read_codepoint, charset, (byte *)ss);
+	while (ch_ptr>ss) {
+	  ch_ptr--;
+	  unGetC(*ch_ptr,fptr,sfptr);
+	}
+      }
+      ctop_string(CTXTc 3,s);
+    }
+    XSB_STREAM_UNLOCK(io_port);
+    break;
+ }
+
+  case ATOM_LENGTH: {
+    Cell term = ptoc_tag(CTXTc 2);
+    if (isstring(term)) {
+      ctop_int(CTXTc 3, utf8_nchars((byte *)string_val(term)));
+    }
+    else if (isref(term)) {
+      xsb_instantiation_error(CTXTc "atom_length/2",1);
+    } else {
+      xsb_type_error(CTXTc "atom",term,"atom_length/2",1);
+    }
+    break;
+  }
 
   default:
     xsb_abort("[FILE_FUNCTION]: Invalid file operation, %d\n", ptoc_int(CTXTc 1));

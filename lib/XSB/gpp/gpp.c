@@ -19,7 +19,7 @@
 ** along with this software; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gpp.c,v 1.38 2011/08/05 09:10:53 kifer Exp $
+** $Id: gpp.c,v 1.38 2011-08-05 09:10:53 kifer Exp $
 ** 
 */
 
@@ -29,6 +29,7 @@
 #define popen   _popen
 #define pclose  _pclose
 #define strdup  _strdup
+#define access  _access
 #define strcasecmp _stricmp
 #define SLASH '\\'
 #define DEFAULT_CRLF 1
@@ -52,11 +53,25 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef WIN_NT
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
+#ifndef R_OK
+#define R_OK_GPP 4
+#else
+#define R_OK_GPP R_OK
+#endif
+
+
 #define STACKDEPTH 50
 #define MAXARGS 100
-#define MAXINCL 14   /* max # of include dirs */
+#define MAXINCL 18   /* max # of include dirs */
+#define MAXINCLUDE_DEPTH 200 /* max depth of #include statements */
 
-#define MAX_GPP_NUM_SIZE 15
+#define MAX_GPP_NUM_SIZE 18
 
 typedef struct MODE {
   char *mStart;		/* before macro name */
@@ -194,7 +209,8 @@ short WarningLevel = 2;
 int NoStdInc        = 0;
 int NoCurIncFirst   = 0;
 int CurDirIncLast   = 0;
-int file_and_stdout = 0;
+/* this is for debugging: set to 1 to see dump on the screen */
+int file_and_stderr = 0;
 
 typedef struct OUTPUTCONTEXT {
   char *buf;
@@ -217,6 +233,7 @@ typedef struct INPUTCONTEXT {
   struct OUTPUTCONTEXT *out;
   int eof;
   int in_comment;
+  int include_depth;
   int ambience; /* FLAG_TEXT, FLAG_USER or FLAG_META */
   int may_have_args;
 } INPUTCONTEXT;
@@ -235,7 +252,8 @@ void delete_macro(int h,int i);
 
 /* various recent additions */
 static void getDirname(char *fname, char *dirname);
-static FILE *openInCurrentDir(char *incfile);
+static FILE *openInCurrentDir(char **incfile);
+static int checkAbsOrCurrentDir(char *file);
 char *ArithmEval(int pos1,int pos2);
 void replace_definition_with_blank_lines(char *start, char *end, int skip);
 void replace_directive_with_blank_line(FILE *file);
@@ -244,15 +262,17 @@ void construct_include_directive_marker(char **include_directive_marker,
 					char *includemarker_input);
 void escape_backslashes(char *instr, char **outstr);
 
+static int is_slash(char ch);
+
 void bug(char *s)
 {
-  fprintf(stderr,"++Error[GPP]: %s:%d: %s.\n",C->filename,C->lineno,s);
+  fprintf(stderr,"\n++Error[GPP]: %s:%d: %s.\n\n",C->filename,C->lineno,s);
   exit(1);
 }
 
 void warning(char *s)
 {
-  fprintf(stderr,"++Warning[GPP]: %s:%d: %s.\n",C->filename,C->lineno,s);
+  fprintf(stderr,"\n++Warning[GPP]: %s:%d: %s.\n\n",C->filename,C->lineno,s);
 }
 
 int hash_str(char *s,int l)
@@ -686,13 +706,13 @@ void outchar(char c)
   else {
     if (dosmode&&(c==10)) {
       fputc(13,C->out->f);
-      if (file_and_stdout)
-        fputc(13,stdout);
+      if (file_and_stderr)
+        fputc(13,stderr);
     }
     if (c!=13) {
       fputc(c,C->out->f);
-      if (file_and_stdout)
-        fputc(c,stdout);
+      if (file_and_stderr)
+        fputc(c,stderr);
     }
   }
 }
@@ -1063,6 +1083,7 @@ void initthings(int argc, char **argv)
   C->eof=0;
   C->namedargs=NULL;
   C->in_comment=0;
+  C->include_depth=0;
   C->ambience=FLAG_TEXT;
   C->may_have_args=0;
   commented[0]=0;
@@ -1205,7 +1226,7 @@ void initthings(int argc, char **argv)
 	add_comment(S,"sss",strdup("\""),strdup("\""),0,0);
 	break;
       case 'O':
-	file_and_stdout = 1;
+	file_and_stderr = 1;
       case 'o':
 	if (!(*(++arg)))
 	  usage();
@@ -1271,7 +1292,11 @@ int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
     c=getChar(pos);
     i=pos;
     if (matchEndSequence(endseq,&i)) return pos;
-    if (c==0) bug("Input ended while scanning a comment/string");
+    if (c==0) bug("input ended while scanning a comment/string");
+    /*
+    if (c=='\n' && (*endseq == '\'' || *endseq == '"'))
+      warning("string spans multiple lines");
+    */
     if (c==warn) {
       warn=0;
       if (WarningLevel > 2)
@@ -1465,6 +1490,7 @@ char *ProcessText(char *buf,int l,int ambience)
   C->eof=0;
   C->namedargs=T->namedargs;
   C->in_comment=T->in_comment;
+  C->include_depth=0;
   C->ambience=ambience;
   C->may_have_args=T->may_have_args;
   
@@ -1510,6 +1536,7 @@ char *ProcessFastDefinition(char *buf,int l,char **argnames)
   C->eof=0;
   C->namedargs=argnames;
   C->in_comment=T->in_comment;
+  C->include_depth=0;
   C->ambience=FLAG_META;
   C->may_have_args=1;
   
@@ -1733,6 +1760,32 @@ int DoArithmEval(char *buf,int pos1,int pos2,int *result)
   if (strncmp(buf+pos1,"length(",strlen("length("))==0) {
     if (buf[pos2-1]!=')') return 0;
     *result=pos2-pos1-(int)strlen("length()");
+    return 1;
+  }
+
+  /* add if exists(file) */
+  if (strncmp(buf+pos1,"exists(",strlen("exists("))==0) {
+    char *file;
+    pos1 += (int)strlen("exists(");
+    if (pos1<=pos2 && buf[pos2]=='\0') pos2--;
+    while ((pos1<=pos2)&&iswhite(buf[pos1])) pos1++;
+    while ((pos1<=pos2)&&iswhite(buf[pos2])) pos2--;
+    if (buf[pos2] != ')')
+      bug("Wrong syntax in exists(\"file\")");
+    else pos2--;
+    if (buf[pos1]=='\"' || buf[pos1]=='<') pos1++;
+    if (buf[pos2]=='\"' || buf[pos2]=='>') pos2--;
+    if (pos1>pos2) bug("Missing file name in exists(\"file\")");
+    file=malloc(pos2-pos1+2);
+    memcpy(file, buf+pos1, pos2-pos1+1);
+    file[pos2-pos1+1] = '\0';
+    
+    /* search absolute or current dir */
+    /* result=0 means #if true */
+    if (checkAbsOrCurrentDir(file)==0)
+      *result = 0;
+    else
+      *result = 1;
     return 1;
   }
   
@@ -2229,7 +2282,7 @@ int ParsePossibleMeta()
       incfile_name[pos2-pos1+1] = 0;
 
       /* if absolute path name is specified */
-      if (incfile_name[0]==SLASH
+      if (is_slash(incfile_name[0])
 #ifdef WIN_NT
 	  || (isalpha(incfile_name[0]) && incfile_name[1]==':')
 #endif
@@ -2237,14 +2290,14 @@ int ParsePossibleMeta()
 	f=fopen(incfile_name,"r");
       else /* search current dir, if this search isn't turned off */
 	if (!NoCurIncFirst) {
-	  f = openInCurrentDir(incfile_name);
+	  f = openInCurrentDir(&incfile_name);
 	}
 
       for (j=0;(f==NULL)&&(j<nincludedirs);j++) {
         incfile_name =
           realloc(incfile_name,pos2-pos1+strlen(includedir[j])+3);
         strcpy(incfile_name,includedir[j]);
-        incfile_name[strlen(includedir[j])]=SLASH;
+        incfile_name[strlen(includedir[j])] = SLASH;
         /* extract the orig include filename */
         memcpy(incfile_name+strlen(includedir[j])+1, temp+pos1, pos2-pos1+1);
         incfile_name[pos2-pos1+strlen(includedir[j])+2] = '\0';
@@ -2257,7 +2310,7 @@ int ParsePossibleMeta()
         /* extract the orig include filename */
         memcpy(incfile_name, temp+pos1, pos2-pos1+1);
         incfile_name[pos2-pos1+1] = '\0';
-        f = openInCurrentDir(incfile_name);
+        f = openInCurrentDir(&incfile_name);
       }
 
       free(temp);
@@ -2272,6 +2325,8 @@ int ParsePossibleMeta()
       }
 
       N=C;
+      if (C->include_depth > MAXINCLUDE_DEPTH)
+	bug("Cyclic #include statements detected or maximum depth of 200 #include's exceeded");
       C=(struct INPUTCONTEXT *)malloc(sizeof(struct INPUTCONTEXT));
       C->in=f;
       C->argc=0;
@@ -2285,6 +2340,7 @@ int ParsePossibleMeta()
       C->eof=0;
       C->namedargs=NULL;
       C->in_comment=0;
+      C->include_depth = N->include_depth+1;
       C->ambience=FLAG_TEXT;
       C->may_have_args=0;
       PushSpecs(S);
@@ -2304,6 +2360,7 @@ int ParsePossibleMeta()
       free(C);
       PopSpecs();
       C=N;
+      C->include_depth -= 1;
     } else
       replace_directive_with_blank_line(C->out->f);
     break;
@@ -2420,7 +2477,7 @@ int ParsePossibleMeta()
       char *s;
       if (nparam==2) p1end=p2end; /* we really want it all ! */
       s=ArithmEval(p1start,p1end);
-      commented[iflevel]=((s[0]=='0')&&(s[1]==0));
+      commented[iflevel]=((s[0]=='0')&&(s[1]=='\0'));
       free(s);
     }
     break;
@@ -2443,7 +2500,7 @@ int ParsePossibleMeta()
         commented[iflevel]=0;
         if (nparam==2) p1end=p2end; /* we really want it all ! */
         s=ArithmEval(p1start,p1end);
-        commented[iflevel]=((s[0]=='0')&&(s[1]==0));
+        commented[iflevel]=((s[0]=='0')&&(s[1]=='\0'));
         free(s);
       }
     }
@@ -2596,6 +2653,7 @@ int ParsePossibleUser(void)
   C->eof=0;
   C->namedargs=m->argnames;
   C->in_comment=m->defined_in_comment;
+  C->include_depth=0;
   C->ambience=FLAG_META; 
   if (m != NULL) 
     PushSpecs(m->define_specs);
@@ -2682,7 +2740,7 @@ static void getDirname(char *fname, char *dirname)
   int i;
 
   for (i = (int)strlen(fname)-1; i>=0; i--) {
-    if (fname[i] == SLASH)
+    if (is_slash(fname[i]))
       break;
   }
   if (i >= 0) {
@@ -2695,16 +2753,44 @@ static void getDirname(char *fname, char *dirname)
   dirname[i+1] = '\0';
 }
 
-static FILE *openInCurrentDir(char *incfile)
+/* opens *incfile in the directory of the including file C->filename.
+   Prepends the directory of the including file to *incfile and expands the
+   space pointed to by *incfile. This is passed back to the caller so that the
+   included file will be recorded using its absolute file name.
+*/
+static FILE *openInCurrentDir(char **incfile)
 {
   char *absfile =
-    (char *)calloc(strlen(C->filename)+strlen(incfile)+1, sizeof(char));
+    (char *)calloc(strlen(C->filename)+strlen(*incfile)+1, sizeof(char));
   FILE *f;
   getDirname(C->filename,absfile);
-  strcat(absfile,incfile);
+  /* expand *incfile and prepend the current dir to the included file */
+  strcat(absfile,*incfile);
+  *incfile = realloc(*incfile, strlen(absfile)+1);
+  strcpy(*incfile,absfile);
   f=fopen(absfile,"r");
   free(absfile);
   return f;
+}
+
+/* check if file exists in the current dir or is absolute, and is readable */
+static int checkAbsOrCurrentDir(char *file)
+{
+  char *absfile;
+  if (is_slash(file[0])
+#ifdef WIN_NT
+      || (isalpha(file[0]) && file[1]==':')
+#endif
+    )
+    absfile = file;
+  else {
+    absfile = (char *)calloc(strlen(C->filename)+strlen(file)+1, sizeof(char));
+    getDirname(C->filename,absfile);
+    strcat(absfile,file);
+  }
+
+  if (access(absfile,R_OK_GPP)==0) return 1;
+  else return 0;
 }
 
 /* skip = # of \n's already output by other mechanisms, to be skipped */
@@ -2732,7 +2818,7 @@ void replace_directive_with_blank_line(FILE *f)
 }
 
 
-/* If lineno is > 15 digits - the number won't be printed correctly */
+/* If lineno > MAX_GPP_NUM_SIZE digits - lineno won't be printed correctly */
 void write_include_marker(FILE *f, int lineno, char *filename, char *marker)
 {
   static char lineno_buf[MAX_GPP_NUM_SIZE];
@@ -2824,6 +2910,18 @@ void construct_include_directive_marker(char **include_directive_marker,
   *(*include_directive_marker+out_idx) = '\n';
   out_idx++;
   *(*include_directive_marker+out_idx) = '\0';
+}
+
+/* under windows, some XSB paths are specified using '/', so we take care of
+   this here */
+static int is_slash(char ch)
+{
+  return
+#ifdef WIN_NT
+    ch == '/' ||
+#endif
+    ch == SLASH;
+
 }
 
 

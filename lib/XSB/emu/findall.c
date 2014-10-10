@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: findall.c,v 1.59 2013/01/04 14:56:21 dwarren Exp $
+** $Id: findall.c,v 1.60 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -46,8 +46,11 @@
 #include "cinterf.h"
 #include "findall.h"
 #include "thread_xsb.h"
+#include "tries.h"
 #include "debug_xsb.h"
 #include "flag_defs_xsb.h"
+#include "struct_intern.h"
+#include "cell_xsb_i.h"
 
 #ifndef MULTI_THREAD
 findall_solution_list *findall_solutions = NULL;
@@ -72,6 +75,27 @@ static void findall_untrail(CTXTdecl);
 /* make MAX_FINDALLS larger if you want */
 
 #define on_glstack(p) ((gl_bot <= p) && (p < gl_top))
+
+// seems to sometimes give wrong answers... not currently used
+int in_findall_buffers(CTXTdeclc Cell term) {
+  CPtr tptr = (CPtr)dec_addr(term);
+  CPtr prev_buff = NULL;
+  CPtr curr_buff = current_findall->first_chunk;
+  do {
+    if (tptr >= curr_buff && tptr <= curr_buff+FINDALL_CHUNCK_SIZE) {
+      if (curr_buff != current_findall->first_chunk) {
+	*prev_buff = *curr_buff;
+	*curr_buff = *(current_findall->first_chunk);
+	current_findall->first_chunk = curr_buff;
+      }
+      return TRUE;
+    }
+    prev_buff = curr_buff;
+    curr_buff = *(CPtr *)curr_buff;
+  } while (curr_buff);
+  return FALSE;
+}
+
 
 #include "ptoc_tag_xsb_i.h"
 
@@ -152,7 +176,8 @@ int findall_init_c(CTXTdecl)
   } else w = p->first_chunk;  /* already a first chunk, so use it */
   *w = 0 ;
   p->first_chunk = p->current_chunk = w ;
-  w++ ; bld_free(w) ; p->tail = w ; /* create an undef as init of tail */
+  w++ ; 
+  bld_free(w) ; p->termptr = p->tail = w ; /* create an undef as init of tail */
   w++ ; p->top_of_chunk = w ;
   nextfree = p->size ;
   p->size = 1 ;
@@ -229,7 +254,6 @@ void findall_clean_all(CTXTdecl) {
 
 void findall_copy_to_heap(CTXTdeclc Cell from, CPtr to, CPtr *h)
 {
-
 copy_again : /* for tail recursion optimisation */
 
   switch ( cell_tag( from ) )
@@ -242,12 +266,12 @@ copy_again : /* for tail recursion optimisation */
 #ifndef FAST_FLOATS
       {
 	Float tempFloat = getfloatval(from);
-	new_heap_functor((*h),box_psc);
-	bld_int((*h),((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ));
-	(*h)++;
-	bld_int((*h),FLOAT_MIDDLE_24_BITS(tempFloat)); (*h)++;
-	bld_int((*h),FLOAT_LOW_24_BITS(tempFloat)); (*h)++;
-	cell(to) = makecs((*h)-4);
+	bld_functor((*h),box_psc);
+	bld_int(((*h)+1),((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ));
+	bld_int(((*h)+2),FLOAT_MIDDLE_24_BITS(tempFloat));
+	bld_int(((*h)+3),FLOAT_LOW_24_BITS(tempFloat));
+	cell(to) = makecs((*h));
+	(*h) += 4;
       }
 #else
       *to = from;
@@ -271,6 +295,11 @@ copy_again : /* for tail recursion optimisation */
       CPtr pfirstel;
       Cell q ;
 
+      if (isinternstr_really(from)) {
+	*to = from;
+	return;
+      }
+
       /* first test whether from - which is an L - is actually the left over
 	 of a previously copied first list element
       */
@@ -283,6 +312,7 @@ copy_again : /* for tail recursion optimisation */
 	}
 
       q = *pfirstel;
+
       if (islist(q))
 	{
 	  CPtr p;
@@ -294,8 +324,6 @@ copy_again : /* for tail recursion optimisation */
 	      return;
 	    }
 	}
-
-
 
       /* this list cell has not been copied before */
       /* now be careful: if the first element of the list to be copied
@@ -321,18 +349,21 @@ copy_again : /* for tail recursion optimisation */
 	    *pfirstel = makelist((CPtr)to);
 	    findall_copy_to_heap(CTXTc q,to,h);
 	  }
-
 	from = *(pfirstel+1) ; to++ ;
 	goto copy_again ;
       }
     }
-
+	      
     case XSB_STRUCT :
       {
 	CPtr pfirstel;
 	Cell newpsc;
 	int ar;
     
+	if (isinternstr(from) && isinternstr_really(from)) {
+	  *to = from;
+	  return;
+	}
 	pfirstel = (CPtr)cs_val(from);
 	if ( cell_tag((*pfirstel)) == XSB_STRUCT )
 	  {
@@ -506,8 +537,12 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 	  /* first test whether from - which is an L - is actually the left over
 	     of a previously copied first list element
 	  */
+	  if (isinternstr_really(from)) {
+	    *to = from;
+	    return(size);
+	  }
 	  pfirstel = clref_val(from) ;
-	  if (! on_glstack(pfirstel))
+	  if (! on_glstack(pfirstel) && !isinternstr_really(*pfirstel))  // copied already
 	    {
 	      /* pick up the old value and copy it */
 	      *to = *pfirstel;
@@ -515,12 +550,12 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 	    }
 	  
 	  q = *pfirstel;
-	  if (islist(q))
+	  if (islist(q) && !isinternstr_really(q))
 	    {
 	      CPtr p;
 	      
 	      p = clref_val(q);
-	      if (! on_glstack(p))
+	      if (! on_glstack(p))  // copied already or interned
 		{
 		  *to = q;
 		  return(size);
@@ -556,10 +591,9 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 		if (s < 0) return(-1) ;
 		size += s + 2 ;
 	      }
-
-	    from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
-	    goto copy_again ;
 	  }
+	  from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
+	  goto copy_again ;
 	}
 	
       case XSB_STRUCT :
@@ -568,6 +602,11 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 	  Cell newpsc;
 	  int ar ;
     
+	  if (isinternstr(from) && isinternstr_really(from)) {
+	    *to = from;
+	    return(size);
+	  }
+
 	  pfirstel = (CPtr)cs_val(from) ;
 	  if ( cell_tag((*pfirstel)) == XSB_STRUCT )
 	    {
@@ -734,8 +773,11 @@ int findall_get_solutions(CTXTdecl)
   
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   
-  from = *(p->first_chunk+1) ; /* XSB_Deref not necessary */
+  //  from = *(p->first_chunk+1) ; /* XSB_Deref not necessary */
+  from = *(p->termptr);
+  //  printf("e1 fcth\n");  print_term(stdout,from,1,(long)flags[WRITE_DEPTH]);printf("\n");
   findall_copy_to_heap(CTXTc from,(CPtr)arg1,&hreg) ; /* this can't fail */
+  //  print_term(stdout,arg1,1,(long)flags[WRITE_DEPTH]);printf("\n\n");
   *(CPtr)arg2 = *(p->tail) ; /* no checking, no trailing */
   findall_free(CTXTc cur_f) ;
   return TRUE;
@@ -777,9 +819,9 @@ Integer term_size(CTXTdeclc Cell term)
 	XSB_Deref(term) ;
 	size += term_size( CTXTc term ) ;
       }
-    }
-    term = *++pfirstel ; XSB_Deref(term) ;
-    goto recur;
+      term = *++pfirstel ; XSB_Deref(term) ;
+      goto recur;
+    } else return size;
   }
   case XSB_ATTV: {
     CPtr pfirstel;
@@ -879,11 +921,12 @@ copy_again : /* for tail recursion optimisation */
 	/* first test whether from - which is an L - is actually the left over
 	   of a previously copied first list element
 	*/
+	if (isinternstr(from)) {*to = from; return;} // DSWDSW
 	pfirstel = clref_val(from) ;
 #ifndef MULTI_THREAD
 	if (pfirstel >= hreg)
 #else
-        if ( ((CPtr)pfirstel >= hreg) && ((CPtr)pfirstel < (CPtr)glstack.high) )
+	if ( ((CPtr)pfirstel >= hreg) && ((CPtr)pfirstel < (CPtr)glstack.high) )
 #endif
 	  {
 	    /* pick up the old value and copy it */
@@ -979,6 +1022,8 @@ copy_again : /* for tail recursion optimisation */
 	CPtr pfirstel ;
 	Cell newpsc;
 	int ar ;
+
+	if (isinternstr(from)) {*to = from; return;} // DSWDSW
 
 	pfirstel = (CPtr)cs_val(from) ;
 	if ( cell_tag((*pfirstel)) == XSB_STRUCT )

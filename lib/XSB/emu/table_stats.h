@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: table_stats.h,v 1.19 2011/05/20 21:26:43 tswift Exp $
+** $Id: table_stats.h,v 1.19 2011-05-20 21:26:43 tswift Exp $
 ** 
 */
 

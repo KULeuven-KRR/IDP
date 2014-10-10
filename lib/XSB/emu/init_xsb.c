@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: init_xsb.c,v 1.190 2013/04/17 22:02:35 tswift Exp $
+** $Id: init_xsb.c,v 1.190 2013-04-17 22:02:35 tswift Exp $
 ** 
 */
 
@@ -77,7 +77,9 @@
 #include "cinterf.h"
 #include "storage_xsb.h"
 #include "orient_xsb.h"
-/*-----------------------------------------------------------------------*/
+#include "token_defs_xsb.h"
+
+/*-----------------------------------------------------------------------*/   
 
 /* Sizes of the Data Regions in K-byte blocks
    ------------------------------------------ */
@@ -162,6 +164,7 @@ Cell dynfail_inst;
 //Cell trie_fail_unlock_inst;
 Cell halt_inst;
 Cell proceed_inst;
+Cell completed_trie_member_inst;
 byte *check_interrupts_restore_insts_addr;
 
 extern void reset_stat_total(void); 
@@ -187,7 +190,9 @@ static void display_file(char *infile_name)
   }
   if (flags[LOG_ALL_FILES_USED]) {
     char current_dir[MAX_CMD_LEN];
-    getcwd(current_dir, MAX_CMD_LEN-1);
+    char *dummy; /* to squash warnings */
+    dummy = getcwd(current_dir, MAX_CMD_LEN-1);
+    SQUASH_LINUX_COMPILER_WARN(dummy) ; 
     xsb_log("%s: %s\n",current_dir,infile_name);
   }
   while (fgets(buffer, MAXBUFSIZE-1, infile) != NULL)
@@ -297,16 +302,19 @@ static int init_open_files(void)
   open_files[0].io_mode = 'r';
   open_files[0].stream_type = CONSOLE_STREAM;
   open_files[0].file_name = standard_input_glc;
+  open_files[0].charset = (int)flags[CHARACTER_SET];
 
   open_files[1].file_ptr = stdout;
   open_files[1].io_mode = 'w';
   open_files[1].stream_type = CONSOLE_STREAM;
   open_files[1].file_name = standard_output_glc;
+  open_files[1].charset = (int)flags[CHARACTER_SET];
 
   open_files[2].file_ptr = stderr;
   open_files[2].io_mode = 'w';
   open_files[2].stream_type = CONSOLE_STREAM;
   open_files[2].file_name = standard_error_glc;
+  open_files[2].charset = (int)flags[CHARACTER_SET];
 
   /* stream for xsb warning msgs */
   if ((warn_fd = dup(fileno(stderr))) < 0)
@@ -316,6 +324,7 @@ static int init_open_files(void)
   open_files[3].io_mode = 'w';
   open_files[3].stream_type = CONSOLE_STREAM;
   open_files[3].file_name = standard_warning_glc;
+  open_files[3].charset = (int)flags[CHARACTER_SET];
 
   /* stream for xsb normal msgs */
   if ((msg_fd = dup(fileno(stderr))) < 0)
@@ -325,6 +334,7 @@ static int init_open_files(void)
   open_files[4].io_mode = 'w';
   open_files[4].stream_type = CONSOLE_STREAM;
   open_files[4].file_name = standard_message_glc;
+  open_files[4].charset = (int)flags[CHARACTER_SET];
 
   /* stream for xsb debugging msgs */
   if ((dbg_fd = dup(fileno(stderr))) < 0)
@@ -334,6 +344,7 @@ static int init_open_files(void)
   open_files[5].io_mode = 'w';
   open_files[5].stream_type = CONSOLE_STREAM;
   open_files[5].file_name = standard_debug_glc;
+  open_files[5].charset = (int)flags[CHARACTER_SET];
 
   /* stream for xsb feedback msgs */
   if ((fdbk_fd = dup(fileno(stdout))) < 0)
@@ -343,6 +354,7 @@ static int init_open_files(void)
   open_files[6].io_mode = 'w';
   open_files[6].stream_type = CONSOLE_STREAM;
   open_files[6].file_name = standard_feedback_glc;
+  open_files[6].charset = (int)flags[CHARACTER_SET];
 
   /* NT doesn't seem to think that dup should preserve the buffering mode of
      the original file. So we make all new descriptors unbuffered -- dunno if
@@ -386,6 +398,8 @@ static int process_long_option(char *option,int *ctr,char *argv[],int argc)
     flags[BANNER_CTL] *= QUIETLOAD;
   } else if (0==strcmp(option, "noprompt")) {
     flags[BANNER_CTL] *= NOPROMPT;
+  } else if (0==strcmp(option, "nofeedback")) {
+    flags[BANNER_CTL] *= NOFEEDBACK;
   } else if (0==strcmp(option, "shared_predicates")) {
     flags[PRIVSHAR_DEFAULT] = DEFAULT_SHARING;
   } else if (0==strcmp(option, "help")) {
@@ -494,23 +508,22 @@ FILE * input_read_stream = NULL;
 FILE * input_write_stream = NULL;
 
 int pipe_input_stream() {
-    /* create a pipe for the input. Pass XSB the read-end of this pipe, and
-       place the write-end into stream_input_write  */
-    int fileDescriptors[2] = {0,0};
+  /* create a pipe for the input. Pass XSB the read-end of this pipe, and
+     place the write-end into stream_input_write  */
+  int fileDescriptors[2] = {0,0};
 #ifdef WIN_NT
-    if (_pipe(fileDescriptors, 256, _O_TEXT) == 0) { 
-
+  if (_pipe(fileDescriptors, 256, _O_TEXT) == 0) { 
 #else
-    if (pipe(fileDescriptors) == 0) {
+  if (pipe(fileDescriptors) == 0) {
 #endif
-        fclose(stdin);
-        input_read_stream = fdopen(fileDescriptors[0], "r");
-        *stdin = *input_read_stream;
-
-        input_write_stream = fdopen(fileDescriptors[1], "w");
-        return 0;
-	}
-    return 1;
+    fclose(stdin);
+    input_read_stream = fdopen(fileDescriptors[0], "r");
+    *stdin = *input_read_stream;
+    
+    input_write_stream = fdopen(fileDescriptors[1], "w");
+    return 0;
+  }
+  return 1;
 }
 
 static size_t get_memarea_size( char *s )
@@ -525,8 +538,7 @@ static size_t get_memarea_size( char *s )
 
         /* note : the sizes of the memory areas of XSB are kept in KiloBytes */
 
-	switch( *endptr )
-	{
+	switch( *endptr ) {
 		case 0:
 		case 'k':
 		case 'K':
@@ -545,10 +557,10 @@ static size_t get_memarea_size( char *s )
 
 /*==========================================================================*/
 /* Initialize System Parameters: This is done only on process start
- * up, not on thread startup.   */
-
-    char *init_para(CTXTdeclc int flag, int argc, char *argv[])
-{
+** up, not on thread startup. 
+*/
+ 
+char *init_para(CTXTdeclc int flag, int argc, char *argv[]) {
   int i;
   char warning[80];
   /* Boot module is usually the loader that loads the Prolog code of XSB.
@@ -565,6 +577,13 @@ static size_t get_memarea_size( char *s )
   num_deadlocks = 0;
 #endif
 
+  /* init_open_files needs this flag set. */
+#ifdef WIN_NT
+  flags[CHARACTER_SET] = CP1252;  //LATIN_1;
+#else
+  flags[CHARACTER_SET] = UTF_8;
+#endif
+  
   init_open_files();
 
   /* init statistics. structures */
@@ -612,6 +631,8 @@ static size_t get_memarea_size( char *s )
   }
 
   pflags[TABLING_METHOD] = VARIANT_EVAL_METHOD;
+
+  flags[ERRORS_WITH_POSITION] = 0;
 
   /* Modify Parameters Using Command Line Options
      -------------------------------------------- */
@@ -829,7 +850,12 @@ static size_t get_memarea_size( char *s )
     case 'v':
       version_message();
       break;
-    case '-': /* this was a long option of the form --optionname */
+    case '-':
+      if (0==strcmp(argv[i]+2, "ignore")) {
+	/* long options of the form --ignore */
+	i = argc;
+      } else
+	/* long options of the form --optionname */
       process_long_option(argv[i]+2,&i,argv,argc);
       break;
     case 'p':
@@ -1499,6 +1525,7 @@ void init_symbols(CTXTdecl)
   cell_opcode(&check_complete_inst) = check_complete;
   cell_opcode(&hash_handle_inst) = hash_handle;
   cell_opcode(&trie_fail_inst) = trie_fail;
+  cell_opcode(&completed_trie_member_inst) = completed_trie_member;    
 
   check_interrupts_restore_insts_addr = calloc((3+1),sizeof(Integer));
   write_byte(check_interrupts_restore_insts_addr,&Loc,check_interrupt);

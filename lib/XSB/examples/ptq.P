@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: ptq.P,v 1.3 2010/08/19 15:03:37 spyrosh Exp $
+** $Id: ptq.P,v 1.3 2010-08-19 15:03:37 spyrosh Exp $
 ** 
 */
 
@@ -27,7 +27,7 @@
 
 :- import append/3, member/2 from basics.
 :- import abolish_table_info/0 from machine.
-:- import numbervars/3 from numbervars.
+:- import numbervars/3 from num_vars.
 :- import parse/2, lred/2, lwrite/1 from parser.
 :- import lex/3 from ptqlex.
 :- import ex/2 from ptq_examples.

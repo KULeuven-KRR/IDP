@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: gc_copy.h,v 1.18 2011/05/18 19:21:40 dwarren Exp $
+** $Id: gc_copy.h,v 1.18 2011-05-18 19:21:40 dwarren Exp $
 ** 
 */
 

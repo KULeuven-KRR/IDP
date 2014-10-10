@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: modeinf.P,v 1.15 2013/01/08 14:16:49 dwarren Exp $
+** $Id: modeinf.P,v 1.15 2013-01-08 14:16:49 dwarren Exp $
 ** 
 */
 

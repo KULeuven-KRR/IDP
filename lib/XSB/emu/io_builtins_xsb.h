@@ -36,6 +36,7 @@ typedef struct  {
   int stream_type;
   int reposition;
   int eof_action;
+  int charset;
 #ifdef MULTI_THREAD
   pthread_mutex_t stream_mutex;
   int stream_mutex_owner;
@@ -76,20 +77,23 @@ extern stream_record open_files[];      /* Table of file pointers for open files
 
 extern void strclose( int ) ;
 
-extern int xsb_intern_fileptr(FILE *file,char *c,char *c2,char *c3);
+extern int xsb_intern_fileptr(FILE *file,char *c,char *c2,char *c3, int charset);
 extern int xsb_intern_file(char *c1,char *c2,int *i,char *strmode,int opennew);
 
-extern void write_quotedname(FILE *file, char *string);
+extern void write_quotedname(FILE *fptr, int charset, char *string);
 extern int double_quotes(char *string, char *new_string);
 extern xsbBool quotes_are_needed(char *string);
 
-Integer read_canonical_term(CTXTdeclc FILE *, STRFILE *, int);
+Integer read_canonical_term(CTXTdeclc int, int);
 
-void print_term_canonical(CTXTdeclc FILE *, Cell, int);
+void print_term_canonical(CTXTdeclc FILE *, int, Cell, int);
 
 extern int get_more_chunk(CTXTdecl);
 extern void findall_copy_to_heap(CTXTdeclc Cell, CPtr, CPtr *);
 extern int findall_init_c(CTXTdecl);
 extern void findall_free(CTXTdeclc int);
 
+extern int char_to_codepoint(int, byte **s_ptr);
+
 int unset_fileptr(FILE *stream);
+

@@ -23,7 +23,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-#include "util.h"
+#include "sgmlutil.h"
 /*
   #include "socketcall.h"
 */
@@ -2621,9 +2621,9 @@ process_end_element(dtd_parser *p, const ichar *decl)
   emit_cdata( p, TRUE);
 
 	
-  if ( (s=itake_name(dtd, decl, &id)) && *s == '\0' )
+  if ( (s=itake_name(dtd, decl, &id)) && *s == '\0' ) {
     return close_element(p, find_element(dtd, id), FALSE);
-
+  }
 
   if ( p->dtd->shorttag && *decl == '\0' ) /* </>: close current element */
     return close_current_element(p);
@@ -2660,7 +2660,6 @@ process_declaration(dtd_parser *p, const ichar *decl)
   const ichar *s;
   dtd *dtd = p->dtd;
                            
-
   /*Its either an opening or closing xml tag*/  
   if ( p->dmode != DM_DTD ) {
     if ( HasClass(dtd, *decl, CH_NAME) ) { 
@@ -2676,6 +2675,7 @@ process_declaration(dtd_parser *p, const ichar *decl)
     
     if ( p->on_decl )
       (*p->on_decl)(p, decl);
+
 
     if ( (s = isee_identifier(dtd, decl, "entity")) ) {
       process_entity_declaration(p, s);

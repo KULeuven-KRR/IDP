@@ -88,6 +88,8 @@ compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList).
 compile_f(pl, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, '.pl', Opts, ExList).
+compile_f(prolog, Base, Opts, ExList, Mod, _) :- !,
+	compile(Mod, Base, '.prolog', Opts, ExList).
 compile_f('c', Base, Opts, ExList, Mod, Dir) :- !,
 	compile_cH(Mod, Base, '.c ',Opts, ExList, Dir).
 compile_f('cpp', Base, Opts, ExList, Mod, Dir) :- !,
@@ -197,6 +199,19 @@ needs_recompile(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Obj) :-
 	).	  
 needs_recompile(pl, Base, Obj) :-
 	( str_cat(Base, '.pl', PFileName),
+	  file_time(Obj, OTime), 
+	  file_time(PFileName, PTime),
+	  OTime =< PTime
+	)
+	;
+	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
+	  file_time(Obj, OTime),
+	  %% If no header file exists, then HTime = 0
+	  file_time(HFileName, HTime), 
+	  OTime =< HTime
+	).	  
+needs_recompile(prolog, Base, Obj) :-
+	( str_cat(Base, '.prolog', PFileName),
 	  file_time(Obj, OTime), 
 	  file_time(PFileName, PTime),
 	  OTime =< PTime
@@ -758,7 +773,10 @@ do_assert_and_fail(Term,Dir) :-
 		NArity is Arity+1
 	    ),
 	    (Term = (_ :- Body)
-	     ->	    goal_cut_trans(Body,Nbody,Cutpoint),
+	     ->	    (var(Body)
+		     ->	    Nbody = call(Body)
+		     ;	    goal_cut_trans(Body,Nbody,Cutpoint)
+		    ),
 		    (Body \== Nbody
 		     ->	    MHead =.. Hlist,
 			    append(Hlist,[Cutpoint],Nhlist),
@@ -1053,3 +1071,5 @@ if_file_loaded(FileName) :-
 		)
 	 ;      instantiation_error(if_file_loaded/1,1)
 	).
+
+is_loaded(FilePath) :- consult_file_loaded(FilePath); load_dyn_file_loaded(FilePath,_).

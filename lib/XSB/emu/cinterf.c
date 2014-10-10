@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: cinterf.c,v 1.115 2013/05/02 17:36:17 dwarren Exp $
+** $Id: cinterf.c,v 1.116 2013-05-06 21:10:24 dwarren Exp $
 **
 */
 
@@ -54,6 +54,7 @@
 #include "orient_xsb.h"
 #include "loader_xsb.h"
 #include "thread_xsb.h"
+#include "cell_xsb_i.h"
 
 #ifdef WIN_NT
 #ifndef fileno
@@ -70,7 +71,18 @@
 
 /* the following really belongs somewhere else */
 extern char *expand_filename(char *);
-extern void xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var);
+DllExport void call_conv  xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var)
+{
+  if (var >= (CPtr)glstack.low && var <= top_of_heap)
+    sprintf(sptr, "_h%" Cellfmt, ((Cell)var-(Cell)glstack.low+1)/sizeof(CPtr));
+  else {
+    if (var >= top_of_localstk && var <= (CPtr)glstack.high)
+      sprintf(sptr, "_l%" Cellfmt, ((Cell)glstack.high-(Cell)var+1)/sizeof(CPtr));
+    else sprintf(sptr, "_%p", var);   /* Should never happen */
+  }
+}
+
+//DllExport extern void xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var);
 
 
 DllExport char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
@@ -484,7 +496,8 @@ DllExport void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
 
 DllExport xsbBool call_conv is_charlist(prolog_term term, int *size)
 {
-  int escape_mode=FALSE, head_char, head_int;
+  int escape_mode=FALSE, head_char;
+  Integer head_int;
   prolog_term list, head;
 
   list = term;
@@ -1228,15 +1241,15 @@ int xsb_answer_string(CTXTdeclc VarString *ans, char *sep)
   return 0;
 }
 
+static long lastWarningStart = 0L;
 
 /* Should be obsolete now that parser is returning proper error
    messages */
-static long lastWarningStart = 0L;
-static inline void updateWarningStart(void)
-{
-  if(flags[STDERR_BUFFERED])
-  	lastWarningStart = ftell(stderr);
-}
+// static inline void updateWarningStart(void)
+// {
+//   if(flags[STDERR_BUFFERED])
+//   	lastWarningStart = ftell(stderr);
+// }
 
 /*********************************************************************************************/
 
@@ -1496,7 +1509,7 @@ DllExport int call_conv pipe_xsb_stdin() {
 DllExport int call_conv writeln_to_xsb_stdin(char * input){
     extern FILE * input_write_stream;
     fprintf(stdout, "\n");
-    fprintf(input_write_stream, "%s\n", input);
+    fprintf(input_write_stream, "%s\n", input);  /* write in current coding??*/
     fflush(input_write_stream);
     return 0;
 }

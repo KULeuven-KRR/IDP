@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: packaging.H,v 1.9 2011/04/15 16:05:00 dwarren Exp $
+** $Id: packaging.H,v 1.9 2011-04-15 16:05:00 dwarren Exp $
 ** 
 */
 

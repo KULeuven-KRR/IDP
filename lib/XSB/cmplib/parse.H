@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: parse.H,v 1.54 2012/10/10 22:29:02 tswift Exp $
+** $Id: parse.H,v 1.54 2012-10-10 22:29:02 tswift Exp $
 ** 
 */
 
@@ -27,6 +27,7 @@
 :- export
 	register_xsb_preprocessor/2,
 	unregister_xsb_preprocessor/1,
+	unset_preprocessing_done/0,
 	xppdump_is_on/0,
 	xpp_is_off/0,
 	set_xpp_off/0,
@@ -36,8 +37,9 @@
 :- export get_p_mod/3, %%change_multifile_directive/3, 
 	xpp_process_file/3, xpp_process_file/4, gpp_process_file/3,
 	open_or_xpp_file/1,
-	open_or_xpp_file/2, xpp_include_dir/1,
+	open_or_xpp_file/2, xpp_include_dir/1, gpp_include_dir/1,
 	xpp_options/1,
+	gpp_options/1,
 	enqueue_preprocessor/1,
 	dequeue_preprocessor/1,
 	'_$multifile'/1, '_$multifile1'/1,
@@ -56,7 +58,8 @@
 	error/1, message/1, option/1, setoptions1/1, warning/1
    from auxlry.
 
-:- import append/3, memberchk/2, log_ith/3, member/2 from basics.
+:- import append/3, memberchk/2, log_ith/3, member/2, copy_term/2 from basics.
+:- import ith/3 from basics.
 
 :- import inline_predicate/2 from builtin.
 
@@ -81,7 +84,7 @@
 
 :- import mpa_to_skel/2 from file_op.
 
-:- import conset/2, conget/2 from gensym.
+:- import conset/2, conget/2, gennum/1, prepare/1 from gensym.
 
 :- import add_hilog_symbol/1 from hilogsym.
 
@@ -89,6 +92,7 @@
 
 :- import stat_flag/2, stat_set_flag/2, slash/1 from machine.
 :- import file_read_canonical/3 from machine.
+:- import conpsc/2, term_new/2 from machine.
 
 :- import findall/3 from setof.
 
@@ -105,10 +109,12 @@
 	  call/1, compound/1,
 	  is_most_general_term/1, number/1, atom_codes/2
      from standard.
+:- import throw/1 from standard.
 
 :- import file_read/3 from xsb_read.
 
 :- import standard_symbol/3 from std_xsb.
+:- import standard_metapredicate/3 from std_xsb.
 
 :- import concat_atom/2 from string.
 

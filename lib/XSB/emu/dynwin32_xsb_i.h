@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: dynwin32_xsb_i.h,v 1.27 2012/10/12 16:42:57 tswift Exp $
+** $Id: dynwin32_xsb_i.h,v 1.27 2012-10-12 16:42:57 tswift Exp $
 ** 
 */
 

@@ -79,8 +79,6 @@ counter abol_subg_ctr,abol_pred_ctr,abol_all_ctr; /* statistics */
 
 /*----------------------------------------------------------------------*/
 
-extern void print_subgoal(CTXTdeclc FILE *, VariantSF);
-
 #include "ptoc_tag_xsb_i.h"
 #include "term_psc_xsb_i.h"
 
@@ -104,6 +102,12 @@ double total_table_gc_time = 0;
 
 #endif
 
+//#define DEBUG_ABOLISH 1
+#ifdef DEBUG_ABOLISH
+#define abolish_print(X) printf X
+#else
+#define abolish_print(X) 
+#endif
 
 /*----------------------------------------------------------------------*/
 /* various utility predicates and macros */
@@ -191,6 +195,11 @@ VariantSF get_variant_sf(CTXTdeclc Cell callTerm, TIFptr pTIF, Cell *retTerm) {
   int arity;
   BTNptr root, leaf;
   Cell callVars[MAX_VAR_SIZE + 1];
+
+  if (TIF_Interning(pTIF)) {
+    xsb_abort("[get_variant_sf] not supported for tables with interned ground terms: %s/%d\n",
+	   get_name(TIF_PSC(pTIF)),get_arity(TIF_PSC(pTIF)));
+  }
 
   root = TIF_CallTrie(pTIF);
   if ( IsNULL(root) )
@@ -679,6 +688,73 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool should_warn)
   mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
   //  printf("leaving delete_variant\n");
   }
+
+//---------------------------------------------------------------------------
+
+#include "tr_code_xsb_i.h"
+
+ALNptr traverse_variant_answer_trie(CTXTdeclc VariantSF subgoal, CPtr rootptr, CPtr leafptr) {
+  int node_stk_top = 0; Integer hash_offset;
+  BTNptr rnod, hash_bucket;   
+  BTHTptr hash_hdr, *hash_base;
+  BTNptr *freeing_stack = NULL;  int freeing_stack_size = 0;
+  ALNptr lastALN = (ALNptr) NULL; ALNptr thisALN;
+  BTNptr tempstk[1280]; int tempstk_top = 0;
+
+  // printf("starting leafptr to %p  %x\n",leafptr,BTN_Instr((BTNptr) *leafptr));
+
+  while (leafptr != rootptr) {
+    if (BTN_Instr((BTNptr) *leafptr) == 0x7a) {
+      tempstk[tempstk_top++] = (BTNptr) string_val(cell(breg+CP_SIZE+1));
+      tempstk[tempstk_top++] = (BTNptr) int_val(cell(breg+CP_SIZE));   // Number of bucket / flag
+    }
+    else {
+      tempstk[tempstk_top++] =  *(BTNptr *)leafptr;
+    }
+    //    printf("   setting leafptr to %p  %x\n",cp_prevbreg(leafptr),BTN_Instr((BTNptr) *cp_prevbreg(leafptr)));
+    leafptr = (CPtr)  cp_prevbreg(leafptr);
+  }
+  if (tempstk_top >= 1280) 
+      xsb_abort("Ran out of reversal stack space while logging for incremental tabling update\n");
+  while(tempstk_top > 0) {
+    push_node(tempstk[--tempstk_top]);
+  }
+
+  while (node_stk_top != 0) {
+      pop_node(rnod);
+      //      printf("rnod %p\n",rnod);
+      if ( IsHashHeader(rnod)) {
+	pop_node(hash_bucket);
+	hash_offset = (Integer) hash_bucket;
+	//	printf("hash header %p offset %d\n",rnod,hash_bucket);
+	hash_hdr = (BTHTptr) rnod;
+	hash_base = (BTHTptr *) BTHT_BucketArray(hash_hdr);
+	find_next_nonempty_bucket(hash_hdr,hash_base,hash_offset);
+	if (hash_offset != NO_MORE_IN_HASH) {
+	  push_node((BTNptr) hash_offset);
+	  push_node((BTNptr) hash_hdr);
+	  push_node(*(BTNptr *)(hash_base + hash_offset));
+	  //	  printf("pushed %p\n",hash_base + hash_offset);
+	}
+      }
+      /* Non nulls from abolish-- but keeping for now */
+      else { 
+	//	printf("not hash header\n");
+	if (BTN_Sibling(rnod) && IsNonNULL(BTN_Sibling(rnod)))
+	  { push_node(BTN_Sibling(rnod)); }
+	if ( !IsLeafNode(rnod) && IsNonNULL(BTN_Child(rnod))) {
+	  push_node(BTN_Child(rnod)) } 
+	else { /* leaf node */
+	  //	  printf("Trie traversal Leaf Node %p\n",rnod);
+	  New_ALN(subgoal,thisALN, rnod, lastALN);
+	  lastALN = thisALN;
+	}
+      }
+  }
+  return lastALN;
+} 
+
+//---------------------------------------------------------------------------
 
 /* Code to abolish tables for a variant predicate */
 /* Incremental recomputation seems to be implemented only for
@@ -1566,6 +1642,8 @@ int private_trie_intern(CTXTdecl) {
   Leaf = trie_intern_chk_ins(CTXTc term,&(itrie_array[index].root),
 				 &flag,check_cps_flag,expand_flag);
   switch_from_trie_assert;
+
+  SQUASH_LINUX_COMPILER_WARN(type);
   //  printf("root %p\n",itrie_array[index].root);
   if (Leaf) {
     ctop_int(CTXTc 3,(Integer)Leaf);
@@ -1634,6 +1712,7 @@ int private_trie_interned(CTXTdecl) {
       }
     }
   }
+  SQUASH_LINUX_COMPILER_WARN(type);
   if ((*trie_root_addr != NULL) && (!((Integer) *trie_root_addr & 0x3))) {
     XSB_Deref(trie_term);
     XSB_Deref(Leafterm);
@@ -1722,6 +1801,7 @@ void private_trie_unintern(CTXTdecl)
       safe_delete_branch(Leaf);
     }
   }
+  SQUASH_LINUX_COMPILER_WARN(type);
   switch_from_trie_assert;
 }
 
@@ -1753,10 +1833,6 @@ void shas_trie_unintern(CTXTdecl)
 
 #define CAN_RECLAIM 0
 #define CANT_RECLAIM 1
-
-#define is_trie_instruction(cp_inst) \
- ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
-	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
 
 int interned_trie_cps_check(CTXTdeclc BTNptr root) 
 {
@@ -2220,8 +2296,7 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 {
   TIFptr tif_ptr;
 
-  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf))) { 
-    //&& ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) & ((int) TN_Instr(pLeaf) != trie_fail) ) {
     pLeaf = BTN_Parent(pLeaf);
   }
 
@@ -2242,8 +2317,7 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 VariantSF get_subgoal_frame_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf) 
 {
 
-  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) ) {
-    // &&  ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && ((int) TN_Instr(pLeaf) != trie_fail) ) {
     pLeaf = BTN_Parent(pLeaf);
   }
 
@@ -2287,7 +2361,7 @@ BTNptr get_call_trie_from_subgoal_frame(CTXTdeclc VariantSF subgoal)
    for Deltfs for this predicate.  Depending on the value of
    *chain_begin this can be used for either private or shared
    predicates */
-DelTFptr inline New_DelTF_Pred(CTXTdeclc TIFptr pTIF, DelTFptr *chain_begin, xsbBool Warn) {		      
+static inline DelTFptr New_DelTF_Pred(CTXTdeclc TIFptr pTIF, DelTFptr *chain_begin, xsbBool Warn) {		      
   DelTFptr pDTF;
   
   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	
@@ -2309,7 +2383,7 @@ DelTFptr inline New_DelTF_Pred(CTXTdeclc TIFptr pTIF, DelTFptr *chain_begin, xsb
    return pDTF;
 }
 
-DelTFptr inline New_DelTF_Subgoal(CTXTdeclc TIFptr pTIF, VariantSF pSubgoal,
+static inline DelTFptr New_DelTF_Subgoal(CTXTdeclc TIFptr pTIF, VariantSF pSubgoal,
 			      DelTFptr *chain_begin, xsbBool Warn) { 
   DelTFptr pDTF;
 
@@ -2463,7 +2537,7 @@ void check_insert_private_deltf_subgoal(CTXTdeclc VariantSF subgoal,xsbBool Warn
 /* - - - - - - - - - - */
 
 /* used for transitive abolishes */
-void inline mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
+static inline void mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
   Cell tmp_cell;
   VariantSF subgoal;
 
@@ -2480,7 +2554,7 @@ void inline mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
     }
   }
 
-void inline unmark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
+static inline void unmark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
   Cell tmp_cell;
   VariantSF subgoal;
 
@@ -2493,6 +2567,7 @@ void inline unmark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
   }
 }
 
+/* Used for predicate-level abolishes */
 void mark_cp_tabled_preds(CTXTdecl)
 {
   CPtr cp_top1,cp_bot1 ;
@@ -2509,7 +2584,8 @@ void mark_cp_tabled_preds(CTXTdecl)
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
        gc_mark_tif(tif);
       }
@@ -2535,7 +2611,8 @@ void unmark_cp_tabled_preds(CTXTdecl)
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 	gc_unmark_tif(tif);
       }
@@ -2569,7 +2646,7 @@ int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) {
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
 	if (subgoal == get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode)) 
 	  return CANT_RECLAIM;
       }
@@ -2590,7 +2667,7 @@ int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) {
 }
 
 /* used for transitive abolishes */
-void inline mark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
+static inline void mark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
   Cell tmp_cell;
   VariantSF subgoal;
 
@@ -2607,7 +2684,7 @@ void inline mark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
     }
   }
 
-void inline unmark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
+static inline void unmark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
   Cell tmp_cell;
   VariantSF subgoal;
 
@@ -2639,7 +2716,8 @@ void mark_cp_tabled_subgoals(CTXTdecl) {
       //  printf("found trie instruction %x %d\n",cp_inst,
       //                 TSC_TrieType(((BTNptr)string_val(*(cp_top1+CP_SIZE+1)))));
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	//	printf("is in answer trie\n");
 	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
 	//	printf("Marking ");print_subgoal(CTXTc stddbg, subgoal);printf("\n");
@@ -2667,7 +2745,8 @@ void unmark_cp_tabled_subgoals(CTXTdecl)
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
 	GC_UNMARK_SUBGOAL(subgoal);
       }
@@ -2860,7 +2939,7 @@ int done_subgoal_stack_size = 0;
 
 #define done_subgoal_stack_increment 1000
 
-void inline push_done_subgoal_node(CTXTdeclc VariantSF Subgoal) {				
+static inline void push_done_subgoal_node(CTXTdeclc VariantSF Subgoal) {				
     if (done_subgoal_stack_top >= done_subgoal_stack_size) {		
       size_t old_done_subgoal_stack_size = done_subgoal_stack_size; 
       done_subgoal_stack_size = done_subgoal_stack_size + done_subgoal_stack_increment; 
@@ -2985,7 +3064,6 @@ void abolish_table_call_single(CTXTdeclc VariantSF subgoal) {
     Psc psc;
     int action;
 
-    //    printf("in abolish_table_call_single\n");
     tif = subg_tif_ptr(subgoal);
     psc = TIF_PSC(tif);
 
@@ -3093,17 +3171,20 @@ void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
 
   start_table_gc_time(timer);
 
-  //  printf("in abolish_table_call\n");
+#ifdef DEBUG_ABOLISH
+  printf("abolish_table_call called: "); print_subgoal(stddbg, subgoal); printf("\n");
+#endif
+
   if (IsVariantSF(subgoal) 
       &&  (varsf_has_conditional_answer(subgoal) 
              && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
    	          || !(invocation_flag == ABOLISH_TABLES_DEFAULT 
 		       && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_SINGLY)))) {
-    //    printf("calling atc\n");
+    abolish_print(("calling atc_t\n"));
     abolish_table_call_transitive(CTXTc subgoal);
     }
   else {
-    //    printf("calling ats\n");
+    abolish_print(("calling atc_s\n"));
     abolish_table_call_single(CTXTc subgoal);
   }
 
@@ -3136,7 +3217,7 @@ void unvisit_done_tifs(CTXTdecl) {
   }
 }
 
-void inline push_done_tif_node(CTXTdeclc TIFptr node) {					\
+static inline void push_done_tif_node(CTXTdeclc TIFptr node) {					\
     if (done_tif_stack_top >= done_tif_stack_size) {			\
       size_t old_done_tif_stack_size = done_tif_stack_size;	\
       done_tif_stack_size = done_tif_stack_size + done_tif_stack_increment;	\
@@ -3265,7 +3346,8 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	if (psc == get_psc_for_answer_trie_cp(CTXTc trieNode)) {
 	  return CANT_RECLAIM;
 	}
@@ -3295,7 +3377,8 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
 
   Don't need a warning flag for this predicate -- it must always warn
 */
-inline void abolish_table_pred_single(CTXTdeclc TIFptr tif, int cps_check_flag) {
+static inline void abolish_table_pred_single(CTXTdeclc TIFptr tif, int cps_check_flag) {
+  //void abolish_table_pred_single(CTXTdeclc TIFptr tif, int cps_check_flag) {
   int action;
 
   if(get_incr(TIF_PSC(tif))) {  /* incremental */
@@ -3340,7 +3423,8 @@ inline void abolish_table_pred_single(CTXTdeclc TIFptr tif, int cps_check_flag) 
   }
 }  
 
-inline void abolish_table_pred_transitive(CTXTdeclc TIFptr tif, int cps_check_flag) {
+static inline void abolish_table_pred_transitive(CTXTdeclc TIFptr tif, int cps_check_flag) {
+  //void abolish_table_pred_transitive(CTXTdeclc TIFptr tif, int cps_check_flag) {
   int action;
 
   find_pred_backward_dependencies(CTXTc tif);
@@ -3397,7 +3481,8 @@ inline void abolish_table_pred_transitive(CTXTdeclc TIFptr tif, int cps_check_fl
 inline void abolish_table_predicate_switch(CTXTdeclc TIFptr tif, Psc psc, int invocation_flag, 
 					  int cps_check_flag) {
 
-  //  printf("atps %s/%d\n",get_name(psc),get_arity(psc));
+  abolish_print(("abolish_table_pred called: %s/%d\n",get_name(psc),get_arity(psc)));
+
   if (get_variant_tabled(psc)
       && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
 	  || (invocation_flag == ABOLISH_TABLES_DEFAULT 
@@ -3443,7 +3528,7 @@ inline void abolish_table_predicate(CTXTdeclc Psc psc, int invocation_flag) {
   through a different table altogether, and we needn't mark.
 */
 
-void inline mark_deltfs(CTXTdeclc TIFptr tif, VariantSF subgoal) {
+static inline void mark_deltfs(CTXTdeclc TIFptr tif, VariantSF subgoal) {
   BTNptr call_trie;
   DelTFptr dtf;
 
@@ -3473,7 +3558,7 @@ void inline mark_deltfs(CTXTdeclc TIFptr tif, VariantSF subgoal) {
   }
 }
 
-void inline gc_mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
+static inline void gc_mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
   Cell tmp_cell;
   VariantSF subgoal;
 
@@ -3503,8 +3588,8 @@ void mark_tabled_preds(CTXTdecl) {
     // Want trie insts, but need to distinguish asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
-
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
@@ -3537,8 +3622,8 @@ void mark_private_tabled_preds(CTXTdecl) {
     // Want trie insts, but need to distinguish asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
-      if (IsInAnswerTrie(trieNode)) {
-
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 	if (!get_shared(TIF_PSC(tif))) {
@@ -3820,7 +3905,8 @@ int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate)
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	//      if (IsInAnswerTrie(trieNode)) {
 	if (get_private(get_psc_for_answer_trie_cp(CTXTc trieNode)) == isPrivate) {
 	  return CANT_RECLAIM;
 	}
@@ -4086,7 +4172,9 @@ void abolish_all_tables_cps_check(CTXTdecl)
     if ( is_trie_instruction(cp_inst)) {
       trieNode = TrieNodeFromCP(cp_top1);
       /* Here, we want call_trie_tt,basic_answer_trie_tt,ts_answer_trie_tt"*/
-      if (IsInAnswerTrie(trieNode)) {
+      if (IsInAnswerTrie(trieNode) || cp_inst == trie_fail) {
+	abolish_print(("[abolish_all_tables/0] Illegal table operation"
+		       "\n\t Backtracking through tables to be abolished.\n"));
 	xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		  "\n\t Backtracking through tables to be abolished.");
       }
@@ -4112,6 +4200,8 @@ inline
 void abolish_all_tables(CTXTdeclc int action) {
   declare_timer
   TIFptr pTIF;
+
+  abolish_print(("abolish all tables called\n"));
 
   start_table_gc_time(timer);
 
@@ -4974,8 +5064,6 @@ int  get_residual_sccs(CTXTdeclc Cell listterm) {
     return ret;
 }
 
-extern void ctop_tag(CTXTdeclc int, Cell);
-
  int pred_type, goal_type, answer_set_status;
  VariantSF goalSF = NULL, subsumerSF;
  Cell goalTerm;
@@ -4995,6 +5083,57 @@ forestLogBuffer forest_log_buffer_1;
 forestLogBuffer forest_log_buffer_2;
 forestLogBuffer forest_log_buffer_3;
 #endif
+
+Cell list_of_answers_from_answer_list(CTXTdeclc VariantSF sf,int as_length,int attv_length,ALNptr ALNlist) {
+  BTNptr leaf;
+  Cell listHead;   CPtr argvec1,oldhreg=NULL;
+  int i, isNew;   Psc ans_desig;
+  ALNptr ansPtr;
+  VariantSF undef_sf;
+    Pair undefPair;				      
+
+  //  print_subgoal(stdout, sf); printf("\n"); 
+
+  leaf = subg_leaf_ptr(sf);
+  ans_desig = get_ret_psc(2);
+  ansPtr = ALNlist;
+  undefPair = insert("brat_undefined", 0, pair_psc(insert_module(0,"xsbbrat")), &isNew); 
+  //  printf("tip %p\n",get_tip(CTXTc pair_psc(undefPair)));
+  undef_sf = TIF_Subgoals(get_tip(CTXTc pair_psc(undefPair)));
+
+  listHead = makelist(hreg);
+  while (ansPtr != 0) {
+    new_heap_free(hreg);  new_heap_free(hreg);
+    oldhreg=hreg-2;                          // ptr to car
+    new_heap_functor(hreg,ans_desig); 
+    follow(oldhreg) = makecs(oldhreg+2);
+    follow(hreg) = makecs(hreg+2);
+    hreg++; 
+    //    new_heap_free(hreg);
+    if (is_unconditional_answer(ALN_Answer(ansPtr))) {
+      //      printf("is unconditional\n");
+      new_heap_int(hreg,TRUE);
+    }
+    else {
+      //      printf("conditional answer\n");
+      new_heap_int(hreg,undef_sf);
+    }
+    new_heap_functor(hreg, get_ret_psc(as_length));
+    argvec1 = hreg;
+    for (i=0; i<as_length; i++)
+      bld_free(hreg+i);
+    hreg = hreg + as_length;
+    //    printf("ALN_answer %p\n",ALN_Answer(ansPtr));
+    load_solution_trie_notrail(CTXTc as_length, attv_length, argvec1, ALN_Answer(ansPtr));  // Need to handle attvs
+    follow((oldhreg+1)) = makelist(hreg);
+
+    ansPtr = ALN_Next(ansPtr);
+  }
+
+  follow(oldhreg+1) = makenil;
+  //  printf("---listhead--- ");  printterm(stddbg,listHead,80);printf("\n");
+  return listHead;
+}
 
 int table_inspection_function( CTXTdecl ) {
   switch (ptoc_int(CTXTc 1)) {
@@ -5033,7 +5172,7 @@ int table_inspection_function( CTXTdecl ) {
     bld_list(hreg,hreg+2);    hreg++;
     bld_int(hreg,4);  hreg++;              //          2
     new_heap_nil(hreg);
-    ctop_tag(CTXTc 3, temp);
+    //    ctop_tag(CTXTc 3, temp);
 
     break;
   }
@@ -5359,15 +5498,17 @@ case CALL_SUBS_SLG_NOT: {
 	TIF_SubgoalDepth(tip) = val;
       else if (property == ANSWER_DEPTH) 
 	TIF_AnswerDepth(tip) = val;
+      else if (property == INTERNING_GROUND)
+	TIF_Interning(tip) = val;
     }
     else  /* cant find tip */
-      xsb_permission_error(CTXTc "set peroperty","tif",term,
+      xsb_permission_error(CTXTc "set property","tif",term,
 			   "set_tif_property",3);
     break;
   }
 
   case GET_TIF_PROPERTY: { 
-      /* reg 2=psc, reg 3 = property to set, reg 4 = val */
+      /* reg 2=psc, reg 3 = property to get, reg 4 = val */
     Psc psc;
     TIFptr tip;
 
@@ -5375,7 +5516,7 @@ case CALL_SUBS_SLG_NOT: {
     int property = (int)ptoc_int(CTXTc 3);
 
     if ( isref(term) ) {
-      xsb_instantiation_error(CTXTc "set_tif_property/3",1);
+      xsb_instantiation_error(CTXTc "get_tif_property/3",1);
       break;
     }
     psc = term_psc(term);
@@ -5388,6 +5529,8 @@ case CALL_SUBS_SLG_NOT: {
 	ctop_int(CTXTc 4,TIF_SubgoalDepth(tip));
       else if (property == ANSWER_DEPTH) 
 	ctop_int(CTXTc 4,TIF_AnswerDepth(tip));
+      else if (property == INTERNING_GROUND)
+	ctop_int(CTXTc 4,TIF_Interning(tip));
     }
     else  /* cant find tip */
       return FALSE;
@@ -5397,7 +5540,7 @@ case CALL_SUBS_SLG_NOT: {
 
   case IMMED_ANS_DEPENDS_PTRLIST: {
     ASI asi;
-    DL current_dl;
+    DL current_dl = NULL;
     DE current_de;
     CPtr oldhreg = NULL;
     int  count = 0;
@@ -5405,7 +5548,7 @@ case CALL_SUBS_SLG_NOT: {
     reg[4] = makelist(hreg);
     new_heap_free(hreg);  new_heap_free(hreg);
     asi = (ASI) Child( (BTNptr) ptoc_int(CTXTc 2));
-    current_dl = asi_dl_list(asi);
+    if (asi) current_dl = asi_dl_list(asi);
     while (current_dl != NULL) {
       //      printf("DL: %p\n",current_dl);
       current_de = dl_de_list(current_dl);
@@ -5450,6 +5593,63 @@ case CALL_SUBS_SLG_NOT: {
     return get_residual_sccs(CTXTc ptoc_tag(CTXTc 2));
   }
 
+    //  case TEMP_FUNCTION: {
+    //    /* Input : Incall ; Output : Outcall */
+    //    VariantSF sf;
+    //    BTNptr leaf, root;
+    //    Cell callTermIn,ret, callTermOut; 
+    //    Psc psc; int i, arity;
+    //    CPtr argvec1;
+    //    ALNptr ansPtr;
+    //
+    //    callTermIn = ptoc_tag(CTXTc 2);
+    //    sf = get_call(CTXTc callTermIn, &ret); 
+    //    if ( IsNonNULL(sf) ) {
+    //      root = TIF_CallTrie(subg_tif_ptr(sf));
+    //      psc = term_psc(callTermIn);
+    //      arity = get_arity(psc);
+    //      callTermOut = makecs(hreg); 
+    //      bld_functor(hreg++, psc);
+    //      argvec1 = hreg;
+    //      for (i=0; i<arity; i++)
+    //	bld_free(hreg+i);
+    //      hreg = hreg + arity;
+    //
+    //      leaf = subg_leaf_ptr(sf);
+    //      load_subgoal_trie(arity, 0, argvec1, leaf);  // Need to handle attvs
+    //      ansPtr = ALN_Next(subg_ans_list_ptr(sf));
+    //      load_subgoal_trie(2, 0, (clref_val(ret) +1), ALN_Answer(ansPtr));  // Need to handle attvs
+    //
+    //      //      listHead = list_of_answers_from_answer_list(sf);
+    //
+      //      printterm(stddbg,(Cell) clref_val(listHead),8);printf("\n");	
+      //      ctop_tag(CTXTc 3, callTermOut);
+      //      ctop_tag(CTXTc 4, ret);
+      //      ctop_tag(CTXTc 3, listHead);
+      //      printf("lh %x clr %p *clr %x\n",listHead,clref_val(listHead),clref_val(*clref_val(listHead)));
+      //      printterm(stddbg,clref_val(listHead)+3,8);printf("\n");
+      //      for (i=1; i <= arity; i++) {
+	//	printf("lh %x clr %p *clr %x\n",listHead,clref_val(listHead),((CPtr) *clref_val(listHead)) +i);      
+      //	printterm(stddbg,(Cell) (clref_val(*clref_val(listHead))+i),8);printf("\n");
+      //	ctop_tag(CTXTc 3+i, clref_val(*clref_val(listHead))+i);
+      //      }
+    //  ]
+
+    //    return TRUE; 
+
+    //  }
+
+    //  case TEMP_FUNCTION_2: {
+    //    /* Input : Incall ; Output : Outcall */
+    //    VariantSF sf;
+    //    Cell callTermIn;
+    //
+    //    callTermIn = ptoc_tag(CTXTc 2);
+    //    sf = get_call(CTXTc callTermIn,NULL); 
+    //    if ( IsNonNULL(sf) ) {
+    //      find_the_visitors(sf);
+    //    }
+    //  }
   } /* switch */
   return TRUE;
 }

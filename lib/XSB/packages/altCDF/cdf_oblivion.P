@@ -10,6 +10,7 @@
 	delete_unattached_ext_things/0,
 	delete_unattached_ext_things/1,
 	delete_all_things_to_delete/0,
+	rename_one_subthing/2,
 	rename_things/1, rename_things/0.
 
 :- import
@@ -23,6 +24,7 @@
 :- import cdf_root/1, system_component/1 from cdf_init_cdf.
 
 :- import classHasAttr_ext/3, hasAttr_ext/3, allAttr_ext/3, minAttr_ext/4, maxAttr_ext/4 from usermod.
+:- import compdlrule/3 from usermod.
 
 :- import member/2 from basics.
 
@@ -382,6 +384,20 @@ rename_things :-
 	 newExtTerm(Fact),
 	 fail
 	).
+rename_things :- % in intensional rules
+	findall(changed_dlrule(Cmp,Head,Body,NewHead,NewBody),
+		update_dlrule(Cmp,Head,Body,NewHead,NewBody),
+		UpdateRules),
+	(member(changed_dlrule(Cmp,Head,Body,_,_),UpdateRules),
+	 retractall(compdlrule(Cmp,Head,Body)),
+	 fail
+	 ;
+	 member(changed_dlrule(Cmp,_,_,NewHead,NewBody),UpdateRules),
+	 assert(compdlrule(Cmp,NewHead,NewBody)),
+	 fail
+	 ;
+	 true
+	).
 rename_things :-
 	retractall(facts_to_delete(_)),
 	retractall(facts_to_add(_)),
@@ -455,6 +471,43 @@ cdf_term_ext_arg_rep(hasAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=rid(_,
 cdf_term_ext_arg_rep(classHasAttr_ext(A,X,B),X,hasAttr_ext(A,Y,B),Y) :- X=crid(_,_), Y=rid(_,_).
 cdf_term_ext_arg_rep(minAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=rid(_,_), Y=crid(_,_).
 cdf_term_ext_arg_rep(maxAttr_ext(A,X,B),X,classHasAttr_ext(A,Y,B),Y) :- X=rid(_,_), Y=crid(_,_).
+
+% update dlrules according to facts in things_to_rename.
+update_dlrule(Cmp,Head,Body,NewHead,NewBody) :-
+	compdlrule(Cmp,Head,Body),
+	rename_dlrule_head(Head,Cmp,NewHead),
+	rename_dlrule_body(Body,Cmp,NewBody),
+	(Head \== NewHead
+	 ->	true
+	 ;	Body \== NewBody
+	).
+
+rename_dlrule_head((CE1,CE2),Cmp,(NCE1,NCE2)) :- !,
+	rename_dlrule_head(CE1,Cmp,NCE1),
+	rename_dlrule_head(CE2,Cmp,NCE2).
+rename_dlrule_head(exists(Rid,Cid),_Cmp,exists(NRid,NCid)) :- !,
+	rename_if_nec(Rid,NRid),
+	rename_if_nec(Cid,NCid).
+rename_dlrule_head(component(Cmp),_,component(Cmp)).
+
+rename_dlrule_body((CE1,CE2),Cmp,(NCE1,NCE2)) :- !,
+	rename_dlrule_body(CE1,Cmp,NCE1),
+	rename_dlrule_body(CE2,Cmp,NCE2).
+rename_dlrule_body(not(Body),Cmp,not(NBody)) :- !,
+	rename_dlrule_body(Body,Cmp,NBody).
+rename_dlrule_body(exists(Rid,Cid),_Cmp,exists(NRid,NCid)) :- !,
+	rename_if_nec(Rid,NRid),
+	rename_if_nec(Cid,NCid).
+rename_dlrule_body(exists_immed(Rid,Cid),_Cmp,exists_immed(NRid,NCid)) :- !,
+	rename_if_nec(Rid,NRid),
+	rename_if_nec(Cid,NCid).
+rename_dlrule_body(Cid,_Cmp,NCid) :- Cid = cid(_,_), !,
+	rename_if_nec(Cid,NCid).
+
+
+rename_if_nec(Id,NId) :- things_to_rename(Id,NId), !.
+rename_if_nec(Id,Id).
+
 
 
 end_of_file.

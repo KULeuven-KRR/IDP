@@ -1,4 +1,4 @@
-/*  $Id: class.pl,v 1.3 2010/08/19 15:03:39 spyrosh Exp $
+/*  $Id: class.pl,v 1.3 2010-08-19 15:03:39 spyrosh Exp $
 
     Part of CLP(Q,R) (Constraint Logic Programming over Rationals and Reals)
 

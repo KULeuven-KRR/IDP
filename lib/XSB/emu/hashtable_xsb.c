@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: hashtable_xsb.c,v 1.19 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: hashtable_xsb.c,v 1.20 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -54,7 +54,7 @@
 */
 
 
-#define table_hash(val, length)    ((word)(val) % (length))
+#define table_hash(val, length)    ((UInteger)(val) % (length))
 
 #define get_top_bucket(htable,I) \
     	((xsbBucket *)(htable->table + (htable->bucket_size * I)))

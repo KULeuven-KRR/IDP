@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: slgdelay.h,v 1.42 2012/04/26 18:19:27 tswift Exp $
+** $Id: slgdelay.h,v 1.43 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -40,14 +40,14 @@
   Cell new_delay_cons_cell;						\
 									\
   new_delay_cons_cell = makelist(hreg);					\
-  sreg = hreg+2;							\
-  follow(hreg++) = makecs(sreg);					\
-  follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
-  new_heap_functor(sreg, delay_psc);					\
-  cell(sreg) = makeaddr(SUBGOAL); sreg++;				\
-  cell(sreg) = makeaddr(NEG_DELAY); sreg++;				\
-  cell(sreg) = makeaddr(NEG_DELAY); sreg++; /* NOT STRINGS */		\
-  hreg = sreg;								\
+  follow(hreg) = makecs(hreg+2);					\
+  follow(hreg+1) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
+  hreg += 2; 								\
+  bld_functor(hreg, delay_psc);						\
+  cell(hreg+1) = makeaddr(SUBGOAL);					\
+  cell(hreg+2) = makeaddr(NEG_DELAY); 					\
+  cell(hreg+3) = makeaddr(NEG_DELAY); /* NOT STRINGS */			\
+  hreg += 4;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
 }
     
@@ -67,14 +67,14 @@
   Cell new_delay_cons_cell;						\
 									\
   new_delay_cons_cell = makelist(hreg);					\
-  sreg = hreg + 2;							\
-  follow(hreg++) = makecs(sreg);					\
-  follow(hreg++) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
-  new_heap_functor(sreg, delay_psc);					\
-  cell(sreg++) = makeaddr(SUBGOAL);					\
-  cell(sreg++) = makeaddr(ANSWER);					\
-  follow(sreg++) = MAKE_SUBSF;						\
-  hreg = sreg;								\
+  follow(hreg) = makecs(hreg+2);					\
+  follow(hreg+1) = (delayreg == NULL) ? makenil : (Cell) delayreg;	\
+  hreg += 2; \
+  bld_functor(hreg, delay_psc);					\
+  cell(hreg+1) = makeaddr(SUBGOAL);					\
+  cell(hreg+2) = makeaddr(ANSWER);					\
+  cell(hreg+3) = MAKE_SUBSF;						\
+  hreg += 4; \
   delayreg = (CPtr) new_delay_cons_cell;				\
 }
 

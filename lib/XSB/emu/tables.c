@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tables.c,v 1.106 2013/04/17 22:02:35 tswift Exp $
+** $Id: tables.c,v 1.107 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -179,7 +179,7 @@ inline static  BTNptr newCallTrie(CTXTdeclc Psc predicate) {
   BTNptr pRoot;
 
   New_BTN( pRoot, CALL_TRIE_TT, TRIE_ROOT_NT, EncodeTriePSC(predicate),
-	   NULL, NULL );
+	   NULL, NULL, NULL );
   return pRoot;
 }
 
@@ -246,8 +246,8 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
          is complete.  Otherwise, dfs_outedges would have aborted */
 
       if(IsNonNULL(c) && (c->falsecount!=0)){
-	//	  printf("   recomputing (bit = %d) ",c->recomputable);
-	//	  print_subgoal(stddbg,sf);printf("\n");
+	//	 	  printf("   recomputing (rcomputable = %d) ",c->recomputable);
+	//  print_subgoal(stddbg,sf);printf("\n");
 	if (c->recomputable == COMPUTE_DEPENDENCIES_FIRST) {
 	  lazy_affected = empty_calllist();
 	  if ( !dfs_inedges(CTXTc c,  &lazy_affected, CALL_LIST_EVAL) ) {
@@ -384,7 +384,8 @@ int table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
 		       CallLookupResults *results) {
 
   TIFptr tif;
-  BTNptr leaf;
+  BTNptr leaf; callnodeptr cn;
+
   tif = CallInfo_TableInfo(*call_info);
   if ( IsNULL(TIF_CallTrie(tif)) )
     TIF_CallTrie(tif) = newCallTrie(CTXTc TIF_PSC(tif));
@@ -397,7 +398,10 @@ int table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
     leaf=CallLUR_Leaf(*results);
     if (CallLUR_VariantFound(*results)==0){
       /* new call */      
-      BTN_Child(leaf) = (BTNptr)makecallnode(NULL); 
+      cn = makecallnode(NULL); 
+      BTN_Child(leaf) = (BTNptr)cn;
+      callnode_tif_ptr(cn) = tif;
+      callnode_leaf_ptr(cn) = leaf;
       initoutedges((callnodeptr)BTN_Child(leaf));
     }
   }
@@ -907,7 +911,8 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    }									
    TIF_CallTrie(pTIF) = NULL;						
    TIF_Mark(pTIF) = 0;                                                  
-   TIF_Visited(pTIF) = 0;  
+   TIF_Visited(pTIF) = 0; 
+   TIF_Interning(pTIF) = 0;  /* for now; figure out how to set... DSWDSW */
    TIF_DelTF(pTIF) = NULL;						
    TIF_Subgoals(pTIF) = NULL;						
    TIF_NextTIF(pTIF) = NULL;						
@@ -970,32 +975,3 @@ VariantSF tnotNewSubConsSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo,VariantSF prod
 
 /*=========================================================================*/
 
-#if !defined(WIN_NT)
-inline 
-#endif
-#ifdef CONC_COMPL
-/* can't perform early completion for CONC_COMPL shared tables */
-void perform_early_completion(CTXTdeclc VariantSF ProdSF,CPtr ProdCPF) {
-    if( IsPrivateSF(ProdSF) )			
-    {   if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) 
-      	    tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst; 
-        mark_as_completed(ProdSF)				
-    }
-#else
-void perform_early_completion(CTXTdeclc VariantSF ProdSF,CPtr ProdCPF) {
-  //  printf("performing ec for ");print_subgoal(stddbg,ProdSF);printf("\n");
-  if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) 	
-    tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   	
-  mark_as_completed(ProdSF);					
-  if (flags[CTRACE_CALLS])  { 
-    sprint_subgoal(CTXTc forest_log_buffer_1,0,ProdSF);     
-    fprintf(fview_ptr,"cmp(%s,ec,%d).\n",forest_log_buffer_1->fl_buffer,
-	    ctrace_ctr++);
-  }
-  if ( flags[EC_REMOVE_SCC] && is_leader(ProdSF)) { 
-    remove_incomplete_tries(CTXTc subg_compl_stack_ptr(ProdSF));
-    subg_pos_cons(ProdSF) = 0;
-    subg_compl_susp_ptr(ProdSF) = 0;  /* ec'd -- neg must fail */
-  }
-}
-#endif

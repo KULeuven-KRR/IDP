@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: struct_manager.c,v 1.36 2011/12/24 21:09:11 tswift Exp $
+** $Id: struct_manager.c,v 1.36 2011-12-24 21:09:11 tswift Exp $
 ** 
 */
 
@@ -41,6 +41,7 @@
 #include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
+#include "tries.h"
 #include "debug_xsb.h"
 #include "flags_xsb.h"
 #include "memory_xsb.h"

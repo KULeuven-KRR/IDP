@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tries.h,v 1.85 2013/04/20 19:33:51 tswift Exp $
+** $Id: tries.h,v 1.85 2013-04-20 19:33:51 tswift Exp $
 ** 
 */
 
@@ -373,6 +373,7 @@ extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
 extern BTHTptr  New_BTHT(Structure_Manager *, int);
+extern void     load_solution_trie_notrail(int, int, CPtr, BTNptr);
 #else
 struct th_context ;
 
@@ -398,6 +399,7 @@ extern BTNptr   delay_chk_insert(struct th_context *, int, CPtr, CPtr *);
 //extern void     undo_answer_bindings(struct th_context *);
 extern void	load_delay_trie(struct th_context *, int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(struct th_context *);
+extern void     load_solution_trie_notrail(struct th_context *, int, int, CPtr, BTNptr);
 #endif
 
 #ifndef MULTI_THREAD
@@ -649,14 +651,24 @@ typedef struct callnodetag{
   void* goal;  
   unsigned int no_of_answers;
   unsigned int deleted:1, changed:1,recomputable:1,falsecount:14,outcount:15;
-  callnodeptr prev_call;  
-  ALNptr aln; 
+  union{
+    callnodeptr prev_call;  
+    void* tif_ptr;	  /* Table of which this call is a part */
+  };
+  union{
+    ALNptr aln; 
+    BTNptr leaf_ptr;
+  };
   int id; 
   //  unsigned int no_of_undefs;
 }CALL_NODE;
 
 #define callnode_sf(Ptr) ( ((callnodeptr)(Ptr)) -> goal)
 #define callnode_no_undefs(Ptr)  ( ((callnodeptr)(Ptr)) -> no_of_undefs)
+#define callnode_tif_ptr(Ptr) ( ((callnodeptr)(Ptr)) -> tif_ptr)
+#define callnode_leaf_ptr(Ptr) ( ((callnodeptr)(Ptr)) -> leaf_ptr)
+
+#define is_fact_in_callgraph(Ptr)  (callnode_sf(Ptr) == 0)
 
 typedef struct key{
 	int goal;

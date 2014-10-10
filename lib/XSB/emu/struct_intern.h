@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: struct_intern.h,v 1.1 2013/01/04 14:53:19 dwarren Exp $
+** $Id: struct_intern.h,v 1.2 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -57,6 +57,7 @@ struct hc_block_rec {
   struct intterm_rec *freedisp; /* address of first free record in (first) block */
 };
 
+// make bigger?
 #define hc_num_in_block 1000
 
 struct term_subterm {
@@ -67,5 +68,6 @@ struct term_subterm {
 };
 
 
+int isinternstr_really(prolog_term term);
 prolog_term intern_rec(CTXTdeclc prolog_term term);
 prolog_term intern_term(CTXTdeclc prolog_term term);

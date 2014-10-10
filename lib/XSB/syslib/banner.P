@@ -29,18 +29,60 @@
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
 
-:- export banner_control/1.
-:- import stat_flag/2 from machine.
+:- export
+	set_banner_control/2,
+	banner_control/1.
+:- import
+	stat_set_flag/2,
+	stat_flag/2
+   from machine.
 
-banner_control(noprompt) :-
+banner_control(noprompt) :- is_enabled(NOPROMPT).
+banner_control(nobanner) :- is_enabled(NOBANNER).
+banner_control(quietload) :- is_enabled(QUIETLOAD).
+banner_control(nofeedback) :- is_enabled(NOFEEDBACK).
+
+%% Flag is 1 for enable, 0 for disable
+set_banner_control(noprompt,Flag) :-
+	(Flag == 1 -> enable_control(NOPROMPT)
+	; disable_control(NOPROMPT)
+	).
+set_banner_control(nobanner,Flag) :-
+	(Flag == 1 -> enable_control(NOBANNER)
+	; disable_control(NOBANNER)
+	).
+set_banner_control(quietload,Flag) :-
+	(Flag == 1 -> enable_control(QUIETLOAD)
+	; disable_control(QUIETLOAD)
+	).
+set_banner_control(nofeedback,Flag) :-
+	(Flag == 1 -> enable_control(NOFEEDBACK)
+	; disable_control(NOFEEDBACK)
+	).
+
+%% Type: NOPROMPT, NOBANNER, QUIETLOAD, NOFEEDBACK
+is_enabled(Type) :-
 	stat_flag(BANNER_CTL,BannerCtl),
-	HidePrompt is BannerCtl mod NOPROMPT,
-	HidePrompt =:= 0.
-banner_control(nobanner) :-
+	Status is BannerCtl mod Type,
+	Status =:= 0.
+
+%% Type: NOPROMPT, NOBANNER, QUIETLOAD
+disable_control(Type) :-
 	stat_flag(BANNER_CTL,BannerCtl),
-	HideBanner is BannerCtl mod NOBANNER,
-	HideBanner =:= 0.
-banner_control(quietload) :-
+	Status is BannerCtl mod Type,
+	(Status =:= 0 ->
+	    NewBannerCtl is BannerCtl div Type,
+	    stat_set_flag(BANNER_CTL,NewBannerCtl)
+	; %% already enabled
+	    NewBannerCtl = BannerCtl
+	).
+
+enable_control(Type) :-
 	stat_flag(BANNER_CTL,BannerCtl),
-	KeepQuiet is BannerCtl mod QUIETLOAD,
-	KeepQuiet =:= 0.
+	Status is BannerCtl mod Type,
+	(Status =:= 0 ->
+	    NewBannerCtl = BannerCtl
+	; %% already enabled
+	    NewBannerCtl is BannerCtl * Type,
+	    stat_set_flag(BANNER_CTL,NewBannerCtl)
+	).

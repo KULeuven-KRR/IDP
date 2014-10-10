@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tables.h,v 1.22 2011/08/19 21:44:15 tswift Exp $
+** $Id: tables.h,v 1.22 2011-08-19 21:44:15 tswift Exp $
 ** 
 */
 
@@ -46,7 +46,7 @@ void	release_all_tabling_resources(CTXTdecl);
 VariantSF NewProducerSF(CTXTdeclc BTNptr,TIFptr);
 VariantSF tnotNewSubConsSF(CTXTdeclc BTNptr ,TIFptr,VariantSF);
 
-extern void inline perform_early_completion(CTXTdeclc VariantSF ,CPtr );
+//extern void inline perform_early_completion(CTXTdeclc VariantSF ,CPtr );
 
 /*
  * The next answer to consume is obtained from the old answer continuation.

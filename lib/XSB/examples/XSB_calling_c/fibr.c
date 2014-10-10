@@ -17,7 +17,9 @@ them, and returns them as the result.
 #include "xsb_config.h"
 #include "cinterf.h"
 #include "context.h"
+#ifndef TRUE
 #define TRUE 1
+#endif
 
 DllExport int call_conv fibr(CTXTdecl) {
   int inarg, f1, f2;

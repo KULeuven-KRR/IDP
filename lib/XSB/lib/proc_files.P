@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: proc_files.P,v 1.10 2012/01/09 21:37:13 dwarren Exp $
+** $Id: proc_files.P,v 1.10 2012-01-09 21:37:13 dwarren Exp $
 ** 
 */
 
@@ -59,8 +59,13 @@ read_dsv(FileName,Options,Term) :-
 	 ->	true
 	 ;	Sep = ","
 	),
-	(member(delimiter=[Delim],Options)
-	 ->	true
+	(member(delimiter=Delimiter,Options)
+	 ->	(Delimiter = [Delim]
+		 ->	true
+		 ; Delimiter = none
+		 ->	Delim = none
+		 ;	throw(error('Illegal delimiter specification'))
+		)
 	 ;	Delim = 0'"' %"
 	),
 	functor(Term,Pred,Arity),
@@ -111,7 +116,7 @@ load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
 	conset('__errcnt',0),
 	conset('__recsread',0),
 	conset('__linesread',0),
-	file_open(FileName,read,Stream),
+	open(FileName,read,Stream),
 	(member(returns=Returns,Options)
 	 ->	length(Args,NumFields)
 	 ;	NumFields = 0,
@@ -120,7 +125,7 @@ load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
 	delim_file_process_fixed(Stream,Sep,Delim,Returns,NumFields,CodeFields),
 	(CodeFields == end_of_file
 	 ->	!,
-		file_close(Stream),
+		close(Stream),
 		conget('__recsread',RecsRead),
 		time_message(T0,(FileName,' loaded (delimited) ',RecsRead,' records')),
 		fail
@@ -375,9 +380,12 @@ save_dsv(FileName,PSpec,Options) :-
 	 ->	true
 	 ;	Sep = ","
 	),
-	(member(delimiter=[Delim],Options)
-	 ->	true
-	 ;	Delim = 0'"'
+	(member(delimiter=Delimiter,Options)
+	 ->	(Delimiter = [Delim]
+		 ->	true
+		 ;	throw(error('Delimiter must be a single character string'))
+		)
+	 ;	Delim = 0'"'  %"
 	),
 	save_dsv(FileName,PSpec,Sep,Delim,Options).
 
@@ -411,7 +419,7 @@ save_dsv(FileName,PSpec,Sep0,Delim0,Options) :-
 	atom_codes(SepA,Sep), atom_codes(DelimA,Delim),
 
 	OutFields = [FirstField|RestFields],
-	file_open(FileName,write,OutStream),
+	open(FileName,write,OutStream),
 	(call(Spec),
 	 write_field(FirstField,OutStream,SepA,Delim,DelimA),
 	 write_fields(RestFields,OutStream,SepA,Delim,DelimA),
@@ -420,7 +428,7 @@ save_dsv(FileName,PSpec,Sep0,Delim0,Options) :-
 	 ;
 	 true
 	),
-	file_close(OutStream).
+	close(OutStream).
 
 write_fields([],_Stream,_SepA,_Delim,_DelimA).
 write_fields([Field|Fields],Stream,SepA,Delim,DelimA) :-
@@ -502,7 +510,7 @@ load_with_header(FileNameList,Options) :-
 	),
 	(member(delimiter=[Delim],Options)
 	 ->	true
-	 ;	Delim = 0'"'
+	 ;	Delim = 0'"'  %"
 	),
 	(flat_member(FileName,FileNameList),
 	 atom_codes(FileName,FileNameCodes),
@@ -511,14 +519,14 @@ load_with_header(FileNameList,Options) :-
 	  ;	 PredName = FileName
 	 ),
 
-	 file_open(FileName,read,InStream),
+	 open(FileName,read,InStream),
 	 write(userout,'Loading '),write(userout,FileName),write(userout,'...'),
 	 conset('__rec_cnt',0),
 	 retractall(file_header(PredName,_,_,_)),
 
 	 delim_file_process(InStream,Sep,Delim,CodeFields),
 	 (CodeFields == end_of_file
-	  ->	 file_close(InStream),
+	  ->	 close(InStream),
 		 conget('__rec_cnt',NumRecs),
 		 write(userout,NumRecs),writeln(' records'),
 		 fail
@@ -566,8 +574,8 @@ copy_dsv(InFileName,NumFields,InSep,InDelim,OutFileName,OutSep0,OutDelim0,Option
 	(integer(OutSep0) -> OutSep = [OutSep0] ; OutSep = OutSep0),
 	(integer(OutDelim0) -> OutDelim = [OutDelim0] ; OutDelim = OutDelim0),
 	atom_codes(OutSepA,OutSep), atom_codes(OutDelimA,OutDelim),
-	file_open(InFileName,read,InStream),
-	file_open(OutFileName,write,OutStream),
+	open(InFileName,read,InStream),
+	open(OutFileName,write,OutStream),
 	(member(returns=Returns,Options)
 	 ->	delim_file_process_fixed(InStream,InSep,InDelim,Returns,NumFields,CodeFields)
 	 ;	delim_file_process(InStream,InSep,InDelim,CodeFields),
@@ -580,8 +588,8 @@ copy_dsv(InFileName,NumFields,InSep,InDelim,OutFileName,OutSep0,OutDelim0,Option
 	),
 	(CodeFields == end_of_file
 	 ->	!,		% cut repeat in delim_file_process..
-		file_close(InStream),
-		file_close(OutStream)
+		close(InStream),
+		close(OutStream)
 	 ;	CodeFields = [FirstField|RestFields],
 		write_code_field(FirstField,OutStream,OutSep,OutDelim,OutDelimA),
 		write_code_fields(RestFields,OutStream,OutSep,OutSepA,OutDelim,OutDelimA),

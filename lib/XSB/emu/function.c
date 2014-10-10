@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: function.c,v 1.41 2013/01/09 20:15:34 dwarren Exp $
+** $Id: function.c,v 1.41 2013-01-09 20:15:34 dwarren Exp $
 ** 
 */
 
@@ -39,6 +39,7 @@
 #include "binding.h"
 #include "error_xsb.h"
 #include "function.h"
+#include "cell_xsb_i.h"
 
 #define FUN_PLUS   1
 #define FUN_MINUS  2

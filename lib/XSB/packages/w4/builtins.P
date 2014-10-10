@@ -12,7 +12,7 @@
 %%%
 
 :- export operating_system_type/1.
-:- export time/1.
+:- export x_time/1.
 :- export absolute_filename/2.
 :- export append/3.
 :- export reverse/2.
@@ -27,7 +27,7 @@
 % Should return windows for any OS of Windows family.
 operating_system_type( OS ) :- xsb_configuration( os_type, OS ).
 
-time(T) :- cputime(T).
+x_time(T) :- cputime(T).
 
 % Expands relative file names into absolute ones.
 absolute_filename( Path, AbsPath ) :- expand_filename( Path, AbsPath ).

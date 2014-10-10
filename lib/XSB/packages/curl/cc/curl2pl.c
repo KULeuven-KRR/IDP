@@ -170,7 +170,7 @@ DllExport int call_conv pl_load_page()
 			strcat(options.auth.usr_pwd, password);			
 		}
 		else if(!strcmp(p2c_functor(term_option), "timeout")){
-			options.timeout = p2c_int(p2p_arg(term_option, 1));
+		  options.timeout = (int)p2c_int(p2p_arg(term_option, 1));
 		}
 		else if(!strcmp(p2c_functor(term_option), "url_prop")){
 			options.url_prop = options.redir_flag;

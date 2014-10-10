@@ -42,10 +42,7 @@
  *
  * -------------------------------------------------------------------------- **
  *
- * $Log: sys_include.h,v $
- * Revision 1.6  2010/08/19 15:03:37  spyrosh
- * Roll back to state as of Aug 16, 2010.
- *
+ * $Log: not supported by cvs2svn $
  * Revision 1.1  2004/01/14 20:27:13  dwarren
  * XSB Prolog Profiling as command line option -p
  *

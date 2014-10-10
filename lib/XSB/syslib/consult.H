@@ -26,7 +26,7 @@
 :- export 	  add_lib_dir/1, add_lib_dir/2,
 	  compile/1, compile/2, search_module/6,
           consult/1, consult/2, '.'/2, reconsult/1, reconsult/2,
-	  current_loaded_file/1,
+	  current_loaded_file/1, is_loaded/1,
           engine_mode_magic_num/2,
 	  ensure_dyn_loaded/1, ensure_dync_loaded/1,
 	  ensure_dyn_loaded/3, ensure_dync_loaded/3,

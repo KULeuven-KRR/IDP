@@ -279,6 +279,7 @@ u_not(Goal) :-
 	 ; check_cyclic(Goal,'u_not/1',1),
 	   floundered(Goal)).
 
+:- import floundered_undefined/1 from xsbbrat.
 :- table floundered/1 as variant, opaque.
 floundered(_Goal):- floundered_undefined(a).
 
@@ -313,13 +314,6 @@ tunnumcall(GGoal) :-
 :- table undefined/0.
 undefined:- tnot(undefined).
 
-:- table floundered_undefined/1.
-floundered_undefined(a) :- tnot(floundered_undefined(a)).
-
-%:- table floundered_undefined/0.
-%floundered_undefined :- tnot(floundered_undefined).
-
-?- floundered_undefined(a).
 /*----------------------------------------------------------------------*/
 /* Predicates to retrieve information out of tables.                    */
 /*----------------------------------------------------------------------*/
@@ -445,6 +439,9 @@ get_calls_for_table(PredSpec,Call) :-
  *   There is some complication with the inlining of builtins which
  *   perform trie-code-directed traversals.  Hence trie_get_return/2
  *   is not inlined and we explicitly invoke the builtin call.
+ * 
+ *   Note that trie_get_return will not affect the delay list (a C
+ *   variable, delay_it, is set to ensure this).
  */
 
 get_returns(TableEntry, ReturnTemplate) :-
@@ -588,13 +585,11 @@ is_conditional_answer(Leaf,IsCond):-
 /* Predicates to remove information from tables.			*/
 /*----------------------------------------------------------------------*/
 
-:- import brat_undefined/0 from xsbbrat.
-:- import current_prolog_flag/2 from curr_sym.
+:- import reinitialize_undefineds/0 from xsbbrat.
+%:- import current_prolog_flag/2 from curr_sym.
 abolish_all_tables :- 
 	   abolish_table_info,
-	   (current_prolog_flag(max_table_answer_action,bounded_rationality) -> 
-   		   (brat_undefined,fail ; true)
-		    ; true).		   
+	   reinitialize_undefineds.
 
 abolish_table_pred(Spec,Options) :-
 	check_nonvar(Spec,abolish_table_pred/1,1),
@@ -800,6 +795,7 @@ set_tif_property(Term,Property,Value):-
 
 tif_translate(subgoal_depth,SUBGOAL_DEPTH).
 tif_translate(answer_depth,ANSWER_DEPTH).
+tif_translate(intern,INTERNING_GROUND).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Forest Logging
@@ -853,18 +849,17 @@ stop_forest_view:-
 
 load_forest_log(File):- 
 	ensure_loaded(term_abstract),
-	dynamic(pus_smpl/4), 
-	dynamic(puc_smpl/5), 
-	dynamic(ns_smpl/3),
-	dynamic(nf_smpl/3),
+	dynamic(pus_smpl/4), 	dynamic(puc_smpl/5), 
+	dynamic(ns_smpl/3),	dynamic(nf_smpl/3),
 	dynamic(cmp/3),
 	dynamic(del/3),
 	dynamic(nc/4),
-	dynamic(nda/4),
+	dynamic(ar/4),	dynamic(dar/4),
+	dynamic(na/3),	dynamic(nda/4),
 	index(tc/4,[*(1),*(2)]),
 	index(nc/4,[*(1),*(2)]),
-	index(na/2,[2]),
-	index(nda/2,[2]),
+	index(na/3,[2]),
+	index(nda/4,[2]),
 	index(ar/4,[2,3]),
 	index(dar/4,[2,3]),
 	index(ta/2,[1,2]),

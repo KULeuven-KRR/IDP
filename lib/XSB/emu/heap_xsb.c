@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: heap_xsb.c,v 1.89 2011/12/24 21:09:10 tswift Exp $
+** $Id: heap_xsb.c,v 1.90 2013-05-06 21:10:24 dwarren Exp $
 ** 
 */
 
@@ -164,6 +164,8 @@ unmarking marked strings.
 #include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
 #include "struct_manager.h"
 #include "hash_xsb.h"
+#include "struct_intern.h"
+#include "cell_xsb_i.h"
 /*=========================================================================*/
 
 /* this might belong somewhere else (or should be accessible to init.c),
@@ -484,12 +486,12 @@ xsbBool glstack_realloc(CTXTdeclc size_t new_size, int arity)
 	    new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
 	}
 	if (new_heap_bot == NULL) {
-	  //	  xsb_mesg("Not enough core to resize the Heap/Local Stack! (current: %"Intfmt"; resize %"Intfmt")",
+	  //	  xsb_error("Not enough core to resize the Heap/Local Stack! (current: %"Intfmt"; resize %"Intfmt")",
 	  //   glstack.size*K,new_size_in_bytes);
 	  return 1; /* return an error output -- will be picked up later */
 	}
       } else {
-	xsb_mesg("Not enough core to resize the Heap and Local Stack! (%" Intfmt ")",new_size_in_bytes);
+	xsb_error("Not enough core to resize the Heap and Local Stack! (%" Intfmt ")",new_size_in_bytes);
 	return 1; /* return an error output -- will be picked up later */
       }
     }

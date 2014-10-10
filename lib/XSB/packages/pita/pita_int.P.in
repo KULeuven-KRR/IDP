@@ -518,6 +518,17 @@ term_expansion((Head :- Body), Clauses):-
 	generate_rules(HeadList,(myone(One),Body1),VC,R,Probs,BDDAnd,0,Clauses).
 
 term_expansion((Head :- Body), Clauses) :- 
+%  clause with a single head atom with prob 1
+	setting(compiling,true),
+	((Head:-Body) \= ((user:term_expansion(_,_) ):- _ )),
+	Head = (H:1.0), !, 
+	list2and(BodyList, Body), 
+	process_body(BodyList,One,BDDAnd,BodyList2),
+	list2and(BodyList2,Body2),
+	add_bdd_arg(H,BDDAnd,Head1),
+	Clauses=(Head1 :- (myone(One),Body2)).
+	
+term_expansion((Head :- Body), Clauses) :- 
 % disjunctive clause with a single head atom
 	setting(compiling,true),
 	((Head:-Body) \= ((user:term_expansion(_,_) ):- _ )),
@@ -555,6 +566,14 @@ term_expansion(Head,Clauses) :-
 	get_next_rule_number(R),
 	get_probs(HeadList,Probs),
 	generate_rules_fact(HeadList,VC,R,Probs,0,Clauses).
+
+term_expansion(Head, (Head1:-myone(One))) :- 
+% fact with a single head atom with prob 1
+	setting(compiling,true),
+	(Head \= ((term_expansion(_,_)) :- _ )),
+	Head \= (:- _),
+	Head = (H:1.0), !, 
+	add_bdd_arg(Head,One,Head1).
 
 term_expansion(Head,Clause) :- 
 % disjunctive fact with a single head atom

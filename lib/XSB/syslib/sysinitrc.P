@@ -76,3 +76,5 @@
 %% load package maintenance definitions
 %% NO, made standard preds so this will be loaded on demand.
 %%:- [packaging].
+
+:- [xsbbrat].

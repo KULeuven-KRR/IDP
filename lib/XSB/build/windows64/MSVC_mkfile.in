@@ -111,6 +111,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/builtin.obj" \
 	"$(OBJDIR)/biassert.obj" \
 	"$(OBJDIR)/call_graph_xsb.obj" \
+	"$(OBJDIR)/call_xsb.obj" \
 	"$(OBJDIR)/cinterf.obj" \
 	"$(OBJDIR)/deadlock.obj" \
 	"$(OBJDIR)/debug_xsb.obj" \

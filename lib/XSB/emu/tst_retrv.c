@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tst_retrv.c,v 1.35 2012/02/19 19:17:56 tswift Exp $
+** $Id: tst_retrv.c,v 1.35 2012-02-19 19:17:56 tswift Exp $
 ** 
 */
 

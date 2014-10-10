@@ -206,6 +206,7 @@ to and loading them from a component.
 :- import numbervars/1 from num_vars.
 :- import call0/1 from machine.
 :- import messageln/2 from standard.
+:- import variant/2 from subsumes.
 
 #include "standard.h"
 
@@ -460,17 +461,26 @@ rule), so must abolish all the cdf tables in case of update.  If this
 turns out to be too inefficient, then we might just not check for
 intensional duplicates. */
 check_identity(Term):- 
-	(call0(Term) 
+	(ground(Term)
+	 ->	(call0(Term)
+		 ->	fail
+		 ;	check_identity_int(Term)
+		)
+	 ; copy_term(Term,Term0),call0(Term),variant(Term,Term0)
 	 ->	fail 
-	 ;	ext_to_int_call(Term, TermInt),
-		(\+clause(TermInt,_Bod)
-		 ->	true
-		 ;	(call0(TermInt)  
-			 ->	fail % won't be inserted, so no need to abolish
-			 ;	abolish_cdf_tables % intensional rule can call any cdf term, so must abolish any tables generated
-			)
+	 ;	check_identity_int(Term)
+	).
+
+check_identity_int(Term) :-
+	ext_to_int_call(Term, TermInt),
+	(\+clause(TermInt,_Bod)
+	 ->	true
+	 ;	(call0(TermInt)  
+		 ->	fail % won't be inserted, so no need to abolish
+		 ;	abolish_cdf_tables % intensional rule can call any cdf term, so must abolish any tables generated
 		)
 	).
+
 %% previous, erroneous, else was: (ext_to_int_call(Term, TermInt), call0(TermInt) -> fail ; true)).
 
 ext_to_int_call(isa_ext(A,B), isa_int(A,B)).
@@ -892,7 +902,8 @@ dl_type_table(exists_immed(R,C),check_ind_types(_,exists_immed(R,C),[[rid],[cid]
 dl_type_table(all(R,C),check_ind_types(_,all(R,C),[[rid],[cid]])).
 dl_type_table(atLeast(N,R,C),check_ind_types(_,atLeast(N,R,C),[posint,[rid],[cid]])).
 dl_type_table(atMost(N,R,C),check_ind_types(_,atMost(N,R,C),[posint,[rid],[cid]])).
-dl_type_table(component(Cmpt),isatom2(_,Cmpt)).
+dl_type_table(atMost(N,R,C),check_ind_types(_,atMost(N,R,C),[posint,[rid],[cid]])).
+dl_type_table(call(_),=(_,_)). % no checking
 dl_type_table(is(_,_),=(_,_)). % no checking for now
 dl_type_table(dlEval(_,_),=(_,_)). % no checking??
 dl_type_table(dlTable(_N,_),isatom2(_,_N)).
@@ -928,6 +939,7 @@ check_type_dl_body(Fmla,Context) :-
 	!,
 	arg(1,Typecall,Context),
 	call0(Typecall).
+check_type_dl_body(call(_),_Context) :- !.
 check_type_dl_body(Body,Context) :-
 	cdf_warning(Context,
 		    [Body, ' does not have proper sorts and cannot be added.']),

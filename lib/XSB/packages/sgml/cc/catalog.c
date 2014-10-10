@@ -1,4 +1,4 @@
-/*  $Id: catalog.c,v 1.5 2010/08/19 15:03:39 spyrosh Exp $
+/*  $Id: catalog.c,v 1.5 2010-08-19 15:03:39 spyrosh Exp $
 
     Part of SWI-Prolog
 
@@ -23,7 +23,7 @@
 */
 
 #include "xsb_config.h"
-#include "util.h"
+#include "sgmlutil.h"
 #include "catalog.h"
 #include <stdio.h>
 #include <ctype.h>

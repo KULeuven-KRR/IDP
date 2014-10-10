@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: inprog.P,v 1.14 2011/06/07 21:26:38 dwarren Exp $
+** $Id: inprog.P,v 1.14 2011-06-07 21:26:38 dwarren Exp $
 ** 
 */
 

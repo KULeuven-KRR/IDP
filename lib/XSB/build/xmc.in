@@ -1,6 +1,6 @@
 %%%	xmc.P:  Startup file for XMC
 
-%% $Id: xmc.in,v 1.5 2010/08/19 15:03:35 spyrosh Exp $
+%% $Id: xmc.in,v 1.5 2010-08-19 15:03:35 spyrosh Exp $
 
 %% ----------------------------------------------------------------------
 %%	xlc(S): compile XL program to trans rules.

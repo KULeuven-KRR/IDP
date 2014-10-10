@@ -94,9 +94,13 @@ dump :- ll_write('dump not implemented yet').
 trace :-
 	init_goalstack,
 	debug,
-	stat_set_flag(TRACE,1). % trace = 1
+	stat_set_flag(TRACE,1). % set trace flag on
+notrace :-                      %% Added by MK 10/10/2013
+	stat_flag(TRACE,F),	% if trace flag off
+	F =:= 0,
+	!.
 notrace :-
-	stat_set_flag(TRACE,0),	% trace = 0
+	stat_set_flag(TRACE,0),	% set trace flag off
 	make_trace_interactive,
 	ll_flush,
 	nodebug,		% ??dsw added, (no load msgs)

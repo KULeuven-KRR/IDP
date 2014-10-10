@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tr_delay.h,v 1.22 2010/12/16 23:38:00 tswift Exp $
+** $Id: tr_delay.h,v 1.23 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -69,11 +69,12 @@
 	{								\
 	  int i;							\
 	  for (i = 0; i < trieinstr_vars_num + 1; i++) {		\
-	    cell(hreg++) = (Cell) trieinstr_vars[i]; /* new */		\
+	    cell(hreg+i) = (Cell) trieinstr_vars[i]; /* new */		\
 	    xsb_dbgmsg((LOG_DELAY, ">>>>     trieinstr_vars[%d] = ", i));	\
 	    dbg_printterm(LOG_DELAY, stddbg, cell(trieinstr_vars[i]), 25);	\
 	    xsb_dbgmsg((LOG_DELAY, "\n"));				\
 	  }								\
+	  hreg += trieinstr_vars_num + 1;				\
 	}								\
 	delay_positively(subgoal, NodePtr, makecs(temp_hreg));		\
       }									\

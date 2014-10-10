@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: xsb_wildmatch.c,v 1.20 2010/08/19 15:03:39 spyrosh Exp $
+** $Id: xsb_wildmatch.c,v 1.20 2010-08-19 15:03:39 spyrosh Exp $
 ** 
 */
 
@@ -128,8 +128,13 @@ int do_wildmatch__(void)
 #ifndef GLOB_ABORTED
 #define	GLOB_ABORTED	(-2)	/* Unignored error. */
 #endif
+#ifndef GLOB_NOMATCH
 #define	GLOB_NOMATCH	(-3)	/* No match and GLOB_NOCHECK not set. */
+#endif
+#ifndef GLOB_NOSYS
 #define	GLOB_NOSYS	(-4)	/* Function not supported. */
+#endif
+
 #define GLOB_ABEND	GLOB_ABORTED
 
 

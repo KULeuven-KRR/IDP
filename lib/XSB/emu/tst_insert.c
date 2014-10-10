@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tst_insert.c,v 1.28 2011/05/18 19:21:41 dwarren Exp $
+** $Id: tst_insert.c,v 1.29 2013-05-06 21:10:25 dwarren Exp $
 ** 
 */
 
@@ -44,6 +44,7 @@
 #include "tst_aux.h"
 #include "thread_xsb.h"
 #include "memory_xsb.h"
+#include "struct_intern.h"
 
 
 
@@ -328,7 +329,7 @@ BTNptr btnAddSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
 
   BTNptr newBTN;
 
-  New_BTN(newBTN,trieType,INTERIOR_NT,symbol,parent,NULL);
+  New_BTN(newBTN,trieType,INTERIOR_NT,symbol,NULL,parent,NULL);
   BTN_Child(parent) = newBTN;
   return newBTN;
 }
@@ -373,7 +374,7 @@ BTNptr btnInsertSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
 
 
   chain = BTN_Child(parent);
-  New_BTN(btn,trieType,INTERIOR_NT,symbol,parent,chain);
+  New_BTN(btn,trieType,INTERIOR_NT,symbol,NULL,parent,chain);
   BTN_Child(parent) = btn;
   chain_length = 1;
   while ( IsNonNULL(chain) ) {
@@ -441,7 +442,7 @@ inline static  BTNptr bthtInsertSymbol(CTXTdeclc BTNptr parent, Cell symbol,
   ht = BTN_GetHashHdr(parent);
   bucket = CalculateBucketForSymbol(ht,symbol);
   chain = *bucket;
-  New_BTN(btn,trieType,HASHED_INTERIOR_NT,symbol,parent,chain);
+  New_BTN(btn,trieType,HASHED_INTERIOR_NT,symbol,NULL,parent,chain);
   *bucket = btn;
   BTHT_NumContents(ht)++;
   chain_length = 1;

@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: io_defs_xsb.h,v 1.18 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: io_defs_xsb.h,v 1.18 2010-08-19 15:03:36 spyrosh Exp $
 ** 
 */
 
@@ -32,8 +32,8 @@
 #define FILE_POS      	   3
 #define XSB_FILE_OPEN      	   4
 #define FILE_CLOSE     	   5
-#define FILE_GET     	   6
-#define FILE_PUT     	   7
+#define FILE_GET_BYTE  	   6
+#define FILE_PUT_BYTE  	   7
 #define FILE_GETBUF    	   8
 #define FILE_PUTBUF    	   9
 #define FILE_READ_LINE 	   10
@@ -46,13 +46,20 @@
 #define TMPFILE_OPEN       17
 #define IS_VALID_STREAM    18
 #define FILE_READ_LINE_LIST 19
-#define STREAM_PROPERTY 20
-#define PRINT_OPENFILES 21
-#define FILE_END_OF_FILE 22
-#define FILE_PEEK 23
-#define XSB_STREAM_LOCK_B 24
+#define STREAM_PROPERTY     20
+#define PRINT_OPENFILES     21
+#define FILE_END_OF_FILE    22
+#define FILE_PEEK_BYTE      23
+#define XSB_STREAM_LOCK_B   24
 #define XSB_STREAM_UNLOCK_B 25
-#define FILE_NL 26
+#define FILE_NL             26
+#define FILE_GET_CODE  	   27
+#define FILE_PUT_CODE  	   28
+#define FILE_GET_CHAR  	   29
+#define FILE_PUT_CHAR  	   30
+#define FILE_PEEK_CODE     31
+#define FILE_PEEK_CHAR     32
+#define ATOM_LENGTH        33
 
 /* This sequence is for stream properties */
 #define STREAM_FILE_NAME              0

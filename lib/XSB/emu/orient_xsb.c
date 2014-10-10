@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: orient_xsb.c,v 1.29 2013/01/04 14:56:22 dwarren Exp $
+** $Id: orient_xsb.c,v 1.29 2013-01-04 14:56:22 dwarren Exp $
 ** 
 */
 
@@ -57,6 +57,7 @@ char executable_path_gl[MAXPATHLEN] = {'\0'};	/* This is set to a real name belo
 
 char *install_dir_gl; 			/* installation directory */
 char *xsb_config_file_gl;     		/* XSB configuration file */
+char *xsb_config_file_gl_xwam; 		/* XSB config file - xwam version */
 char *user_home_gl;    	     	     	/* the user $HOME dir or install dir,
 					   if $HOME is null */ 
 
@@ -182,6 +183,8 @@ DllExport char *xsb_executable_full_path(char *myname)
     snprintf(executable_path_gl, MAXPATHLEN, "%s%c%s", current_dir_gl, SLASH, myname_augmented);
   }
 
+  SQUASH_LINUX_COMPILER_WARN(dummy) ; 
+
   /* found executable by prepending cwd. Make sure we haven't found a directory named xsb */
   if ((!stat(executable_path_gl, &fileinfo)) && (S_ISREG(fileinfo.st_mode))) return executable_path_gl;
                                           //  or (!S_ISDIR(fileinfo.st_mode))
@@ -266,14 +269,19 @@ void set_install_dir(void) {
 }
 
 void set_config_file(void) {
-  int retcode;
-  struct stat fileinfo;
+  int retcode, retcode_xwam;
+  struct stat fileinfo, fileinfo_xwam;
 
   /* The config file is in the lib directory at the same 
      level as the xsb executable. */
   xsb_config_file_gl = strip_names_from_path(executable_path_gl, 2);
-  snprintf(xsb_config_file_gl+strlen(xsb_config_file_gl),(MAXPATHLEN-strlen(xsb_config_file_gl)),
+  snprintf(xsb_config_file_gl+strlen(xsb_config_file_gl),
+	   (MAXPATHLEN-strlen(xsb_config_file_gl)),
 	  "%clib%cxsb_configuration%s", SLASH, SLASH,XSB_SRC_EXTENSION_STRING);
+  xsb_config_file_gl_xwam = strip_names_from_path(executable_path_gl, 2);
+  snprintf(xsb_config_file_gl_xwam+strlen(xsb_config_file_gl_xwam),
+	   (MAXPATHLEN-strlen(xsb_config_file_gl_xwam)),
+	  "%clib%cxsb_configuration%s", SLASH, SLASH,XSB_OBJ_EXTENSION_STRING);
 
   /* Perform sanity checks: xsb_config_file must be in install_dir/config
      This is probably redundant */
@@ -306,16 +314,19 @@ void set_config_file(void) {
 
   /* Check if configuration.P exists and is readable */
   retcode = stat(xsb_config_file_gl, &fileinfo);
+  retcode_xwam = stat(xsb_config_file_gl_xwam, &fileinfo_xwam);
 #ifdef WIN_NT
-  if ( (retcode != 0) || !(S_IREAD & fileinfo.st_mode) ) {
+  if (( (retcode != 0) || !(S_IREAD & fileinfo.st_mode) ) &&
+      ( (retcode_xwam != 0) || !(S_IREAD & fileinfo_xwam.st_mode) )) {
 #else
-  if ( (retcode != 0) || !(S_IRUSR & fileinfo.st_mode) ) {
+    if (( (retcode != 0) || !(S_IRUSR & fileinfo.st_mode) ) &&
+	( (retcode_xwam != 0) || !(S_IRUSR & fileinfo_xwam.st_mode) )) {
 #endif  
     if (xsb_mode != C_CALLING_XSB) {
       fprintf(stderr,
 	    "*************************************************************\n");
-      fprintf(stderr, "PANIC! XSB configuration file %s\n", xsb_config_file_gl);
-      fprintf(stderr, "doesn't exist or is not readable by you.\n");
+      fprintf(stderr, "PANIC! XSB configuration files %s[%s]\n", xsb_config_file_gl, XSB_OBJ_EXTENSION_STRING);
+      fprintf(stderr, "don't exist or are not readable by you.\n");
       fprintf(stderr,
 	      "*************************************************************\n");
       exit(1);

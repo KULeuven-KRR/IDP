@@ -8,19 +8,42 @@
 	str_cat(CONFDIR, '/saved.o/', ObjDir),
 
 	write('Compiling cregs.c ... '),
-	shell([Compiler, ' -c ', ' -I', Emudir, ' -I', CONFDIR, ' ', CFLAGS, ' cregs.c ']),
-	shell([Compiler, ' -o ', './cretest ',
+	loc_shell([Compiler, ' -c ', ' -I', Emudir, ' -I', CONFDIR, ' ', CFLAGS, ' cregs.c ']),
+	loc_shell([Compiler, ' -o ', './cretest ',
 	       ObjDir, 'xsb.o ', ' cregs.o ', LDFLAGS]),
 	writeln('You can find the executable in  ./cretest'),
 
 	write('Compiling cfixedstring.c ... '),
-	shell([Compiler, ' -c ', ' -I', Emudir, ' -I', CONFDIR, ' ', CFLAGS, ' cfixedstring.c ']),
-	shell([Compiler, ' -o ', './cfstest ',
+	loc_shell([Compiler, ' -c ', ' -I', Emudir, ' -I', CONFDIR, ' ', CFLAGS, ' cfixedstring.c ']),
+	loc_shell([Compiler, ' -o ', './cfstest ',
 	       ObjDir, 'xsb.o ', ' cfixedstring.o ', LDFLAGS]),
 	writeln('You can find the executable in  ./cfstest'),
 
 	write('Compiling cvarstring.c ... '),
-	shell([Compiler, ' -c ', ' -I', Emudir, ' -I', CONFDIR, ' ', CFLAGS, ' cvarstring.c ']),
-	shell([Compiler, ' -o ', './cvstest ',
+	loc_shell([Compiler, ' -c ', ' -I', Emudir, ' -I', CONFDIR, ' ', CFLAGS, ' cvarstring.c ']),
+	loc_shell([Compiler, ' -o ', './cvstest ',
 	       ObjDir, 'xsb.o ', ' cvarstring.o ', LDFLAGS]),
 	writeln('You can find the executable in  ./cvstest').
+
+%%loc_shell(Args) :- shell(Args).
+
+/* or if cygwin on windows 7-64, try: */
+
+:- import concat_atom/2 from string.
+:- import append/3 from basics.
+loc_shell(Args) :-
+	concat_atom(Args,AArgs),
+	atom_codes(AArgs,Args_codes),
+	repl_codes(Args_codes,0'\',0'/',FArgs_codes),
+	atom_codes(FArgs,FArgs_codes),
+	NArgs = ['bash -c "',FArgs,'"'],
+	writeln(userout,NArgs),
+	shell(NArgs).
+
+repl_codes([],_,_,[]).
+repl_codes([C|Cs],F,T,Rs) :-
+	(C == F
+	 ->	Rs = [T|Rs0]
+	 ;	Rs = [C|Rs0]
+	),
+	repl_codes(Cs,F,T,Rs0).

@@ -19,7 +19,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: tp_index.H,v 1.9 2010/08/19 15:03:36 spyrosh Exp $
+** $Id: tp_index.H,v 1.9 2010-08-19 15:03:36 spyrosh Exp $
 ** 
 */
 

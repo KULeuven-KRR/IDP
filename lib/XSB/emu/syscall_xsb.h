@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: syscall_xsb.h,v 1.9 2010/08/19 15:03:37 spyrosh Exp $
+** $Id: syscall_xsb.h,v 1.9 2010-08-19 15:03:37 spyrosh Exp $
 ** 
 */
 
@@ -208,6 +208,8 @@
 #define SYS_fchdir	176
 #define SYS_fchroot	177
 #define SYS_vpixsys	178
+
+#define SYS_epoch_seconds 180
 
 /* XSB-specific numbers */
 

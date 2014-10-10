@@ -132,7 +132,7 @@
   }
 
 #define LOG_ANSWER_RETURN(answer,template_ptr)		\
-  if (flags[CTRACE_CALLS])  {			\
+  if (flags[CTRACE_CALLS] > 1)  {			\
     sprintAnswerTemplate(CTXTc forest_log_buffer_1,template_ptr, template_size); \
     sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)consumer_sf);	\
     sprint_subgoal(CTXTc forest_log_buffer_3,0,(VariantSF)ptcpreg); \
@@ -395,6 +395,7 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
   else if ( is_completed(producer_sf) ) {
 
     LOG_TABLE_CALL("cmp");
+    //    printf("completed table "); print_n_registers(stddbg, 6 , 8);printf("\n");
 
     /* Unify Call with Answer Trie
        --------------------------- */
@@ -431,7 +432,6 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
 	 the trie nodes have been set up to account for this in
 	 variant_answer_search() -- see the documentation there.  */
       if (attv_num > 0) {
-	//	printf("fiddling with attvs\n");
 	CPtr cptr;
 	for (cptr = answer_template_heap - 1;
 	     cptr >= answer_template_heap - template_size; cptr--) {
@@ -449,22 +449,23 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
       for (i = 0; i < template_size; i++) {
 	push_trieinstr_unif_stk(cell(answer_template_heap-template_size+i));
       }
+      //      printf("unif stk size is %d\n",i);
       delay_it = 1;
       lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
-#ifdef MULTI_THREAD_RWL
-/* save choice point for trie_unlock instruction */
-      save_find_locx(ereg);
-      tbreg = top_of_cpstack;
-#ifdef SLG_GC
-      old_cptop = tbreg;
-#endif
-      save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
-#ifdef SLG_GC
-      cp_prevtop(tbreg) = old_cptop;
-#endif
-      breg = tbreg;
-      hbreg = hreg;
-#endif
+      //#ifdef MULTI_THREAD_RWL
+      ///* save choice point for trie_unlock instruction */
+      //      save_find_locx(ereg);
+      //      tbreg = top_of_cpstack;
+      //#ifdef SLG_GC
+      //      old_cptop = tbreg;
+      //#endif
+      //      save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
+      //#Ifdef SLG_GC
+      //      cp_prevtop(tbreg) = old_cptop;
+      //#endif
+      //      breg = tbreg;
+      //      hbreg = hreg;
+      //#endif
       XSB_Next_Instr();
     }
     else {
@@ -671,7 +672,8 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
 	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	    if (var_addr == NULL) printf("var_addr NULL 3\n");
 	    for (i = 0; i < num_heap_term_vars; i++)
-	      cell(hreg++) = (Cell) var_addr[i];
+	      cell(hreg+i) = (Cell) var_addr[i];
+	    hreg += num_heap_term_vars;
 	    delay_positively(producer_sf, first_answer, makecs(temp_hreg));
 #else
 	    delay_positively(producer_sf, first_answer,
@@ -704,7 +706,7 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
   CallLookupResults lookupResults;
   VariantSF  sf;
   TIFptr tip;
-  callnodeptr c;
+  callnodeptr cn;
 
     //#ifdef MULTI_THREAD
     //  xsb_abort("Incremental Maintenance of tables is not available for multithreaded engine.\n");
@@ -713,11 +715,23 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
   //  printf("tabletrysinglenoanswers\n");
 
   xwammode = 1;
-  CallInfo_Arguments(callInfo) = reg + 1;
+   
+
   CallInfo_CallArity(callInfo) = get_xxa; 
   LABEL = (CPtr)((byte *) get_xxxl);  
   Op1(get_xxxxl);
   tip =  (TIFptr) get_xxxxl;
+
+			       //  printf("Subgoal Depth %d\n",TIF_SubgoalDepth(tip));
+  if ( TIF_SubgoalDepth(tip) == 65535) {
+    int i;
+    //    new_heap_functor(hreg, TIF_PSC(tip)); /* set str psc ptr */
+    CallInfo_Arguments(callInfo) = hreg;
+    for (i=1; i <= (int)get_arity(TIF_PSC(tip)); i++) {
+      new_heap_free(hreg);		   
+    }
+  }
+  else CallInfo_Arguments(callInfo) = reg + 1;
 
   if (get_incr(TIF_PSC(tip))) {
   
@@ -741,18 +755,21 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
     if(IsNonNULL(ptcpreg)) {
       sf=(VariantSF)ptcpreg;
       if(IsIncrSF(sf)){
-	c=(callnodeptr)BTN_Child(CallLUR_Leaf(lookupResults));
-	if(IsNonNULL(c)) {
-	  addcalledge(c,sf->callnode);  
+	cn=(callnodeptr)BTN_Child(CallLUR_Leaf(lookupResults));
+	if(IsNonNULL(cn)) {
+	  addcalledge(cn,sf->callnode);  
 	}
       }
     }
+    //    printf("creating cn for: "); print_callnode(stddbg, cn); printf("\n");
   }
 #ifdef NON_OPT_COMPILE
   else  /* not incremental */
-    if (!get_opaque(TIF_PSC(tip)))
+    if (!get_opaque(TIF_PSC(tip))) {
+      sf=(VariantSF)ptcpreg;
       xsb_abort("Parent predicate %s/%d not declared incr_table\n", 
 		get_name(TIF_PSC(subg_tif_ptr(sf))),get_arity(TIF_PSC(subg_tif_ptr(sf)))); 
+    }
 #endif
   ADVANCE_PC(size_xxx);
   lpcreg = *(pb *)lpcreg;
@@ -792,7 +809,7 @@ XSB_Start_Instr(answer_return,_answer_return)
   int abstr_size;
 #endif
 
-  /* Locate relevant answers
+  /* locate relevant answers
      ----------------------- */
   answer_continuation = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
   consumer_sf = (VariantSF)nlcp_subgoal_ptr(breg);
@@ -884,8 +901,9 @@ table_consume_answer(CTXTc next_answer,template_size,attv_num,answer_template,
 	new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
 	if (var_addr == NULL) printf("var_addr NULL 4\n");
 	for (i = 0; i < num_heap_term_vars; i++) {
-	  cell(hreg++) = (Cell) var_addr[i];
+	  cell(hreg+i) = (Cell) var_addr[i];
 	}
+	hreg += num_heap_term_vars;
 	delay_positively(consumer_sf, next_answer, makecs(temp_hreg));
 #else
 	delay_positively(consumer_sf, next_answer,
@@ -983,7 +1001,6 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   //  if ((subgoal_space_has_been_reclaimed(producer_sf,producer_csf)) ||
   if ((subg_is_completed(producer_sf)) ||
 	(IsNonNULL(delayreg) && answer_is_unsupported(CTXTc delayreg))) {
-    //    printf("completed\n");
     Fail1;
     XSB_Next_Instr();
   }

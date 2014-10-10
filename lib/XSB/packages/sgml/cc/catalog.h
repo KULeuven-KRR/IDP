@@ -1,4 +1,4 @@
-/*  $Id: catalog.h,v 1.4 2010/08/19 15:03:39 spyrosh Exp $
+/*  $Id: catalog.h,v 1.4 2010-08-19 15:03:39 spyrosh Exp $
 
     Part of SWI-Prolog
 

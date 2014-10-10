@@ -20,7 +20,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: compile.H,v 1.27 2011/09/06 17:12:27 dwarren Exp $
+** $Id: compile.H,v 1.27 2011-09-06 17:12:27 dwarren Exp $
 ** 
 */
 
@@ -31,7 +31,7 @@
 
 :- import spec/2 from spec.
 :- import cp_opt/2, perform_tabling_transforms/2 from cp_opt.
-:- import str_cat/3, stat_flag/2 from machine.
+:- import str_cat/3, stat_flag/2, stat_set_flag/2 from machine.
 :- import useinfer/3 from useinfer.
 %%:- import db_optimize/4 from db_opt.
 %%:- import build_graph/1 from cutcheck.
@@ -53,7 +53,7 @@
 :- import force_listutil_loaded/0 from listutil.
 :- import supplementary_tabling/2 from suppltab.
 :- import force_asm_pass2_loaded/0 from asmpass2.
-:- import dump_module/2, write_preds/2 from sanity.
+:- import dump_module/2  /**, write_preds/2**/ from sanity.
 :- import force_tp_geninline_loaded/0 from tpinline.
 :- import sym_name/3, sym_type/2, sym_prop/2 from symtab.
 :- import sym_gen/2 from symtab.
@@ -67,10 +67,10 @@
 :- import force_peephole_loaded/0, compile_peephole_opt/2 from peephole.
    :- import message/1, warning/1, time_message/2, setoptions/1, option/1
      from auxlry.
-:- import prepare/0, gennum/1, conget/2, conset/2 from gensym.
+:- import gennum/1, conget/2, conset/2 from gensym.
 :- import sys_unlink/2 from shell.
 :- import member/2 from basics.
-:- import force_ti_mod_loaded/0, ti_pred_block/3 from ti_mod.
+%%:- import force_ti_mod_loaded/0, ti_pred_block/3 from ti_mod.
 
 :- import modeanalyze/3 from modeinf.
 :- import assert/1, retractall/1, (dynamic)/1  from assert.

@@ -31,7 +31,7 @@ SOURCE="$(CURLDIR)\load_page.c"
 "$(OUTOBJDIR)\load_page.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-SOURCE=charmap.c error.c fetch_file.c model.c parser.c sgml2pl.c utf8.c util.c xmlns.c
+SOURCE=charmap.c error.c fetch_file.c model.c parser.c sgml2pl.c utf8.c sgmlutil.c xmlns.c
 "$(OUTOBJDIR)\$(MYPROGRAM).obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 

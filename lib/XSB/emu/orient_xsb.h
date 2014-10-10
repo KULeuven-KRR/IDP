@@ -18,7 +18,7 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: orient_xsb.h,v 1.10 2012/02/24 17:37:21 tswift Exp $
+** $Id: orient_xsb.h,v 1.10 2012-02-24 17:37:21 tswift Exp $
 ** 
 */
 

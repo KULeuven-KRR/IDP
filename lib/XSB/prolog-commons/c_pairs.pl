@@ -1,4 +1,4 @@
-/*  $Id: c_pairs.pl,v 1.3 2010/08/19 15:03:40 spyrosh Exp $
+/*  $Id: c_pairs.pl,v 1.4 2013-05-06 21:10:26 dwarren Exp $
 
     Part of SWI-Prolog
 
@@ -51,7 +51,8 @@
 	  ]).
 :- endif.
 
-:- include(library('dialect/commons')).
+%% Peter Ludemann says the following must be removed for this to work (-dsw)
+%%:- include(library('dialect/commons')).
 
 /** <module> Operations on key-value lists
 

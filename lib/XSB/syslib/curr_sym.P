@@ -36,6 +36,7 @@
 #include "extensions_xsb.h"
 #include "cinterf_defs.h"
 #include "incr_xsb_defs.h"
+#include "token_defs_xsb.h"
 
 /* ===== current_atom/1 ====================================== */
 
@@ -885,7 +886,22 @@ xsb_flag(exception_action, Mode) :-
 	( Flag =:= UNDEFINED_TRUTH_VALUE -> 
 	  Mode = undefined_truth_value
 	; Mode = iso ).
-
+xsb_flag(ctrace,Mode):- 
+	stat_flag(CTRACE_CALLS, Flag),
+	( Flag =:= 0 -> Mode = off
+          ; (Flag =:= 1 -> Mode = partial
+             ; Mode = full) ).
+xsb_flag(character_set,Mode):- 
+	stat_flag(CHARACTER_SET, Flag),
+	(Flag =:= LATIN_1
+	 ->	Mode = latin_1
+	 ; Flag =:= CP1252
+	 ->	Mode = cp1252
+	 ;	Mode = utf_8
+	).
+xsb_flag(errors_with_position,Mode):- 
+	stat_flag(ERRORS_WITH_POSITION, Flag),
+	( Flag =:= 0 -> Mode = off ; Mode = on ).
 
 set_xsb_flag(Type,Val):- 
 	check_nonvar(Type,set_xsb_flag/2,1),
@@ -1034,7 +1050,7 @@ set_xsb_flag_1(max_table_answer_action, Action) :-!,
 	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_WARNING)
           ; (Action == bounded_rationality ->  
 	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_BRAT),
-	    ensure_loaded(xsbbrat)
+	    reinitialize_undefineds
           ; (Action == failure ->  
 	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_FAILURE)
             ; domain_error([error,', ',warning,', ',failure,', ',bounded_rationality],
@@ -1051,9 +1067,9 @@ set_xsb_flag_1(max_table_answer_list_action, Action) :-!,
             ; domain_error([error,', ',warning,', ',failure],
                         Action,set_prolog_flag/2,2,'max_table_answer_list_action clause') ) ) ).
 set_xsb_flag_1(ctrace, OnOff) :-!,
-	(OnOff == on -> 
-	    stat_set_flag(CTRACE_CALLS, 1)
-	 ;  stat_set_flag(CTRACE_CALLS, 0)).
+	((OnOff == on ; OnOff == full) -> stat_set_flag(CTRACE_CALLS, 2)
+     ; 	OnOff == partial -> stat_set_flag(CTRACE_CALLS, 1)
+     ;  stat_set_flag(CTRACE_CALLS, 0)).
 set_xsb_flag_1(unify_with_occurs_check, OnOff) :-!,
 	(OnOff == on -> 
 	    stat_set_flag(UNIFY_WITH_OCCURS_CHECK_FLAG, 1)
@@ -1072,7 +1088,8 @@ set_xsb_flag_1(exception_pre_action, Mode) :- !,
 set_xsb_flag_1(exception_action, Mode) :- !,
          (Mode = undefined_truth_value-> 
 	  stat_set_flag(EXCEPTION_ACTION, UNDEFINED_TRUTH_VALUE),
-          ensure_loaded(tables)
+	  reinitialize_undefineds
+%	  ensure_loaded(tables)
 	; (Mode = iso ->
     	      stat_set_flag(EXCEPTION_ACTION, 0)
 	    ; domain_error([iso,undefined_truth_value],
@@ -1081,6 +1098,20 @@ set_xsb_flag_1(max_tab_usage, OnOff) :-!,
 	(OnOff == on -> 
 	    stat_set_flag(MAX_USAGE, 1)
 	 ;  stat_set_flag(MAX_USAGE, 0)).
+set_xsb_flag_1(character_set,Mode):- !,
+	(Mode = latin_1
+	 ->	stat_set_flag(CHARACTER_SET, LATIN_1)
+	 ; Mode = cp1252
+	 ->	stat_set_flag(CHARACTER_SET, CP1252)
+	 ; Mode == utf_8
+	 ->	stat_set_flag(CHARACTER_SET, UTF_8)
+	 ;	domain_error([iso,undefined_character_set],
+			     Mode,set_prolog_flag/2,2,'exception_action clause')
+	).
+set_xsb_flag_1(errors_with_position,Mode):- !,
+	( Mode = on -> 
+	    stat_set_flag(ERRORS_WITH_POSITION, 1)
+	 ;  (Mode = off, stat_set_flag(ERRORS_WITH_POSITION, 0))).
 set_xsb_flag_1(Type, _) :-  
 	domain_error(prolog_flag,Type,set_prolog_flag/2,1).
 
