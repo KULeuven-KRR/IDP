@@ -91,7 +91,10 @@ XSBInterface::XSBInterface() {
 		commandCall(ss1.str());
 	}
 	stringstream ss2;
-	ss2 << "consult('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
+	// We choose to load_dyn in the basic file for two reasons:
+	// 1: the file isn't that big, compiling wouldn't really offer that much benefits
+	// 2: compiling the file requires writing permissions, which may not be present at run-time
+	ss2 << "load_dyn('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
 	commandCall(ss2.str());
 }
 
