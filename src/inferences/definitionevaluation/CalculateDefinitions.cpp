@@ -187,7 +187,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 #ifdef WITHXSB
 	if (getOption(XSB)) {
-		DefinitionUtils::joinDefinitionsForXSB(theory);
+		DefinitionUtils::joinDefinitionsForXSB(theory, structure);
 	}
 #endif
 

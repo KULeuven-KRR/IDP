@@ -384,7 +384,7 @@ void checkSorts(Vocabulary* v, Rule* f);
 void deriveSorts(Vocabulary* v, Rule* f);
 
 /** Compute the open symbols of a definition */
-std::set<PFSymbol*> opens(Definition*);
+std::set<PFSymbol*> opens(const Definition*);
 std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s);
 /** Collect the open symbols of all definitions, put them in a map */
 std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*>);
@@ -408,7 +408,7 @@ void splitDefinitions(Theory* t);
 
 #ifdef WITHXSB
 /** Group definitions for minimum overhead with XSB */
-void joinDefinitionsForXSB(Theory* t);
+void joinDefinitionsForXSB(Theory* t, const Structure* s);
 #endif
 
 /** Check whether the definition has a recursive aggregate */
