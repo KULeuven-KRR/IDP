@@ -30,7 +30,7 @@ extern void setclconst(string,string);
 
 struct ParserData{
 
-	ParserData(): tablen(4), bracketcounter(0), prevlength(0), stdin_included(false){
+	ParserData(): tablen(1), bracketcounter(0), prevlength(0), stdin_included(false){
 	}
 	
 	// Return to right mode after a comment
