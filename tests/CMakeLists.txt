@@ -21,9 +21,6 @@ addToCXX("-std=gnu++0x") # necessary for gtest!
 if(USEINTERACTIVE)
 	addToCXX("-D USEINTERACTIVE")
 endif()
-if(WITHGECODE)
-	addToCXX("-D WITHGECODE")
-endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STRICT_ANSI__")

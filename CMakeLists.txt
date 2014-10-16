@@ -77,12 +77,6 @@ else()
 	message("WARNING: this IntegerType may not be suitable for some input file. Consider using GMP")
 endif()
 
-### Gecode option for minisatid
-option(WITHGECODE "Use gecode for cp support" OFF)
-if(WITHGECODE)
-	set(WITHGECODE ON CACHE BOOL "") # the minisatid option
-endif()
-
 ### 32 bits
 option(32BITS "Compile for 32 bit architectures" OFF)
 if(NOT 32BITS) # Cmake user didn't "force" 32bit compilation - do autodetection

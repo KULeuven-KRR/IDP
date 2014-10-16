@@ -17,7 +17,6 @@ Required software packages:
    - Cmake build environment. 
    - Bison and flex packages or yacc and lex packages.
    - Pdflatex and doxygen for building the documentation. (On linux, search for the `latex2html` package)
-   - (optional) Gecode for constraint programming support.
 
 Assume idp is unpacked in `<idpdir>`, you want to build in `<builddir>` (cannot be the same as `<idpdir>`) and install in `<installdir>`.
 Building and installing is then achieved by executing the following commands:
@@ -29,12 +28,6 @@ make check
 make install
 ```
 Alternatively, cmake-gui can be used as a graphical way to set cmake options.
-
-# Adding constraint solving support by Gecode
-Execute the following command in your <builddir> to enable support by Gecode:
-```
-cmake <idpdir> -DCMAKE_INSTALL_PREFIX=<installdir> -DCMAKE_BUILD_TYPE="Release" -DWITHGECODE=on
-```
 
 # Further information
 For more information on using the system, see the documentation, which can be found in `docs/official/idp-manual.pdf`

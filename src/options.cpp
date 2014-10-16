@@ -193,7 +193,6 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::SHOW_XSB_WARNINGS, "showxsbwarnings", boolvalues, false, PrintBehaviour::DONOTPRINT); // Show XSB warnings
 		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
 		BoolPol::createOption(BoolType::REFINE_DEFS_WITH_XSB, "refinedefinitionswithxsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
-		BoolPol::createOption(BoolType::GECODE, "gecode", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SATISFIABILITYDELAY, "satdelay", boolvalues, false, PrintBehaviour::PRINT);
