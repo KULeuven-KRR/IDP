@@ -98,7 +98,7 @@ bool Metafier::handleNegation(const Formula* f) {
 	INIT
 	const_cast<Formula*>(f)->negate();
 	f->accept(this);
-	auto idsub = ids.front();
+	auto idsub = ids.back();
 	const_cast<Formula*>(f)->negate();
 	m.negations->add(id);
 	m.singleform->add( { id, idsub }, true);

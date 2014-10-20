@@ -27,3 +27,16 @@ Wichita; Tulsa; Ottawa; Oklahoma; Tampa; Panama; Mattawa}
 procedure getExpectedNbOfModels(){
 	return 1
 }
+
+procedure allowed(){
+//DO NOT RUN VERY LAZY, see #827
+if(	stdoptions.lazyheur==true and
+	stdoptions.relevancewatched==true and
+	stdoptions.existsexpansion==2 and
+	stdoptions.lazysizelimit==3 and
+	stdoptions.satdelay==true and
+	stdoptions.tseitindelay==true) then
+	return false
+	end
+	return true
+}
