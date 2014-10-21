@@ -965,6 +965,7 @@ public:
 		Assert(isTheoryOpen());
 		if (not table->finite()) {
 			std::clog << "Requested to print infinite table, did not do this.\n";
+			return;
 		}
 		TableIterator kt = table->begin();
 		if (table->arity() > 0) {
