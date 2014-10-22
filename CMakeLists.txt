@@ -84,12 +84,21 @@ endif()
 
 ### 32 bits
 option(32BITS "Compile for 32 bit architectures" OFF)
-if(32BITS)
-	addToCXX("-m32")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")
+if(NOT 32BITS) # Cmake user didn't "force" 32bit compilation - do autodetection
+  if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8) # Cmake built-in to detect whether you're on a 64b machine or not
+    set(32BITS ON)
+  endif()
 endif()
 
+if(32BITS)
+  addToCXX("-m32")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")      
+endif()
+message(STATUS "Compiling for 32 bit machine (32BITS): ${32BITS}")
+
+
+### Build type
 set(WRONGBUILD ON)
 if(${CMAKE_BUILD_TYPE} MATCHES "^Profile$")
 	addToCXX("-DNDEBUG -O3 -pg ")
