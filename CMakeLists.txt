@@ -37,7 +37,7 @@ macro(addToCXX ARGUMENT)
 endmacro()
 
 macro(alsoClean ARGUMENT)
-    set(ADDITIONAL_CLEAN_FILES_TO_CLEAN "${ADDITIONAL_CLEAN_FILES_TO_CLEAN};${ARGUMENT}")
+	set(ADDITIONAL_CLEAN_FILES_TO_CLEAN "${ADDITIONAL_CLEAN_FILES_TO_CLEAN};${ARGUMENT}")
 endmacro()
 
 ### Fix for newest ubuntu+gcc
@@ -85,15 +85,15 @@ endif()
 ### 32 bits
 option(32BITS "Compile for 32 bit architectures" OFF)
 if(NOT 32BITS) # Cmake user didn't "force" 32bit compilation - do autodetection
-  if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8) # Cmake built-in to detect whether you're on a 64b machine or not
-    set(32BITS ON)
-  endif()
+	if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8) # Cmake built-in to detect whether you're on a 64b machine or not
+		set(32BITS ON)
+	endif()
 endif()
 
 if(32BITS)
-  addToCXX("-m32")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")      
+	addToCXX("-m32")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
+	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")	  
 endif()
 message(STATUS "Compiling for 32 bit machine (32BITS): ${32BITS}")
 
@@ -165,78 +165,78 @@ include(ExternalProject)
 #SPASS
 option(SPASS  "Compile and install the SPASS theorem prover" ON)
 if(SPASS)
-    ExternalProject_Add(
-      spass
-      SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7
-      CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/spass
-      BUILD_IN_SOURCE 0
-    )
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spass/bin/ DESTINATION bin FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+	ExternalProject_Add(
+		spass
+		SOURCE_DIR ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7
+		CONFIGURE_COMMAND ${PROJECT_SOURCE_DIR}/lib/SPASS-3.7/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/spass
+		BUILD_IN_SOURCE 0
+	)
+	install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spass/bin/ DESTINATION bin FILES_MATCHING PATTERN "*" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 else()
-    message(STATUS "SPASS will not be installed automatically. To be able to use it, install it manually and change the appropriate call in your config.idp file.")
+	message(STATUS "SPASS will not be installed automatically. To be able to use it, install it manually and change the appropriate call in your config.idp file.")
 endif()
 
 #XSB
 option(WITHXSB  "Compile with XSB support" ON)
 if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in currently unfixable segfaults
-    message(STATUS "compile with XSB support: ON")
-    addToCXX("-D WITHXSB")
-    set(XSB_VERSION "3.5.0")
-    set(XSB_INSTALL_URL "/bin/xsb/xsb-${XSB_VERSION}/")
-    addToCXX("-D XSB_INSTALL_URL=\\\\\"\"${XSB_INSTALL_URL}/\\\\\"\" ") # This has a bunch of layers of \ characters, because it gets evaluated a lot... don't ask. Version below also works (less unnesting)
-#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL2=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
-    set(XSB_COPIED_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/XSB")
-    set(XSB_BUILD_DIR "${XSB_COPIED_SOURCE_DIR}/build")
-    add_custom_target(copy_xsb_source_code)
-    file(GLOB_RECURSE XSB_SOURCE_FILES ${PROJECT_SOURCE_DIR}/lib/XSB/*)
-    add_custom_command(
-        TARGET copy_xsb_source_code PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/lib/XSB  ${XSB_COPIED_SOURCE_DIR})
-    alsoClean(${XSB_COPIED_SOURCE_DIR})
+	message(STATUS "compile with XSB support: ON")
+	addToCXX("-D WITHXSB")
+	set(XSB_VERSION "3.5.0")
+	set(XSB_INSTALL_URL "/bin/xsb/xsb-${XSB_VERSION}/")
+	addToCXX("-D XSB_INSTALL_URL=\\\\\"\"${XSB_INSTALL_URL}/\\\\\"\" ") # This has a bunch of layers of \ characters, because it gets evaluated a lot... don't ask. Version below also works (less unnesting)
+#	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL2=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
+	set(XSB_COPIED_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/XSB")
+	set(XSB_BUILD_DIR "${XSB_COPIED_SOURCE_DIR}/build")
+	add_custom_target(copy_xsb_source_code)
+	file(GLOB_RECURSE XSB_SOURCE_FILES ${PROJECT_SOURCE_DIR}/lib/XSB/*)
+	add_custom_command(
+		TARGET copy_xsb_source_code PRE_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/lib/XSB  ${XSB_COPIED_SOURCE_DIR})
+	alsoClean(${XSB_COPIED_SOURCE_DIR})
 
-    set(XSB_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/xsbinstall")
-    alsoClean(${XSB_INSTALL_DIR})
+	set(XSB_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/xsbinstall")
+	alsoClean(${XSB_INSTALL_DIR})
 
-#     if (NOT EXISTS ${XSB_COPIED_SOURCE_DIR})
-#         # copy XSB source directory
-#         message(STATUS "Copying XSB source directory, this might take a while...")
-#         file(COPY ${PROJECT_SOURCE_DIR}/lib/XSB DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-#         message(STATUS "Copying XSB source directory, this might take a while... - done")
-#     endif()
+#	 if (NOT EXISTS ${XSB_COPIED_SOURCE_DIR})
+#		 # copy XSB source directory
+#		 message(STATUS "Copying XSB source directory, this might take a while...")
+#		 file(COPY ${PROJECT_SOURCE_DIR}/lib/XSB DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#		 message(STATUS "Copying XSB source directory, this might take a while... - done")
+#	 endif()
 
-    execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
-                    OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
-    file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
-    if (32BITS)   # Currently never used, since it's filtered out in the top-level if above
-      set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
-      set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=bits32)
-      set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install --config-tag=bits32)
-      set(XSB_CONFIG_STRING ${XSB_CONFIG_STRING}-bits32)
-    else()
-      set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC)
-      set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb)
-      set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install)
-    endif()
+	execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
+					OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
+	file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
+	if (32BITS)   # Currently never used, since it's filtered out in the top-level if above
+		set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
+		set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=bits32)
+		set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install --config-tag=bits32)
+		set(XSB_CONFIG_STRING ${XSB_CONFIG_STRING}-bits32)
+	else()
+		set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC)
+		set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb)
+		set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install)
+	endif()
 
-    include_directories (
-        "${XSB_COPIED_SOURCE_DIR}/emu"
-        "${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}"
-    )
-    file(MAKE_DIRECTORY ${XSB_BUILD_DIR}/dummy) # Needed to stop complaining from adding XSB project - souce dir specified has to be non-empty
-    ExternalProject_Add(
-      xsb
-      SOURCE_DIR ${XSB_COPIED_SOURCE_DIR}/build
-      CONFIGURE_COMMAND ${XSB_CONFIG_COMMAND}
-      BUILD_COMMAND ${XSB_BUILD_COMMAND}
-      INSTALL_COMMAND ${XSB_INSTALL_COMMAND}
-      BUILD_IN_SOURCE 1
-    )
-    add_dependencies(xsb copy_xsb_source_code)
+	include_directories (
+		"${XSB_COPIED_SOURCE_DIR}/emu"
+		"${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}"
+	)
+	file(MAKE_DIRECTORY ${XSB_BUILD_DIR}/dummy) # Needed to stop complaining from adding XSB project - souce dir specified has to be non-empty
+	ExternalProject_Add(
+		xsb
+		SOURCE_DIR ${XSB_COPIED_SOURCE_DIR}/build
+		CONFIGURE_COMMAND ${XSB_CONFIG_COMMAND}
+		BUILD_COMMAND ${XSB_BUILD_COMMAND}
+		INSTALL_COMMAND ${XSB_INSTALL_COMMAND}
+		BUILD_IN_SOURCE 1
+	)
+	add_dependencies(xsb copy_xsb_source_code)
 else()
-    message(STATUS "compile with XSB support: OFF")
-    if(WITHXSB AND 32BITS)
-        message(STATUS "  .. because currently 32 bit compilation is not supported with XSB")
-    endif()
+	message(STATUS "compile with XSB support: OFF")
+	if(WITHXSB AND 32BITS)
+		message(STATUS "  .. because currently 32 bit compilation is not supported with XSB")
+	endif()
 endif()
 
 #REST
