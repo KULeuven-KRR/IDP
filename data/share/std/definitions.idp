@@ -150,8 +150,6 @@ namespace stdspace{
 			// IN
 			extern vocabulary higher
 			xsbcalculable(def)
-			twovaluedsymbol(symbol)
-			calculabledef(def)
 			
 			// OUT
 			dependson(def,def)
@@ -163,14 +161,8 @@ namespace stdspace{
 				dependson(d1,d2) <- ?d3 : dependson(d1,d3) & dependson(d3,d2).
 			}
 			{
-				calculabledef(d) <- xsbcalculable(d) & 
-									! s : openin(s,d) => twovaluedsymbol(s).
-				calculabledef(d) <- xsbcalculable(d) & 
-									! s : openin(s,d) => (twovaluedsymbol(s) | ?d2 : d ~= d2 & definedin(s,d2) & calculabledef(d2)).
-			}
-			{
 				samedef(d,d).
-				samedef(d1,d2) <- calculabledef(d1) & calculabledef(d2) & 
+				samedef(d1,d2) <- xsbcalculable(d1) & xsbcalculable(d2) & 
 								  ~(dependson(d1,d2) & dependson(d2,d1)) & 
 				                  (~? s : definedin(s,d1) & definedin(s,d2)) &
 				                  ~(?def : ~samedef(d1,def) & dependson(d2,def)).

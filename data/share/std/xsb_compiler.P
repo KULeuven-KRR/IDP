@@ -132,8 +132,7 @@ ixsubset([_|Tail],NTail) :-
 ixint(X) :- 
     nonvar(X),
     ROUNDEDNUMBER is round(X),
-    ZERO is ROUNDEDNUMBER - X,
-    0 is round(ZERO).
+    0 is ROUNDEDNUMBER - X.
     
 ixint(X) :- 
     var(X),

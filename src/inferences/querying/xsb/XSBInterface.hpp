@@ -40,7 +40,7 @@ public:
 	static XSBInterface* instance();
 	void reset();
 	void exit();
-	void load(const Definition*, Structure*);
+	void load(Definition*, Structure*);
 	SortedElementTable queryDefinition(PFSymbol*, TruthValue tv = TruthValue::True);
 	bool query(PFSymbol*, ElementTuple);
 	PrologTerm* atom2term(PredForm* pf);

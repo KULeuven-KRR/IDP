@@ -22,11 +22,11 @@ class PFSymbol;
 class CollectOpensOfDefinitions: public DefaultTraversingTheoryVisitor {
 	VISITORFRIENDS()
 private:
-	const Definition* _definition;
+	Definition* _definition;
 	std::set<PFSymbol*> _result;
 
 public:
-	const std::set<PFSymbol*>& execute(const Definition* d);
+	const std::set<PFSymbol*>& execute(Definition* d);
 protected:
 	void visit(const PredForm* pf);
 	void visit(const FuncTerm* ft);

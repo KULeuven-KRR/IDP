@@ -18,7 +18,6 @@ set (idp_VERSION_PATCH 0)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
-set(CMAKE_INSTALL_MESSAGE LAZY)
 
 include(cmake/outofsourcecheck.cmake)
 assureOutOfSourceBuilds()
@@ -171,7 +170,6 @@ endif()
 #XSB
 option(WITHXSB  "Compile with XSB support" ON)
 if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in currently unfixable segfaults
-    set(XSBUSED ON)
     message(STATUS "compile with XSB support: ON")
     addToCXX("-D WITHXSB")
     set(XSB_VERSION "3.5.0")
@@ -186,13 +184,20 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
         TARGET copy_xsb_source_code PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/lib/XSB  ${XSB_COPIED_SOURCE_DIR})
     alsoClean(${XSB_COPIED_SOURCE_DIR})
+
     set(XSB_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/xsbinstall")
     alsoClean(${XSB_INSTALL_DIR})
 
-    execute_process(COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/config.guess 
+#     if (NOT EXISTS ${XSB_COPIED_SOURCE_DIR})
+#         # copy XSB source directory
+#         message(STATUS "Copying XSB source directory, this might take a while...")
+#         file(COPY ${PROJECT_SOURCE_DIR}/lib/XSB DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#         message(STATUS "Copying XSB source directory, this might take a while... - done")
+#     endif()
+
+    execute_process(COMMAND ${XSB_COPIED_SOURCE_DIR}/build/config.guess 
                     OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
     file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
-
     if (32BITS)   # Currently never used, since it's filtered out in the top-level if above
       set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
       set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=bits32)
@@ -219,12 +224,11 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
     )
     add_dependencies(xsb copy_xsb_source_code)
 else()
-    set(XSBUSED OFF)
+    message(STATUS "compile with XSB support: OFF")
     if(WITHXSB AND 32BITS)
         message(STATUS "  .. because currently 32 bit compilation is not supported with XSB")
     endif()
 endif()
-message(STATUS "compile with XSB support: ${XSBUSED}")
 
 #REST
 add_subdirectory(lib/minisatid)

@@ -19,7 +19,6 @@ class AbstractTheory;
 class Theory;
 class Predicate;
 class Definition;
-class PFSymbol;
 class Structure;
 
 /**
@@ -57,14 +56,10 @@ class Structure;
 class JoinDefinitionsForXSB {
 
 public:
-	Theory* execute(Theory* t, const Structure* s);
+	Theory* execute(Theory* t);
 private:
-	std::vector<Definition*> joinForXSB(Structure*,
-			UniqueNames<const Definition*>&); //Takes a structure containing metadata regarding one or more definitions and splits
-	void prepare(Structure*,
-			UniqueNames<const Definition*>&,
-			const Structure*,
-			UniqueNames<PFSymbol*>&); //Prepares all options etcetera
+	std::vector<Definition*> joinForXSB(Structure* s,UniqueNames<const Definition*>& uniqueDefinitionNames); //Takes a structure containing metadata regarding one or more definitions and splits
+	void prepare(Structure*, UniqueNames<const Definition*>&); //Prepares all options etcetera
 	void finish(); //Should be ran before exiting! Set back options.
 
 private:
@@ -74,6 +69,5 @@ private:
 	//Output of the bootstrapping
 	Predicate* sameDef;
 	Predicate* xsbCalculable;
-	Predicate* twoValuedSymbol;
 
 };

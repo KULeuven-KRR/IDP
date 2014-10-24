@@ -15,7 +15,7 @@
 
 using namespace std;
 
-const std::set<PFSymbol*>& CollectOpensOfDefinitions::execute(const Definition* d) {
+const std::set<PFSymbol*>& CollectOpensOfDefinitions::execute(Definition* d) {
 	_definition = d;
 	_result.clear();
 	d->accept(this);
