@@ -91,23 +91,27 @@ XSBInterface::XSBInterface() {
 		commandCall(ss1.str());
 	}
 	stringstream ss2;
-	ss2 << "consult('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
+	// We choose to load_dyn in the basic file for two reasons:
+	// 1: the file isn't that big, compiling wouldn't really offer that much benefits
+	// 2: compiling the file requires writing permissions, which may not be present at run-time
+	ss2 << "load_dyn('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
 	commandCall(ss2.str());
 }
 
-void XSBInterface::load(Definition* d, Structure* structure) {
+void XSBInterface::load(const Definition* d, Structure* structure) {
 	// TODO: delete possible previous PrologProgram?
 	_pp = new PrologProgram(structure,_translator);
 	_structure = structure;
 	auto cloned_definition = d->clone();
-	Theory theory("", _structure->vocabulary(), ParseInfo());
-	theory.add(cloned_definition);
-	FormulaUtils::unnestFuncsAndAggs(&theory, _structure);
-	FormulaUtils::graphFuncsAndAggs(&theory, _structure, cloned_definition->defsymbols(), true, false);
-	FormulaUtils::removeEquivalences(&theory);
-	FormulaUtils::pushNegations(&theory);
-	FormulaUtils::flatten(&theory);
-	_pp->setDefinition(cloned_definition);
+	auto theory = new Theory("", _structure->vocabulary(), ParseInfo());
+	theory->add(cloned_definition);
+	FormulaUtils::unnestFuncsAndAggs(theory, _structure);
+	FormulaUtils::graphFuncsAndAggs(theory, _structure, cloned_definition->defsymbols(), true, false);
+	FormulaUtils::removeEquivalences(theory);
+	FormulaUtils::pushNegations(theory);
+	FormulaUtils::flatten(theory);
+	_pp->setDefinition(cloned_definition->clone());
+	theory->recursiveDelete(); // memory management - delete everything of the temp. theory
 	//TODO: Not really a reason anymore to generate code separate from facts and ranges, since "facts" now also possibly contain P :- tnot(P) rules
 	auto str2 = _pp->getFacts();
 	auto str = _pp->getCode();

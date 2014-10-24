@@ -32,9 +32,8 @@
 #include <iostream>
 
 using namespace std;
-DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Definition* d, Structure* structure,
+DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Definition* definition, Structure* structure,
 		bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const {
-	auto definition = d->clone();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
@@ -59,7 +58,6 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 				}
 			}
 		}
-		definition->recursiveDelete();
 
 		for (auto symbol : symbols) {
 			auto sorted = xsb_interface->queryDefinition(symbol);
@@ -104,7 +102,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	// Default: Evaluation using ground-and-solve
 	auto data = SolverConnection::createsolver(1);
 	auto theory = new Theory("", structure->vocabulary(), ParseInfo());
-	theory->add(definition);
+	theory->add(definition->clone());
 	bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 	bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
 	auto symstructure = generateBounds(theory, structure, propagate, LUP);
@@ -189,7 +187,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 #ifdef WITHXSB
 	if (getOption(XSB)) {
-		DefinitionUtils::joinDefinitionsForXSB(theory);
+		DefinitionUtils::joinDefinitionsForXSB(theory, structure);
 	}
 #endif
 
