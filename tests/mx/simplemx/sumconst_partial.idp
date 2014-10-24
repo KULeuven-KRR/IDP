@@ -1,0 +1,17 @@
+vocabulary V {
+	type X isa int
+	partial c: X
+}
+
+theory T : V {
+	sum{:true:c}<1.
+}
+
+structure S : V {
+	X = {1..10}
+	c = {}
+}
+
+procedure getExpectedNbOfModels() {
+	return 1
+}
