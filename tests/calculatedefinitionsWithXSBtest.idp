@@ -62,7 +62,7 @@ procedure checkDefinitionRefining(theory, structure) {
 	stdoptions.xsb=true
 	stdoptions.nbmodels=0
 	
-	io.stderr:write("Refined definitions with XSB...")
+	io.stderr:write("Refining definitions with XSB...")
 	REFINEDDEFS=refinedefinitions(theory,structure)
 	if (REFINEDDEFS==nil) then
 		io.stderr:write("no model was found\n");
