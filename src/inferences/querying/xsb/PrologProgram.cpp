@@ -45,6 +45,9 @@ void PrologProgram::setDefinition(Definition* d) {
 	for (auto clause = builder.clauses().begin(); clause != builder.clauses().end(); ++clause) {
 		converter.visit(*clause);
 	}
+	for (auto clause : builder.clauses()) {
+		clause->recursiveDelete();
+	}
 }
 
 string PrologProgram::getCode() {
@@ -207,6 +210,7 @@ std::ostream& operator<<(std::ostream& output, const PrologClause& pc) {
 				output << ", " << *(*it)->instantiation();
 			}
 		}
+		delete(instantiatedAndCheckedVars);
 	}
 	output << ".";
 	return output;

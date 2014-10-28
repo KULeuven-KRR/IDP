@@ -34,7 +34,6 @@ protected:
 	list<PrologVariable*> _variables;
 	set<PrologVariable*> _instantiatedVariables;
 	string _name;
-	Formula* _formula;
 	bool _numeric;
 	set<PrologVariable*> _inputvars_to_check;
 	set<PrologVariable*> _outputvars_to_check;
@@ -42,12 +41,13 @@ public:
 	FormulaClause(const string& name, FormulaClause* parent = NULL)
 	: 	_parent(parent),
 				_name(name),
-				_formula(NULL),
 				_numeric(false){
 	}
-	virtual ~FormulaClause(){
-		// TODO what should be deleted?
+	virtual ~FormulaClause() {
+
 	}
+
+	virtual void recursiveDelete() = 0;
 
 	virtual void accept(FormulaClauseVisitor*) = 0;
 	virtual PrologTerm* asTerm();
@@ -111,13 +111,6 @@ public:
 	}
 	string name() {
 		return _name;
-	}
-
-	void formula(Formula* f) {
-		_formula = f;
-	}
-	Formula* formula() {
-		return _formula;
 	}
 	bool numeric() {
 		return _numeric;
@@ -184,6 +177,9 @@ public:
 				_tabled(false),
 				_fact(false),
 				_numerical_operation(false) {
+	}
+	void recursiveDelete() {
+		delete(this);
 	}
 	void infix(bool b) {
 		_infix = b;
@@ -260,7 +256,6 @@ public:
 			: 	PrologTerm(name),
 				_type(type) {
 	}
-
 	string type() {
 		return _type;
 	}
@@ -292,6 +287,14 @@ public:
 	CompositeFormulaClause(string name)
 			: 	FormulaClause(name),
 				_children() {
+	}
+	~CompositeFormulaClause() {
+	}
+	void recursiveDelete() {
+		for (auto f : _children) {
+			f->recursiveDelete();
+		}
+		delete(this);
 	}
 	list<FormulaClause*>& children() {
 		return _children;
@@ -326,6 +329,13 @@ public:
 			: 	FormulaClause(name),
 				_quantifiedVariables(),
 				_child() {
+	}
+	~QuantifiedFormulaClause() {
+
+	}
+	void recursiveDelete() {
+//		_child->recursiveDelete();
+		delete(this);
 	}
 	set<PrologVariable*>& quantifiedVariables() {
 		return _quantifiedVariables;
@@ -405,21 +415,20 @@ class SetExpression: public FormulaClause {
 private:
 	bool _twovaluedbody;
 	PrologVariable* _var;
-	set<PrologVariable*> _quantvars;
 public:
 	SetExpression(string name, XSBToIDPTranslator* translator, bool twovaluedbody);
 	PrologVariable* var() {
 		return _var;
 	}
+	~SetExpression() {
+
+	}
+	void recursiveDelete() {
+		_var->recursiveDelete();
+		delete(this);
+	}
 	void close() {
 		FormulaClause::addArgument(_var);
-	}
-	void quantifiedVariables(set<PrologVariable*> v) {
-		_quantvars = v;
-	}
-
-	set<PrologVariable*>& quantifiedVariables() {
-		return _quantvars;
 	}
 	bool hasTwoValuedBody() {
 		return _twovaluedbody;
@@ -435,6 +444,17 @@ public:
 			: SetExpression(name, translator, twovaluedbody),
 			  _last(NULL),
 			  _set() {}
+	~EnumSetExpression() {
+
+	}
+	void recursiveDelete() {
+		for (auto m : _set) {
+			m.first->recursiveDelete();
+			m.second->recursiveDelete();
+		}
+		_last->recursiveDelete();
+		delete(this);
+	}
 	void addChild(FormulaClause* f) {
 		_last = f;
 	}
@@ -456,6 +476,14 @@ public:
 			: SetExpression(name, translator, twovaluedbody),
 			  _term(NULL),
 			  _clause(NULL) {}
+	~QuantSetExpression() {
+
+	}
+	void recursiveDelete() {
+		_clause->recursiveDelete();
+		_term->recursiveDelete();
+		delete(this);
+	}
 	void addChild(FormulaClause* f) {
 		_clause = f;
 	}
@@ -480,6 +508,14 @@ private:
 	PrologVariable* _result;
 public:
 	AggregateTerm(string name, XSBToIDPTranslator* translator);
+	~AggregateTerm() {
+
+	}
+	void recursiveDelete() {
+		_set->recursiveDelete();
+		_result->recursiveDelete();
+		delete(this);
+	}
 	void accept(FormulaClauseVisitor*);
 	void agg_type(string type) {
 		_agg_type = type;
@@ -514,6 +550,15 @@ public:
 				_comparison_type(),
 				_aggterm(),
 				_term() {
+	}
+	~AggregateClause() {
+
+	}
+	void recursiveDelete() {
+		_aggterm->recursiveDelete();
+		_term->recursiveDelete();
+		_aggvar->recursiveDelete();
+		delete(this);
 	}
 	PrologVariable* aggvar() {
 		return _aggvar;
