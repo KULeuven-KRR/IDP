@@ -23,6 +23,9 @@
 
 using namespace std;
 
+PrologProgram::~PrologProgram() {
+	_definition->recursiveDelete();
+}
 void PrologProgram::setDefinition(Definition* d) {
 	_definition = d;
 

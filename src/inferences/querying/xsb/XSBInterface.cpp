@@ -182,6 +182,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
     char* delimiter = new char [strlen(" ") + 1];
     strcpy(delimiter," ");
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
+	delete(query);
 	handleResult(rc);
 
 	while (rc == XSB_SUCCESS) {
