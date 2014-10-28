@@ -9,11 +9,9 @@ vocabulary V {
     toY(El):yCo
     xDist(El,El):El
     yDist(El,El):El
-    dist(El,El):El
     from(xCo,yCo):El
     
     
-    cost(El,El):Cost
     
     totCost : Cost
 }
@@ -25,7 +23,6 @@ theory T : V {
     {
         xDist(a,b)=abs(toX(a)-toX(b)).
         yDist(a,b)=abs(toY(a)-toY(b)).
-        dist(a,b)= xDist(a,b)*xDist(a,b)+yDist(a,b)*yDist(a,b).
     }
     
     
@@ -33,18 +30,7 @@ theory T : V {
         !a[El] : gcd(a,a)=a.
         !a[El] b[El] : gcd(a,b)=gcd(b,a).
         !a[El] b[El] : gcd(a,b)=gcd(a,b-a).
-    }
-    
-    
-    
-    {
-        !a[El] b[El]: cost(a,b)= gcd(a,b) * dist(a,b) <- a < b.
-        cost(a,b)=0 <- a >= b.
-    }
-    
-    
-    totCost = sum{a b : true : cost(a,b)}.
-    
+    }    
 }
 
 structure S : V {
