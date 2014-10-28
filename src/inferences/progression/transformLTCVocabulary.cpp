@@ -28,6 +28,7 @@ void LTCVocabularyTransformer::projectAndAddSymbol(PFSymbol* pred) {
 
 	std::vector<PFSymbol*> newSymbols;
 	if(LTCData::instance()->hasBeenProjected(pred)){
+		projectSorts(pred); //Needed: sets the index of time.
 		newSymbols = LTCData::instance()->getProjection(pred);
 	} else{
 		newSymbols = projectSymbol(pred);
