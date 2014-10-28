@@ -18,7 +18,6 @@
 #include "../transformLTCVocabulary.hpp"
 #include "vocabulary/vocabulary.hpp"
 
-
 LTCData* _LTCinstance = NULL;
 
 LTCData* LTCData::instance() {
@@ -50,6 +49,20 @@ const LTCVocInfo* LTCData::getStateVocInfo(const Vocabulary* v) {
 	auto symbols = collectLTCSortAndFunctions(v);
 	return getStateVocInfo(v, symbols);
 
+}
+
+bool LTCData::hasBeenProjected(PFSymbol* pf) {
+	return _projectedSymbols.find(pf) != _projectedSymbols.cend();
+}
+std::vector<PFSymbol*> LTCData::getProjection(PFSymbol* pf) {
+	auto result = _projectedSymbols.find(pf);
+	if (result != _projectedSymbols.cend()) {
+		return result->second;
+	}
+	return {};
+}
+void LTCData::setProjection(PFSymbol* pf, std::vector<PFSymbol*> v) {
+	_projectedSymbols[pf] = v;
 }
 
 const LTCVocInfo* LTCData::getStateVocInfo(const Vocabulary* v, LTCInputData symbols) {

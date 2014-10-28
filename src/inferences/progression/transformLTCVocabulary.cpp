@@ -25,7 +25,14 @@ LTCVocabularyTransformer::~LTCVocabularyTransformer() {
 }
 
 void LTCVocabularyTransformer::projectAndAddSymbol(PFSymbol* pred) {
-	auto newSymbols = projectSymbol(pred);
+
+	std::vector<PFSymbol*> newSymbols;
+	if(LTCData::instance()->hasBeenProjected(pred)){
+		newSymbols = LTCData::instance()->getProjection(pred);
+	} else{
+		newSymbols = projectSymbol(pred);
+		LTCData::instance()->setProjection(pred,newSymbols);
+	}
 	if (newSymbols.size() == 0) {
 		return;
 	} else if (newSymbols.size() == 1) {
