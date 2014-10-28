@@ -198,6 +198,7 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	}
 	XSB_StrDestroy(&buff);
 
+	delete(delimiter);
 	delete (term);
 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {

@@ -64,12 +64,14 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
             auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));
             if(not isConsistentWith(predtable1, structure->inter(symbol))){
+            	delete(predtable1);
             	xsb_interface->reset();
             	result._hasModel=false;
             	result._calculated_model=structure;
             	return result;
             }
             structure->inter(symbol)->ctpt(predtable1);
+        	delete(predtable1);
             structure->clean();
             if(isa<Function>(*symbol)) {
             	auto fun = dynamic_cast<Function*>(symbol);
