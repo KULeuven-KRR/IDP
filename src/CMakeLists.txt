@@ -77,6 +77,7 @@ endif()
 add_library(idp ${IDPFILES})
 
 if(XSBUSED)
+	add_dependencies(idp xsb)
 endif()
 
 if(NOT CMAKE_COMPILER_IS_MINGW)
