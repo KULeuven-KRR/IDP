@@ -142,6 +142,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<SetOptionsInference>());
 	inferences.push_back(make_shared<CreateTupleInference>());
 	inferences.push_back(make_shared<MinimizeInference>());
+	inferences.push_back(make_shared<MinimizeWithVocInference>());
 	inferences.push_back(make_shared<GetOptionsInference>());
 	inferences.push_back(make_shared<ParseInference>());
 	inferences.push_back(make_shared<TheoryQueryInference>());

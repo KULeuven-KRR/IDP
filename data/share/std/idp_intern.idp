@@ -112,7 +112,7 @@ procedure sat(theory, structure) {
  * The second return value is a boolean, representing whether or not the models are optimal with respect to the given term. 
  * The third return argument is the value of the term in the optimal model.
  * The (optional) fourth argument is a trace of the solver (depending on stdoptions.trace)*/
-procedure minimize(theory, structure, term){
+procedure minimize(theory, structure, term, vocabulary){
 	if type(theory) ~= "theory" then
 		io.stderr:write("Error: theory expected\n")
 		return
@@ -125,10 +125,21 @@ procedure minimize(theory, structure, term){
 		io.stderr:write("Error: term expected\n")
 		return
 	end
+	if type(vocabulary) ~= "vocabulary" then
+		io.stderr:write("Error: vocabulary expected\n")
+		return
+	end
+	
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
 	flatten(clonetheo)
-	local solutions, optimal, value, trace = idpintern.minimize(clonetheo,structure,term)
+	
+	local solutions, optimal, value, trace
+	if(vocabulary~=nil) then
+		solutions, optimal, value, trace = idpintern.minimize(clonetheo,structure,term,vocabulary)
+	else
+		solutions, optimal, value, trace = idpintern.minimize(clonetheo,structure,term)
+	end	
 	local solutions2 = nbModelsTwoValuedExtensions(solutions)
 	return solutions2, optimal, value, trace
 }
