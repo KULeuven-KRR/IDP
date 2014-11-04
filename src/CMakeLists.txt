@@ -57,7 +57,7 @@ set(LIBGIDLCPPFILES "")
 file(GLOB_RECURSE LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/" "*.cpp")
 file(GLOB_RECURSE LIBGIDLHPPFILES "${PROJECT_SOURCE_DIR}/src/" "*.hpp")
 LIST(REMOVE_ITEM LIBGIDLCPPFILES "${PROJECT_SOURCE_DIR}/src/external/main.cpp")
-if(NOT WITHXSB)
+if(NOT XSBUSED)
 	file(GLOB XSBFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/*.hpp")
 	file(GLOB XSBFILES "${PROJECT_SOURCE_DIR}/src/inferences/querying/xsb/*.cpp")
 	LIST(REMOVE_ITEM LIBGIDLHPPFILES ${XSBFILES}) 
@@ -65,7 +65,7 @@ if(NOT WITHXSB)
 endif()
 set(IDPFILES "${IDPFILES};${LIBGIDLHPPFILES};${LIBGIDLCPPFILES}")
 
-if(WITHXSB)
+if(XSBUSED)
 	set_source_files_properties(
 		${XSB_COPIED_SOURCE_DIR}/config/${XSB_CONFIG_STRING}/saved.o/xsb.o PROPERTIES
 		EXTERNAL_OBJECT TRUE  # Identifies this as an object file
@@ -76,7 +76,8 @@ endif()
 
 add_library(idp ${IDPFILES})
 
-if(WITHXSB)
+if(XSBUSED)
+	add_dependencies(idp xsb)
 endif()
 
 if(NOT CMAKE_COMPILER_IS_MINGW)
@@ -99,7 +100,7 @@ if(BUILD_IDP_STATIC)
 endif()
 
 target_link_libraries(idp-bin idp minisatid lua linenoise tinythread)
-if(WITHXSB)
+if(XSBUSED)
 	target_link_libraries(idp-bin dl)
 endif()
 
@@ -126,7 +127,7 @@ install (FILES ${PROJECT_SOURCE_DIR}/data/var/config.idp DESTINATION var)
 install (FILES ${DATAFILES} ${PROJECT_SOURCE_DIR}/data/share/std/idp_intern.lua
 		 DESTINATION share/std)
 
-if(WITHXSB)
+if(XSBUSED)
 	install (FILES ${PROJECT_SOURCE_DIR}/data/share/std/xsb_compiler.P
 		DESTINATION share/std)
 	install (DIRECTORY ${XSB_INSTALL_DIR}/xsb-${XSB_VERSION}/bin/

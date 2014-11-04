@@ -18,6 +18,25 @@
 using std::string;
 using std::stringstream;
 
+void FormulaClause::recursiveDelete() {
+	for (auto arg : _arguments) {
+		arg->recursiveDelete();
+	}
+	for (auto arg : _variables) {
+		arg->recursiveDelete();
+	}
+	for (auto arg : _instantiatedVariables) {
+		arg->recursiveDelete();
+	}
+	for (auto arg : _inputvars_to_check) {
+		arg->recursiveDelete();
+	}
+	for (auto arg : _inputvars_to_check) {
+		arg->recursiveDelete();
+	}
+	delete (this);
+}
+
 std::ostream& operator<<(std::ostream& output, const PrologVariable& pv) {
 	output << pv._name;
 	return output;

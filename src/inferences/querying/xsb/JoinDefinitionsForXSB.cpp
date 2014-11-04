@@ -19,7 +19,7 @@
 
 extern void parsefile(const std::string&);
 
-Theory* JoinDefinitionsForXSB::execute(Theory* t) {
+Theory* JoinDefinitionsForXSB::execute(Theory* t, const Structure* s) {
 	if(not getOption(JOIN_DEFS_FOR_XSB)){
 		return t;
 	}
@@ -30,7 +30,7 @@ Theory* JoinDefinitionsForXSB::execute(Theory* t) {
 
 	auto structure = BootstrappingUtils::getDefinitionInfo(t, usn, urn, udn);
 
-	prepare(structure,udn);
+	prepare(structure,udn,s,usn);
 
 	auto newDefs = joinForXSB(structure, udn);
 	delete(structure);
@@ -42,7 +42,8 @@ Theory* JoinDefinitionsForXSB::execute(Theory* t) {
 	return t;
 }
 
-std::vector<Definition*> JoinDefinitionsForXSB::joinForXSB(Structure* structure, UniqueNames<const Definition*>& uniqueDefinitionNames){
+std::vector<Definition*> JoinDefinitionsForXSB::joinForXSB(Structure* structure,
+		UniqueNames<const Definition*>& uniqueDefinitionNames){
 	auto temptheo = jointheo->clone();
 	// Set the interpretation for xsbCalculable
 
@@ -93,7 +94,10 @@ std::vector<Definition*> JoinDefinitionsForXSB::joinForXSB(Structure* structure,
 	return result;
 }
 
-void JoinDefinitionsForXSB::prepare(Structure* structure, UniqueNames<const Definition*>& uniqueDefinitionNames) {
+void JoinDefinitionsForXSB::prepare(Structure* structure,
+		UniqueNames<const Definition*>& uniqueDefinitionNames,
+		const Structure* structureInput,
+		UniqueNames<PFSymbol*>& uniqueSymbolNames) {
 	if (not getGlobal()->instance()->alreadyParsed("definitions")) {
 		parsefile("definitions");
 	}
@@ -107,6 +111,8 @@ void JoinDefinitionsForXSB::prepare(Structure* structure, UniqueNames<const Defi
 	Assert(sameDef != NULL);
 	xsbCalculable = joinVoc->pred("xsbcalculable/1");
 	Assert(xsbCalculable != NULL);
+	twoValuedSymbol = joinVoc->pred("twovaluedsymbol/1");
+	Assert(twoValuedSymbol != NULL);
 
 	auto higherTheo = defnamespace->theory("findHigher");
 	Assert(higherTheo != NULL);
@@ -124,9 +130,16 @@ void JoinDefinitionsForXSB::prepare(Structure* structure, UniqueNames<const Defi
 		if (CalculateDefinitions::determineXSBUsage(def)) {
 			structure->inter(xsbCalculable)->ct()->add( { mapName(def, uniqueDefinitionNames) });
 		}
+		auto opens = DefinitionUtils::opens(def);
+		for (auto open : opens) {
+			if (structureInput->inter(open)->approxTwoValued()) {
+				structure->inter(twoValuedSymbol)->ct()->add( { mapName(open, uniqueSymbolNames) });
+			}
+		}
 	}
 	structure->checkAndAutocomplete();
 	makeUnknownsFalse(structure->inter(xsbCalculable));
+	makeUnknownsFalse(structure->inter(twoValuedSymbol));
 	structure->clean();
 
 	savedOptions = BootstrappingUtils::setBootstrappingOptions();

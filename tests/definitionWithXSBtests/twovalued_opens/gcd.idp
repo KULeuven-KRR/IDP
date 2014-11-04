@@ -1,0 +1,41 @@
+vocabulary V {
+    type xCo isa int
+    type yCo isa int
+    type Cost isa int
+    type El isa int
+    
+    gcd(El,El):El
+    toX(El):xCo
+    toY(El):yCo
+    xDist(El,El):El
+    yDist(El,El):El
+    from(xCo,yCo):El
+    
+    
+    
+    totCost : Cost
+}
+
+theory T : V {
+    {
+        from(x,y)=e <- (toX(e)=x & toY(e)=y).
+    }
+    {
+        xDist(a,b)=abs(toX(a)-toX(b)).
+        yDist(a,b)=abs(toY(a)-toY(b)).
+    }
+    
+    
+    {
+        !a[El] : gcd(a,a)=a.
+        !a[El] b[El] : gcd(a,b)=gcd(b,a).
+        !a[El] b[El] : gcd(a,b)=gcd(a,b-a).
+    }    
+}
+
+structure S : V {
+    xCo = {1..4}
+    yCo = {1..4}
+    Cost = {0..300}
+    El = {1..16}
+}

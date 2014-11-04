@@ -224,7 +224,7 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 	transform<DeriveSorts>(rule, voc, true);
 }
 
-std::set<PFSymbol*> opens(Definition* d) {
+std::set<PFSymbol*> opens(const Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
 std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s) {
@@ -280,8 +280,8 @@ void splitDefinitions(Theory* t) {
 
 #ifdef WITHXSB
 /** Group definitions for minimum overhead with XSB */
-void joinDefinitionsForXSB(Theory* t) {
-	transform<JoinDefinitionsForXSB>(t);
+void joinDefinitionsForXSB(Theory* t, const Structure* s) {
+	transform<JoinDefinitionsForXSB>(t, s);
 }
 #endif
 

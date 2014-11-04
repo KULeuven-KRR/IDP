@@ -23,6 +23,9 @@
 
 using namespace std;
 
+PrologProgram::~PrologProgram() {
+	_definition->recursiveDelete();
+}
 void PrologProgram::setDefinition(Definition* d) {
 	_definition = d;
 
@@ -41,6 +44,9 @@ void PrologProgram::setDefinition(Definition* d) {
 	FormulaClauseToPrologClauseConverter converter(this, _translator);
 	for (auto clause = builder.clauses().begin(); clause != builder.clauses().end(); ++clause) {
 		converter.visit(*clause);
+	}
+	for (auto clause : builder.clauses()) {
+		clause->recursiveDelete();
 	}
 }
 
@@ -204,6 +210,7 @@ std::ostream& operator<<(std::ostream& output, const PrologClause& pc) {
 				output << ", " << *(*it)->instantiation();
 			}
 		}
+		delete(instantiatedAndCheckedVars);
 	}
 	output << ".";
 	return output;

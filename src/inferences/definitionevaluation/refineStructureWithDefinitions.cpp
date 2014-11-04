@@ -27,15 +27,14 @@ using namespace std;
 DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 		const Definition* d, Structure* structure, bool satdelay,
 		std::set<PFSymbol*> symbolsToQuery) const {
-	auto definition = d->clone();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
-		clog << "Refining definition: " << toString(definition) << "\n";
+		clog << "Refining definition: " << toString(d) << "\n";
 	}
 	DefinitionRefiningResult result(structure);
 	result._hasModel = true;
 
 #ifdef WITHXSB
-	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
+	auto withxsb = CalculateDefinitions::determineXSBUsage(d);
 	if (withxsb) {
 		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
 			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
@@ -44,9 +43,9 @@ DefinitionRefiningResult refineStructureWithDefinitions::processDefinition(
 			clog << "Refining the above definition using XSB\n";
 		}
 		auto xsb_interface = XSBInterface::instance();
-		xsb_interface->load(definition,structure);
+		xsb_interface->load(d,structure);
 
-		auto symbols = definition->defsymbols();
+		auto symbols = d->defsymbols();
 		if (not symbolsToQuery.empty()) {
 			for(auto it = symbols.begin(); it != symbols.end();) {
 				auto symbol = *(it++);
@@ -142,6 +141,9 @@ DefinitionRefiningResult refineStructureWithDefinitions::refineDefinedSymbols(Th
 		DefinitionRefiningResult processDefResult(structure);
 		processDefResult = processDefinition(definition, structure, satdelay, symbolsToQuery);
 		processDefResult._hasModel = postprocess(processDefResult, initial_interpretations);
+		for (auto i : initial_interpretations) {
+			delete(i.second);
+		}
 		initial_interpretations.clear(); // These are not needed anymore
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 			clog << "Resulting structure:\n" << toString(structure) << "\n";

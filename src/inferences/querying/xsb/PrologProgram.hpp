@@ -47,6 +47,7 @@ public:
 				_definition(NULL),
 			  	_translator(translator) {
 	}
+	~PrologProgram();
 	void table(PFSymbol*);
 	void addClause(PrologClause* pc) {
 		_clauses.push_back(pc);
