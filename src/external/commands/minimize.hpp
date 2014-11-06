@@ -21,7 +21,7 @@
 
 
 // TODO trace is returned as the SECOND return value of the lua call
-InternalArgument executeMXCommand(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc) {
+InternalArgument executeMinimizeCommand(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc) {
 		LuaTraceMonitor* tracer = NULL;
 		if (getOption(BoolType::TRACE)) {
 			tracer = LuaConnection::getLuaTraceMonitor();
@@ -81,7 +81,7 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		return executeMXCommand(get<0>(args),get<1>(args),get<2>(args),NULL);
+		return executeMinimizeCommand(get<0>(args),get<1>(args),get<2>(args),NULL);
 	}
 };
 
@@ -97,6 +97,6 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		return executeMXCommand(get<0>(args),get<1>(args),get<2>(args),get<3>(args));
+		return executeMinimizeCommand(get<0>(args),get<1>(args),get<2>(args),get<3>(args));
 	}
 };

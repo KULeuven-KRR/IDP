@@ -108,7 +108,8 @@ procedure sat(theory, structure) {
 }
 
 /**
- *  Return a vector of models of the given theory, more precise than the given structure. 
+ *  Return a vector of models of the given theory, more precise than the given structure, 
+ *  and (optional) projected to the given vocabulary (a.k.a. the output vocabulary).
  * The second return value is a boolean, representing whether or not the models are optimal with respect to the given term. 
  * The third return argument is the value of the term in the optimal model.
  * The (optional) fourth argument is a trace of the solver (depending on stdoptions.trace)*/
@@ -125,10 +126,6 @@ procedure minimize(theory, structure, term, vocabulary){
 		io.stderr:write("Error: term expected\n")
 		return
 	end
-	if type(vocabulary) ~= "vocabulary" then
-		io.stderr:write("Error: vocabulary expected\n")
-		return
-	end
 	
 	local clonetheo = clone(theory)
 	pushnegations(clonetheo)
@@ -136,6 +133,10 @@ procedure minimize(theory, structure, term, vocabulary){
 	
 	local solutions, optimal, value, trace
 	if(vocabulary~=nil) then
+		if type(vocabulary) ~= "vocabulary" then
+			io.stderr:write("Error: vocabulary expected\n")
+			return
+		end
 		solutions, optimal, value, trace = idpintern.minimize(clonetheo,structure,term,vocabulary)
 	else
 		solutions, optimal, value, trace = idpintern.minimize(clonetheo,structure,term)
