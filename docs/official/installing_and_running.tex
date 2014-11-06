@@ -14,7 +14,6 @@ Required software packages:
   \item Cmake build environment. 
   \item Bison and Flex parser generator software.
   \item Pdflatex for building the documentation.
-  \item (optional) Gecode for constraint programming support.
 \end{itemize}
 
 Assume idp is unpacked in \code{idpdir}, you want to build in \code{builddir} (cannot be the same as \code{idpdir}) and install in \code{installdir}. Building and installing is then achieved by executing the following commands:
@@ -26,8 +25,6 @@ make -j 4
 make check
 make install
 \end{lstlisting}
-
-If you have Gecode installed and want to use it for constraint programming support, you add the option {\tt -DWITHGECODE=ON}.
 
 Alternatively, cmake-gui can be used as a graphical way to set cmake options.
 

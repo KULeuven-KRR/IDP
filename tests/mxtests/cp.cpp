@@ -17,12 +17,6 @@ TEST_P(MXnbTest, DoesMXWithCP) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");
 }
 
-#ifdef WITHGECODE
-TEST_P(MXnbTest, DoesMXWithGecode) {
-	runTests("modelexpansion.idp", GetParam(), "mxwithcpgecode()");
-}
-#endif
-
 TEST_P(MXnbTest, DoesMXWithFullCP) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithfullcp()");
 }
