@@ -19,24 +19,14 @@
 #include "lua/luaconnection.hpp"
 #include "Weight.hpp"
 
-typedef TypedInference<LIST(AbstractTheory*, Structure*, Term*)> OptimizeInferenceBase;
-class MinimizeInference: public OptimizeInferenceBase {
-public:
-	MinimizeInference() :
-			OptimizeInferenceBase(
-					"minimize",
-					"Return a vector of models of the given theory, more precise than the given structure. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term. The third value is the optimal value of the term.",
-					false) {
-		setNameSpace(getInternalNamespaceName());
-	}
 
-	// TODO trace is returned as the SECOND return value of the lua call
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+// TODO trace is returned as the SECOND return value of the lua call
+InternalArgument executeMinimizeCommand(AbstractTheory* theory, Structure* structure, Term* term, Vocabulary* outputvoc) {
 		LuaTraceMonitor* tracer = NULL;
 		if (getOption(BoolType::TRACE)) {
 			tracer = LuaConnection::getLuaTraceMonitor();
 		}
-		auto mxresult = ModelExpansion::doMinimization(get<0>(args), get<1>(args), get<2>(args), NULL, tracer);
+		auto mxresult = ModelExpansion::doMinimization(theory, structure, term, outputvoc, tracer);
 		auto models = mxresult._models;
 		auto optimumfound = mxresult._optimumfound;
 		auto value = mxresult._optimalvalue;
@@ -76,7 +66,37 @@ public:
 			randt._value._table->push_back(trace);
 			delete (tracer);
 		}
-
 		return randt;
+}
+
+typedef TypedInference<LIST(AbstractTheory*, Structure*, Term*)> OptimizeInferenceBase;
+class MinimizeInference: public OptimizeInferenceBase {
+public:
+	MinimizeInference() :
+			OptimizeInferenceBase(
+					"minimize",
+					"Return a vector of models of the given theory, more precise than the given structure. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term. The third value is the optimal value of the term.",
+					false) {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		return executeMinimizeCommand(get<0>(args),get<1>(args),get<2>(args),NULL);
+	}
+};
+
+typedef TypedInference<LIST(AbstractTheory*, Structure*, Term*, Vocabulary*)> OptimizeWithVocInferenceBase;
+class MinimizeWithVocInference: public OptimizeWithVocInferenceBase {
+public:
+	MinimizeWithVocInference() :
+			OptimizeWithVocInferenceBase(
+					"minimize",
+					"Return a vector of models of the given theory, more precise than the given structure, limiting itself to the given output vocabulary. The second return value is a boolean, representing whether or not the models are optimal with respect to the given term. The third value is the optimal value of the term.",
+					false) {
+		setNameSpace(getInternalNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		return executeMinimizeCommand(get<0>(args),get<1>(args),get<2>(args),get<3>(args));
 	}
 };
