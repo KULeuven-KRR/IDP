@@ -31,7 +31,12 @@ procedure pickstate(states, printprocedure){
 	local validnum = false
 	while not validnum do
 		print("Please enter a number between 0 and "..#states)
-		num = tonumber(io.read())
+		num = io.read()
+		if ( num == nil) then
+			print("Error: End of File")
+			os.exit()
+		end
+		num = tonumber(num)
 		if (num ~= nil and num >= 0 and #states >= num ) then
 			validnum = true
 		end
