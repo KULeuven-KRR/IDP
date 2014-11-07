@@ -3722,13 +3722,12 @@ void PredInter::checkConsistency() {
 
 	//At this point, what we should do is: either
 	//  * check whether ct \cap cf = \emptyset
-	//  * check whether ct \subseteq pt
+	//  * check whether ct (cf) \subseteq pt (pf)
 	// depending on the table that is explicitely represented. (one is an inversetable of the other, we search the explicitely represented one)
 
 	if (not isa<InverseInternalPredTable>(*largest->internTable())) {
-		auto smallIt = smallest->begin();
 		auto largeIt = largest->begin();
-		for (; not smallIt.isAtEnd(); ++smallIt) {
+		for (auto smallIt = smallest->begin(); not smallIt.isAtEnd(); ++smallIt) {
 			CHECKTERMINATION;
 			// find this element in large table
 			while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
@@ -3746,9 +3745,8 @@ void PredInter::checkConsistency() {
 			//Should always be true...
 		}
 	} else {
-		auto smallIt = smallest->begin();
 		auto smallposIt = sPossTable->begin();
-		for (; not smallIt.isAtEnd(); ++smallIt) {
+		for (auto smallIt = smallest->begin() ; not smallIt.isAtEnd(); ++smallIt) {
 			CHECKTERMINATION;
 			// find this element in possibly small table
 			while (not smallposIt.isAtEnd() && so(*smallposIt, *smallIt)) {
