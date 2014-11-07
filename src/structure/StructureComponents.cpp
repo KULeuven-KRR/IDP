@@ -3710,33 +3710,53 @@ void PredInter::checkConsistency() {
 	if (not _ct->approxFinite() && not _cf->approxFinite()) {
 		throw notyetimplemented("Check consistency between an infinite certainly-true and an infinite certainly-false table");
 	}
+
 	auto smallest = _ct->size() < _cf->size() ? _ct : _cf; // Walk over the smallest table first => also optimal behavior in case one is emtpy
 	auto largest = (smallest == _ct) ? _cf : _ct;
-
-	auto smallIt = smallest->begin();
-	auto largeIt = largest->begin();
 
 	auto sPossTable = smallest == _ct ? _pt : _pf;
 	auto lPossTable = smallest == _ct ? _pf : _pt;
 
 	FirstNElementsEqual eq(smallest->arity());
 	StrictWeakNTupleOrdering so(smallest->arity());
-	for (; not smallIt.isAtEnd(); ++smallIt) {
-		CHECKTERMINATION;
-		// get unassigned domain element
-		while(not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
+
+	//At this point, what we should do is: either
+	//  * check whether ct \cap cf = \emptyset
+	//  * check whether ct (cf) \subseteq pt (pf)
+	// depending on the table that is explicitely represented. (one is an inversetable of the other, we search the explicitely represented one)
+
+	if (not isa<InverseInternalPredTable>(*largest->internTable())) {
+		auto largeIt = largest->begin();
+		for (auto smallIt = smallest->begin(); not smallIt.isAtEnd(); ++smallIt) {
 			CHECKTERMINATION;
-			Assert(sPossTable->size()._size > 5 || not sPossTable->contains(*largeIt));
+			// find this element in large table
+			while (not largeIt.isAtEnd() && so(*largeIt, *smallIt)) {
+				CHECKTERMINATION;
+				Assert(sPossTable->size()._size > 5 || not sPossTable->contains(*largeIt));
+				// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
+				//Should always be true...
+				++largeIt;
+			}
+			if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
+				_inconsistentElements.insert(*largeIt);
+			}
+			Assert(lPossTable->size()._size > 5 || not lPossTable->contains(*smallIt));
 			// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
 			//Should always be true...
-			++largeIt;
 		}
-		if (not largeIt.isAtEnd() && eq(*largeIt, *smallIt)) {
-			_inconsistentElements.insert(*largeIt);
+	} else {
+		auto smallposIt = sPossTable->begin();
+		for (auto smallIt = smallest->begin() ; not smallIt.isAtEnd(); ++smallIt) {
+			CHECKTERMINATION;
+			// find this element in possibly small table
+			while (not smallposIt.isAtEnd() && so(*smallposIt, *smallIt)) {
+				CHECKTERMINATION;
+				++smallposIt;
+			}
+			if (smallposIt.isAtEnd() || not eq(*smallposIt, *smallIt)) {
+				_inconsistentElements.insert(*smallIt);
+			}
 		}
-		Assert(lPossTable->size()._size > 5 || not lPossTable->contains(*smallIt));
-		// NOTE: checking pt and pf can be very expensive in large domains, so the debugging check is only done for small domains
-		//Should always be true...
 	}
 }
 
