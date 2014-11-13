@@ -12,10 +12,12 @@
 #pragma once
 #include "GlobalData.hpp"
 #include <map>
+#include <vector>
 
 struct LTCVocInfo;
 class Vocabulary;
 class Sort;
+class PFSymbol;
 class Function;
 class AbstractTheory;
 struct SplitLTCTheory;
@@ -30,9 +32,14 @@ class LTCData: public DeleteMe {
 private:
 	std::map<const Vocabulary*, const LTCVocInfo*> _LTCVocData;
 	std::map<const AbstractTheory*, const SplitLTCTheory*> _LTCTheoData;
+	std::map<const PFSymbol*, std::vector<PFSymbol*>> _projectedSymbols;
 public:
 	static LTCData* instance();
 	~LTCData();
+
+	bool hasBeenProjected(PFSymbol* pf);
+	std::vector<PFSymbol*> getProjection(PFSymbol* pf);
+	void setProjection(PFSymbol* pf,std::vector<PFSymbol*>);
 
 	bool hasBeenTransformed(const Vocabulary*);
 	const LTCVocInfo* getStateVocInfo(const Vocabulary*);
