@@ -379,5 +379,17 @@ procedure printcore(theory,structure){
 		end
 	}
 
+	/** Activate or deactivate bootstrapping. Shorthand for setting (or un-setting) all bootstrapping options */
+	procedure setBootstrapping(val) {
+		if type(val) ~= "boolean" then
+			io.stderr:write("Error: boolean expected\n")
+			return
+		end
+		stdoptions.postprocessdefs=val
+		stdoptions.splitdefs=val
+		stdoptions.joindefsforxsb=val
+		stdoptions.guaranteenorecursionnegation=(not val)
+	}
+
 }
 }
