@@ -1,0 +1,15 @@
+
+vocabulary V {
+    
+   	type A constructed from {
+        C
+    ,d
+    
+    
+    ,e
+    
+    ,f}
+
+}
+ 
+
