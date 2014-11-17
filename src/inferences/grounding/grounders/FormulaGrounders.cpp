@@ -121,7 +121,7 @@ Lit AtomGrounder::run() const {
 			alldomelts = false;
 		} else {
 			auto domelem = groundterm._domelement;
-			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), getContext()._funccontext, _sign);
+			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), getContext()._funccontext, _sign, getFormula());
 			if (known != TruthValue::Unknown) {
 				if (verbosity() > 2) {
 					poptab();

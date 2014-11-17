@@ -194,7 +194,7 @@ public:
 	VarId translateTerm(CPTerm*, SortTable*);
 	VarId translateTerm(const DomainElement*);
 
-	TruthValue checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign);
+	TruthValue checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign, const Formula* origFormula = NULL); //The original formula only serves for good error messages
 
 	Lit translateNonReduced(PFSymbol* symbol, const ElementTuple& args);
 	Lit translateReduced(PFSymbol* symbol, const ElementTuple& args, bool recursive);
