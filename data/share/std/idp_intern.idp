@@ -381,7 +381,9 @@ procedure printcore(theory,structure){
 }
 
 namespace options {
-	/** Activate or deactivate all bootstrapping options. In general: bootstrapping is good when using large structures, but can cause significant slowdown on simple problems. Shorthand for setting (or un-setting) all bootstrapping options separately */
+	/** Activate or deactivate all bootstrapping options. 
+	* In general: bootstrapping is good when using large structures, but can cause significant slowdown on simple problems. 
+	* This is a shorthand for setting (or un-setting) all bootstrapping options separately */
 	procedure setBootstrapping(val) {
 		if type(val) ~= "boolean" then
 			io.stderr:write("Error: boolean expected\n")
