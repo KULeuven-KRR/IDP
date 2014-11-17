@@ -76,7 +76,7 @@ void FormulaGrounder::put(std::ostream& output) const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg, const vector<SortTable*>& vst,
-		const GroundingContext& ct)
+		const GroundingContext& ct, const PredForm* orig)
 		: 	FormulaGrounder(grounding, ct),
 			_subtermgrounders(sg),
 			_symbol(s),
@@ -92,7 +92,11 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		args.push_back(tg->getTerm()->cloneKeepVars());
 		addAll(_varmap, tg->getVarmapping());
 	}
-	setFormula(new PredForm(sign, s, args, { }));
+	if (orig != NULL) {
+		setFormula(new PredForm(sign, s, args, orig->pi()));
+	} else {
+		setFormula(new PredForm(sign, s, args, { }));
+	}
 
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));

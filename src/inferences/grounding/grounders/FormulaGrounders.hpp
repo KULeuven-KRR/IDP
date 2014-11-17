@@ -81,7 +81,7 @@ protected:
 
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
-			const std::vector<SortTable*>&, const GroundingContext&);
+			const std::vector<SortTable*>&, const GroundingContext&, const PredForm* orig = NULL);
 	~AtomGrounder();
 };
 
