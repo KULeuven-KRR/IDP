@@ -85,7 +85,7 @@ int Grounder::_groundedatoms = 0;
 tablesize Grounder::_fullgroundsize = tablesize(TableSizeType::TST_EXACT, 0);
 
 Grounder::Grounder(AbstractGroundTheory* gt, const GroundingContext& context)
-		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_INFINITE, 0)), _formula(NULL) {
+		: _grounding(gt), _context(context), _maxsize(tablesize(TableSizeType::TST_INFINITE, 0)){
 }
 
 GroundTranslator* Grounder::translator() const {
@@ -93,14 +93,6 @@ GroundTranslator* Grounder::translator() const {
 }
 
 Grounder::~Grounder() {
-	if(_formula!=NULL){
-		deleteDeep(_formula);
-	}
-}
-
-// Passes ownership!!!
-void Grounder::setFormula(Formula* f) {
-	_formula = f;
 }
 
 bool Grounder::toplevelRun(LazyGroundingRequest& request) {

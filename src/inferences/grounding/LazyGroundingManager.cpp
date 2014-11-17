@@ -349,8 +349,8 @@ void LazyGroundingManager::addToManager(Grounder* grounder) {
 		return;
 	}
 
-	if (getOption(SATISFIABILITYDELAY) && isa<FormulaGrounder>(*grounder) && grounder->hasFormula()) {
-		auto fg = dynamic_cast<FormulaGrounder*>(grounder);
+	auto fg = dynamic_cast<FormulaGrounder*>(grounder);
+	if (getOption(SATISFIABILITYDELAY) && fg != NULL && fg->hasFormula()) {
 
 		auto delayforms = FormulaUtils::findDelay(fg->getFormula(), fg->getVarmapping(), this);
 		if (delayforms.get() != NULL) {
@@ -359,8 +359,8 @@ void LazyGroundingManager::addToManager(Grounder* grounder) {
 		}
 	}
 
-	if (verbosity() > 2 && grounder->hasFormula() && getOption(SATISFIABILITYDELAY)) {
-		clog << "Did not find delay for formula " << toString(grounder->getFormula()) << "\n";
+	if (verbosity() > 2 && fg != NULL && fg->hasFormula() && getOption(SATISFIABILITYDELAY)) {
+		clog << "Did not find delay for formula " << toString(fg->getFormula()) << "\n";
 	}
 
 	groundersRegisteredForDeletion.push_back(grounder);

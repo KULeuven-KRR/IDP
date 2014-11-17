@@ -34,10 +34,19 @@ bool recursive(const PFSymbol& symbol, const GroundingContext& context) {
 }
 
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: Grounder(grounding, ct) {
+		: 	Grounder(grounding, ct),
+			_formula(NULL) {
 }
 
 FormulaGrounder::~FormulaGrounder() {
+	if (_formula != NULL) {
+		deleteDeep(_formula);
+	}
+}
+
+// Passes ownership!!!
+void FormulaGrounder::setFormula(Formula* f) {
+	_formula = f;
 }
 
 #define dtype(container) decltype(*std::begin(container))

@@ -76,16 +76,11 @@ private:
 	GroundingContext _context;
 	tablesize _maxsize;
 
-	Formula* _formula; // The formula represented by this grounder, if any. Currently not representing generators/checkers
-
 protected:
 	// NOTE: it is IMPERATIVE to set the type of the formula within run!
 	// NOTE: only call directly in wrapRun!
 	// NOTE: formula passed as reference argument to prevent vector copying during grounding
 	virtual void internalRun(ConjOrDisj& formula, LazyGroundingRequest& request) = 0;
-
-	// Passes ownership!!!
-	void setFormula(Formula* f);
 
 public:
 	Grounder(AbstractGroundTheory* gt, const GroundingContext& context);
@@ -136,13 +131,6 @@ public:
 	}
 
 	int verbosity() const;
-	bool hasFormula() const {
-		return _formula != NULL;
-	}
-	Formula* getFormula() const {
-		Assert(hasFormula());
-		return _formula;
-	}
 };
 
 class TheoryGrounder: public Grounder {
