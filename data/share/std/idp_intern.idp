@@ -1,6 +1,6 @@
 // NOTE: the argument names are used literally in the help information, so they should be readable!
 
-namespace stdspace{
+namespace stdspace {
 
 /***********
 	Help
@@ -51,7 +51,7 @@ procedure idptype(something){
 	return idpintern.idptype(something)
 }
 
-namespace inferences{
+namespace inferences {
 
 /**
  * Apply model expansion to theory T, structure S over the same vocabulary.
@@ -316,7 +316,7 @@ procedure printcore(theory,structure){
 	)
 	stdoptions.language = tmplang
 	return result
-}*/
+} */
 
 
 
@@ -377,6 +377,22 @@ procedure printcore(theory,structure){
 			print(str)
 			print(v)
 		end
+	}
+}
+
+namespace options {
+	/** Activate or deactivate all bootstrapping options. 
+	* In general: bootstrapping is good when using large structures, but can cause significant slowdown on simple problems. 
+	* This is a shorthand for setting (or un-setting) all bootstrapping options separately */
+	procedure setBootstrapping(val) {
+		if type(val) ~= "boolean" then
+			io.stderr:write("Error: boolean expected\n")
+			return
+		end
+		stdoptions.postprocessdefs=val
+		stdoptions.splitdefs=val
+		stdoptions.joindefsforxsb=val
+		stdoptions.guaranteenorecursionnegation=(not val)
 	}
 
 }
