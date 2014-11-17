@@ -425,7 +425,7 @@ COMMENTLINE2	"--".*
 								}
 <vocabulary>".."				{ parser.advancecol();
 								  return RANGE;				}
-<constructed>\n					
+<constructed>\n					{ parser.advanceline(); }		
 <constructed>"}"				{ parser.advancecol();
 								  --parser.bracketcounter;
 								  BEGIN(vocabulary);
