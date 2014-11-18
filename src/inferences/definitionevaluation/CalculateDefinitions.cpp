@@ -338,16 +338,12 @@ void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, st
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
-	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
-	if (getOption(XSB) && hasrecursion) {
-		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
-	}
 
 	auto has_recursive_aggregate = DefinitionUtils::approxContainsRecDefAggTerms(definition);
 	if(getOption(XSB) && has_recursive_aggregate) {
 		Warning::warning("Currently, no support for definitions that have recursive aggregates");
 	}
 
-	return getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
+	return getOption(XSB) && not has_recursive_aggregate;
 }
 #endif
