@@ -6,25 +6,73 @@
  */
 
 #include "ModelIterator.hpp"
+#include "inferences/modelexpansion/DefinitionPostProcessing.hpp"
+#include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "structure/StructureComponents.hpp"
 #include <cstdlib>
 #include <bits/stl_algo.h>
+#include "Weight.hpp"
+#include "utils/UniqueNames.hpp"
+#include "theory/Query.hpp"
+#include "inferences/querying/Query.hpp"
+#include "groundtheories/GroundTheory.hpp"
+#include "inferences/grounding/Grounding.hpp"
+#include "inferences/grounding/GroundTranslator.hpp"
 
-ModelIterator::ModelIterator() {
-}
+#include "inferences/SolverConnection.hpp"
+#include "utils/ResourceMonitor.hpp"
+#include "vocabulary/vocabulary.hpp"
 
-ModelIterator::ModelIterator(const ModelIterator& orig) {
-    orig;
+
+//Somehow max is included here %Ruben
+#include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
+
+ModelIterator::ModelIterator(Structure* structure, Theory* theory, Vocabulary* targetvoc, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
+	_structure = structure -> clone();
+	_theory = theory->clone();
+	_outputvoc = targetvoc != NULL ? targetvoc : theory->vocabulary();
+	_tracemonitor = tracemonitor;
+	_assumeFalse = assumeFalse;
 }
 
 ModelIterator::~ModelIterator() {
+	_grounding->recursiveDelete();
+	_theory->recursiveDelete();
+	delete (_extender);
+	delete (_structure);
+	delete (_currentVoc);
+	delete (_data);
 }
 
-static ModelIterator* create(Vocabulary* targetVocabulary, Structure* structure) {
-    return NULL;
+#define cleanup \
+		getGlobal()->removeTerminationMonitor(terminator);\
+		delete (terminator);\
+		delete (mx);
+
+static shared_ptr<ModelIterator> create(AbstractTheory* theory, Structure* structure, Vocabulary* targetVocabulary,
+		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
+	if (theory == NULL || structure == NULL) {
+		throw IdpException("Unexpected NULL-pointer.");
+	}
+	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
+	if (t == NULL) {
+		throw notyetimplemented("Modeliteration of already ground theories");
+	}
+	if(structure->vocabulary()!=theory->vocabulary()){
+		if(VocabularyUtils::isSubVocabulary(structure->vocabulary(), theory->vocabulary())){
+			structure->changeVocabulary(theory->vocabulary());
+		}else {
+			throw IdpException("Modeliteration requires that the structure interprets (a subvocabulary of) the vocabulary of the theory.");
+		}
+	}
+	auto m = shared_ptr<ModelIterator>(new ModelIterator(structure, t, targetVocabulary, tracemonitor, assumeFalse));
+	if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && getOption(NBMODELS) != 1) {
+		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.");
+	}
+	return m;
 }
 
-int getMXVerbosity() {
+static int getMXVerbosity() {
     auto mxverbosity = max(getOption(IntType::VERBOSE_SOLVING), getOption(IntType::VERBOSE_SOLVING_STATISTICS));
     return mxverbosity;
 }
@@ -32,31 +80,36 @@ int getMXVerbosity() {
 void ModelIterator::init() {
     _data = SolverConnection::createsolver(1);
     _currentVoc = new Vocabulary(createName());
+	_currentVoc->add(_structure->vocabulary());
+	_currentVoc->add(_theory->vocabulary());
+	_structure->changeVocabulary(_currentVoc);
+	_theory->vocabulary(_currentVoc);
+	preprocess(_theory);
+	ground(_theory);
 }
 
-std::pair<Theory*, std::vector<Definition*>> ModelIterator::preprocess(Theory* theory) {
+/**
+ * Modifies theory, assumes cloned theory.
+ */
+std::vector<Definition*> ModelIterator::preprocess(Theory* theory) {
     std::vector<Definition*> postprocessdefs;
-    Theory* theoryClone = theory->clone();
     if (getOption(POSTPROCESS_DEFS)) {
-        postprocessdefs = simplifyTheoryForPostProcessableDefinitions(theoryClone, _minimizeterm, _structure, _currentVoc, _outputvoc);
+        postprocessdefs = simplifyTheoryForPostProcessableDefinitions(theory, NULL, _structure, _currentVoc, _outputvoc);
     }
     if (getOption(SATISFIABILITYDELAY)) { // Add non-forgotten defs again, as top-down grounding might give a better result
         for (auto def : postprocessdefs) {
-            theoryClone->add(def);
+            theory->add(def);
         }
         postprocessdefs.clear();
     }
-    return
-    {
-        theoryClone, postprocessdefs
-    };
+    return postprocessdefs;
 }
 
 void ModelIterator::ground(Theory* theory) {
     std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
     try {
         groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(
-                theory, _structure, _outputvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, _data);
+                theory, _structure, _outputvoc, NULL, _tracemonitor, getOption(IntType::NBMODELS) != 1, _data);
     } catch (...) {
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());
@@ -69,7 +122,7 @@ void ModelIterator::ground(Theory* theory) {
     litlist assumptions;
     auto trans = _grounding->translator();
     for (auto p : _assumeFalse.assumeAllFalse) {
-        for (Tuple2AtomMap& atom : trans->getIntroducedLiteralsFor(p)) { // TODO should be introduced ATOMS
+        for (auto atom : trans->getIntroducedLiteralsFor(p)) { // TODO should be introduced ATOMS
             assumptions.push_back(-abs(atom.second));
         }
         std::vector<Variable*> vars;
@@ -89,22 +142,24 @@ void ModelIterator::ground(Theory* theory) {
     for (auto pf : _assumeFalse.assumeFalse) {
         assumptions.push_back(_grounding->translator()->translateNonReduced(pf.symbol, pf.args));
     }
+	_assumptions = assumptions;
 }
 
+class SolverTermination: public TerminateMonitor {
+private:
+	PCModelExpand* solver;
+public:
+	SolverTermination(PCModelExpand* solver)
+			: solver(solver) {
+	}
+	void notifyTerminateRequested() {
+		solver->notifyTerminateRequested();
+	}
+};
 
-#define cleanup \
-		grounding->recursiveDelete();\
-		clonetheory->recursiveDelete();\
-		getGlobal()->removeTerminationMonitor(terminator);\
-		delete (extender);\
-		delete (terminator);\
-		delete (newstructure);\
-		delete (voc); \
-		delete (data);\
-		delete (mx);
 
 MXResult ModelIterator::calculate() {
-    auto mx = SolverConnection::initsolution(data, 1, assumptions);
+    auto mx = SolverConnection::initsolution(_data, 1, _assumptions);
     auto startTime = clock();
     if (getMXVerbosity() > 0) {
         logActionAndTime("Starting solving at ");
@@ -143,6 +198,7 @@ MXResult ModelIterator::calculate() {
     } catch (...) {
         t.requestStop();
         time.join();
+		cleanup;
         throw;
     }
 
@@ -158,6 +214,7 @@ MXResult ModelIterator::calculate() {
     }
 
     if (getGlobal()->terminateRequested()) {
+		cleanup;
         throw IdpException("Solver was terminated");
     }
 
@@ -184,40 +241,20 @@ MXResult ModelIterator::calculate() {
         }
         return result;
     }
-    
-    return getStructure(result);
+    result = getStructure(mx, result, startTime);
+	cleanup;
+    return result;
 }
 
-MXResult* ModelIterator::getStructure(PCModelExpand* mx, MXResult mx) {
-    MXResult result;
+
+Structure* handleSolution(Structure const * const structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
+		Vocabulary* outputvoc, const std::vector<Definition*>& defs);
+
+MXResult ModelIterator::getStructure(PCModelExpand* mx, MXResult result, clock_t startTime) {
     auto mxverbosity = getMXVerbosity();
     std::vector<Structure*> solutions;
     if (result.unsat) {
-        if (_minimizeterm != NULL) { // Optimizing
-            Assert(mx->getBestSolutionsFound().size() > 0);
-            auto list = mx->getBestSolutionsFound();
-            for (auto i = list.cbegin(); i < list.cend(); ++i) {
-                solutions.push_back(handleSolution(_structure, **i, _grounding, _extender, _outputvoc, postprocessdefs));
-            }
-            auto bestvalue = evaluate(_minimizeterm->clone(), solutions.front());
-            Assert(bestvalue != NULL && bestvalue->type() == DomainElementType::DET_INT);
-            result._optimalvalue = bestvalue->value()._int;
-            if (mxverbosity > 0) {
-                logActionAndValue("bestvalue", result._optimalvalue);
-                logActionAndValue("nrmodels", list.size());
-                logActionAndTimeSince("total-solving-time", startTime);
-            }
-            if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
-                logActionAndValue("bestvalue", result._optimalvalue);
-                if (result._optimumfound) {
-                    logActionAndValue("state", "optimal");
-                } else {
-                    logActionAndValue("state", "satisfiable");
-                }
-                std::clog.flush();
-            }
-        } else
-            if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
+		if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "satisfiable");
         }
         auto abstractsolutions = mx->getSolutions();
@@ -226,8 +263,11 @@ MXResult* ModelIterator::getStructure(PCModelExpand* mx, MXResult mx) {
             logActionAndTimeSince("total-solving-time", startTime);
         }
         for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
-            solutions.push_back(handleSolution(_structure, **model, _grounding, _extender, _outputvoc, postprocessdefs));
+			auto solution = handleSolution(_structure, **model, _grounding, 
+				_extender, _outputvoc, postprocessdefs);
+            solutions.push_back(solution);
         }
+		result._models = solutions;
     }
     return result;
 }

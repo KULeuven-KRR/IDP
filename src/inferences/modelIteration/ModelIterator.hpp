@@ -29,20 +29,19 @@ typedef std::vector<const DomainElement*> ElementTuple;
 
 class ModelIterator {
 public:
-    ModelIterator();
+    ModelIterator(Structure*, Theory*, Vocabulary*, TraceMonitor*, const MXAssumptions&);
     ModelIterator(const ModelIterator& orig);
     virtual ~ModelIterator();
-private:
-    Structure* getStructure(MXResult);
-    int getMXVerbosity();
     void init();
-    std::vector<Definition*> preprocess();
-    void ground();
-    void calculate();
+    MXResult calculate();
+private:
+    std::vector<Definition*> preprocess(Theory*);
+    void ground(Theory*);
+    MXResult getStructure(PCModelExpand*, MXResult, clock_t);
     
     Structure* _structure;
+    Theory* _theory;
     TraceMonitor* _tracemonitor;
-    Term* _minimizeterm; // if NULL, no optimization is done
     std::vector<Definition*> postprocessdefs;
 
     Vocabulary* _outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
@@ -53,6 +52,7 @@ private:
     PCSolver*  _data;
     AbstractGroundTheory* _grounding;
     StructureExtender* _extender;
+    litlist _assumptions;
 };
 
 #endif	/* MODELITERATOR_HPP */
