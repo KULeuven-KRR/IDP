@@ -601,8 +601,12 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
 			return;
 		}
 
-		// Graph if CP is off
-		if(not getOption(CPSUPPORT) || recursive(pf) || not CPSupport::eligibleForCP(left, getConcreteStructure()) || not CPSupport::eligibleForCP(right, getConcreteStructure())){
+		// Graph if CP is not used or not applicable to this equality:
+		// * CP is off
+		// * No integers
+		// * Recursive context
+		// * Left or right term are not cpable
+		if(not getOption(CPSUPPORT) || not VocabularyUtils::isIntComparisonPredicate(symbol, getConcreteStructure()->vocabulary()) || recursive(pf) || not CPSupport::eligibleForCP(left, getConcreteStructure()) || not CPSupport::eligibleForCP(right, getConcreteStructure())){
 			if(is(symbol, STDPRED::EQ) && left->type()==TermType::FUNC){
 				auto functerm = dynamic_cast<FuncTerm*>(left);
 				terms = functerm->subterms();
