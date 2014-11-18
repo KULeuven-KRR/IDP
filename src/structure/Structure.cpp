@@ -584,7 +584,6 @@ bool Structure::satisfiesFunctionConstraints(const Function* f, bool throwerrors
 
 bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 	auto fi = inter(f);
-//#warning check for partial interpretations!
 	if(f->builtin()){ // builtins are always valid function interpretations
 		return true;
 	}
@@ -633,12 +632,35 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 	}
 
 	// Check if the interpretation is total
+	// We distinguish two cases
+	//CASE ONE: Function is represented by functable.
+	//In this case, all we need to is iterate over the domain and check that every domain element has an image.
+	//Or, even simpler: check that the number of elements in "functable" equals the number of elements in the universe
+	if (fi->funcTable() != NULL) {
+		auto ft = fi->funcTable();
+		auto ftsize = ft->size();
+		auto domainUnivTables = fi->universe().tables();
+		domainUnivTables.pop_back(); //Everything but the output table
+		auto domainUnivSize = Universe(domainUnivTables).size();
+
+		//Infinite case is already handled above.
+		if (domainUnivSize == ftsize) {
+			//as much tuples in the map as input elements
+			return true;
+		}
+		if (throwErrors) {
+			Error::nottotal(f->name(), name());
+		}
+		return false;
+	}
+
+	//CASE TWO: REPRSENTED AS GRAPHINTER:
+	//Go over all CF images; count number of impossibles.
+	// TODO: could be further optimised by running over pt instead of cf in case pt is explicitely represented.
+	//However, this will not often be the case
 	auto cf = pt->cf();
 	auto maxnbimages = inter(f->outsort())->size();
-	if(not cf->approxFinite() || maxnbimages._type==TST_INFINITE){
-		//TODO
-		Warning::warning("Checking total function too expensive.");
-	}
+	//Infinite case is already handled above.
 	map<ElementTuple, int> domain2numberofimages;
 	for(auto cfit = cf->begin(); not cfit.isAtEnd(); ++cfit) {
 		auto domain = *cfit;
