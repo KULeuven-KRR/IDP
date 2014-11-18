@@ -41,7 +41,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 #ifdef WITHXSB
 	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
 	if (withxsb) {
-		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation
+		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation (see issue #850)
 			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
 		}
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
