@@ -1,0 +1,23 @@
+
+vocabulary V {
+    
+   	type A constructed from {
+        C
+    ,d
+    
+    
+    ,e
+    
+
+    ,f,
+
+    g,
+
+    h}
+
+}
+ 
+
+procedure main(){
+	return 1;
+}

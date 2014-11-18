@@ -199,6 +199,7 @@ bool alreadyParsed(const std::string& filename){
 
 %x comment
 %x vocabulary
+%x constructed
 %x structure
 %x aspstructure
 %x theory
@@ -419,9 +420,16 @@ COMMENTLINE2	"--".*
 <vocabulary>\n                  { parser.advanceline(); 
 									return NEWLINE; 		}
 <vocabulary>"constructed from"	{ parser.advancecol();
-								  return CONSTRUCTED;	}
+								  BEGIN(constructed);
+								  return CONSTRUCTED;
+								}
 <vocabulary>".."				{ parser.advancecol();
-							  return RANGE;				}
+								  return RANGE;				}
+<constructed>\n					{ parser.advanceline(); }		
+<constructed>"}"				{ parser.advancecol();
+								  --parser.bracketcounter;
+								  BEGIN(vocabulary);
+								  return *yytext;}								
 
 	/*************
 		Theory
