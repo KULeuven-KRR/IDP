@@ -1220,6 +1220,7 @@ Sort* Insert::sort(const string& name, const vector<Sort*> sups, const vector<So
 
 void Insert::addConstructors(const std::vector<Function*>* functionlist) const {
 	Assert(parsingType!=NULL);
+	parsingType->setConstructed(true);
 	for (auto f : (*functionlist)) {
 		parsingType->addConstructor(f);
 	}

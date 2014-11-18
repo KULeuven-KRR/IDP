@@ -333,7 +333,7 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 }
 
 bool Sort::isConstructed() const {
-	return _constructors.size() != 0;
+	return sortConstructed;
 }
 
 bool Sort::hasFixedInterpretation() const {
@@ -344,7 +344,13 @@ bool Sort::builtin() const {
 	return _interpretation != NULL;
 }
 
+void Sort::setConstructed(bool constructed) {
+	Assert(_interpretation == NULL);
+	sortConstructed = constructed;
+}
+
 void Sort::addConstructor(Function* func) {
+	Assert(sortConstructed);
 	_constructors.push_back(func);
 }
 
