@@ -1,0 +1,18 @@
+vocabulary V{
+	
+    type U
+    a : U
+}
+
+theory T:V{
+}
+
+structure S:V{
+	U = {}
+    
+}
+
+procedure main(){
+	printmodels(allmodels(T,S))
+}
+

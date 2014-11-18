@@ -660,7 +660,12 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 	//However, this will not often be the case
 	auto cf = pt->cf();
 	auto maxnbimages = inter(f->outsort())->size();
-	//Infinite case is already handled above.
+	if (maxnbimages == 0) {
+		if (throwErrors) {
+			Error::nottotal(f->name(), name());
+		}
+		return false;
+	}
 	map<ElementTuple, int> domain2numberofimages;
 	for(auto cfit = cf->begin(); not cfit.isAtEnd(); ++cfit) {
 		auto domain = *cfit;
