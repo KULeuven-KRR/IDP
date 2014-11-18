@@ -7,7 +7,8 @@
 
 #ifndef MODELITERATOR_HPP
 #define	MODELITERATOR_HPP
-
+#include <memory>
+#include <bits/shared_ptr.h>
 #include "common.hpp"
 #include "../modelexpansion/ModelExpansion.hpp"
 #include "inferences/SolverInclude.hpp"
@@ -26,6 +27,10 @@ class Predicate;
 class PFSymbol;
 class DomainElement;
 typedef std::vector<const DomainElement*> ElementTuple;
+class ModelIterator;
+
+std::shared_ptr<ModelIterator> createIterator(AbstractTheory*, Structure*, Vocabulary*,
+		TraceMonitor*, const MXAssumptions& = MXAssumptions());
 
 class ModelIterator {
 public:

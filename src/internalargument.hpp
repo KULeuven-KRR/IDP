@@ -19,6 +19,8 @@
 #include "parseinfo.hpp"
 
 #include "structure/fwstructure.hpp"
+#include "inferences/modelIteration/ModelIterator.hpp"
+#include <bits/shared_ptr.h>
 
 class LuaTraceMonitor;
 
@@ -43,6 +45,7 @@ class FuncInter;
 class TableIterator;
 class SortIterator;
 class FOBDD;
+class ModelIterator;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -95,7 +98,10 @@ enum ArgType {
 	AT_REGISTRY, //!< a value stored in the registry of the lua state
 
 	// Also passable via lua
-	AT_TRACEMONITOR
+	AT_TRACEMONITOR,
+                
+        //ModelIterator
+        AT_MODELITERATOR
 };
 
 template<class T>
@@ -319,6 +325,8 @@ struct InternalArgument {
 
 		LuaTraceMonitor* _tracemonitor;
 		UserProcedure* _procedure;
+                
+                std::shared_ptr<ModelIterator>* _modelIterator;
 	} _value;
 
 	// Constructors
@@ -428,6 +436,10 @@ struct InternalArgument {
 	InternalArgument(LuaTraceMonitor* v)
 			: _type(AT_TRACEMONITOR) {
 		_value._tracemonitor = v;
+	}
+	InternalArgument(std::shared_ptr<ModelIterator>* v)
+			: _type(AT_MODELITERATOR) {
+		_value._modelIterator = v;
 	}
 
 	// Inspectors

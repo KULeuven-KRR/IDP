@@ -27,6 +27,8 @@
 //Somehow max is included here %Ruben
 #include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
 
+using namespace std;
+
 ModelIterator::ModelIterator(Structure* structure, Theory* theory, Vocabulary* targetvoc, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
 	_structure = structure -> clone();
 	_theory = theory->clone();
@@ -49,7 +51,7 @@ ModelIterator::~ModelIterator() {
 		delete (terminator);\
 		delete (mx);
 
-static shared_ptr<ModelIterator> create(AbstractTheory* theory, Structure* structure, Vocabulary* targetVocabulary,
+shared_ptr<ModelIterator> createIterator(AbstractTheory* theory, Structure* structure, Vocabulary* targetVocabulary,
 		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
 	if (theory == NULL || structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");

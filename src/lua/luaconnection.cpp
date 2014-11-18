@@ -80,7 +80,7 @@ const char* toCString(ArgType type) {
 				AT_DOMAINITERATOR, "domain_iterator")(AT_QUERY, "query")(AT_TERM, "term")(AT_FOBDD, "fobdd")(AT_FORMULA, "formula")(AT_THEORY,
 				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
 				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
-				AT_TRACEMONITOR, "tracemonitor");
+				AT_TRACEMONITOR, "tracemonitor")(AT_MODELITERATOR, "mxIterator");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -428,6 +428,10 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		Assert(arg._value._string!=NULL);
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
 		result = 1;
+		break;
+	case AT_MODELITERATOR:
+		Assert(arg._value._modelIterator!=NULL);
+		result = addUserData(L, arg._value._modelIterator, arg._type);
 		break;
 	case AT_TRACEMONITOR:
 		throw IdpException("Tracemonitors cannot be passed to lua.");
@@ -876,6 +880,11 @@ int gcTerm(lua_State*) {
 int gcFobdd(lua_State*) {
 	// TODO
 	return 0;
+}
+
+int gcMXIterator(lua_State* L) {
+	throw new IdpException("Called MX garbage collection");
+	return garbageCollect<std::shared_ptr<ModelIterator>*>(L);
 }
 
 /**
@@ -1752,6 +1761,18 @@ int symbolArity(lua_State* L) {
 	}
 }
 
+int mxNext(lua_State* L) {
+	ModelIterator* iter = *(ModelIterator**) lua_touserdata(L, 1); //self
+	auto result = iter->calculate();
+	if(result.unsat) {
+		lua_pushnil(L);
+		return 1;
+	} else {
+		InternalArgument ia(result._models[0]);
+		return convertToLua(L, ia);
+	}
+}
+
 typedef pair<int (*)(lua_State*), string> tablecolheader;
 
 void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements) {
@@ -1943,6 +1964,13 @@ void overloadedMetaTable(lua_State* L) {
 	createNewTable(L, AT_OVERLOADED, elements);
 }
 
+void mxIteratorMetaTable(lua_State* L) {
+	vector<tablecolheader> elements;
+	elements.push_back(tablecolheader { &gcMXIterator, "__gc" });
+	elements.push_back(tablecolheader { &mxNext, "next" });
+	createNewTable(L, AT_MODELITERATOR, elements);
+}
+
 /**
  * Create all metatables
  */
@@ -1974,6 +2002,7 @@ void createMetaTables(lua_State* L) {
 	fobddMetaTable(L);
 
 	overloadedMetaTable(L);
+	mxIteratorMetaTable(L);
 }
 
 std::set<Namespace*> _checkedAddToGlobal;
