@@ -72,6 +72,7 @@ procedure getExpectedNbOfModels(){
 
 
 structure S:V{
+dataset={1}
 connected = {}
 }
 
