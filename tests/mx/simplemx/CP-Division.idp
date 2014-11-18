@@ -1,0 +1,21 @@
+vocabulary V {
+type t isa int
+   a : t
+   b : t
+   c : t
+}
+
+theory T : V {
+   a = b /c .
+}
+
+structure S : V {
+t={-5..4}
+   b = 1
+   c = 2
+}
+
+
+procedure getExpectedNbOfModels() {
+  return 0
+}
