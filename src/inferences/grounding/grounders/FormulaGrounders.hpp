@@ -34,6 +34,13 @@ bool recursive(const PFSymbol& symbol, const GroundingContext& context);
 class FormulaGrounder: public Grounder {
 protected:
 	var2dommap _varmap; // Maps the (cloned) variables in the original formula to their instantiation
+
+	Formula* _formula; 	// The formula represented by this grounder, if any. Currently not representing generators/checkers
+						// This formula is a clone of the original and gets deleted together with the grounder.
+
+	// Passes ownership!!!
+	void setFormula(Formula* f);
+
 public:
 	FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct);
 	virtual ~FormulaGrounder();
@@ -43,6 +50,14 @@ public:
 	virtual void put(std::ostream& stream) const;
 	const var2dommap& getVarmapping() const {
 		return _varmap;
+	}
+
+	bool hasFormula() const {
+		return _formula != NULL;
+	}
+	Formula* getFormula() const {
+		Assert(hasFormula());
+		return _formula;
 	}
 };
 
@@ -66,7 +81,7 @@ protected:
 
 public:
 	AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*, const std::vector<TermGrounder*>&,
-			const std::vector<SortTable*>&, const GroundingContext&);
+			const std::vector<SortTable*>&, const GroundingContext&, const PredForm* orig = NULL);
 	~AtomGrounder();
 };
 

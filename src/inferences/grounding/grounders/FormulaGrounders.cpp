@@ -34,10 +34,19 @@ bool recursive(const PFSymbol& symbol, const GroundingContext& context) {
 }
 
 FormulaGrounder::FormulaGrounder(AbstractGroundTheory* grounding, const GroundingContext& ct)
-		: Grounder(grounding, ct) {
+		: 	Grounder(grounding, ct),
+			_formula(NULL) {
 }
 
 FormulaGrounder::~FormulaGrounder() {
+	if (_formula != NULL) {
+		deleteDeep(_formula);
+	}
+}
+
+// Passes ownership!!!
+void FormulaGrounder::setFormula(Formula* f) {
+	_formula = f;
 }
 
 #define dtype(container) decltype(*std::begin(container))
@@ -67,7 +76,7 @@ void FormulaGrounder::put(std::ostream& output) const {
 }
 
 AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol* s, const vector<TermGrounder*>& sg, const vector<SortTable*>& vst,
-		const GroundingContext& ct)
+		const GroundingContext& ct, const PredForm* orig)
 		: 	FormulaGrounder(grounding, ct),
 			_subtermgrounders(sg),
 			_symbol(s),
@@ -83,7 +92,11 @@ AtomGrounder::AtomGrounder(AbstractGroundTheory* grounding, SIGN sign, PFSymbol*
 		args.push_back(tg->getTerm()->cloneKeepVars());
 		addAll(_varmap, tg->getVarmapping());
 	}
-	setFormula(new PredForm(sign, s, args, { }));
+	if (orig != NULL) {
+		setFormula(new PredForm(sign, s, args, orig->pi()));
+	} else {
+		setFormula(new PredForm(sign, s, args, { }));
+	}
 
 	gentype = ct.gentype;
 	setMaxGroundSize(tablesize(TableSizeType::TST_EXACT, 1));
@@ -108,7 +121,7 @@ Lit AtomGrounder::run() const {
 			alldomelts = false;
 		} else {
 			auto domelem = groundterm._domelement;
-			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), getContext()._funccontext, _sign);
+			auto known = translator()->checkApplication(domelem, _tables[n], _subtermgrounders[n]->getDomain(), getContext()._funccontext, _sign, getFormula());
 			if (known != TruthValue::Unknown) {
 				if (verbosity() > 2) {
 					poptab();

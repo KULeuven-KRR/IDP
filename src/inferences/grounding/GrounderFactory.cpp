@@ -638,7 +638,7 @@ void GrounderFactory::handleGeneralPredForm(const PredForm* pf){
     if (_context._component == CompContext::HEAD) {
 		_headgrounder = new HeadGrounder(getGrounding(), symbol, subtermgrounders, argsorttables, _context);
     } else {
-		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, argsorttables, _context);
+		_formgrounder = new AtomGrounder(getGrounding(), pf->sign(), symbol, subtermgrounders, argsorttables, _context, pf);
     }
 
 	checkAndAddAsTopGrounder();

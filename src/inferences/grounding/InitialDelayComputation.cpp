@@ -58,8 +58,8 @@ DelayInitializer::~DelayInitializer() {
 }
 
 void DelayInitializer::addGrounder(Grounder* grounder) {
-	if (grounder->hasFormula() && isa<FormulaGrounder>(*grounder)) {
-		auto fg = dynamic_cast<FormulaGrounder*>(grounder);
+	auto fg = dynamic_cast<FormulaGrounder*>(grounder);
+	if (fg != NULL && fg->hasFormula()) {
 		auto delay = FormulaUtils::findDelay(fg->getFormula(), fg->getVarmapping(), manager);
 		if (delay.get() == NULL) {
 			// TODO equivalence delaying currently disabled, should first fix that no loops can go over them, how they are constructed (and outputvoc!) etc

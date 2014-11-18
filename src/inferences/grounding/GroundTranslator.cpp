@@ -183,7 +183,7 @@ void GroundTranslator::addKnown(VarId id) {
 	}
 }
 
-TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign) {
+TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, SortTable* predtable, SortTable* termtable, Context funccontext, SIGN sign, const Formula* origFormula) {
 	// Check partial functions
 	if (domelem == NULL) {
 		TruthValue result;
@@ -195,7 +195,12 @@ TruthValue GroundTranslator::checkApplication(const DomainElement* domelem, Sort
 			result = TruthValue::False;
 			break;
 		case Context::BOTH:
-			throw IdpException("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
+			if (origFormula != NULL) {
+				Error::error("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.", origFormula->pi());
+			} else {
+				Error::error("Could not find out the semantics of an ambiguous partial term. Please specify the meaning.");
+			}
+			throw IdpException("Critical error encountered. Aborting.");
 		}
 		if (verbosity() > 2) {
 			std::clog << tabs() << "Partial function went out of bounds\n";
