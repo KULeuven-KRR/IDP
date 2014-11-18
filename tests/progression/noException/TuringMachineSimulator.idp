@@ -23,7 +23,7 @@ Anything that operates according to these specifications is a Turing machine.
 LTCvocabulary V{
  	type Time
  	Start : Time
- 	Next(Time):Time
+ 	partial Next(Time):Time
  	type Dir constructed from {L,R}
  	type Sym
 	b: Sym							//blanc
@@ -75,6 +75,7 @@ LTCvocabulary V{
  
  }
  structure S:  V{
+ 	Time={0..10}
  	Q = { A;B;C;Halt}
  	Halt=Halt	
  	q0=A
