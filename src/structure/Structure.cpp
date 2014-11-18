@@ -599,26 +599,30 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 		return true;
 	}
 
-	// Check whether each input tuple maps to less than two output tuples
 	auto pt = fi->graphInter();
-	auto ct = pt->ct();
-	// Check if the interpretation is indeed a function
-	FirstNElementsEqual eq(f->arity());
-	auto ctit = ct->begin();
-	if (not ctit.isAtEnd()) {
-		auto jt = ct->begin();
-		++jt;
-		for (; not jt.isAtEnd(); ++ctit, ++jt) {
-			if (eq(*ctit, *jt)) { // Found a tuple that violates the constraint
-				if (throwErrors) {
-					const auto& tuple = *ctit;
-					vector<string> vstr;
-					for (size_t c = 0; c < f->arity(); ++c) {
-						vstr.push_back(toString(tuple[c]));
+
+	// Check whether each input tuple maps to less than two output tuples
+	//This check should not happen to an interpretation with a functable (as this can be definition only map to at most one tuple!
+	if (fi->funcTable() == NULL) {
+		auto ct = pt->ct();
+		// Check if the interpretation is indeed a function
+		FirstNElementsEqual eq(f->arity());
+		auto ctit = ct->begin();
+		if (not ctit.isAtEnd()) {
+			auto jt = ct->begin();
+			++jt;
+			for (; not jt.isAtEnd(); ++ctit, ++jt) {
+				if (eq(*ctit, *jt)) { // Found a tuple that violates the constraint
+					if (throwErrors) {
+						const auto& tuple = *ctit;
+						vector<string> vstr;
+						for (size_t c = 0; c < f->arity(); ++c) {
+							vstr.push_back(toString(tuple[c]));
+						}
+						Error::notfunction(f->name(), name(), vstr);
 					}
-					Error::notfunction(f->name(), name(), vstr);
+					return false;
 				}
-				return false;
 			}
 		}
 	}
