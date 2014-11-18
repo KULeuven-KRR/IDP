@@ -541,7 +541,9 @@ void Insert::currfile(string* s) {
 }
 
 void Insert::partial(Function* f) const {
-	f->partial(true);
+	if(f){
+		f->partial(true);
+	}
 }
 
 void Insert::makeLFD(FixpDef* d, bool lfp) const {
