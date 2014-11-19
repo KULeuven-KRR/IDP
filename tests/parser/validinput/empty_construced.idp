@@ -10,5 +10,5 @@ structure S:V{
 }
 
 procedure main(){
-	print(S)
+	return 1	
 }
