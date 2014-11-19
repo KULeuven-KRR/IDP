@@ -708,27 +708,31 @@ public:
 		_printTermsAsBlock = false;
 		_printSetTerm = true;
 		Assert(isTheoryOpen());
-		switch (t->function()) {
-			case AggFunction::CARD:
-				output() << "sum";
-			_printSetTerm = false;
-			break;
-			case AggFunction::SUM:
-			output() << "sum";
-			break;
-			case AggFunction::PROD:
-			output() << "prod";
-			break;
-			case AggFunction::MIN:
-			output() << "min";
-			break;
-			case AggFunction::MAX:
-			output() << "max";
-			break;
+
+		if(t->set()->getSets().size()>1){
+			switch (t->function()) {
+				case AggFunction::CARD:
+					output() << "sum";
+					break;
+				case AggFunction::SUM:
+					output() << "sum";
+					break;
+				case AggFunction::PROD:
+					output() << "prod";
+					break;
+				case AggFunction::MIN:
+					output() << "min";
+					break;
+				case AggFunction::MAX:
+					output() << "max";
+					break;
+			}
+			output() <<'(';
+			printEnumSetExpr(t->set(),t->function());
+			output() <<')';
+		}else{
+			printEnumSetExpr(t->set(),t->function());
 		}
-		output() <<'(';
-		printEnumSetExpr(t->set(),t->function());
-		output() <<')';
 		_printTermsAsBlock = backup;
 		_printSetTerm = backupTermPrint;
 		finishTermPrinting();
@@ -1416,6 +1420,7 @@ private:
 		switch (f) {
 		case AggFunction::CARD:
 			output() << "#";
+			_printSetTerm = false;
 			break;
 		case AggFunction::SUM:
 			output() << "sum";
