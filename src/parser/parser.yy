@@ -697,6 +697,7 @@ elements		: elements ';' charrange			{ $$ = $1; data().addElement($$,$3->first,$
 				
 func_list		: func_list ',' constr_func_decl { $$ = $1; $$->push_back($3); }
 				| constr_func_decl { $$ = new std::vector<Function*>(); $$->push_back($1); }
+				| {  $$ = new std::vector<Function*>(); }
 				;
 
 

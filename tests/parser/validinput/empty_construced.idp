@@ -1,0 +1,14 @@
+vocabulary V{
+	type T constructed from {}
+}
+
+theory T:V{
+}
+
+structure S:V{
+
+}
+
+procedure main(){
+	return 1	
+}

@@ -264,21 +264,24 @@ void Sort::generatePred() {
 
 Sort::Sort(SortTable* inter)
 		: 	_pi(),
-			_interpretation(inter) {
+			_interpretation(inter),
+			sortConstructed(false){
 	_name = "sort" + convertToString(getGlobal()->getNewID());
 	generatePred();
 }
 Sort::Sort(const string& name, SortTable* inter)
 		: 	_name(name),
 			_pi(),
-			_interpretation(inter) {
+			_interpretation(inter),
+			sortConstructed(false){
 	generatePred();
 }
 
 Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter)
 		: 	_name(name),
 			_pi(pi),
-			_interpretation(inter) {
+			_interpretation(inter),
+			sortConstructed(false){
 	generatePred();
 }
 
@@ -333,7 +336,7 @@ set<Sort*> Sort::descendents(const Vocabulary* vocabulary) const {
 }
 
 bool Sort::isConstructed() const {
-	return _constructors.size() != 0;
+	return sortConstructed;
 }
 
 bool Sort::hasFixedInterpretation() const {
@@ -344,7 +347,13 @@ bool Sort::builtin() const {
 	return _interpretation != NULL;
 }
 
+void Sort::setConstructed(bool constructed) {
+	Assert(_interpretation == NULL);
+	sortConstructed = constructed;
+}
+
 void Sort::addConstructor(Function* func) {
+	Assert(sortConstructed);
 	_constructors.push_back(func);
 }
 
