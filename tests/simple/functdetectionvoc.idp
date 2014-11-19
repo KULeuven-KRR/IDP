@@ -1,0 +1,32 @@
+vocabulary V {
+    type Pigeon
+    type Hole
+    SitsIn(Pigeon,Hole)
+}
+
+theory T : V {
+    !p: ?1 h: SitsIn(p,h).
+    !h: ?<2 p: SitsIn(p,h).
+}
+
+structure S : V {
+    Pigeon={1..5}
+    Hole={1..5}
+}
+
+procedure main(){
+    stdoptions.nbmodels=0
+
+    tmp = detectfunctions(T)
+    if(getvocabulary(T)["SitsIn_1"] == nil ) then
+	print("OK: theory is still over original vocabulary")
+    	return 1
+    else
+	print(T)
+    	print("Error: function detection changed theory")
+	return 0
+    end
+
+
+}
+

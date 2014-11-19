@@ -26,7 +26,8 @@ public:
 		if(theory==NULL){
 			throw IdpException("Expected a concrete Theory.");
 		}
-		FunctionDetection::doDetectAndRewriteIntoFunctions(theory);
-		return InternalArgument(theory);
+		auto tmptheo = theory->clone();
+		FunctionDetection::doDetectAndRewriteIntoFunctions(tmptheo);
+		return InternalArgument(tmptheo);
 	}
 };
