@@ -264,21 +264,24 @@ void Sort::generatePred() {
 
 Sort::Sort(SortTable* inter)
 		: 	_pi(),
-			_interpretation(inter) {
+			_interpretation(inter),
+			sortConstructed(false){
 	_name = "sort" + convertToString(getGlobal()->getNewID());
 	generatePred();
 }
 Sort::Sort(const string& name, SortTable* inter)
 		: 	_name(name),
 			_pi(),
-			_interpretation(inter) {
+			_interpretation(inter),
+			sortConstructed(false){
 	generatePred();
 }
 
 Sort::Sort(const string& name, const ParseInfo& pi, SortTable* inter)
 		: 	_name(name),
 			_pi(pi),
-			_interpretation(inter) {
+			_interpretation(inter),
+			sortConstructed(false){
 	generatePred();
 }
 
