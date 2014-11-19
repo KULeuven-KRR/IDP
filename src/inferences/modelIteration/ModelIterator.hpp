@@ -35,8 +35,7 @@ std::shared_ptr<ModelIterator> createIterator(AbstractTheory*, Structure*, Vocab
 class ModelIterator {
 public:
     ModelIterator(Structure*, Theory*, Vocabulary*, TraceMonitor*, const MXAssumptions&);
-    ModelIterator(const ModelIterator& orig);
-    virtual ~ModelIterator();
+    ~ModelIterator();
     void init();
     MXResult calculate();
 private:
@@ -57,7 +56,7 @@ private:
     PCSolver*  _data;
     AbstractGroundTheory* _grounding;
     StructureExtender* _extender;
-    litlist* _assumptions();
+    litlist* _assumptions;
 };
 
 #endif	/* MODELITERATOR_HPP */

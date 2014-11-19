@@ -41,7 +41,7 @@ ModelIterator::~ModelIterator() {
 	_grounding->recursiveDelete();
 	_theory->recursiveDelete();
 	delete (_extender);
-	//delete (_assumptions);
+	delete (_assumptions);
 	delete (_structure);
 	delete (_currentVoc);
 	delete (_data);
@@ -87,6 +87,7 @@ void ModelIterator::init() {
 	_currentVoc->add(_theory->vocabulary());
 	_structure->changeVocabulary(_currentVoc);
 	_theory->vocabulary(_currentVoc);
+	_assumptions = new litlist();
 	preprocess(_theory);
 	ground(_theory);
 }
@@ -122,11 +123,10 @@ void ModelIterator::ground(Theory* theory) {
     _grounding = groundingAndExtender.first;
     _extender = groundingAndExtender.second;
 
-    litlist assumptions = _assumptions;
     auto trans = _grounding->translator();
     for (auto p : _assumeFalse.assumeAllFalse) {
         for (auto atom : trans->getIntroducedLiteralsFor(p)) { // TODO should be introduced ATOMS
-            assumptions->push_back(-abs(atom.second));
+            _assumptions->push_back(-abs(atom.second));
         }
         std::vector<Variable*> vars;
         std::vector<Term*> varterms;
@@ -139,11 +139,11 @@ void ModelIterator::ground(Theory* theory) {
         PredTable* table = Querying::doSolveQuery(new Query("", vars, new PredForm(SIGN::POS, p, varterms,{}), {}), trans->getConcreteStructure(), trans->getSymbolicStructure());
         for (auto i = table->begin(); not i.isAtEnd(); ++i) {
             auto atom = _grounding->translator()->translateNonReduced(p, *i);
-            assumptions->push_back(-abs(atom));
+            _assumptions->push_back(-abs(atom));
         }
     }
     for (auto pf : _assumeFalse.assumeFalse) {
-        assumptions->push_back(_grounding->translator()->translateNonReduced(pf.symbol, pf.args));
+        _assumptions->push_back(_grounding->translator()->translateNonReduced(pf.symbol, pf.args));
     }
 }
 
@@ -162,7 +162,7 @@ public:
 
 MXResult ModelIterator::calculate() {
 	std::cerr << "Calculate\n";
-    auto mx = SolverConnection::initsolution(_data, 1, _assumptions);
+    auto mx = SolverConnection::initsolution(_data, 1, *_assumptions);
 	std::cerr << "initialized\n";
     auto startTime = clock();
     if (getMXVerbosity() > 0) {
