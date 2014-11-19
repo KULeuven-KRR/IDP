@@ -57,7 +57,7 @@ private:
     PCSolver*  _data;
     AbstractGroundTheory* _grounding;
     StructureExtender* _extender;
-    litlist _assumptions;
+    litlist* _assumptions();
 };
 
 #endif	/* MODELITERATOR_HPP */

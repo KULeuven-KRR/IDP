@@ -45,7 +45,7 @@ class FuncInter;
 class TableIterator;
 class SortIterator;
 class FOBDD;
-class ModelIterator;
+class WrapModelIterator;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -326,7 +326,7 @@ struct InternalArgument {
 		LuaTraceMonitor* _tracemonitor;
 		UserProcedure* _procedure;
                 
-                std::shared_ptr<ModelIterator>* _modelIterator;
+                WrapModelIterator* _modelIterator;
 	} _value;
 
 	// Constructors
@@ -437,7 +437,7 @@ struct InternalArgument {
 			: _type(AT_TRACEMONITOR) {
 		_value._tracemonitor = v;
 	}
-	InternalArgument(std::shared_ptr<ModelIterator>* v)
+	InternalArgument(WrapModelIterator* v)
 			: _type(AT_MODELITERATOR) {
 		_value._modelIterator = v;
 	}

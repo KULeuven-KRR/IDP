@@ -161,7 +161,7 @@ void setTranslator(MinisatID::Space* solver, GroundTranslator* translator) {
 MinisatID::ModelExpand* initsolution(MinisatID::Space* solver, int nbmodels, const litlist& assumptions) {
 	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
 	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
-  return solver->createModelExpand(solver, opts, createList(assumptions));
+	return solver->createModelExpand(solver, opts, createList(assumptions));
 }
 
 PCUnitPropagate* initpropsolution(MinisatID::Space* solver) {

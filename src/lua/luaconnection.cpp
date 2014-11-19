@@ -25,6 +25,7 @@
 #include "insert.hpp"
 #include "structure/StructureComponents.hpp"
 #include "external/runidp.hpp"
+#include "lstate.h"
 
 using namespace std;
 using namespace LuaConnection;
@@ -791,6 +792,14 @@ int garbageCollect<AbstractTheory*>(lua_State* L) {
 	return 0;
 }
 
+template<>
+int garbageCollect<WrapModelIterator*>(lua_State* L) {
+	WrapModelIterator* t = *(WrapModelIterator**) lua_touserdata(L, 1);
+	std::cerr << t << "\n";
+	delete t;
+	return 0;
+}
+
 template<typename T>
 int garbageCollect(T obj) {
 	delete (obj);
@@ -883,8 +892,7 @@ int gcFobdd(lua_State*) {
 }
 
 int gcMXIterator(lua_State* L) {
-	throw new IdpException("Called MX garbage collection");
-	return garbageCollect<std::shared_ptr<ModelIterator>*>(L);
+	return garbageCollect<WrapModelIterator*>(L);
 }
 
 /**
@@ -1969,6 +1977,15 @@ void mxIteratorMetaTable(lua_State* L) {
 	elements.push_back(tablecolheader { &gcMXIterator, "__gc" });
 	elements.push_back(tablecolheader { &mxNext, "next" });
 	createNewTable(L, AT_MODELITERATOR, elements);
+	
+	//Make metatable own table:
+	//mt.__index = mt
+	string name = toCString(AT_MODELITERATOR);
+	luaL_getmetatable(L, name.c_str());
+	lua_pushvalue(L, -1);
+	string index = "__index";
+	lua_setfield(L, -2, index.c_str());
+	lua_pop(L, 1);
 }
 
 /**

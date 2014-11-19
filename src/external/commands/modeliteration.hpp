@@ -17,6 +17,7 @@
 #include "utils/LogAction.hpp"
 #include "lua/luaconnection.hpp"
 
+
 // TODO trace is returned as the SECOND return value of the lua call
 InternalArgument createIteratorCommand(AbstractTheory* theory, Structure* structure, Vocabulary* outputvoc) {
 	LuaTraceMonitor* tracer = NULL;
@@ -24,8 +25,9 @@ InternalArgument createIteratorCommand(AbstractTheory* theory, Structure* struct
 		tracer = LuaConnection::getLuaTraceMonitor();
 	}
 	auto iterator =  createIterator(theory, structure, outputvoc, tracer);
-        InternalArgument ia(&iterator);
-        std::cout << "There\n";
+        auto wrap = new WrapModelIterator(iterator);
+        InternalArgument ia(wrap);
+        iterator->init();
         return ia;
 }
 
@@ -39,8 +41,8 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-                std::cout << "Here\n";
-		return createIteratorCommand(get<0>(args), get<1>(args), NULL);
+                auto ret = createIteratorCommand(get<0>(args), get<1>(args), NULL);
+		return ret;
 	}
 };
 
@@ -55,7 +57,8 @@ public:
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		return createIteratorCommand(get<0>(args), get<1>(args), get<2>(args));
+            std::cerr << "Here\n";
+            return createIteratorCommand(get<0>(args), get<1>(args), get<2>(args));
 	}
 };
 

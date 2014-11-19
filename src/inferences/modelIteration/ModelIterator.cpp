@@ -41,6 +41,7 @@ ModelIterator::~ModelIterator() {
 	_grounding->recursiveDelete();
 	_theory->recursiveDelete();
 	delete (_extender);
+	//delete (_assumptions);
 	delete (_structure);
 	delete (_currentVoc);
 	delete (_data);
@@ -121,11 +122,11 @@ void ModelIterator::ground(Theory* theory) {
     _grounding = groundingAndExtender.first;
     _extender = groundingAndExtender.second;
 
-    litlist assumptions;
+    litlist assumptions = _assumptions;
     auto trans = _grounding->translator();
     for (auto p : _assumeFalse.assumeAllFalse) {
         for (auto atom : trans->getIntroducedLiteralsFor(p)) { // TODO should be introduced ATOMS
-            assumptions.push_back(-abs(atom.second));
+            assumptions->push_back(-abs(atom.second));
         }
         std::vector<Variable*> vars;
         std::vector<Term*> varterms;
@@ -138,13 +139,12 @@ void ModelIterator::ground(Theory* theory) {
         PredTable* table = Querying::doSolveQuery(new Query("", vars, new PredForm(SIGN::POS, p, varterms,{}), {}), trans->getConcreteStructure(), trans->getSymbolicStructure());
         for (auto i = table->begin(); not i.isAtEnd(); ++i) {
             auto atom = _grounding->translator()->translateNonReduced(p, *i);
-            assumptions.push_back(-abs(atom));
+            assumptions->push_back(-abs(atom));
         }
     }
     for (auto pf : _assumeFalse.assumeFalse) {
-        assumptions.push_back(_grounding->translator()->translateNonReduced(pf.symbol, pf.args));
+        assumptions->push_back(_grounding->translator()->translateNonReduced(pf.symbol, pf.args));
     }
-	_assumptions = assumptions;
 }
 
 class SolverTermination: public TerminateMonitor {
@@ -161,15 +161,17 @@ public:
 
 
 MXResult ModelIterator::calculate() {
+	std::cerr << "Calculate\n";
     auto mx = SolverConnection::initsolution(_data, 1, _assumptions);
+	std::cerr << "initialized\n";
     auto startTime = clock();
     if (getMXVerbosity() > 0) {
         logActionAndTime("Starting solving at ");
     }
+	std::cerr << "There\n";
     bool unsat = false;
     auto terminator = new SolverTermination(mx);
     getGlobal()->addTerminationMonitor(terminator);
-
     auto t = basicResourceMonitor([]() {
         return getOption(MXTIMEOUT);
     }, []() {
@@ -203,7 +205,6 @@ MXResult ModelIterator::calculate() {
 		cleanup;
         throw;
     }
-
     t.requestStop();
     time.join();
 

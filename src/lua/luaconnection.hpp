@@ -15,6 +15,8 @@
 #include <string>
 #include <sstream>
 #include "internalargument.hpp"
+#include <bits/shared_ptr.h>
+#include "inferences/modelIteration/ModelIterator.hpp"
 #include "lua.hpp" // TODO should move to cpp, but then have to remove templated addGlobal
 
 class Vocabulary;
@@ -83,5 +85,24 @@ public:
 LuaTraceMonitor* getLuaTraceMonitor();
 
 }
+
+class WrapModelIterator {
+private:
+    std::shared_ptr<ModelIterator> wrap;
+public:
+    WrapModelIterator(std::shared_ptr<ModelIterator> wrap) {
+        this->wrap = wrap;
+    }
+    ~WrapModelIterator() {
+        std::cerr << "DestroyWrap\n";
+        wrap = NULL;
+    }
+    std::shared_ptr<ModelIterator> get(){
+        return wrap;
+    }
+    std::shared_ptr<ModelIterator> operator->() {
+        return wrap;
+    }
+};
 
 #endif /* LUACONNECTION_HPP_ */
