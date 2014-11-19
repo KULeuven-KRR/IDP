@@ -1892,6 +1892,8 @@ FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 		auto temp = f->disambiguate( { t->sort(), NULL }, _currvocabulary);
 		if(temp != NULL){
 			f = temp;
+		}else{
+			nofuncsort(f->name(),f->pi());
 		}
 	}
 	auto temp = new FuncTerm(f, pivt, TermParseInfo());
