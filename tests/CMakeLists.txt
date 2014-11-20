@@ -93,7 +93,7 @@ if(${BUILDTESTS})
 	)
 	set(PRINTERTESTS printertest.cpp)
 	
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux" OR ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 		add_executable(idptests
 			${FASTTESTS}
 			${MXINCLUDES}
@@ -153,17 +153,11 @@ if(${BUILDTESTS})
 			mxtests/basic.cpp
             mxtests/focard.cpp
 			mxtests/bounds.cpp
-			if(XSBUSED)
-				mxtests/xsbmx.cpp
-			endif()
 			mxtests/nobounds.cpp
 			mxtests/boundsNoLUP.cpp
 			mxtests/cp.cpp
 			mxtests/lazy.cpp
 			mxtests/verylazy.cpp
-			if(SPASS)
-			    mxtests/funcdetect.cpp
-			endif()
 			mxtests/symm.cpp
 			mxtests/optim.cpp
 			mxtests/satnobounds.cpp
@@ -172,8 +166,13 @@ if(${BUILDTESTS})
 			mxtests/metarep.cpp
 		)
         
+        if(XSBUSED)
+        	set(LONGERTESTS ${LONGERTESTS} mxtests/definitionWithXSBtests.cpp)
+        endif()
+
         if(SPASS)
-            set(LONGERTESTS "${LONGERTESTS} EntailmentTests.cpp")
+        	set(LONGERTESTS ${LONGERTESTS} mxtests/funcdetect.cpp)
+            set(LONGERTESTS ${LONGERTESTS} EntailmentTests.cpp ${TESTINCLUDES})
         endif()
 
 		add_executable(idptests
