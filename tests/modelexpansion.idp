@@ -26,6 +26,7 @@ procedure mxnobounds(){
 procedure mxlazy(){
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
+	stdoptions.xsb=false
 	return run(T)
 }
 
@@ -33,6 +34,7 @@ procedure mxlazycp(){
 	stdoptions.cpsupport = true
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
+	stdoptions.xsb=false
 	return run(T)
 }
 
@@ -46,6 +48,7 @@ procedure mxverylazy(){
 	stdoptions.lazysizelimit=3
 	stdoptions.satdelay=true
 	stdoptions.tseitindelay=true
+	stdoptions.xsb=false
 	stdoptions.timeout = 7
 	return run(T)
 }

@@ -191,7 +191,15 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::XSB_SHORT_NAMES, "xsbshortnames", boolvalues, true, PrintBehaviour::DONOTPRINT); // Translation to XSB code does not maintain predicate and atom names, but introduces identifiers to minimize communication overhead with XSB
 		BoolPol::createOption(BoolType::SHOW_XSB_WARNINGS, "showxsbwarnings", boolvalues, false, PrintBehaviour::DONOTPRINT); // Show XSB warnings
-		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
+#ifdef WITHXSB
+		// only set XSB default to true when the options is available.
+		// This makes the getOption(XSB) check consistent, whether it occurs within a #ifdef WITHXSB context or not.
+		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, true, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
+#else
+		// When the XSB option is not available, the option still exists, but is always false
+		// This is because it is false by default, and it cannot be set to true (see setValue/2 implementation)
+		BoolPol::createOption(BoolType::XSB, "xsb", boolvalues, false, PrintBehaviour::DONOTPRINT); // Request to compute definitions as much as possible with xsb
+#endif
 		BoolPol::createOption(BoolType::REFINE_DEFS_WITH_XSB, "refinedefinitionswithxsb", boolvalues, false, PrintBehaviour::PRINT); // Request to compute definitions as much as possible with xsb
 		BoolPol::createOption(BoolType::EXPANDIMMEDIATELY, "expandimm", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::TSEITINDELAY, "tseitindelay", boolvalues, false, PrintBehaviour::PRINT);

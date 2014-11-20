@@ -19,7 +19,7 @@
 extern void parsefile(const std::string&);
 
 Theory* SplitDefinitions::execute(Theory* t) {
-	if(not getOption(SPLIT_DEFS)){
+	if (not getOption(SPLIT_DEFS)) {
 		return t;
 	}
 	prepare();

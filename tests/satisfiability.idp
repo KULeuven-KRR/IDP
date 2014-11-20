@@ -18,6 +18,7 @@ procedure satnoboundslong(){
 procedure satlazy(){
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 10
+	stdoptions.xsb=false
 	return run()
 }
 

@@ -195,6 +195,9 @@ Options* setBootstrappingOptions() {
 	setOption(NRPROPSTEPS, 12);
 	setOption(CPSUPPORT, true);
 	setOption(TSEITINDELAY, false);
+#ifndef WITHXSB
+	Warning::warning("Performing bootstrapping without XSB support. This might be inefficient.\n");
+#endif
 	setOption(XSB, true);
 	setOption(SATISFIABILITYDELAY, false);
 	setOption(NBMODELS, 1);
