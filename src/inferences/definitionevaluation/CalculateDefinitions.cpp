@@ -63,10 +63,10 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 		for (auto symbol : symbols) {
 			if (possRecNegSymbols.find(symbol) != possRecNegSymbols.end()) {
 				if(xsb_interface->hasUnknowns(symbol)) {
-	            	xsb_interface->reset();
-	            	result._hasModel=false;
-	            	result._calculated_model=structure;
-	            	return result;
+					xsb_interface->reset();
+					result._hasModel=false;
+					result._calculated_model=structure;
+					return result;
 				}
 			}
 			auto sorted = xsb_interface->queryDefinition(symbol);
