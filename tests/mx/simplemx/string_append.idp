@@ -30,7 +30,3 @@ procedure shouldNotCheck(){
 procedure doNotPrint(){
 	return true
 }
-
-procedure shouldNotCompareStructure(){
-	return 1;
-}

@@ -1,9 +1,6 @@
 procedure getExpectedNbOfModels(){
 	return 1;
 }
-procedure shouldNotCompareStructure(){
-	return 1;
-}
 
 vocabulary V {
 	type Val
