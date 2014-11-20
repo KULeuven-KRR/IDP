@@ -105,18 +105,18 @@ string funcArityName(const longname& name, int arity) {
 }
 
 /**Generates good error message for not-in-scope stuff in which arity can be important */
-void undeclaredPred(NSPair* nst, int arity) const {
+void undeclaredPred(NSPair* nst, int arity) {
 	if (nst->_sortsincluded) {
 		notDeclared(ComponentType::Predicate, toString(nst), nst->_pi);
 	} else {
 		notDeclared(ComponentType::Predicate, predArityName(nst->_name, arity), nst->_pi);
 	}
 }
-void undeclaredFunc(NSPair* nst, int arity) const {
+void undeclaredFunc(NSPair* nst, int arity) {
 	if (nst->_sortsincluded) {
 		notDeclared(ComponentType::Function, toString(nst), nst->_pi);
 	} else {
-		notDeclared(ComponentType::Function, predArityName(nst->_name, arity), nst->_pi);
+		notDeclared(ComponentType::Function, funcArityName(nst->_name, arity), nst->_pi);
 	}
 }
 
