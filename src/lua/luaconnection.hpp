@@ -94,7 +94,7 @@ public:
         this->wrap = wrap;
     }
     ~WrapModelIterator() {
-        std::cerr << "DestroyWrap\n";
+        wrap.reset();
         wrap = NULL;
     }
     std::shared_ptr<ModelIterator> get(){

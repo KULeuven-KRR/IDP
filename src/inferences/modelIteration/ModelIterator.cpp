@@ -186,7 +186,6 @@ MXResult ModelIterator::calculate() {
     try {
 		model = _mx->findNext();
         result.unsat = (model == NULL);
-		std::cerr << "Unsat: " << result.unsat << "\n";
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
             getGlobal()->reset();
@@ -222,7 +221,6 @@ MXResult ModelIterator::calculate() {
 		cleanup;
         throw IdpException("Solver was terminated");
     }
-	std::cerr << "Here\n";
     result._optimumfound = not result._interrupted;
     if (t.outOfResources()) {
         Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
@@ -261,7 +259,6 @@ MXResult ModelIterator::getStructure(MXResult result, clock_t startTime, std::sh
 			_extender, _outputvoc, postprocessdefs);
 		solutions.push_back(solution);
 		result._models = solutions;
-		std::cerr << result._models.size() << "\n";
     }
     return result;
 }

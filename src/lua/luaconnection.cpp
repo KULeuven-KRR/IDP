@@ -792,14 +792,6 @@ int garbageCollect<AbstractTheory*>(lua_State* L) {
 	return 0;
 }
 
-template<>
-int garbageCollect<WrapModelIterator*>(lua_State* L) {
-	WrapModelIterator* t = *(WrapModelIterator**) lua_touserdata(L, 1);
-	std::cerr << t << "\n";
-	delete t;
-	return 0;
-}
-
 template<typename T>
 int garbageCollect(T obj) {
 	delete (obj);
@@ -892,7 +884,7 @@ int gcFobdd(lua_State*) {
 }
 
 int gcMXIterator(lua_State* L) {
-	return garbageCollect<WrapModelIterator*>(L);
+	return garbageCollect(*(WrapModelIterator**) lua_touserdata(L, 1));
 }
 
 /**
@@ -1774,7 +1766,6 @@ int mxNext(lua_State* L) {
 	shared_ptr<ModelIterator> it = iter->get();
 	auto result = it->calculate();
 	if(result.unsat) {
-		std::cerr << "UNSATLUA\n";
 		lua_pushnil(L);
 		return 1;
 	} else {
