@@ -1770,8 +1770,9 @@ int symbolArity(lua_State* L) {
 }
 
 int mxNext(lua_State* L) {
-	ModelIterator* iter = *(ModelIterator**) lua_touserdata(L, 1); //self
-	auto result = iter->calculate();
+	WrapModelIterator* iter = *(WrapModelIterator**) lua_touserdata(L, 1); //self
+	shared_ptr<ModelIterator> it = iter->get();
+	auto result = it->calculate();
 	if(result.unsat) {
 		lua_pushnil(L);
 		return 1;

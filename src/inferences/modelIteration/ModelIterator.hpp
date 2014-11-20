@@ -41,6 +41,7 @@ public:
 private:
     std::vector<Definition*> preprocess(Theory*);
     void ground(Theory*);
+    void prepareSolver();
     MXResult getStructure(PCModelExpand*, MXResult, clock_t);
     
     Structure* _structure;
@@ -57,6 +58,8 @@ private:
     AbstractGroundTheory* _grounding;
     StructureExtender* _extender;
     litlist* _assumptions;
+    
+    PCModelExpand* _mx;
 };
 
 #endif	/* MODELITERATOR_HPP */

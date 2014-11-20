@@ -38,6 +38,7 @@ ModelIterator::ModelIterator(Structure* structure, Theory* theory, Vocabulary* t
 }
 
 ModelIterator::~ModelIterator() {
+	std::cerr << "destroyed\n";
 	_grounding->recursiveDelete();
 	_theory->recursiveDelete();
 	delete (_extender);
@@ -45,12 +46,12 @@ ModelIterator::~ModelIterator() {
 	delete (_structure);
 	delete (_currentVoc);
 	delete (_data);
+	delete (_mx);
 }
 
 #define cleanup \
 		getGlobal()->removeTerminationMonitor(terminator);\
-		delete (terminator);\
-		delete (mx);
+		delete (terminator);
 
 shared_ptr<ModelIterator> createIterator(AbstractTheory* theory, Structure* structure, Vocabulary* targetVocabulary,
 		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
@@ -90,6 +91,7 @@ void ModelIterator::init() {
 	_assumptions = new litlist();
 	preprocess(_theory);
 	ground(_theory);
+	prepareSolver();
 }
 
 /**
@@ -159,18 +161,14 @@ public:
 	}
 };
 
+void ModelIterator::prepareSolver() {
+    _mx = SolverConnection::initsolution(_data, 1, *_assumptions);
+
+}
+
 
 MXResult ModelIterator::calculate() {
-	std::cerr << "Calculate\n";
-    auto mx = SolverConnection::initsolution(_data, 1, *_assumptions);
-	std::cerr << "initialized\n";
-    auto startTime = clock();
-    if (getMXVerbosity() > 0) {
-        logActionAndTime("Starting solving at ");
-    }
-	std::cerr << "There\n";
-    bool unsat = false;
-    auto terminator = new SolverTermination(mx);
+    auto terminator = new SolverTermination(_mx);
     getGlobal()->addTerminationMonitor(terminator);
     auto t = basicResourceMonitor([]() {
         return getOption(MXTIMEOUT);
@@ -180,11 +178,14 @@ MXResult ModelIterator::calculate() {
         terminator->notifyTerminateRequested();
     });
     tthread::thread time(&resourceMonitorLoop, &t);
-
+	auto startTime = clock();
+    if (getMXVerbosity() > 0) {
+        logActionAndTime("Starting solving at ");
+    }
     MXResult result;
     try {
-        mx->execute(); // FIXME wrap other solver calls also in try-catch
-        unsat = mx->getSolutions().size() == 0;
+        _mx->execute(); // FIXME wrap other solver calls also in try-catch
+        result.unsat = _mx->getSolutions().size() == 0;
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
             getGlobal()->reset();
@@ -198,7 +199,7 @@ MXResult ModelIterator::calculate() {
         cleanup;
         throw IdpException(ss.str());
     } catch (UnsatException& ex) {
-        unsat = true;
+        result.unsat = true;
     } catch (...) {
         t.requestStop();
         time.join();
@@ -210,7 +211,7 @@ MXResult ModelIterator::calculate() {
 
     if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
         logActionAndValue("effective-size", _grounding->getSize());
-        if (mx->getNbModelsFound() > 0) {
+        if (_mx->getNbModelsFound() > 0) {
             logActionAndValue("state", "satisfiable");
         }
         std::clog.flush();
@@ -222,18 +223,13 @@ MXResult ModelIterator::calculate() {
     }
 
     result._optimumfound = not result._interrupted;
-    result.unsat = unsat;
     if (t.outOfResources()) {
         Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
         result._optimumfound = false;
         result._interrupted = true;
         getGlobal()->reset();
-    }
-
-    if (not t.outOfResources() && unsat) {
-        MXResult result;
-        result.unsat = true;
-        for (auto lit : mx->getUnsatExplanation()) {
+    } else if (result.unsat) {
+        for (auto lit : _mx->getUnsatExplanation()) {
             auto symbol = _grounding->translator()->getSymbol(lit.getAtom());
             auto args = _grounding->translator()->getArgs(lit.getAtom());
             result.unsat_in_function_of_ct_lits.push_back({symbol, args});
@@ -244,7 +240,7 @@ MXResult ModelIterator::calculate() {
         }
         return result;
     }
-    result = getStructure(mx, result, startTime);
+    result = getStructure(_mx, result, startTime);
 	cleanup;
     return result;
 }
@@ -256,7 +252,7 @@ Structure* handleSolution(Structure const * const structure, const MinisatID::Mo
 MXResult ModelIterator::getStructure(PCModelExpand* mx, MXResult result, clock_t startTime) {
     auto mxverbosity = getMXVerbosity();
     std::vector<Structure*> solutions;
-    if (result.unsat) {
+    if (not result.unsat) {
 		if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "satisfiable");
         }
@@ -265,12 +261,14 @@ MXResult ModelIterator::getStructure(PCModelExpand* mx, MXResult result, clock_t
             logActionAndValue("nrmodels", abstractsolutions.size());
             logActionAndTimeSince("total-solving-time", startTime);
         }
+		std::cerr << abstractsolutions.size() << "\n";
         for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
 			auto solution = handleSolution(_structure, **model, _grounding, 
 				_extender, _outputvoc, postprocessdefs);
             solutions.push_back(solution);
         }
 		result._models = solutions;
+		std::cerr << result._models.size() << "\n";
     }
     return result;
 }
