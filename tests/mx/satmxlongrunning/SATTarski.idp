@@ -74,9 +74,9 @@ theory T : V {
 	  Between(z,x,y) <- OnDiagObj(rd,cd,dd,z) & OnDiagObj(rd,cd,dd,x) & OnDiagObj(rd,cd,dd,y) & LeftOf(y,z) & LeftOf(z,x).
 	}
 	// A used object has exactly one of the three shapes.
-	! x : Used(x) => #[Triangle(x); Square(x); Pentagon(x)] = 1.
+	! x : Used(x) => #(Triangle(x), Square(x), Pentagon(x)) = 1.
 	// A used object has exactly one of the three sizes.
-	! x : Used(x) => #[Small(x); Medium(x); Large(x)] = 1.
+	! x : Used(x) => #(Small(x), Medium(x), Large(x)) = 1.
 	// Break symmetries
 	! x y : Used(y) & x < y => Used(x).
 	! x : (Square(x) | Triangle(x) | Pentagon(x)) => Used(x).
