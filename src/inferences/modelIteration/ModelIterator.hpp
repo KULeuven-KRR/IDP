@@ -42,7 +42,7 @@ private:
     std::vector<Definition*> preprocess(Theory*);
     void ground(Theory*);
     void prepareSolver();
-    MXResult getStructure(PCModelExpand*, MXResult, clock_t);
+    MXResult getStructure(MXResult, clock_t, std::shared_ptr<MinisatID::Model>);
     
     Structure* _structure;
     Theory* _theory;
@@ -59,7 +59,7 @@ private:
     StructureExtender* _extender;
     litlist* _assumptions;
     
-    PCModelExpand* _mx;
+    PCModelIteration* _mx;
 };
 
 #endif	/* MODELITERATOR_HPP */

@@ -14,6 +14,7 @@
 
 #include "Space.hpp"
 #include "Tasks.hpp"
+#include "ModelIterationTask.hpp"
 #include "SearchMonitor.hpp"
 #include "Translator.hpp"
 #include "Constraints.hpp"

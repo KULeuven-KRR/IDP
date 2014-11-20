@@ -38,7 +38,6 @@ ModelIterator::ModelIterator(Structure* structure, Theory* theory, Vocabulary* t
 }
 
 ModelIterator::~ModelIterator() {
-	std::cerr << "destroyed\n";
 	_grounding->recursiveDelete();
 	_theory->recursiveDelete();
 	delete (_extender);
@@ -151,9 +150,9 @@ void ModelIterator::ground(Theory* theory) {
 
 class SolverTermination: public TerminateMonitor {
 private:
-	PCModelExpand* solver;
+	PCModelIteration* solver;
 public:
-	SolverTermination(PCModelExpand* solver)
+	SolverTermination(PCModelIteration* solver)
 			: solver(solver) {
 	}
 	void notifyTerminateRequested() {
@@ -162,8 +161,10 @@ public:
 };
 
 void ModelIterator::prepareSolver() {
-    _mx = SolverConnection::initsolution(_data, 1, *_assumptions);
-
+    _mx = SolverConnection::createIteratorSolution(_data, 1, *_assumptions);
+	std::cerr << "InitStart\n";
+	_mx->initialise();
+	std::cerr << "InitDone\n";
 }
 
 
@@ -183,9 +184,11 @@ MXResult ModelIterator::calculate() {
         logActionAndTime("Starting solving at ");
     }
     MXResult result;
+	std::shared_ptr<MinisatID::Model> model = NULL;
     try {
-        _mx->execute(); // FIXME wrap other solver calls also in try-catch
-        result.unsat = _mx->getSolutions().size() == 0;
+		std::cerr << "findNext\n";
+		model = _mx->findNext();
+        result.unsat = (model==NULL);
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
             getGlobal()->reset();
@@ -211,7 +214,7 @@ MXResult ModelIterator::calculate() {
 
     if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
         logActionAndValue("effective-size", _grounding->getSize());
-        if (_mx->getNbModelsFound() > 0) {
+        if (not result.unsat) {
             logActionAndValue("state", "satisfiable");
         }
         std::clog.flush();
@@ -221,7 +224,7 @@ MXResult ModelIterator::calculate() {
 		cleanup;
         throw IdpException("Solver was terminated");
     }
-
+	std::cerr << "Here\n";
     result._optimumfound = not result._interrupted;
     if (t.outOfResources()) {
         Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
@@ -229,18 +232,13 @@ MXResult ModelIterator::calculate() {
         result._interrupted = true;
         getGlobal()->reset();
     } else if (result.unsat) {
-        for (auto lit : _mx->getUnsatExplanation()) {
-            auto symbol = _grounding->translator()->getSymbol(lit.getAtom());
-            auto args = _grounding->translator()->getArgs(lit.getAtom());
-            result.unsat_in_function_of_ct_lits.push_back({symbol, args});
-        }
         cleanup;
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "unsat");
         }
         return result;
     }
-    result = getStructure(_mx, result, startTime);
+    result = getStructure(result, startTime, model);
 	cleanup;
     return result;
 }
@@ -249,24 +247,21 @@ MXResult ModelIterator::calculate() {
 Structure* handleSolution(Structure const * const structure, const MinisatID::Model& model, AbstractGroundTheory* grounding, StructureExtender* extender,
 		Vocabulary* outputvoc, const std::vector<Definition*>& defs);
 
-MXResult ModelIterator::getStructure(PCModelExpand* mx, MXResult result, clock_t startTime) {
+MXResult ModelIterator::getStructure(MXResult result, clock_t startTime, std::shared_ptr<MinisatID::Model> model) {
     auto mxverbosity = getMXVerbosity();
     std::vector<Structure*> solutions;
     if (not result.unsat) {
+		MAssert(model != NULL);
 		if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "satisfiable");
         }
-        auto abstractsolutions = mx->getSolutions();
         if (mxverbosity > 0) {
-            logActionAndValue("nrmodels", abstractsolutions.size());
+            logActionAndValue("nrmodels", 1);
             logActionAndTimeSince("total-solving-time", startTime);
         }
-		std::cerr << abstractsolutions.size() << "\n";
-        for (auto model = abstractsolutions.cbegin(); model != abstractsolutions.cend(); ++model) {
-			auto solution = handleSolution(_structure, **model, _grounding, 
-				_extender, _outputvoc, postprocessdefs);
-            solutions.push_back(solution);
-        }
+		auto solution = handleSolution(_structure, *model, _grounding, 
+			_extender, _outputvoc, postprocessdefs);
+		solutions.push_back(solution);
 		result._models = solutions;
 		std::cerr << result._models.size() << "\n";
     }
