@@ -110,7 +110,7 @@ public:
 	}
 };
 
-PCSolver* createsolver(int nbmodels) {
+MinisatID::Space* createsolver(int nbmodels) {
 	MinisatID::SolverOption modes;
 	modes.nbmodels = nbmodels;
 	modes.verbosity = getOption(IntType::VERBOSE_SOLVING);
@@ -149,22 +149,22 @@ PCSolver* createsolver(int nbmodels) {
 		break;
 	}
 
-	return new PCSolver(modes);
+	return new MinisatID::Space(modes);
 }
 
-void setTranslator(PCSolver* solver, GroundTranslator* translator) {
+void setTranslator(MinisatID::Space* solver, GroundTranslator* translator) {
 	auto trans = new CallBackTranslator([translator](const Lit& lit){return translator->printLit(lit);}, [translator](const GroundTerm& term){return translator->printTerm(term);});
 	solver->setTranslator(trans);
 	// FIXME trans is not deleted anywhere
 }
 
-PCModelExpand* initsolution(PCSolver* solver, int nbmodels, const litlist& assumptions) {
+MinisatID::ModelExpand* initsolution(MinisatID::Space* solver, int nbmodels, const litlist& assumptions) {
 	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
 	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
-	return new PCModelExpand(solver, opts, createList(assumptions));
+  return solver->createModelExpand(solver, opts, createList(assumptions));
 }
 
-PCUnitPropagate* initpropsolution(PCSolver* solver) {
+PCUnitPropagate* initpropsolution(MinisatID::Space* solver) {
 	return new PCUnitPropagate(solver, { });
 }
 

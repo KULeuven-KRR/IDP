@@ -28,3 +28,5 @@ docs/official/idp-manual.out
 .autotools
 *~
 *.idp3_history
+nbproject*
+lib/SPASS*
