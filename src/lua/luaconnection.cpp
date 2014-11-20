@@ -1774,6 +1774,7 @@ int mxNext(lua_State* L) {
 	shared_ptr<ModelIterator> it = iter->get();
 	auto result = it->calculate();
 	if(result.unsat) {
+		std::cerr << "UNSATLUA\n";
 		lua_pushnil(L);
 		return 1;
 	} else {

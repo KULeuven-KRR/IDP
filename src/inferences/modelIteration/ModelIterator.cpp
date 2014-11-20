@@ -162,9 +162,7 @@ public:
 
 void ModelIterator::prepareSolver() {
     _mx = SolverConnection::createIteratorSolution(_data, 1, *_assumptions);
-	std::cerr << "InitStart\n";
 	_mx->initialise();
-	std::cerr << "InitDone\n";
 }
 
 
@@ -186,9 +184,9 @@ MXResult ModelIterator::calculate() {
     MXResult result;
 	std::shared_ptr<MinisatID::Model> model = NULL;
     try {
-		std::cerr << "findNext\n";
 		model = _mx->findNext();
-        result.unsat = (model==NULL);
+        result.unsat = (model == NULL);
+		std::cerr << "Unsat: " << result.unsat << "\n";
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
             getGlobal()->reset();
