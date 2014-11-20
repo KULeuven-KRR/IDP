@@ -182,7 +182,6 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
     char* delimiter = new char [strlen(" ") + 1];
     strcpy(delimiter," ");
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
-	delete(query);
 	handleResult(rc);
 
 	while (rc == XSB_SUCCESS) {
@@ -198,8 +197,9 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	}
 	XSB_StrDestroy(&buff);
 
-	delete(delimiter);
 	delete (term);
+	delete[] (delimiter);
+	delete[] (query);
 
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
 		clog << "Resulted in the following answer tuples:\n";
@@ -213,4 +213,39 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 		}
 	}
 	return result;
+}
+
+bool XSBInterface::hasUnknowns(PFSymbol* s) {
+	auto term = symbol2term(s);
+	XSB_StrDefine (buff);
+	stringstream ss;
+	ss << "call_tv(" << *term << ",undefined).";
+	auto query = new char[ss.str().size() + 1];
+	strcpy(query, ss.str().c_str());
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		clog << "To determine whether there XSB program is non-total, quering XSB with: " <<  query << "\n";
+	}
+    char* delimiter = new char [strlen(" ") + 1];
+    strcpy(delimiter," ");
+	auto rc = xsb_query_string_string(query, &buff, delimiter);
+	handleResult(rc);
+	auto hasUnknowns = (rc == XSB_SUCCESS);
+	while (rc == XSB_SUCCESS) {
+		rc = xsb_next_string(&buff, delimiter);
+		handleResult(rc);
+	}
+	XSB_StrDestroy(&buff);
+
+	delete (term);
+	delete[] (delimiter);
+	delete[] (query);
+
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
+		if (hasUnknowns) {
+			clog << "Resulted in at least one answer (the XSB program is non-total).\n";
+		} else {
+			clog << "Resulted in no answers (the XSB program is total).\n";
+		}
+	}
+	return hasUnknowns;
 }

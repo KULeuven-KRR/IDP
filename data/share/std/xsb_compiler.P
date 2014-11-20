@@ -100,8 +100,38 @@ ixmax([X|Rest],Max,TmpMax) :-
 	X =< TmpMax,
 	ixmax(Rest,Max,TmpMax).
 
+% ixforall(Generator,Verifier)
+% Only succeeds if for every succeeding call to Generator, the Verifier also succeeds
+%
+% Implementation-wise, tables:not_exists/1 is used for handling negation because it 
+% supports the mixed usage of tabled and non-tabled predicates (as well as the
+% conjunction/disjunction of these).
+%
+% Additionaly, this has to be surrounded by builtin call_tv([...], true), because
+% otherwise, the answer may be tagged as "undefined", even it if does not show this
+% when printing the answer. An example of this is the following program, in which
+% ?- p. 
+% is answered as "undefined", even though calling the body of the second rule for p
+% is answered as "false".
+%
+%   :- set_prolog_flag(unknown, fail).
+%   :- table p/0, d/1, c/0, or/1.
+% 
+%   p :- p.
+%   p :- tables:not_exists((type(X), tables:not_exists(or(X)))).
+% 
+%   or(2).
+%   or(_) :- c.
+% 
+%   c :- d(X), \+ 1 = X.
+% 
+%   d(1) :- p.
+% 
+%   type(1).
+%   type(2).
+%
 ixforall(CallA, CallB) :-
-    tables:not_exists((call(CallA), tables:not_exists(CallB))).
+    call_tv(tables:not_exists((call(CallA), tables:not_exists(CallB))),true).
 
 % ixthreeval_findall(Var,Query,Ret)
 %   1: Gather all "true" answers

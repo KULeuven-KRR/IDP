@@ -59,7 +59,16 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 			}
 		}
 
+		auto possRecNegSymbols = DefinitionUtils::approxRecurionsOverNegationSymbols(definition);
 		for (auto symbol : symbols) {
+			if (possRecNegSymbols.find(symbol) != possRecNegSymbols.end()) {
+				if(xsb_interface->hasUnknowns(symbol)) {
+	            	xsb_interface->reset();
+	            	result._hasModel=false;
+	            	result._calculated_model=structure;
+	            	return result;
+				}
+			}
 			auto sorted = xsb_interface->queryDefinition(symbol);
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
             auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));
@@ -329,16 +338,12 @@ void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, st
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
-	auto hasrecursion = DefinitionUtils::hasRecursionOverNegation(definition);
-	if (getOption(XSB) && hasrecursion) {
-		Warning::warning("Currently, no support for definitions that have recursion over negation with XSB");
-	}
 
 	auto has_recursive_aggregate = DefinitionUtils::approxContainsRecDefAggTerms(definition);
 	if(getOption(XSB) && has_recursive_aggregate) {
 		Warning::warning("Currently, no support for definitions that have recursive aggregates");
 	}
 
-	return getOption(XSB) && not hasrecursion && not has_recursive_aggregate;
+	return getOption(XSB) && not has_recursive_aggregate;
 }
 #endif

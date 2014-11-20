@@ -1,0 +1,62 @@
+vocabulary V {
+  type node
+  type nr isa int
+  edge(node,node)
+  onPath(node)
+  path(nr,node)
+  from:node
+  to:node
+  
+  type nr2 isa int
+  even(nr2)
+  
+  P1
+  
+  P
+  R
+  S
+  T
+} 
+
+structure S : V {
+  node = {1..100}
+  edge = {1,2; 2,3; 3,4; 4,5; 3,3; 2,2}
+  onPath = {1..5}
+  from = 1
+  to = 5
+  nr = {1..5}
+  
+  nr2 = {0..99}
+} 
+
+theory T : V {
+  {
+    path(1,from).
+    path(n+1,y) <- path(n,x) & edge(x,y) & onPath(y) & ~? n' : n' =< n & path(n',y).
+  }
+  
+  {
+    even(0).
+    even(n+1) <- ~even(n).
+  }
+  
+  {
+    P1 <- ~P1 & P1.
+  }
+  
+  {
+    P <- P.
+  }
+  
+  {
+    R.
+    R <- R.
+  }
+  
+  {
+    S.
+    S <- ~S.
+  }
+  
+}
+
