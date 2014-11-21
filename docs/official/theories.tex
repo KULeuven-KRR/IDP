@@ -150,6 +150,13 @@ A sum operation would look like this:
 and is interpreted as \[\sum_{i=1..n} t_i\]
 The three other operations are similar.
 
+\subsubsection{Aggregates on lists of formulas}
+
+For the fifth aggregate Card, \idp supports lists of formulas. 
+A formula with cardinality aggregate on list looks like this: \[\forall \overline{x}:(\#(F_1(x),F_2(x),\ldots,F_k(x))=n)\]
+This means that for every $\overline{x}$ exactly $n$ formulas in that list are true.
+For example, \[\forall x[Figure]:(\#(Triangle(x),Square(x),Pentagon(x))=1)\] means that every figure is Triangle, Square or Pentagon, but never both or all three of them.
+
 \subsection{Partial functions}\label{ssec:partial}
 Normally, functions are total: they assign an output value to each of the input values. On the other hand, \emph{partial} functions do not necessarily have this property. In \idp, a partial function $F$ can arise in different situations. Either $F$ is explicitly declared as partial, or it is a built-in integer function (for example modulo).
 
