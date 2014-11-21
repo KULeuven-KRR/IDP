@@ -1,0 +1,14 @@
+vocabulary V{
+	type t
+	T(t)
+	S(t)
+	P(t)
+
+}
+theory T:V{
+	!x[t]:#(T(x),S(x),P(x))=2.
+}
+structure S:V{
+	t={A;B;C}
+}
+
