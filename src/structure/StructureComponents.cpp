@@ -204,7 +204,7 @@ DomainElement::DomainElement(double value)
  */
 DomainElement::DomainElement(const string* value)
 		: _type(DET_STRING), _value(value) {
-	Assert(not isDouble(*value));
+	
 }
 
 /**
