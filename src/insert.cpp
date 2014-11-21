@@ -77,6 +77,13 @@ string predName(const longname& name, const vector<Sort*>& vs) {
 	return sstr.str();
 }
 
+string predArityName(const longname& name, int arity) {
+	stringstream sstr;
+	sstr << print(name);
+	sstr << "/" << arity << " ";
+	return sstr.str();
+}
+
 string funcName(const longname& name, const vector<Sort*>& vs) {
 	Assert(!vs.empty());
 	stringstream sstr;
@@ -88,6 +95,29 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 	}
 	sstr << ':' << vs.back()->name() << ']';
 	return sstr.str();
+}
+
+string funcArityName(const longname& name, int arity) {
+	stringstream sstr;
+	sstr << print(name);
+	sstr << "/" << arity << ":1 ";
+	return sstr.str();
+}
+
+/**Generates good error message for not-in-scope stuff in which arity can be important */
+void undeclaredPred(NSPair* nst, int arity) {
+	if (nst->_sortsincluded) {
+		notDeclared(ComponentType::Predicate, toString(nst), nst->_pi);
+	} else {
+		notDeclared(ComponentType::Predicate, predArityName(nst->_name, arity), nst->_pi);
+	}
+}
+void undeclaredFunc(NSPair* nst, int arity) {
+	if (nst->_sortsincluded) {
+		notDeclared(ComponentType::Function, toString(nst), nst->_pi);
+	} else {
+		notDeclared(ComponentType::Function, funcArityName(nst->_name, arity), nst->_pi);
+	}
 }
 
 /*************
@@ -1054,7 +1084,7 @@ Predicate* Insert::predpointer(longname& vs, int arity, YYLTYPE l) const {
 	auto pi = parseinfo(l);
 	auto p = predInScope(vs,arity, pi);
 	if (p==NULL) {
-		notDeclared(ComponentType::Predicate, toString(vs), pi);
+		notDeclared(ComponentType::Predicate, predArityName(vs, arity), pi);
 	}
 	return p;
 }
@@ -1076,8 +1106,8 @@ YYLTYPE l) const {
 Function* Insert::funcpointer(longname& vs, int arity, YYLTYPE l) const {
 	auto pi = parseinfo(l);
 	auto f = funcInScope(vs, arity, pi);
-	if (f==NULL) {
-		notDeclared(ComponentType::Function, toString(vs), pi);
+	if (f == NULL) {
+		notDeclared(ComponentType::Function, funcArityName(vs, arity), pi);
 	}
 	return f;
 }
@@ -1412,6 +1442,8 @@ Formula* Insert::predformVar(NSPair* nst, const vector<Variable*>& vt, YYLTYPE l
 	return predform(nst, vs, l);
 }
 
+
+
 Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const {
 	if (nst->_sortsincluded) {
 		if ((nst->_sorts).size() != vt.size()) {
@@ -1453,7 +1485,7 @@ Formula* Insert::predform(NSPair* nst, const vector<Term*>& vt, YYLTYPE l) const
 			notInVocabularyOf(ComponentType::Predicate, ComponentType::Theory, p->name(), _currtheory->name(), nst->_pi);
 		}
 	} else {
-		notDeclared(ComponentType::Predicate, toString(nst), nst->_pi);
+		undeclaredPred(nst, vt.size());
 	}
 
 	// Cleanup
@@ -1543,7 +1575,7 @@ YYLTYPE l) const {
 			notInVocabularyOf(ComponentType::Function, ComponentType::Theory, f->name(), _currtheory->name(), nst->_pi);
 		}
 	} else {
-		notDeclared(ComponentType::Function, toString(nst), nst->_pi);
+		undeclaredFunc(nst, vt.size());
 	}
 
 	// Cleanup
@@ -1790,7 +1822,7 @@ FuncTerm* Insert::functerm(NSPair* nst, const vector<Term*>& vt) {
 			notInVocabularyOf(ComponentType::Function, ComponentType::Theory, f->name(), _currtheory->name(), nst->_pi);
 		}
 	} else {
-		notDeclared(ComponentType::Function, toString(nst), nst->_pi);
+		undeclaredFunc(nst, vt.size());
 	}
 
 	// Cleanup
@@ -2273,7 +2305,7 @@ const Compound* Insert::compound(NSPair* nst, const vector<const DomainElement*>
 			notInVocabularyOf(ComponentType::Function, ComponentType::Structure, toString(nst), _currstructure->name(), pi);
 		}
 	} else {
-		notDeclared(ComponentType::Function, toString(nst), pi);
+		undeclaredFunc(nst, vte.size());
 	}
 	return c;
 }
@@ -2298,7 +2330,7 @@ void Insert::predatom(NSPair* nst, const vector<ElRange>& args, bool t) {
 		p = p->resolve(nst->_sorts);
 	}
 	if (p == NULL) {
-		notDeclared(ComponentType::Predicate, toString(nst), pi);
+		undeclaredPred(nst, args.size());
 		delete (nst);
 		return;
 	}
