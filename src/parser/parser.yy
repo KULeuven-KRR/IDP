@@ -209,7 +209,7 @@ void yyerror(const char* s);
 %type <fpd> fixpdef
 %type <fpd> fd_rules
 %type <def> definition
-%type <est> formset termset termlist
+%type <est> formset termset termlist formlist
 %type <cpo> compound
 %type <pta>	ptuples
 %type <pta>	ptuples_es
@@ -609,7 +609,8 @@ domterm		: FLNUMBER									{ $$ = data().domterm($1,@1);		}
 		The above lines are commented since writing @ is unsafe"*/
 			;
 
-aggterm		: P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
+aggterm		: P_CARD	'(' formlist	')'	{ $$ = data().aggregate(AggFunction::CARD,$3,@1);	}
+			| P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
 			| P_SOM 	'(' termlist	')'	{ $$ = data().aggregate(AggFunction::SUM,$3,@1);	}
 			| P_SOM 	termset				{ $$ = data().aggregate(AggFunction::SUM,$2,@1);	}
 			| P_PROD 	'(' termlist 	')'	{ $$ = data().aggregate(AggFunction::PROD,$3,@1);	}
@@ -618,6 +619,10 @@ aggterm		: P_CARD	formset				{ $$ = data().aggregate(AggFunction::CARD,$2,@1);	}
 			| P_MINAGG  termset 			{ $$ = data().aggregate(AggFunction::MIN,$2,@1);	}
 			| P_MAXAGG  '(' termlist 	')' { $$ = data().aggregate(AggFunction::MAX,$3,@1);	}
 			| P_MAXAGG   termset 			{ $$ = data().aggregate(AggFunction::MAX,$2,@1);	}
+			;
+
+formlist	: formlist ',' formula 			{ $$ = $1; if($3!=NULL){data().addToFirst($$,data().set($3,@1,varset())); 	}		}
+			| formula						{ $$ = data().createEnum(@1); if($1!=NULL){data().addToFirst($$,data().set($1,@1,varset()));} }
 			;
 
 formset		: '{' variables ':' formula '}'	{ $$ = data().set($4,@1,*$2); delete($2);	}
