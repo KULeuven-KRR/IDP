@@ -225,8 +225,8 @@ bool XSBInterface::hasUnknowns(PFSymbol* s) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
 		clog << "To determine whether there XSB program is non-total, quering XSB with: " <<  query << "\n";
 	}
-    char* delimiter = new char [strlen(" ") + 1];
-    strcpy(delimiter," ");
+	char* delimiter = new char [strlen(" ") + 1];
+	strcpy(delimiter," ");
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
 	handleResult(rc);
 	auto hasUnknowns = (rc == XSB_SUCCESS);

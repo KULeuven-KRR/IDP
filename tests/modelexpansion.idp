@@ -221,22 +221,14 @@ procedure check(solutions){
 		return 1;
 	end
 	for i,v in ipairs(solutions) do
-		if (shouldNotCompareStructure~=nil) then
-			if(#modelexpand(T, v)==0) then
-				io.stderr:write("Found an invalid solution:\n")
-				io.stderr:write(tostring(v))
-				return 0
-			end
-		else 
-			structure = v
-			if(Vout~=nil and Vout~=V)then
-				setvocabulary(structure,V)
-			end
-			if(not isconsistent(merge(S,structure)) or not value(T, structure)) then
-				io.stderr:write("Found an invalid solution:\n")
-				io.stderr:write(tostring(structure))
-				return 0
-			end
+		structure = v
+		if(Vout~=nil and Vout~=V)then
+			setvocabulary(structure,V)
+		end
+		if(not isconsistent(merge(S,structure)) or not value(T, structure)) then
+			io.stderr:write("Found an invalid solution:\n")
+			io.stderr:write(tostring(structure))
+			return 0
 		end
 	end
 	return 1
