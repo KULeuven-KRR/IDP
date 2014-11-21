@@ -1889,7 +1889,12 @@ FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 	vector<Term*> pivt(1, t->clone());
 	bool knowntype = t->sort();
 	if (knowntype) {
-		f = f->disambiguate( { t->sort(), NULL }, _currvocabulary);
+		auto temp = f->disambiguate( { t->sort(), NULL }, _currvocabulary);
+		if(temp != NULL){
+			f = temp;
+		}else{
+			nofuncsort(f->name(),f->pi());
+		}
 	}
 	auto temp = new FuncTerm(f, pivt, TermParseInfo());
 	auto res = new FuncTerm(f, vt, termparseinfo(temp, l));

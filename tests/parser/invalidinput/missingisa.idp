@@ -1,0 +1,13 @@
+vocabulary V{
+	type T
+	x:T
+	y:T
+}
+
+theory T:V{
+	-x = y.
+}
+
+structure S:V{
+	T={1..2}
+}
