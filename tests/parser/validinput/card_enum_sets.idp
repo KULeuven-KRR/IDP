@@ -12,3 +12,6 @@ structure S:V{
 	t={A;B;C}
 }
 
+procedure main(){
+	return 1
+}
