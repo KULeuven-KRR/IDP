@@ -1,0 +1,12 @@
+vocabulary V{
+	type x
+	type y
+	f(y):x
+}
+structure S:V{
+	y = {A}
+	f = {}
+}
+procedure main(){
+	return 1	
+}

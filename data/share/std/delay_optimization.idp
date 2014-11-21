@@ -94,6 +94,7 @@ structure Delay_TestData : Delay_Voc {
 	isDefinitionDelay = {Qx,2,1;Qx,3,1}
 	groundSize = {1->100;2->50;3->40;4->5000; 5->6000}
 	isEquivalence = {}
+	threshold = {1}
 }
 
 structure Delay_TestData2: Delay_Voc {
@@ -113,6 +114,7 @@ structure Delay_TestData2: Delay_Voc {
   not = { False->True; True->False }
   symbol = { 0->2; 1->3 }
   isEquivalence = {}
+  	threshold = {1}
 }
 
 structure Delay_TestData3 : Delay_Voc {
@@ -133,6 +135,7 @@ structure Delay_TestData3 : Delay_Voc {
   groundSize[Constraint:noninfcost] = { Pif->1; Ponlyif->1; Sent->100; Qif->2; Qonlyif->2 }
   symbol[PredForm:Symbol] = { Px1->P; Px2->P; Px3->P; Qxy1->Q; Qxy2->Q }
   isEquivalence = {}
+  	threshold = {1}
 }
 
 structure Delay_TestData4 : Delay_Voc {
@@ -153,6 +156,7 @@ structure Delay_TestData4 : Delay_Voc {
   groundSize[Constraint:noninfcost] = { 0->247483; 1->247483; 2->247483; 3->0}
   symbol[PredForm:Symbol] = { 0->2; 1->3; 2->3; 3->2 }
   isEquivalence = {}
+  	threshold = {1}
 }
 
 structure Delay_TestData5 : Delay_Voc{
@@ -175,6 +179,7 @@ structure Delay_TestData5 : Delay_Voc{
   groundSize[Delay_Voc::Constraint:Delay_Voc::noninfcost] = { 0->27 }
   not[Delay_Voc::Bool:Delay_Voc::Bool] = { False->True; True->False }
   symbol[Delay_Voc::PredForm:Delay_Voc::Symbol] = { 0->2; 1->2 }
+  	threshold = {1}
 }
 
 structure Delay_TestData6 : Delay_Voc {
@@ -194,5 +199,6 @@ structure Delay_TestData6 : Delay_Voc {
   groundSize[Delay_Voc::Constraint:Delay_Voc::noninfcost] = { 0->13; 1->17; 2->17; 3->17; 4->17; 5->17; 6->17; 7->17; 8->17; 9->17; 10->29; 11->29; 12->29; 13->29; 14->29; 15->29; 16->9; 17->11; 18->17; 19->16; 20->20; 21->5; 22->5; 23->5; 24->5 }
   not[Delay_Voc::Bool:Delay_Voc::Bool] = { False->True; True->False }
   symbol[Delay_Voc::PredForm:Delay_Voc::Symbol] = { 0->2; 1->3; 2->3; 3->3; 4->3; 5->3; 6->3; 7->3; 8->3; 9->3; 10->4; 11->4; 12->4; 13->4; 14->4; 15->4; 16->5; 17->6; 18->6; 19->5; 20->6; 21->5; 22->6; 23->4; 24->3; 25->4; 26->4; 27->7; 28->7; 29->7; 30->7 }
+  	threshold = {1}
 }
 

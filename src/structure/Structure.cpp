@@ -631,6 +631,10 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 		return true;
 	}
 
+	auto domainUnivTables = fi->universe().tables();
+	domainUnivTables.pop_back(); //Everything but the output table
+	auto domainUnivSize = Universe(domainUnivTables).size();
+
 	// Check if the interpretation is total
 	// We distinguish two cases
 	//CASE ONE: Function is represented by functable.
@@ -660,7 +664,12 @@ bool Structure::functionCheck(const Function* f, bool throwErrors) const {
 	//However, this will not often be the case
 	auto cf = pt->cf();
 	auto maxnbimages = inter(f->outsort())->size();
-	//Infinite case is already handled above.
+	if (maxnbimages == 0 && domainUnivSize != tablesize(TableSizeType::TST_EXACT, 0)) {
+		if (throwErrors) {
+			Error::nottotal(f->name(), name());
+		}
+		return false;
+	}
 	map<ElementTuple, int> domain2numberofimages;
 	for(auto cfit = cf->begin(); not cfit.isAtEnd(); ++cfit) {
 		auto domain = *cfit;

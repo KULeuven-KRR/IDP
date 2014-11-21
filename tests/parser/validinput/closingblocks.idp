@@ -22,6 +22,7 @@ namespace packing {
   }
   structure S:voc{
   	Square = {2}
+  	SizeT = {2}
   }
   
   vocabulary visvoc {

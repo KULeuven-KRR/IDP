@@ -8,6 +8,7 @@ namespace packing {
 	theory B:A{
 	}
 	structure C:A{
+	X = {1}
 	}
 	term D : A {
 		f
