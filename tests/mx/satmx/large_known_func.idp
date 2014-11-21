@@ -14,4 +14,10 @@ structure S:V{
 }
 procedure getExpectedAModel(){
 	return true
+
+
+}
+
+procedure shouldNotCheck(){
+	return true
 }
