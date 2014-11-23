@@ -1,0 +1,12 @@
+vocabulary V{
+	type T isa int
+	type pos constructed from {x, not(T)}
+	p(pos)
+}
+structure S:V{
+	T = {1..10000}
+	p = {pos(not(1))}
+}
+procedure main(){
+	return 1
+}
