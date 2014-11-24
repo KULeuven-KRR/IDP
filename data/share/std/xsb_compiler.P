@@ -131,7 +131,7 @@ ixmax([X|Rest],Max,TmpMax) :-
 %   type(2).
 %
 ixforall(CallA, CallB) :-
-    call_tv(tables:not_exists((call(CallA), tables:not_exists(CallB))),true).
+    tables:not_exists((call(CallA), tables:not_exists(CallB))).
 
 % ixthreeval_findall(Var,Query,Ret)
 %   1: Gather all "true" answers
