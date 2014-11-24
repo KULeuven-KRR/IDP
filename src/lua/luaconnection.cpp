@@ -560,6 +560,9 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		case AT_OVERLOADED:
 			ia._value._overloaded = *(OverloadedObject**) lua_touserdata(L, arg);
 			break;
+		case AT_MODELITERATOR:
+			ia._value._modelIterator = *(WrapModelIterator**) lua_touserdata(L, arg);
+			break;
 		default:
 			throw IdpException("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
@@ -1762,7 +1765,16 @@ int symbolArity(lua_State* L) {
 }
 
 int mxNext(lua_State* L) {
-	WrapModelIterator* iter = *(WrapModelIterator**) lua_touserdata(L, 1); //self
+	if(lua_type(L, 1) == LUA_TNONE) {
+		lua_pushstring(L, "next expects an iterator argument. Use the \":\" operator.");
+		return lua_error(L);
+	}
+	InternalArgument ia = createArgument(1, L);
+	if(ia._type != AT_MODELITERATOR) {
+		lua_pushstring(L, "next expects an iterator argument. Use the \":\" operator.");
+		return lua_error(L);
+	}
+	WrapModelIterator* iter = ia._value._modelIterator;
 	shared_ptr<ModelIterator> it = iter->get();
 	auto result = it->calculate();
 	if(result.unsat) {
