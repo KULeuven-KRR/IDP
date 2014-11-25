@@ -145,10 +145,10 @@ ixthreeval_findall(Var,Query,Ret) :-
   findall(Var,call_tv(Query,undefined),Ulist),
   ixsubset(Ulist,S),
   append(S,CTList,Ret),
-  generate_CT_or_U_answer(S).
+  generate_CT_or_U_answer(Ulist,S).
 
-generate_CT_or_U_answer([]).
-generate_CT_or_U_answer([_|_]) :- undef.
+generate_CT_or_U_answer([],_).
+generate_CT_or_U_answer([_|_],_) :- undef.
 
 :- table undef/0.
 undef :- tnot(undef).
