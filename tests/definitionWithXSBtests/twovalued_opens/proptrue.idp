@@ -1,0 +1,38 @@
+vocabulary V{
+	type Step isa int
+	type Lit
+	type Clause
+	
+	InClause(Clause,Lit)
+	Neg(Lit) : Lit
+
+	partial ChoiceLit(Step) : Lit
+	Assigned(Step,Lit)
+	True(Step,Lit)
+	PropTrue(Step,Lit)
+
+}
+
+theory T : V { 
+	// Unit propagation
+	{ PropTrue(s,l) <- ChoiceLit(s)=l.
+	  PropTrue(s,l) <-
+		~Assigned(s,l) & 
+		(? c : InClause(c,l) & (! l2 : InClause(c,l2) & l2~=l => (True(s,Neg(l2)) | PropTrue(s,Neg(l2))))).
+	}
+
+	
+
+}
+
+structure  S : V {
+  Clause = { 1..6 }
+  Lit = { 1; 2; 3; "min1"; "min2"; "min3" }
+  Step = { 0..20 }
+  Assigned = {  }
+  InClause = { 1,2; 1,"min1"; 2,3; 2,"min2"; 3,"min1"; 3,"min3"; 4,1; 4,"min2"; 5,2; 5,"min3"; 6,1; 6,3 }
+--   PropTrue = { 0,1; 0,2; 0,3; 0,"min1"; 0,"min2"; 0,"min3"; 1,1; 1,2; 1,3; 1,"min1"; 1,"min2"; 1,"min3"; 2,1; 2,2; 2,3; 2,"min1"; 2,"min2"; 2,"min3" }
+  True = {  }
+  ChoiceLit = { 0->"min3"; 1->3; 2->3 }
+  Neg = { 1->"min1"; 2->"min2"; 3->"min3"; "min1"->1; "min2"->2; "min3"->3 }
+}
