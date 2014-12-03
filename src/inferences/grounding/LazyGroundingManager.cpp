@@ -66,6 +66,7 @@ LazyGroundingManager::LazyGroundingManager(AbstractGroundTheory* grounding, cons
 			_outputvocabulary(outputvocabulary),
 			_structures(structures),
 			resolvingqueues(false) {
+    std::cerr << "Invalidate4\n";
 	translator()->addMonitor(this); // NOTE: request notifications of literal additions
 	notifyForOutputVoc(NULL, { }); // NOTE: ugly hack to notify the solver there will be an output vocabulary (otherwise everything is default outputvoc)
 	setMaxGroundSize(tablesize(TST_EXACT, 1));
@@ -572,14 +573,18 @@ void LazyGroundingManager::needWatch(bool watchedvalue, Lit translatedliteral) {
 
 // Note: none of the literals should be true/false
 void LazyGroundingManager::notifyForOutputVoc(PFSymbol* symbol, const litlist& literals) {
+    std::cerr << "Invalidate3\n";
 	if (not getOption(SATISFIABILITYDELAY)) {
+            std::cerr << "DelayIsOn\n";
 		return;
 	}
 	if (_outputvocabulary != NULL && symbol != NULL && not _outputvocabulary->contains(symbol)) {
+            std::cerr << "OutputDoesNotContainSymbol\n";
 		return;
 	}
 	auto solver = dynamic_cast<SolverTheory*>(getGrounding());
 	if (solver == NULL) {
+            std::cerr << "NoSolver\n";
 		return;
 	}
 	solver->requestTwoValued(literals);

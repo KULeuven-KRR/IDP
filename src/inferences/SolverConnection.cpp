@@ -168,11 +168,11 @@ PCUnitPropagate* initpropsolution(MinisatID::Space* solver) {
 	return new PCUnitPropagate(solver, { });
 }
 
-PCModelIteration* createIteratorSolution(PCSolver* solver, int nbmodels, const litlist& assumptions) {
+MinisatID::ModelIterationTask* createIteratorSolution(PCSolver* solver, int nbmodels, const litlist& assumptions) {
 	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
 	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
 	auto l = createList(assumptions);
-	return new PCModelIteration(solver, opts, l);
+	return new MinisatID::ModelIterationTask(solver, opts, l);
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {

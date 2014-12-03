@@ -150,9 +150,9 @@ void ModelIterator::ground(Theory* theory) {
 
 class SolverTermination: public TerminateMonitor {
 private:
-	PCModelIteration* solver;
+	MinisatID::ModelIterationTask* solver;
 public:
-	SolverTermination(PCModelIteration* solver)
+	SolverTermination(MinisatID::ModelIterationTask* solver)
 			: solver(solver) {
 	}
 	void notifyTerminateRequested() {

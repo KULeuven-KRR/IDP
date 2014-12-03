@@ -257,6 +257,7 @@ void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmet
 
 template<class Solver>
 void SolverPolicy<Solver>::requestTwoValued(const std::vector<Lit>& lits) {
+    std::cerr << "Invalidate2\n";
 	MinisatID::TwoValuedRequirement req( { });
 	for (auto lit : lits) {
 		req.atoms.push_back(createAtom(lit));
