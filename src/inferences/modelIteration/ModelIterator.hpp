@@ -59,7 +59,7 @@ private:
     StructureExtender* _extender;
     litlist* _assumptions;
     
-    PCModelIteration* _mx;
+    MinisatID::ModelIterationTask* _mx;
 };
 
 #endif	/* MODELITERATOR_HPP */
