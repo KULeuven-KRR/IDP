@@ -1,0 +1,73 @@
+
+
+            INSTALLATION SUMMARY
+            --------------------
+
+XSB Version:	   3.4.0
+Code name:	   Soy mILK
+Release date:	   2013-05-01
+Configuration:	   x86_64-unknown-linux-gnu
+Installation date: Mon Oct  6 14:15:38 CEST 2014
+
+  Build process is looking for XSB sources in:	  /home/rupsbant/idp/src/lib/XSB
+  XSB should be installed in:			  /home/rupsbant/idp/nbBuild/xsbinstall/xsb-3.4.0
+  Configuration-specific executables go in:	  /home/rupsbant/idp/src/lib/XSB/config/x86_64-unknown-linux-gnu/bin
+  Configuration-specific libraries go in:	  /home/rupsbant/idp/src/lib/XSB/config/x86_64-unknown-linux-gnu/lib
+  Object code goes in:				  /home/rupsbant/idp/src/lib/XSB/config/x86_64-unknown-linux-gnu/saved.o
+  Site-specific code goes in:			  /home/rupsbant/idp/nbBuild/xsbinstall/site
+  Site configuration-specific code goes in:	  /home/rupsbant/idp/nbBuild/xsbinstall/site/config/x86_64-unknown-linux-gnu
+  XSB will be built with:			  gcc  -fPIC  -Wall -pipe 
+  builtin.c will be built with: 		  gcc  -fPIC  -Wall -pipe 
+  loader_xsb.c will be built with: 		  gcc  -fPIC  -Wall -pipe 
+  emuloop.c will be built with: 		  gcc  -fPIC  -Wall -pipe 
+  tr_utils.c will be built with:		  gcc  -fPIC  -Wall -pipe 
+  Loader flags: 				  -lm -ldl -Wl,-export-dynamic -lpthread
+  Compilation mode:				  optimal
+  XSB abstract machine: 			  slg-wam
+  XSB scheduling strategy:			  local
+  Garbage Collection Stress-Test:		  no
+  Jumptable-based emulator loop:		  yes
+  Demand support:                                 no
+
+  Support for modular database drivers: 	  no
+  -- These drivers can also be configured later.
+  Native support for Oracle:			  no
+  Support for the old ODBC driver:		  no
+
+  Java compiler:                                  /usr/bin/javac
+  Support for InterProlog's native engine:   	  no
+  -- JDK may not have been installed or
+  -- JAVA_HOME not set. You will still be able
+  -- to use InterProlog's subprocess engine.
+
+  POSIX regexp matching libraries:                yes
+  POSIX wildcard matching libraries:              yes
+
+  Curl support (HTTP protocol library):           no
+  XPath support:				  no
+  PCRE support (Perl pattern matching):           no
+
+
+-e 
+Compiling XSB with gcc using -fPIC  -Wall -pipe 
+
+
+Making XSB executable /home/rupsbant/idp/src/lib/XSB/config/x86_64-unknown-linux-gnu/bin/xsb 
+
+-e 	[gcc] -o /home/rupsbant/idp/src/lib/XSB/config/x86_64-unknown-linux-gnu/bin/xsb
+error_xsb.o: In function `print_incomplete_tables_on_abort':
+error_xsb.c:(.text+0x49ba): warning: the use of `tempnam' is dangerous, better use `mkstemp'
+-e 	[gcc] -o gpp
+
+
+
+----------------- Warnings ------------------------
+While compiling XSB/cmplib:
+-------------------- End --------------------------
+----------------- Warnings ------------------------
+While compiling XSB/lib:
+-------------------- End --------------------------
+----------------- Warnings ------------------------
+While compiling XSB/syslib:
+-------------------- End --------------------------
+
