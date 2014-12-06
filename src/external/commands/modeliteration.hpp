@@ -35,7 +35,7 @@ typedef TypedInference<LIST(AbstractTheory*, Structure*)> ModelIterationInferenc
 class ModelIterationInference: public ModelIterationInferenceBase {
 public:
 	ModelIterationInference()
-			: ModelIterationInferenceBase("createIterator",
+			: ModelIterationInferenceBase("createMXIterator",
 					"Create an iterator generating 2-valued models of the theory which are more precise than the given structure.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
@@ -50,7 +50,7 @@ typedef TypedInference<LIST(AbstractTheory*, Structure*, Vocabulary*)> ModelIter
 class ModelIterationWithOutputVocInference: public ModelIterationWithVocInferenceBase {
 public:
 	ModelIterationWithOutputVocInference()
-			: ModelIterationWithVocInferenceBase("createIterator",
+			: ModelIterationWithVocInferenceBase("createMXIterator",
 					"Create an iterator generating models of the theory which are more precise than the given structure"
 					" and twovalued on the output vocabulary.", false) {
 		setNameSpace(getInternalNamespaceName());

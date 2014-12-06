@@ -20,6 +20,7 @@
 
 #include "structure/fwstructure.hpp"
 #include "inferences/modelIteration/ModelIterator.hpp"
+#include "inferences/makeTwoValued/TwoValuedStructureIterator.hpp"
 #include <bits/shared_ptr.h>
 
 class LuaTraceMonitor;
@@ -101,7 +102,8 @@ enum ArgType {
 	AT_TRACEMONITOR,
                 
         //ModelIterator
-        AT_MODELITERATOR
+        AT_MODELITERATOR,
+        AT_TWOVALUEDITERATOR
 };
 
 template<class T>
@@ -327,6 +329,7 @@ struct InternalArgument {
 		UserProcedure* _procedure;
                 
                 WrapModelIterator* _modelIterator;
+                TwoValuedStructureIterator* _twoValuedIterator;
 	} _value;
 
 	// Constructors
