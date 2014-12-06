@@ -8,13 +8,23 @@
 #ifndef TWOVALUEDSTRUCTUREITERATOR_HPP
 #define	TWOVALUEDSTRUCTUREITERATOR_HPP
 
+#include "PartialStructureIterator.hpp"
+#include "structure/Structure.hpp"
+
+/**
+ * This class generates all more precise two valued structures.
+ */
 class TwoValuedStructureIterator {
 public:
-    TwoValuedStructureIterator();
+    TwoValuedStructureIterator(Structure*);
     TwoValuedStructureIterator(const TwoValuedStructureIterator& orig);
     virtual ~TwoValuedStructureIterator();
+    Structure* next();
+    bool isFinished();
 private:
-
+    std::vector<PreciseCommand*> stack;
+    int position;
+    Structure* structure;
 };
 
 #endif	/* TWOVALUEDSTRUCTUREITERATOR_HPP */
