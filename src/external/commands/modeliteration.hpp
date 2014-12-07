@@ -36,7 +36,7 @@ class ModelIterationInference: public ModelIterationInferenceBase {
 public:
 	ModelIterationInference()
 			: ModelIterationInferenceBase("createMXIterator",
-					"Create an iterator generating 2-valued models of the theory which are more precise than the given structure.", false) {
+					"Create an iterator generating models that satisfy the theory and which are more precise than the given structure.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
@@ -51,13 +51,11 @@ class ModelIterationWithOutputVocInference: public ModelIterationWithVocInferenc
 public:
 	ModelIterationWithOutputVocInference()
 			: ModelIterationWithVocInferenceBase("createMXIterator",
-					"Create an iterator generating models of the theory which are more precise than the given structure"
-					" and twovalued on the output vocabulary.", false) {
+					"Create an iterator generating models that satisfy the theory and which are more precise than the given structure.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-            std::cerr << "Here\n";
             return createIteratorCommand(get<0>(args), get<1>(args), get<2>(args));
 	}
 };
