@@ -12,6 +12,7 @@
 TwoValuedStructureIterator::TwoValuedStructureIterator(Structure* original) {
     structure = original->clone();
     stack = create(original);
+    std::cout << "size: " << stack.size() << "\n";
 }
 
 TwoValuedStructureIterator::~TwoValuedStructureIterator() {
@@ -26,15 +27,26 @@ Structure* TwoValuedStructureIterator::next() {
         return NULL;
     }
     while (not structure->approxTwoValued()) {
+        std::cout << "pos: " << position << "\n";
+        std::cout << structure << "\n";
+        if (position >= stack.size()) {
+            std::cout << "out of specifiers\n";
+            break;
+        }
         stack[position]->doNext(structure);
         position++;
     }
     Structure* out = structure->clone();
-    for (; position >= 0; position--) {
-        if (not stack[position]->isFinished()) {
+    //clean(out);
+    for (; position >= 0;) {
+        position--;
+        if (position < 0 or not stack[position]->isFinished()) {
+            std::cout << "posNotFinished: " << position << "\n";
             break;
         }
+        std::cout << "undo: " << position << "\n";
         stack[position]->undo(structure);
     }
+    std::cout << "final: " << position << "\n";
     return out;
 }

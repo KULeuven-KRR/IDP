@@ -33,7 +33,7 @@ public:
     bool isFinished();
 private:
     std::pair<Predicate*, PredInter*> _predicateInterpretation;
-    const ElementTuple& _tuple;
+    ElementTuple _tuple;
     int state = 0;
 };
 
@@ -46,7 +46,7 @@ public:
     bool isFinished();
 private:
     std::pair<Function*, FuncInter*> _functionInterpretation;
-    const ElementTuple& _tuple;
+    ElementTuple _tuple;
     SortIterator* _iterator;
     ElementTuple _prevTuple;
     bool _doPartial = false;

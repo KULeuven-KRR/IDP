@@ -444,7 +444,10 @@ struct InternalArgument {
 			: _type(AT_MODELITERATOR) {
 		_value._modelIterator = v;
 	}
-
+	InternalArgument(TwoValuedStructureIterator* v)
+			: _type(AT_TWOVALUEDITERATOR) {
+        	_value._twoValuedIterator = v;
+	}
 	// Inspectors
 	std::set<Sort*>* sort() const {
 		if (_type == AT_SORT) {

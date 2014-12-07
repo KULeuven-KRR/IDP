@@ -82,7 +82,7 @@ const char* toCString(ArgType type) {
 				AT_DOMAINITERATOR, "domain_iterator")(AT_QUERY, "query")(AT_TERM, "term")(AT_FOBDD, "fobdd")(AT_FORMULA, "formula")(AT_THEORY,
 				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
 				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
-				AT_TRACEMONITOR, "tracemonitor")(AT_MODELITERATOR, "mxIterator")(AT_TWOVALUEDITERATOR, "twpValuedIterator");
+				AT_TRACEMONITOR, "tracemonitor")(AT_MODELITERATOR, "mxIterator")(AT_TWOVALUEDITERATOR, "twoValuedIterator");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -1778,12 +1778,12 @@ int symbolArity(lua_State* L) {
 
 int mxNext(lua_State* L) {
 	if(lua_type(L, 1) == LUA_TNONE) {
-		lua_pushstring(L, "next expects an iterator argument. Use the \":\" operator.");
+		lua_pushstring(L, "next expects an MXiterator. Use the \":\" operator.");
 		return lua_error(L);
 	}
 	InternalArgument ia = createArgument(1, L);
 	if(ia._type != AT_MODELITERATOR) {
-		lua_pushstring(L, "next expects an iterator argument. Use the \":\" operator.");
+		lua_pushstring(L, "next expects an MXiterator. Use the \":\" operator.");
 		return lua_error(L);
 	}
 	WrapModelIterator* iter = ia._value._modelIterator;
@@ -1800,12 +1800,12 @@ int mxNext(lua_State* L) {
 
 int twoValuedNext(lua_State* L) {
     if (lua_type(L, 1) == LUA_TNONE) {
-        lua_pushstring(L, "next expects an iterator argument. Use the \":\" operator.");
+        lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
         return lua_error(L);
     }
     InternalArgument ia = createArgument(1, L);
-    if (ia._type != AT_MODELITERATOR) {
-        lua_pushstring(L, "next expects an iterator argument. Use the \":\" operator.");
+    if (ia._type != AT_TWOVALUEDITERATOR) {
+        lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
         return lua_error(L);
     }
     TwoValuedStructureIterator* iter = ia._value._twoValuedIterator;

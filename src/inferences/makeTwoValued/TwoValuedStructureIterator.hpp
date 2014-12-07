@@ -23,7 +23,7 @@ public:
     bool isFinished();
 private:
     std::vector<PreciseCommand*> stack;
-    int position;
+    int position = 0;
     Structure* structure;
 };
 

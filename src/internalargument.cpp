@@ -206,3 +206,12 @@ template<>
 const FOBDD* InternalArgument::get<const FOBDD*>() {
 	return _value._fobdd;
 }
+template<>
+WrapModelIterator* InternalArgument::get<WrapModelIterator*>() {
+	return _value._modelIterator;
+}
+
+template<>
+TwoValuedStructureIterator* InternalArgument::get<TwoValuedStructureIterator*>() {
+	return _value._twoValuedIterator;
+}
