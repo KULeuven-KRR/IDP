@@ -46,7 +46,6 @@ PartialFunctionPreciseCommand::PartialFunctionPreciseCommand(const ElementTuple&
 }
 
 void PartialPredicatePreciseCommand::doNext(Structure* s) {
-    std::cout << "Predicate\n";
     Assert(state != 2);
     auto pred = _predicateInterpretation.first;
     auto inter = _predicateInterpretation.second;
@@ -54,7 +53,6 @@ void PartialPredicatePreciseCommand::doNext(Structure* s) {
     Assert(not inter->approxTwoValued());
 
     auto predInter = s->inter(pred);
-    std::cout << "Getters\n";
     if (state == 0) {
         //Tuple is unknown.
         Assert(inter->pf()->contains(_tuple));
@@ -62,7 +60,6 @@ void PartialPredicatePreciseCommand::doNext(Structure* s) {
         predInter->makeTrueExactly(_tuple);
         state++;
     } else if (state == 1) {
-        std::cout << "makeFalse\n";
         predInter->makeFalseExactly(_tuple);
         state++;
     }
@@ -103,7 +100,6 @@ void PartialFunctionPreciseCommand::undo(Structure* s) {
 }
 
 void PartialFunctionPreciseCommand::doNext(Structure* s) {
-    std::cout << "Function\n";
     Assert(_doPartial || _iterator != NULL);
     auto function = _functionInterpretation.first;
     auto inter = _functionInterpretation.second;
@@ -111,7 +107,6 @@ void PartialFunctionPreciseCommand::doNext(Structure* s) {
     auto graph = s->inter(function)->graphInter();
     auto universe = graph->universe();
     const auto& sorts = universe.tables();
-    std::cout << "Getters\n";
     if (_doPartial) { //Make ALL false
         _doPartial = false;
         auto it = sorts.back()->sortBegin();
