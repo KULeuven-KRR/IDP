@@ -25,7 +25,6 @@ class InteractivePrintMonitor;
 
 typedef MinisatID::Space PCSolver;
 typedef MinisatID::Translator PCPrinter;
-typedef MinisatID::ModelExpand PCModelExpand;
 typedef MinisatID::UnitPropagate PCUnitPropagate;
 typedef MinisatID::PropAndBackMonitor SearchMonitor;
 //typedef MinisatID::RealECNFPrinter<InteractivePrintMonitor> ECNFPrinter; TODO should become (gcc 4.6):

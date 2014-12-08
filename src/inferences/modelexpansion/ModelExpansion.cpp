@@ -93,9 +93,9 @@ Structure* handleSolution(Structure const * const structure, const MinisatID::Mo
 
 class SolverTermination: public TerminateMonitor {
 private:
-	PCModelExpand* solver;
+	MinisatID::ModelExpand* solver;
 public:
-	SolverTermination(PCModelExpand* solver)
+	SolverTermination(MinisatID::ModelExpand* solver)
 			: solver(solver) {
 	}
 	void notifyTerminateRequested() {
