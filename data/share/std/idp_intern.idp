@@ -105,7 +105,6 @@ procedure modelIterator(T, S, V) {
     else
         mainIterator = idpintern.createMXIterator(T, S, V);
     end
-    //print(mainIterator);
     local preciseIterator = nil;
     return function() 
         while(true) do

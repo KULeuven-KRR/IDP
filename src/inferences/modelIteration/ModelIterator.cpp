@@ -114,7 +114,7 @@ void ModelIterator::ground(Theory* theory) {
     std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
     try {
         groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(
-                theory, _structure, _outputvoc, NULL, _tracemonitor, getOption(IntType::NBMODELS) != 1, _data);
+                theory, _structure, _outputvoc, NULL, _tracemonitor, true, _data);
     } catch (...) {
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());

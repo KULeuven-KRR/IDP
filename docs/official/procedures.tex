@@ -109,7 +109,9 @@ The \code{inferences} namespace and all its procedures are included in the globa
 			Returns an iterator iterating over all possible two-valued models satisfying the given theory. See modelexpand for more information.
 \begin{lstlisting}
 iterator = modelIterator(T, S);
-for model in iterator do
+print("1: ", iterator());
+print("2: ", iterator());
+for model in iterator do //print all other models
 	print(model);
 end
 \end{lstlisting}
