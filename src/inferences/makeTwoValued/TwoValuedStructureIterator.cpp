@@ -8,6 +8,7 @@
 #include "TwoValuedStructureIterator.hpp"
 #include "PartialStructureIterator.hpp"
 #include <stddef.h>
+#include "Assert.hpp"
 
 TwoValuedStructureIterator::TwoValuedStructureIterator(Structure* original) {
     structure = original->clone();
@@ -25,15 +26,13 @@ Structure* TwoValuedStructureIterator::next() {
     if (position < 0) {
         return NULL;
     }
-    while (not structure->approxTwoValued()) {
-        if (position >= stack.size()) {
-            break;
-        }
+    while (position < stack.size()) {
         stack[position]->doNext(structure);
         position++;
     }
     Structure* out = structure->clone();
     out->clean();
+    Assert(out->approxTwoValued());
     for (; position >= 0;) {
         position--;
         if (position < 0 or not stack[position]->isFinished()) {
