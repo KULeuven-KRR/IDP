@@ -202,10 +202,14 @@ void DeriveTermBounds::visit(const AggTerm* t) {
 
 	storeAndClearLists();
 
-	auto neutral = createDomElem(0);
+
+	const DomainElement* neutral;
 	if (t->function() == AggFunction::PROD) {
 		neutral = createDomElem(1);
+	} else {
+		neutral  = createDomElem(0);
 	}
+
 	bool start = true;
 	auto currentmin = neutral;
 	auto currentmax = neutral;

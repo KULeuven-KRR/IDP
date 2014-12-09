@@ -123,7 +123,8 @@ std::vector<Structure*>  PropagationUsingApproxDef::propagateUsingFullAD(Abstrac
 	auto rule_types = std::set<ApproximatingDefinition::RuleType>();
 	rule_types.insert(ApproximatingDefinition::RuleType::CHEAP);
 	rule_types.insert(ApproximatingDefinition::RuleType::FORALL);
-	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(theory,getAllDerivationTypes(),rule_types);
+	auto approxdef = GenerateApproximatingDefinition::doGenerateApproximatingDefinition(
+			theory,getAllDerivationTypes(),rule_types,structure);
 	processApproxDef(structure,approxdef);
 	return {structure};
 }
