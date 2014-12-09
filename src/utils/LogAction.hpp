@@ -2,6 +2,7 @@
 
 #include <string>
 #include <iostream>
+#include <ctime>
 
 void logActionAndTime(const std::string& action);
 template<class Value>
