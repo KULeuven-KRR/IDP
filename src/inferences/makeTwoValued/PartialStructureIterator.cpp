@@ -29,22 +29,6 @@ PartialPredicatePreciseCommand::~PartialPredicatePreciseCommand() {
 
 }
 
-PartialFunctionPreciseCommand::PartialFunctionPreciseCommand(const ElementTuple& tuple, std::pair<Function*, FuncInter*> pair) : _tuple(tuple) {
-    _functionInterpretation = pair;
-
-    auto inter = _functionInterpretation.second;
-    auto universe = inter->graphInter()->universe();
-    const auto& sorts = universe.tables();
-    auto s = sorts.back()->sortBegin();
-    _iterator = new SortIterator(s);
-    _prevTuple = _tuple;
-    _prevTuple.push_back(**_iterator);
-    auto function = _functionInterpretation.first;
-    if (function->partial()) {
-        _doPartial = true;
-    }
-}
-
 void PartialPredicatePreciseCommand::doNext(Structure* s) {
     Assert(state != 2);
     auto pred = _predicateInterpretation.first;
@@ -55,8 +39,7 @@ void PartialPredicatePreciseCommand::doNext(Structure* s) {
     auto predInter = s->inter(pred);
     if (state == 0) {
         //Tuple is unknown.
-        Assert(inter->pf()->contains(_tuple));
-        Assert(inter->pt()->contains(_tuple));
+        Assert(inter->isUnknown(_tuple));
         predInter->makeTrueExactly(_tuple);
         state++;
     } else if (state == 1) {
@@ -77,7 +60,62 @@ bool PartialPredicatePreciseCommand::isFinished() {
 }
 
 bool PartialFunctionPreciseCommand::isFinished() {
-    return _iterator == NULL;
+    return not _doPartial && _iterator == NULL;
+}
+
+PartialFunctionPreciseCommand::PartialFunctionPreciseCommand(const ElementTuple& tuple, std::pair<Function*, FuncInter*> pair) : _tuple(tuple) {
+    _functionInterpretation = pair;
+
+    auto inter = _functionInterpretation.second;
+    auto universe = inter->graphInter()->universe();
+    const auto& sorts = universe.tables();
+    auto s = sorts.back()->sortBegin();
+    _iterator = new SortIterator(s);
+    _prevTuple = _tuple;
+    //Assume at least 1 element in _iterator.
+    _prevTuple.push_back(**_iterator);
+}
+
+void PartialFunctionPreciseCommand::init(Structure* s) {
+    auto function = _functionInterpretation.first;
+    auto inter = _functionInterpretation.second;
+    Assert(not inter->approxTwoValued());
+    auto graph = s->inter(function)->graphInter();
+    //Find next unknown.
+    while (not _iterator->isAtEnd()) {
+        ElementTuple tuple(_tuple);
+        tuple.push_back(**_iterator);
+        if (graph->isUnknown(tuple)) {
+            return;
+        }
+        ++(*_iterator);
+    }
+    _iterator = NULL;
+    if (function->partial()) {
+        _doPartial = true;
+    }
+}
+
+void PartialFunctionPreciseCommand::doNext(Structure* s) {
+    Assert(not isFinished());
+    auto function = _functionInterpretation.first;
+    auto inter = _functionInterpretation.second;
+    Assert(not inter->approxTwoValued());
+    auto graph = s->inter(function)->graphInter();
+    if (_doPartial) { //Make ALL false
+        _doPartial = false;
+        graph->makeFalseExactly(_prevTuple);
+    } else { //Make next element true.
+        ElementTuple tuple(_tuple);
+        tuple.push_back(**_iterator);
+        Assert(graph->isUnknown(tuple));
+        falsied.push_back(**_iterator);
+        graph->makeFalseExactly(_prevTuple);
+        graph->makeTrueExactly(tuple);
+        _prevTuple = tuple;
+        ++(*_iterator);
+        init(s);
+    }
 }
 
 void PartialFunctionPreciseCommand::undo(Structure* s) {
@@ -85,46 +123,18 @@ void PartialFunctionPreciseCommand::undo(Structure* s) {
     auto graph = s->inter(function)->graphInter();
     auto universe = graph->universe();
     const auto& sorts = universe.tables();
-    for (; _iterator != NULL && not _iterator->isAtEnd(); ++_iterator) { //Make the rest unknown
-        ElementTuple tuple(_tuple);
-        tuple.push_back(**_iterator);
+    ElementTuple tuple(_tuple);
+    for (auto it = falsied.cbegin(); it != falsied.cend(); ++it) {
+        tuple.push_back(*it);
         graph->makeUnknownExactly(tuple);
+        tuple.pop_back();
     }
-    graph->makeUnknownExactly(_prevTuple);
     _iterator = new SortIterator(sorts.back()->sortBegin());
-    _prevTuple = _tuple;
-    _prevTuple.push_back(**_iterator);
-    if (function->partial()) {
-        _doPartial = true;
-    }
-}
-
-void PartialFunctionPreciseCommand::doNext(Structure* s) {
-    Assert(_doPartial || _iterator != NULL);
-    auto function = _functionInterpretation.first;
-    auto inter = _functionInterpretation.second;
-    Assert(not inter->approxTwoValued());
-    auto graph = s->inter(function)->graphInter();
-    auto universe = graph->universe();
-    const auto& sorts = universe.tables();
-    if (_doPartial) { //Make ALL false
-        _doPartial = false;
-        auto it = sorts.back()->sortBegin();
-        for (; not it.isAtEnd(); ++it) {
-            ElementTuple tuple(_tuple);
-            tuple.push_back(*it);
-            graph->makeFalseExactly(tuple);
-        }
-    } else { //Make next element true.
-        ElementTuple tuple(_tuple);
-        tuple.push_back(**_iterator);
-        graph->makeUnknownExactly(_prevTuple);
-        graph->makeTrueExactly(tuple);
-        _prevTuple = tuple;
-        ++(*_iterator);
-        if (_iterator->isAtEnd()) {
-            _iterator = NULL;
-        }
+    init(s);
+    if (_iterator != NULL) {
+        //Set the first found element as prevTuple
+        _prevTuple = _tuple;
+        _prevTuple.push_back(**_iterator);
     }
 }
 
@@ -197,7 +207,8 @@ std::vector<PreciseCommand*> createFunction(Structure* s) {
             if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
                 continue;
             }
-            PreciseCommand* p = new PartialFunctionPreciseCommand(domainElementWithoutValue, f2inter);
+            PartialFunctionPreciseCommand* p = new PartialFunctionPreciseCommand(domainElementWithoutValue, f2inter);
+            p->init(s);
             out.push_back(p);
         }
     }

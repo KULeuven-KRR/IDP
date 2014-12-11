@@ -113,6 +113,7 @@ procedure modelIterator(T, S, V) {
                 if(n == nil) then
                     return nil;
                 end
+                //clean(n);
                 preciseIterator = idpintern.createTwoValuedIterator(n);
             end
             local out = preciseIterator:next();

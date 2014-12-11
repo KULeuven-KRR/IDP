@@ -11,7 +11,7 @@
 #include "structure/Structure.hpp"
 #include "structure/StructureComponents.hpp"
 #include <vector>
-
+#include <unordered_set>
 /**
  * This class creates all more precise structures of a given structure and function/predicate.
  */
@@ -41,6 +41,7 @@ class PartialFunctionPreciseCommand : public PreciseCommand {
 public:
     PartialFunctionPreciseCommand (const ElementTuple& tuple, std::pair<Function*, FuncInter*>);
     ~PartialFunctionPreciseCommand();
+    void init(Structure* s);    
     void doNext(Structure*);
     void undo(Structure*);
     bool isFinished();
@@ -50,6 +51,7 @@ private:
     SortIterator* _iterator;
     ElementTuple _prevTuple;
     bool _doPartial = false;
+    std::vector<const DomainElement*> falsied;
 };
 
 /**
