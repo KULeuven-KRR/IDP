@@ -4,9 +4,7 @@
  *
  * Created on December 5, 2014, 3:20 PM
  */
-
-#ifndef TWOVALUEDSTRUCTUREITERATOR_HPP
-#define	TWOVALUEDSTRUCTUREITERATOR_HPP
+#pragma once
 
 #include "PartialStructureIterator.hpp"
 #include "structure/Structure.hpp"
@@ -26,6 +24,3 @@ private:
     int position = 0;
     Structure* structure;
 };
-
-#endif	/* TWOVALUEDSTRUCTUREITERATOR_HPP */
-

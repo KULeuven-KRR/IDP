@@ -4,9 +4,8 @@
  *
  * Created on October 3, 2014, 9:56 AM
  */
+#pragma once
 
-#ifndef MODELITERATOR_HPP
-#define	MODELITERATOR_HPP
 #include <memory>
 #include <bits/shared_ptr.h>
 #include "common.hpp"
@@ -61,6 +60,3 @@ private:
     
     MinisatID::ModelIterationTask* _mx;
 };
-
-#endif	/* MODELITERATOR_HPP */
-

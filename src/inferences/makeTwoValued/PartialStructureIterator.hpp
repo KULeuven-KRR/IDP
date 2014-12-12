@@ -5,8 +5,7 @@
  * Created on December 5, 2014, 3:19 PM
  */
 
-#ifndef PARTIALSTRUCTUREITERATOR_HPP
-#define	PARTIALSTRUCTUREITERATOR_HPP
+#pragma once
 
 #include "structure/Structure.hpp"
 #include "structure/StructureComponents.hpp"
@@ -63,5 +62,4 @@ private:
 std::vector<PreciseCommand*> create(Structure*);
 std::vector<PreciseCommand*> createFunction(Structure* s);
 std::vector<PreciseCommand*> createPredicate(Structure* s);
-#endif	/* PARTIALSTRUCTUREITERATOR_HPP */
 
