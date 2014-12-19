@@ -1,0 +1,19 @@
+vocabulary V{
+	type Color
+	type Area
+	Border(Area,Area)
+	Coloring(Area):Color
+}
+theory T:V{
+    /**//
+//test
+//*/
+	//2 adjacent countries can not have the same color
+	!a1[Area] a2[Area]:Border(a1,a2) | Border(a2,a1) =>Coloring(a1)~=Coloring(a2).
+    
+}
+
+
+procedure main(){
+	return 1
+}

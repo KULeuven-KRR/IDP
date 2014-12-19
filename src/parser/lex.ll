@@ -198,6 +198,7 @@ bool alreadyParsed(const std::string& filename){
 %option never-interactive
 
 %x comment
+%x onelinecomment
 %x vocabulary
 %x constructed
 %x structure
@@ -218,8 +219,7 @@ FL				[0-9]*"."[0-9]+
 STR				\"[^\"]*\"
 CHR				\'.\'
 WHITESPACE		[\r ]*
-COMMENTLINE		"//".*
-COMMENTLINE2	"--".*
+COMMENTLINE		"//"|"--"
 
 %%
 
@@ -228,8 +228,6 @@ COMMENTLINE2	"--".*
 		Comments  
 	***************/
 
-<*>{COMMENTLINE}			{							}
-<*>{COMMENTLINE2}			{							}
 
 	/* When encountering nested comment starts, ignore them (removes the need for bookkeeping lexer states with a stack)*/
 <comment>"/*"				{ parser.advancecol(); }
@@ -263,6 +261,9 @@ COMMENTLINE2	"--".*
 <comment>"*"+"/"			{ BEGIN(parser.commentcaller);           
 							  parser.advancecol();				}
 
+
+<*>{COMMENTLINE}			{ parser.commentcaller = YY_START; BEGIN(onelinecomment);	}
+<onelinecomment>.*			{ BEGIN(parser.commentcaller); }
 	/*************
 		Include
 	*************/
