@@ -22,11 +22,9 @@ PreciseCommand::~PreciseCommand() {
 }
 
 PartialFunctionPreciseCommand::~PartialFunctionPreciseCommand() {
-
 }
 
 PartialPredicatePreciseCommand::~PartialPredicatePreciseCommand() {
-
 }
 
 void PartialPredicatePreciseCommand::doNext(Structure* s) {
@@ -70,7 +68,7 @@ PartialFunctionPreciseCommand::PartialFunctionPreciseCommand(const ElementTuple&
     auto universe = inter->graphInter()->universe();
     const auto& sorts = universe.tables();
     auto s = sorts.back()->sortBegin();
-    _iterator = new SortIterator(s);
+    _iterator = std::unique_ptr<SortIterator>(new SortIterator(s));
     _prevTuple = _tuple;
     //Assume at least 1 element in _iterator.
     _prevTuple.push_back(**_iterator);
@@ -90,9 +88,11 @@ void PartialFunctionPreciseCommand::init(Structure* s) {
         }
         ++(*_iterator);
     }
-    _iterator = NULL;
-    if (function->partial()) {
-        _doPartial = true;
+    if (_iterator->isAtEnd()) {
+        _iterator = NULL;
+        if (function->partial()) {
+            _doPartial = true;
+        }
     }
 }
 
@@ -129,7 +129,7 @@ void PartialFunctionPreciseCommand::undo(Structure* s) {
         graph->makeUnknownExactly(tuple);
         tuple.pop_back();
     }
-    _iterator = new SortIterator(sorts.back()->sortBegin());
+    _iterator = std::unique_ptr<SortIterator>(new SortIterator(sorts.back()->sortBegin()));
     init(s);
     if (_iterator != NULL) {
         //Set the first found element as prevTuple
@@ -192,8 +192,7 @@ std::vector<PreciseCommand*> createFunction(Structure* s) {
             out.push_back(p);
             continue;
         }
-        auto internaliterator = new CartesianInternalTableIterator(domainIterators, domainIterators, true);
-        TableIterator domainIterator(internaliterator);
+        TableIterator domainIterator(new CartesianInternalTableIterator(domainIterators, domainIterators, true));
 
         auto ctIterator = ct->begin();
         FirstNElementsEqual eq(function->arity());

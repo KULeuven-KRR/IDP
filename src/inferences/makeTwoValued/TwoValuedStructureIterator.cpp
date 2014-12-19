@@ -16,6 +16,10 @@ TwoValuedStructureIterator::TwoValuedStructureIterator(Structure* original) {
 }
 
 TwoValuedStructureIterator::~TwoValuedStructureIterator() {
+    for(auto it = stack.begin(); it<stack.end() ; it++) {
+        delete(*it);
+    }
+    delete(structure);
 }
 
 bool TwoValuedStructureIterator::isFinished() {

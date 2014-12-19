@@ -11,6 +11,7 @@
 #include "structure/StructureComponents.hpp"
 #include <vector>
 #include <unordered_set>
+#include <memory>
 /**
  * This class creates all more precise structures of a given structure and function/predicate.
  */
@@ -47,7 +48,7 @@ public:
 private:
     std::pair<Function*, FuncInter*> _functionInterpretation;
     ElementTuple _tuple;
-    SortIterator* _iterator;
+    std::unique_ptr<SortIterator> _iterator;
     ElementTuple _prevTuple;
     bool _doPartial = false;
     std::vector<const DomainElement*> falsied;
