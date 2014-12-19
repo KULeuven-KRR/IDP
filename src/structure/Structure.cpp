@@ -278,7 +278,9 @@ void makeUnknownsFalse(PredInter* inter) {
 		return;
 	}
 	inter->pt(new PredTable(inter->ct()->internTable(), inter->ct()->universe()));
-	inter->cfpf(new PredTable(InverseInternalPredTable::getInverseTable(inter->pt()->internTable()), inter->pt()->universe()));
+    auto cfpf = new PredTable(InverseInternalPredTable::getInverseTable(inter->pt()->internTable()), inter->pt()->universe());
+	inter->cfpf(cfpf);
+    delete(cfpf);
 }
 
 void makeUnknownsFalse(Structure* structure){
