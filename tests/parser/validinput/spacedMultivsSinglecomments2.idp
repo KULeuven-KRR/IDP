@@ -5,9 +5,9 @@ vocabulary V{
 	Coloring(Area):Color
 }
 theory T:V{
-    /**
----test--
---*/
+    /**//
+ //test
+ //*/
 	//2 adjacent countries can not have the same color
 	!a1[Area] a2[Area]:Border(a1,a2) | Border(a2,a1) =>Coloring(a1)~=Coloring(a2).
     
