@@ -159,10 +159,10 @@ int InternalProcedure::operator()(lua_State* L) const {
 	}
 	InternalArgument result = inference_->execute(args);
 	inference_->clean();
-    int out = LuaConnection::convertToLua(L, result);
-    if (result._type == AT_STRING) {
-        delete(result._value._string);
-    }
+	int out = LuaConnection::convertToLua(L, result);
+	if (result._type == AT_STRING) {
+		delete(result._value._string);
+	}
 	return out;
 }
 
@@ -1036,7 +1036,7 @@ int symbolIndex(lua_State* L) {
 		}
 	} else if (index._type == AT_STRING) {
 		string str = *(index._value._string);
-        delete(index._value._string);
+		delete(index._value._string);
 		if (str == "type") {
 			convertToLua(L, InternalArgument(new set<Sort*>(*(symb->sorts()))));
 			return 1;
@@ -1266,7 +1266,7 @@ int namespaceIndex(lua_State* L) {
 		return lua_error(L);
 	}
 	string str = *(index._value._string);
-    delete(index._value._string);
+	delete(index._value._string);
 	unsigned int counter = 0;
 	Namespace* subsp = NULL;
 	if (ns->isSubspace(str)) {
@@ -1576,7 +1576,7 @@ int optionsNewIndex(lua_State* L) {
 	}
 
 	string option = *(index._value._string);
-    delete(index._value._string);
+	delete(index._value._string);
 	if (not opts->isOption(option)) {
 		stringstream ss;
 		ss << "There is no option named " << option << ".\n";
@@ -1589,8 +1589,8 @@ int optionsNewIndex(lua_State* L) {
 		/*case AT_DOUBLE: // TODO currently there are no float options
 		 return attempToSetValue(L, opts, option, value._value._double);*/
 	case AT_STRING:
-        string str2 = *(value._value._string);
-        delete(value._value._string);
+		string str2 = *(value._value._string);
+		delete(value._value._string);
 		return attempToSetValue(L, opts, option, str2);
 	case AT_BOOLEAN:
 		return attempToSetValue(L, opts, option, value._value._boolean);
@@ -2256,7 +2256,7 @@ void addGlobal(UserProcedure* p) {
 	ia._type = AT_PROCEDURE;
 	ia._value._string = new std::string(p->registryindex());
 	convertToLua(getState(), ia);
-    delete(ia._value._string);
+	delete(ia._value._string);
 	lua_setglobal(getState(), p->name().c_str());
 }
 
