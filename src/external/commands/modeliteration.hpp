@@ -5,8 +5,7 @@
  * Created on November 18, 2014, 2:35 PM
  */
 
-#ifndef MODELITERATION_HPP
-#define	MODELITERATION_HPP
+#pragma once
 
 #include <iostream>
 #include "commandinterface.hpp"
@@ -59,7 +58,4 @@ public:
             return createIteratorCommand(get<0>(args), get<1>(args), get<2>(args));
 	}
 };
-
-
-#endif	/* MODELITERATION_HPP */
 

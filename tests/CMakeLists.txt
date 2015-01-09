@@ -114,7 +114,7 @@ if(${BUILDTESTS})
 		#PLEASE MAKE SURE THE TESTS ARE ORDERED FROM LONGRUNNING TO SHORTRUNNING!
 		#this improves the efficiency of running "make check"
 		#IF ADDING TESTS HERE, ALSO ADD THEM BELOW THE ELSE
-        addMXTest(mxIterator mxIterator.cpp)
+
 		addMXTest(bounds bounds.cpp) 
 		addMXTest(boundsNoLUP boundsNoLUP.cpp)
 		if(XSBUSED)
@@ -130,6 +130,7 @@ if(${BUILDTESTS})
 		endif() 
 		addMXTest(satnobounds satnobounds.cpp) 
 		addMXTest(basic basic.cpp) 
+        addMXTest(mxIterator mxIterator.cpp)
 		addMXTest(nobounds nobounds.cpp) 
 		addMXTest(symm symm.cpp) 
 		addMXTest(optim optim.cpp)
@@ -190,7 +191,6 @@ if(${BUILDTESTS})
 			${MXINCLUDES}
 		)
 		addTest(slow)
-        addMXTest(mxIterator mxIterator.cpp)
 		
 		add_custom_target(check ${PROJECT_BINARY_DIR}/tests/idptests DEPENDS idptests)
 		add_custom_target(fullcheck ${PROJECT_BINARY_DIR}/tests/slow DEPENDS slow)

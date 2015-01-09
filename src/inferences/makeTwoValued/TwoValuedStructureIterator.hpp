@@ -20,7 +20,7 @@ public:
     Structure* next();
     bool isFinished();
 private:
-    std::vector<PreciseCommand*> stack;
+    std::vector<TwoValuedSymbolIterator*> stack;
     int position = 0;
     Structure* structure;
 };

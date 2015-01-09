@@ -32,7 +32,7 @@ using namespace std;
 ModelIterator::ModelIterator(Structure* structure, Theory* theory, Vocabulary* targetvoc, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
 	_structure = structure -> clone();
 	_theory = theory->clone();
-	_outputvoc = targetvoc != NULL ? targetvoc : theory->vocabulary();
+	_outputvoc = targetvoc != nullptr ? targetvoc : theory->vocabulary();
 	_tracemonitor = tracemonitor;
 	_assumeFalse = assumeFalse;
 }
@@ -48,17 +48,13 @@ ModelIterator::~ModelIterator() {
 	delete (_mx);
 }
 
-#define cleanup \
-		getGlobal()->removeTerminationMonitor(terminator);\
-		delete (terminator);
-
 shared_ptr<ModelIterator> createIterator(AbstractTheory* theory, Structure* structure, Vocabulary* targetVocabulary,
 		TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse) {
-	if (theory == NULL || structure == NULL) {
+	if (theory == nullptr || structure == nullptr) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
 	auto t = dynamic_cast<Theory*>(theory); // TODO handle other cases
-	if (t == NULL) {
+	if (t == nullptr) {
 		throw notyetimplemented("Modeliteration of already ground theories");
 	}
 	if(structure->vocabulary()!=theory->vocabulary()){
@@ -68,7 +64,7 @@ shared_ptr<ModelIterator> createIterator(AbstractTheory* theory, Structure* stru
 			throw IdpException("Modeliteration requires that the structure interprets (a subvocabulary of) the vocabulary of the theory.");
 		}
 	}
-	auto m = shared_ptr<ModelIterator>(new ModelIterator(structure, t, targetVocabulary, tracemonitor, assumeFalse));
+	auto m = make_shared<ModelIterator>(structure, t, targetVocabulary, tracemonitor, assumeFalse);
 	if (getGlobal()->getOptions()->symmetryBreaking() != SymmetryBreaking::NONE && getOption(NBMODELS) != 1) {
 		Warning::warning("Cannot generate models symmetrical to models already found! More models might exist.");
 	}
@@ -99,7 +95,7 @@ void ModelIterator::init() {
 std::vector<Definition*> ModelIterator::preprocess(Theory* theory) {
     std::vector<Definition*> postprocessdefs;
     if (getOption(POSTPROCESS_DEFS)) {
-        postprocessdefs = simplifyTheoryForPostProcessableDefinitions(theory, NULL, _structure, _currentVoc, _outputvoc);
+        postprocessdefs = simplifyTheoryForPostProcessableDefinitions(theory, nullptr, _structure, _currentVoc, _outputvoc);
     }
     if (getOption(SATISFIABILITYDELAY)) { // Add non-forgotten defs again, as top-down grounding might give a better result
         for (auto def : postprocessdefs) {
@@ -111,10 +107,10 @@ std::vector<Definition*> ModelIterator::preprocess(Theory* theory) {
 }
 
 void ModelIterator::ground(Theory* theory) {
-    std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
+    std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {nullptr, nullptr};
     try {
         groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(
-                theory, _structure, _outputvoc, NULL, _tracemonitor, true, _data);
+                theory, _structure, _outputvoc, nullptr, _tracemonitor, true, _data);
     } catch (...) {
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());
@@ -166,6 +162,10 @@ void ModelIterator::prepareSolver() {
 }
 
 
+#define cleanup \
+		getGlobal()->removeTerminationMonitor(terminator);\
+		delete (terminator);
+
 MXResult ModelIterator::calculate() {
     auto terminator = new SolverTermination(_mx);
     getGlobal()->addTerminationMonitor(terminator);
@@ -182,10 +182,10 @@ MXResult ModelIterator::calculate() {
         logActionAndTime("Starting solving at ");
     }
     MXResult result;
-	std::shared_ptr<MinisatID::Model> model = NULL;
+	std::shared_ptr<MinisatID::Model> model = nullptr;
     try {
 		model = _mx->findNext();
-        result.unsat = (model == NULL);
+        result.unsat = (model == nullptr);
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
             getGlobal()->reset();
@@ -208,6 +208,7 @@ MXResult ModelIterator::calculate() {
     }
     t.requestStop();
     time.join();
+	cleanup;
 
     if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
         logActionAndValue("effective-size", _grounding->getSize());
@@ -218,7 +219,6 @@ MXResult ModelIterator::calculate() {
     }
 
     if (getGlobal()->terminateRequested()) {
-		cleanup;
         throw IdpException("Solver was terminated");
     }
     result._optimumfound = not result._interrupted;
@@ -228,14 +228,12 @@ MXResult ModelIterator::calculate() {
         result._interrupted = true;
         getGlobal()->reset();
     } else if (result.unsat) {
-        cleanup;
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "unsat");
         }
         return result;
     }
     result = getStructure(result, startTime, model);
-	cleanup;
     return result;
 }
 
@@ -247,7 +245,7 @@ MXResult ModelIterator::getStructure(MXResult result, clock_t startTime, std::sh
     auto mxverbosity = getMXVerbosity();
     std::vector<Structure*> solutions;
     if (not result.unsat) {
-		MAssert(model != NULL);
+		MAssert(model != nullptr);
 		if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "satisfiable");
         }

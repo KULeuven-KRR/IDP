@@ -5,8 +5,7 @@
  * Created on December 6, 2014, 10:22 PM
  */
 
-#ifndef TWOVALUEDITERATOR_HPP
-#define	TWOVALUEDITERATOR_HPP
+#pragma once
 
 #include <iostream>
 #include "commandinterface.hpp"
@@ -43,5 +42,3 @@ public:
         return ret;
     }
 };
-#endif	/* TWOVALUEDITERATOR_HPP */
-

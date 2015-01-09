@@ -15,19 +15,19 @@
 /**
  * This class creates all more precise structures of a given structure and function/predicate.
  */
-class PreciseCommand {
+class TwoValuedSymbolIterator {
 public:
-    virtual ~PreciseCommand();
+    virtual ~TwoValuedSymbolIterator();
 
     virtual void doNext(Structure*) = 0;
     virtual void undo(Structure*) = 0;
     virtual bool isFinished() = 0;
 };
 
-class PartialPredicatePreciseCommand : public PreciseCommand {
+class PredicateSymbolIterator : public TwoValuedSymbolIterator {
 public:
-    PartialPredicatePreciseCommand(const ElementTuple&, std::pair<Predicate*, PredInter*>);
-    ~PartialPredicatePreciseCommand();
+    PredicateSymbolIterator(const ElementTuple&, std::pair<Predicate*, PredInter*>);
+    ~PredicateSymbolIterator();
     void doNext(Structure*);
     void undo(Structure*);
     bool isFinished();
@@ -37,10 +37,10 @@ private:
     int state = 0;
 };
 
-class PartialFunctionPreciseCommand : public PreciseCommand {
+class FunctionSymbolIterator : public TwoValuedSymbolIterator {
 public:
-    PartialFunctionPreciseCommand (const ElementTuple& tuple, std::pair<Function*, FuncInter*>);
-    ~PartialFunctionPreciseCommand();
+    FunctionSymbolIterator (const ElementTuple& tuple, std::pair<Function*, FuncInter*>);
+    ~FunctionSymbolIterator();
     void init(Structure* s);    
     void doNext(Structure*);
     void undo(Structure*);
@@ -60,7 +60,7 @@ private:
  * @param A structure to make more precise.
  * @return An iterator generating more precise structures.
  */
-std::vector<PreciseCommand*> create(Structure*);
-std::vector<PreciseCommand*> createFunction(Structure* s);
-std::vector<PreciseCommand*> createPredicate(Structure* s);
+std::vector<TwoValuedSymbolIterator*> create(Structure*);
+std::vector<TwoValuedSymbolIterator*> createFunction(Structure* s);
+std::vector<TwoValuedSymbolIterator*> createPredicate(Structure* s);
 

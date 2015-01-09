@@ -11,27 +11,28 @@
 #include "PartialStructureIterator.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "../../Assert.hpp"
+#include "safeint3.hpp"
 
-PartialPredicatePreciseCommand::PartialPredicatePreciseCommand
+PredicateSymbolIterator::PredicateSymbolIterator
 (const ElementTuple& tuple, std::pair<Predicate*, PredInter*> pair) : _tuple(tuple) {
     _predicateInterpretation = pair;
 }
 
-PreciseCommand::~PreciseCommand() {
+TwoValuedSymbolIterator::~TwoValuedSymbolIterator() {
 
 }
 
-PartialFunctionPreciseCommand::~PartialFunctionPreciseCommand() {
+FunctionSymbolIterator::~FunctionSymbolIterator() {
 }
 
-PartialPredicatePreciseCommand::~PartialPredicatePreciseCommand() {
+PredicateSymbolIterator::~PredicateSymbolIterator() {
 }
 
-void PartialPredicatePreciseCommand::doNext(Structure* s) {
+void PredicateSymbolIterator::doNext(Structure* s) {
     Assert(state != 2);
     auto pred = _predicateInterpretation.first;
     auto inter = _predicateInterpretation.second;
-    Assert(inter != NULL);
+    Assert(inter != nullptr);
     Assert(not inter->approxTwoValued());
 
     auto predInter = s->inter(pred);
@@ -46,22 +47,22 @@ void PartialPredicatePreciseCommand::doNext(Structure* s) {
     }
 }
 
-void PartialPredicatePreciseCommand::undo(Structure* s) {
+void PredicateSymbolIterator::undo(Structure* s) {
     auto pred = _predicateInterpretation.first;
     auto predInter = s->inter(pred);
     predInter->makeUnknownExactly(_tuple);
     state = 0;
 }
 
-bool PartialPredicatePreciseCommand::isFinished() {
+bool PredicateSymbolIterator::isFinished() {
     return state == 2;
 }
 
-bool PartialFunctionPreciseCommand::isFinished() {
-    return not _doPartial && _iterator == NULL;
+bool FunctionSymbolIterator::isFinished() {
+    return not _doPartial && _iterator == nullptr;
 }
 
-PartialFunctionPreciseCommand::PartialFunctionPreciseCommand(const ElementTuple& tuple, std::pair<Function*, FuncInter*> pair) : _tuple(tuple) {
+FunctionSymbolIterator::FunctionSymbolIterator(const ElementTuple& tuple, std::pair<Function*, FuncInter*> pair) : _tuple(tuple) {
     _functionInterpretation = pair;
 
     auto inter = _functionInterpretation.second;
@@ -74,7 +75,7 @@ PartialFunctionPreciseCommand::PartialFunctionPreciseCommand(const ElementTuple&
     _prevTuple.push_back(**_iterator);
 }
 
-void PartialFunctionPreciseCommand::init(Structure* s) {
+void FunctionSymbolIterator::init(Structure* s) {
     auto function = _functionInterpretation.first;
     auto inter = _functionInterpretation.second;
     Assert(not inter->approxTwoValued());
@@ -89,14 +90,14 @@ void PartialFunctionPreciseCommand::init(Structure* s) {
         ++(*_iterator);
     }
     if (_iterator->isAtEnd()) {
-        _iterator = NULL;
+        _iterator = nullptr;
         if (function->partial()) {
             _doPartial = true;
         }
     }
 }
 
-void PartialFunctionPreciseCommand::doNext(Structure* s) {
+void FunctionSymbolIterator::doNext(Structure* s) {
     Assert(not isFinished());
     auto function = _functionInterpretation.first;
     auto inter = _functionInterpretation.second;
@@ -118,7 +119,7 @@ void PartialFunctionPreciseCommand::doNext(Structure* s) {
     }
 }
 
-void PartialFunctionPreciseCommand::undo(Structure* s) {
+void FunctionSymbolIterator::undo(Structure* s) {
     auto function = _functionInterpretation.first;
     auto graph = s->inter(function)->graphInter();
     auto universe = graph->universe();
@@ -131,26 +132,26 @@ void PartialFunctionPreciseCommand::undo(Structure* s) {
     }
     _iterator = std::unique_ptr<SortIterator>(new SortIterator(sorts.back()->sortBegin()));
     init(s);
-    if (_iterator != NULL) {
+    if (_iterator != nullptr) {
         //Set the first found element as prevTuple
         _prevTuple = _tuple;
         _prevTuple.push_back(**_iterator);
     }
 }
 
-std::vector<PreciseCommand*> create(Structure* s) {
+std::vector<TwoValuedSymbolIterator*> create(Structure* s) {
     auto out1 = createPredicate(s);
     auto out2 = createFunction(s);
     out1.insert(out1.end(), out2.begin(), out2.end());
     return out1;
 }
 
-std::vector<PreciseCommand*> createPredicate(Structure* s) {
-    std::vector<PreciseCommand*> out;
+std::vector<TwoValuedSymbolIterator*> createPredicate(Structure* s) {
+    std::vector<TwoValuedSymbolIterator*> out;
     Structure* original = s;
     for (auto i = original->getPredInters().cbegin(); i != original->getPredInters().end(); i++) {
         PredInter* inter = (*i).second;
-        Assert(inter != NULL);
+        Assert(inter != nullptr);
         if (inter->approxTwoValued()) {
             continue;
         }
@@ -160,15 +161,15 @@ std::vector<PreciseCommand*> createPredicate(Structure* s) {
             if (not pf->contains(*ptIterator)) {
                 continue;
             }
-            PreciseCommand* p = new PartialPredicatePreciseCommand(*ptIterator, *i);
+            TwoValuedSymbolIterator* p = new PredicateSymbolIterator(*ptIterator, *i);
             out.push_back(p);
         }
     }
     return out;
 }
 
-std::vector<PreciseCommand*> createFunction(Structure* s) {
-    std::vector<PreciseCommand*> out;
+std::vector<TwoValuedSymbolIterator*> createFunction(Structure* s) {
+    std::vector<TwoValuedSymbolIterator*> out;
     Structure* original = s;
     for (auto f2inter : original->getFuncInters()) {
         Function* function = f2inter.first;
@@ -188,7 +189,7 @@ std::vector<PreciseCommand*> createFunction(Structure* s) {
         //Now, choose an image for this domainelement
         ElementTuple domainElementWithoutValue;
         if (sorts.size() == 0) {
-            PreciseCommand* p = new PartialFunctionPreciseCommand(domainElementWithoutValue, f2inter);
+            TwoValuedSymbolIterator* p = new FunctionSymbolIterator(domainElementWithoutValue, f2inter);
             out.push_back(p);
             continue;
         }
@@ -206,7 +207,7 @@ std::vector<PreciseCommand*> createFunction(Structure* s) {
             if (not ctIterator.isAtEnd() && eq(domainElementWithoutValue, *ctIterator)) {
                 continue;
             }
-            PartialFunctionPreciseCommand* p = new PartialFunctionPreciseCommand(domainElementWithoutValue, f2inter);
+            FunctionSymbolIterator* p = new FunctionSymbolIterator(domainElementWithoutValue, f2inter);
             p->init(s);
             out.push_back(p);
         }

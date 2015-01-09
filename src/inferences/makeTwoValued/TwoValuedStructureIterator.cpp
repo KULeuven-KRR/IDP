@@ -28,7 +28,7 @@ bool TwoValuedStructureIterator::isFinished() {
 
 Structure* TwoValuedStructureIterator::next() {
     if (position < 0) {
-        return NULL;
+        return nullptr;
     }
     while (position < stack.size()) {
         stack[position]->doNext(structure);
