@@ -14,13 +14,13 @@
  */
 class TwoValuedStructureIterator {
 public:
-    TwoValuedStructureIterator(Structure*);
-    TwoValuedStructureIterator(const TwoValuedStructureIterator& orig);
-    virtual ~TwoValuedStructureIterator();
-    Structure* next();
-    bool isFinished();
+	TwoValuedStructureIterator(Structure*);
+	TwoValuedStructureIterator(const TwoValuedStructureIterator& orig);
+	virtual ~TwoValuedStructureIterator();
+	Structure* next();
+	bool isFinished();
 private:
-    std::vector<TwoValuedSymbolIterator*> stack;
-    int position = 0;
-    Structure* structure;
+	std::vector<TwoValuedSymbolIterator*> stack;
+	int position = 0;
+	Structure* structure;
 };

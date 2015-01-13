@@ -7,7 +7,6 @@
 #pragma once
 
 #include <memory>
-#include <bits/shared_ptr.h>
 #include "common.hpp"
 #include "../modelexpansion/ModelExpansion.hpp"
 #include "inferences/SolverInclude.hpp"
@@ -33,30 +32,30 @@ std::shared_ptr<ModelIterator> createIterator(AbstractTheory*, Structure*, Vocab
 
 class ModelIterator {
 public:
-    ModelIterator(Structure*, Theory*, Vocabulary*, TraceMonitor*, const MXAssumptions&);
-    ~ModelIterator();
-    void init();
-    MXResult calculate();
+	ModelIterator(Structure*, Theory*, Vocabulary*, TraceMonitor*, const MXAssumptions&);
+	~ModelIterator();
+	void init();
+	MXResult calculate();
 private:
-    std::vector<Definition*> preprocess(Theory*);
-    void ground(Theory*);
-    void prepareSolver();
-    MXResult getStructure(MXResult, clock_t, std::shared_ptr<MinisatID::Model>);
-    
-    Structure* _structure;
-    Theory* _theory;
-    TraceMonitor* _tracemonitor;
-    std::vector<Definition*> postprocessdefs;
+	std::vector<Definition*> preprocess(Theory*);
+	void ground(Theory*);
+	void prepareSolver();
+	MXResult getStructure(MXResult, clock_t, std::shared_ptr<MinisatID::Model>);
 
-    Vocabulary* _outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
-    Vocabulary* _currentVoc;
-    MXAssumptions _assumeFalse;
-    
+	Structure* _structure;
+	Theory* _theory;
+	TraceMonitor* _tracemonitor;
+	std::vector<Definition*> postprocessdefs;
 
-    PCSolver*  _data;
-    AbstractGroundTheory* _grounding;
-    StructureExtender* _extender;
-    litlist* _assumptions;
-    
-    MinisatID::ModelIterationTask* _mx;
+	Vocabulary* _outputvoc; // if not NULL, mx is allowed to return models which are only two-valued on the outputvoc.
+	Vocabulary* _currentVoc;
+	MXAssumptions _assumeFalse;
+
+
+	PCSolver* _data;
+	AbstractGroundTheory* _grounding;
+	StructureExtender* _extender;
+	litlist* _assumptions;
+
+	MinisatID::ModelIterationTask* _mx;
 };

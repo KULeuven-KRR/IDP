@@ -15,13 +15,13 @@
 #include <set>
 #include <iostream>
 #include <cstdlib>
+#include <memory>
 #include "common.hpp"
 #include "parseinfo.hpp"
 
 #include "structure/fwstructure.hpp"
 #include "inferences/modelIteration/ModelIterator.hpp"
 #include "inferences/makeTwoValued/TwoValuedStructureIterator.hpp"
-#include <bits/shared_ptr.h>
 
 class LuaTraceMonitor;
 

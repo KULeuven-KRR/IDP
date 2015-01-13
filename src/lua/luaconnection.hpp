@@ -14,8 +14,8 @@
 
 #include <string>
 #include <sstream>
+#include <memory>
 #include "internalargument.hpp"
-#include <bits/shared_ptr.h>
 #include "inferences/modelIteration/ModelIterator.hpp"
 #include "lua.hpp" // TODO should move to cpp, but then have to remove templated addGlobal
 
