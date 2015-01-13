@@ -72,7 +72,32 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 			//If we have a situation !x y: P(x) | Q(x,y), we don't want to push the y down either as this introduces extra Tseitins
 			return qf;
 		}
-		vector<vector<Formula*> > formulalevels(quantforms.size() + 1); // Level at which they should be added (index 0 is before the first quantifier, ...)
+
+		// For each of the subformulas of the boolform, find out on which 'level' of quantification they belong.
+		// Level 0: before all quantified variables. This happens only if the subformula does not contain any
+		//          quantified variable, from any of the level
+		// Level X: This is the deepest level at which a a quantified variable is present in the subformula.
+		//          E.g. the formula
+		//				! x : ! y : ! z : !a : P(x) | Q(x,y) | R(x,y,z) | false.
+		//
+		//          should become:
+		//				false | ! x : (P(x) | ! y (Q(x,y) | ! z : (R(x,y,z) | ! a : false))).
+		//					  ^1            ^1            ^1                ^1        ^2
+		//          P(x) occurs at level 1 (after the ! x)
+		//          Q(x,y) occurs at level 2 (after the ! y)
+		//          R(x,y,z) occurs at level 3 (after the ! z)
+		//			'false' occurs at level 0 (before all quantifications)
+		//			=>  These 'levels' have to be joined in a boolform with connectors of the same sign as
+		//				the original bsubf. In the above example, these connectors are marked with "^1"
+		//
+		//          Note how no element occurs at level 4 (after the ! a), even though this level exists.
+		//          This means this 'level' should contain 'false' if bsubf is a disjunction, and 'true' if
+		//			bsubf is a conjunction. (This means it has to be an empty boolform of the same type).
+		//          The contents of this last level is marked with "^2.
+
+
+		// This vector stores, given an index, which formulas belong on this level.
+		vector<vector<Formula*> > formulalevels(quantforms.size() + 1);
 		conj = bsubf->conj();
 		Assert(bsubf->sign()==SIGN::POS);
 		for (auto i = bsubf->subformulas().cbegin(); i < bsubf->subformulas().cend(); ++i) {
@@ -96,13 +121,19 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 				if (prevform != NULL) {
 					subformulas.push_back(prevform);
 				} else {
+					// The previous formula was NULL, so this is the very first element we're constructing of our new formula.
 					if(subformulas.empty()){
+					    // If no formulas are put into this level, create an empty boolform of the
+						// same type (this is the construction of ^2 as seen above)
 						subformulas.push_back(new BoolForm(SIGN::POS, conj, { }, FormulaParseInfo()));
 					}
 				}
 				if (subformulas.size() == 1) {
+					// If this "level" only contains a single subformula, put this subformula directly beneath the quantform
 					prevform = new QuantForm(SIGN::POS, quantforms[i]->quant(), { splitvariables[j] }, subformulas.back(), quantforms[i]->pi());
 				} else {
+					// If this "level" only contains multiple subformulas, join them in a boolform using the same
+					// connector as the original bsubf (this is the construction of ^1 connectors in the above example)
 					prevform = new QuantForm(SIGN::POS, quantforms[i]->quant(), { splitvariables[j] },
 							new BoolForm(SIGN::POS, conj, subformulas, bsubf->pi()), quantforms[i]->pi());
 				}
