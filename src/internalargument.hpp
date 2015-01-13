@@ -328,8 +328,8 @@ struct InternalArgument {
 		LuaTraceMonitor* _tracemonitor;
 		UserProcedure* _procedure;
                 
-                WrapModelIterator* _modelIterator;
-                TwoValuedStructureIterator* _twoValuedIterator;
+        WrapModelIterator* _modelIterator;
+        TwoValuedStructureIterator* _twoValuedIterator;
 	} _value;
 
 	// Constructors

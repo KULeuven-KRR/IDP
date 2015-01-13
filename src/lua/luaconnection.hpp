@@ -86,6 +86,10 @@ LuaTraceMonitor* getLuaTraceMonitor();
 
 }
 
+/** 
+ * This class wraps a shared pointer of a ModelIterator in a dedicated object because 
+ * union types cannot handle custom destructors. See internalargument.hpp
+ */
 class WrapModelIterator {
 private:
     std::shared_ptr<ModelIterator> wrap;
@@ -94,8 +98,6 @@ public:
         this->wrap = wrap;
     }
     ~WrapModelIterator() {
-        wrap.reset();
-        wrap = NULL;
     }
     std::shared_ptr<ModelIterator> get(){
         return wrap;
