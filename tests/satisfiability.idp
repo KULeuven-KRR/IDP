@@ -51,7 +51,7 @@ procedure satnonreduced(){
 	stdoptions.reducedgrounding = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
-	stdoptions.timeout = 10
+	stdoptions.timeout = 15
 	return run()
 }
 
