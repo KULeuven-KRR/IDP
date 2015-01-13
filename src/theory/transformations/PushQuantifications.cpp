@@ -97,7 +97,7 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 					subformulas.push_back(prevform);
 				} else {
 					if(subformulas.empty()){
-						subformulas.push_back(new BoolForm(SIGN::POS, true, { }, FormulaParseInfo()));
+						subformulas.push_back(new BoolForm(SIGN::POS, conj, { }, FormulaParseInfo()));
 					}
 				}
 				if (subformulas.size() == 1) {
