@@ -80,9 +80,9 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 		//          E.g. the formula
 		//				! x : ! y : ! z : !a : P(x) | Q(x,y) | R(x,y,z) | false.
 		//
-		//          should become:
+		//			should become:
 		//				false | ! x : (P(x) | ! y (Q(x,y) | ! z : (R(x,y,z) | ! a : false))).
-		//					  ^1            ^1            ^1                ^1        ^2
+		//				      ^1            ^1            ^1                ^1        ^2
 		//          P(x) occurs at level 1 (after the ! x)
 		//          Q(x,y) occurs at level 2 (after the ! y)
 		//          R(x,y,z) occurs at level 3 (after the ! z)
