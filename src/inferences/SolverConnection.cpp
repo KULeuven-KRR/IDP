@@ -161,11 +161,18 @@ void setTranslator(MinisatID::Space* solver, GroundTranslator* translator) {
 MinisatID::ModelExpand* initsolution(MinisatID::Space* solver, int nbmodels, const litlist& assumptions) {
 	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
 	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
-  return solver->createModelExpand(solver, opts, createList(assumptions));
+	return solver->createModelExpand(solver, opts, createList(assumptions));
 }
 
 PCUnitPropagate* initpropsolution(MinisatID::Space* solver) {
 	return new PCUnitPropagate(solver, { });
+}
+
+MinisatID::ModelIterationTask* createIteratorSolution(PCSolver* solver, int nbmodels, const litlist& assumptions) {
+	auto print = getOption(IntType::VERBOSE_SOLVING)>1;
+	MinisatID::ModelExpandOptions opts(nbmodels, print ? MinisatID::Models::ALL : MinisatID::Models::NONE, MinisatID::Models::ALL);
+	auto l = createList(assumptions);
+	return new MinisatID::ModelIterationTask(solver, opts, l);
 }
 
 void addLiterals(const MinisatID::Model& model, GroundTranslator* translator, Structure* init) {

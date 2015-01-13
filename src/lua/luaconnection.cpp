@@ -25,6 +25,8 @@
 #include "insert.hpp"
 #include "structure/StructureComponents.hpp"
 #include "external/runidp.hpp"
+#include "lstate.h"
+#include "inferences/makeTwoValued/TwoValuedStructureIterator.hpp"
 
 using namespace std;
 using namespace LuaConnection;
@@ -80,7 +82,7 @@ const char* toCString(ArgType type) {
 				AT_DOMAINITERATOR, "domain_iterator")(AT_QUERY, "query")(AT_TERM, "term")(AT_FOBDD, "fobdd")(AT_FORMULA, "formula")(AT_THEORY,
 				"theory")(AT_OPTIONS, "options")(AT_NAMESPACE, "namespace")(AT_NIL, "nil")(AT_INT, "number")(AT_DOUBLE, "number")(AT_BOOLEAN, "boolean")(
 				AT_STRING, "string")(AT_TABLE, "table")(AT_PROCEDURE, "function")(AT_OVERLOADED, "overloaded")(AT_MULT, "mult")(AT_REGISTRY, "registry")(
-				AT_TRACEMONITOR, "tracemonitor");
+				AT_TRACEMONITOR, "tracemonitor")(AT_MODELITERATOR, "mxIterator")(AT_TWOVALUEDITERATOR, "twoValuedIterator");
 		init = true;
 	}
 	return argType2Name.at(type);
@@ -429,6 +431,14 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		lua_getfield(L, LUA_REGISTRYINDEX, arg._value._string->c_str());
 		result = 1;
 		break;
+	case AT_MODELITERATOR:
+		Assert(arg._value._modelIterator!=NULL);
+		result = addUserData(L, arg._value._modelIterator, arg._type);
+		break;
+        case AT_TWOVALUEDITERATOR:
+            Assert(arg._value._twoValuedIterator!=NULL);
+            result = addUserData(L, arg._value._twoValuedIterator, arg._type);
+            break;
 	case AT_TRACEMONITOR:
 		throw IdpException("Tracemonitors cannot be passed to lua.");
 	}
@@ -555,6 +565,12 @@ InternalArgument createArgument(int arg, lua_State* L) {
 		case AT_OVERLOADED:
 			ia._value._overloaded = *(OverloadedObject**) lua_touserdata(L, arg);
 			break;
+		case AT_MODELITERATOR:
+			ia._value._modelIterator = *(WrapModelIterator**) lua_touserdata(L, arg);
+			break;
+		case AT_TWOVALUEDITERATOR:
+                    ia._value._twoValuedIterator = *(TwoValuedStructureIterator**) lua_touserdata(L, arg);
+                    break;
 		default:
 			throw IdpException("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
@@ -876,6 +892,14 @@ int gcTerm(lua_State*) {
 int gcFobdd(lua_State*) {
 	// TODO
 	return 0;
+}
+
+int gcMXIterator(lua_State* L) {
+	return garbageCollect(*(WrapModelIterator**) lua_touserdata(L, 1));
+}
+
+int gcTwoValuedIterator(lua_State* L) {
+	return garbageCollect(*(TwoValuedStructureIterator**) lua_touserdata(L, 1));
 }
 
 /**
@@ -1752,6 +1776,49 @@ int symbolArity(lua_State* L) {
 	}
 }
 
+int mxNext(lua_State* L) {
+	if(lua_type(L, 1) == LUA_TNONE) {
+		lua_pushstring(L, "next expects an MXiterator. Use the \":\" operator.");
+		return lua_error(L);
+	}
+	InternalArgument ia = createArgument(1, L);
+	if(ia._type != AT_MODELITERATOR) {
+		lua_pushstring(L, "next expects an MXiterator. Use the \":\" operator.");
+		return lua_error(L);
+	}
+	WrapModelIterator* iter = ia._value._modelIterator;
+	shared_ptr<ModelIterator> it = iter->get();
+	auto result = it->calculate();
+	if(result.unsat) {
+		lua_pushnil(L);
+		return 1;
+	} else {
+		InternalArgument ia(result._models[0]);
+		return convertToLua(L, ia);
+	}
+}
+
+int twoValuedNext(lua_State* L) {
+    if (lua_type(L, 1) == LUA_TNONE) {
+        lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
+        return lua_error(L);
+    }
+    InternalArgument ia = createArgument(1, L);
+    if (ia._type != AT_TWOVALUEDITERATOR) {
+        lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
+        return lua_error(L);
+    }
+    TwoValuedStructureIterator* iter = ia._value._twoValuedIterator;
+    auto result = iter->next();
+    if (result == NULL) {
+        lua_pushnil(L);
+        return 1;
+    } else {
+        InternalArgument ia(result);
+        return convertToLua(L, ia);
+    }
+}
+
 typedef pair<int (*)(lua_State*), string> tablecolheader;
 
 void createNewTable(lua_State* L, ArgType type, vector<tablecolheader> elements) {
@@ -1943,6 +2010,38 @@ void overloadedMetaTable(lua_State* L) {
 	createNewTable(L, AT_OVERLOADED, elements);
 }
 
+void mxIteratorMetaTable(lua_State* L) {
+	vector<tablecolheader> elements;
+	elements.push_back(tablecolheader { &gcMXIterator, "__gc" });
+	elements.push_back(tablecolheader { &mxNext, "next" });
+	createNewTable(L, AT_MODELITERATOR, elements);
+	
+	//Make metatable own table:
+	//mt.__index = mt
+	string name = toCString(AT_MODELITERATOR);
+	luaL_getmetatable(L, name.c_str());
+	lua_pushvalue(L, -1);
+	string index = "__index";
+	lua_setfield(L, -2, index.c_str());
+	lua_pop(L, 1);
+}
+
+void twoValuedIteratorMetaTable(lua_State* L) {
+    vector<tablecolheader> elements;
+    elements.push_back(tablecolheader { &gcTwoValuedIterator, "__gc" });
+    elements.push_back(tablecolheader { &twoValuedNext, "next" });
+    createNewTable(L, AT_TWOVALUEDITERATOR, elements);
+
+    //Make metatable own table:
+    //mt.__index = mt
+    string name = toCString(AT_TWOVALUEDITERATOR);
+    luaL_getmetatable(L, name.c_str());
+    lua_pushvalue(L, -1);
+    string index = "__index";
+    lua_setfield(L, -2, index.c_str());
+    lua_pop(L, 1);
+}
+
 /**
  * Create all metatables
  */
@@ -1974,6 +2073,8 @@ void createMetaTables(lua_State* L) {
 	fobddMetaTable(L);
 
 	overloadedMetaTable(L);
+	mxIteratorMetaTable(L);
+        twoValuedIteratorMetaTable(L);
 }
 
 std::set<Namespace*> _checkedAddToGlobal;

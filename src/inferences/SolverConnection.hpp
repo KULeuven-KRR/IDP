@@ -28,6 +28,7 @@ namespace SolverConnection {
 	PCSolver* createsolver(int nbmodels = 0);
 	void setTranslator(PCSolver*, GroundTranslator* translator);
 	MinisatID::ModelExpand* initsolution(PCSolver*, int nbmodels, const litlist& assumptions = litlist());
+        MinisatID::ModelIterationTask* createIteratorSolution(PCSolver*, int nbmodels, const litlist& assumptions = litlist());
 	PCUnitPropagate* initpropsolution(PCSolver*);
 
 	// Parse model into structure

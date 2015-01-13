@@ -15,10 +15,13 @@
 #include <set>
 #include <iostream>
 #include <cstdlib>
+#include <memory>
 #include "common.hpp"
 #include "parseinfo.hpp"
 
 #include "structure/fwstructure.hpp"
+#include "inferences/modelIteration/ModelIterator.hpp"
+#include "inferences/makeTwoValued/TwoValuedStructureIterator.hpp"
 
 class LuaTraceMonitor;
 
@@ -43,6 +46,7 @@ class FuncInter;
 class TableIterator;
 class SortIterator;
 class FOBDD;
+class WrapModelIterator;
 
 /**
  * Types of arguments given to, or results produced by internal procedures
@@ -95,7 +99,11 @@ enum ArgType {
 	AT_REGISTRY, //!< a value stored in the registry of the lua state
 
 	// Also passable via lua
-	AT_TRACEMONITOR
+	AT_TRACEMONITOR,
+                
+        //ModelIterator
+        AT_MODELITERATOR,
+        AT_TWOVALUEDITERATOR
 };
 
 template<class T>
@@ -319,6 +327,9 @@ struct InternalArgument {
 
 		LuaTraceMonitor* _tracemonitor;
 		UserProcedure* _procedure;
+                
+        WrapModelIterator* _modelIterator;
+        TwoValuedStructureIterator* _twoValuedIterator;
 	} _value;
 
 	// Constructors
@@ -429,7 +440,14 @@ struct InternalArgument {
 			: _type(AT_TRACEMONITOR) {
 		_value._tracemonitor = v;
 	}
-
+	InternalArgument(WrapModelIterator* v)
+			: _type(AT_MODELITERATOR) {
+		_value._modelIterator = v;
+	}
+	InternalArgument(TwoValuedStructureIterator* v)
+			: _type(AT_TWOVALUEDITERATOR) {
+        	_value._twoValuedIterator = v;
+	}
 	// Inspectors
 	std::set<Sort*>* sort() const {
 		if (_type == AT_SORT) {

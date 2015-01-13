@@ -1,0 +1,36 @@
+vocabulary V{
+	type x isa int
+	c:x
+	P(x)
+}
+theory T:V{
+}
+structure S:V{
+	x = {1..2}
+}
+
+vocabulary V2 {}
+theory T2 : V2 {}
+
+/**
+ * Drop in replacement of modelexpand.
+ */
+procedure modeliterate(T, S, V) {
+    local iterator = modelIterator(T, S, V);
+    local nbModels = stdoptions.nbmodels;
+    local count = 0;
+    local solutions = {};
+    for model in iterator do
+        count = count + 1;
+        solutions[count] = model;
+    end
+    return solutions;
+}
+
+procedure main(){
+	stdoptions.nbmodels=10
+	sols = modeliterate(T,S)
+	if #sols==8 then return 1
+	else return 0
+	end
+}

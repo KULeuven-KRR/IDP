@@ -95,6 +95,37 @@ procedure modelexpandpartial(theory, structure, vocabulary) {
 }
 
 /**
+ * Returns an iterator iterating over all possible two-valued models satisfying 
+ * the given theory.
+ */
+procedure modelIterator(T, S, V) {
+    local mainIterator = nil;
+    if(V == nil) then
+        mainIterator = idpintern.createMXIterator(T, S);
+    else
+        mainIterator = idpintern.createMXIterator(T, S, V);
+    end
+    local preciseIterator = nil;
+    return function() 
+        while(true) do
+            if(preciseIterator == nil) then 
+                local n = mainIterator:next();
+                if(n == nil) then
+                    return nil;
+                end
+                //clean(n);
+                preciseIterator = idpintern.createTwoValuedIterator(n);
+            end
+            local out = preciseIterator:next();
+            if(out ~= nil) then
+                return out;
+            end
+            preciseIterator = nil;
+        end
+    end
+}
+
+/**
  * Checks satisfiability of the given theory-structure combination over the same vocabulary. 
  * Returns true if and only if there exists a model extending the structure satisfying the theory.
  */

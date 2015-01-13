@@ -52,6 +52,8 @@
 #include "names.hpp"
 #include "equal.hpp"
 #include "newvocabulary.hpp"
+#include "modeliteration.hpp"
+#include "twoValuedIterator.hpp"
 
 #include "answer.hpp" //easter egg
 
@@ -168,5 +170,8 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<FromMetaInference>());
 
 	inferences.push_back(make_shared<AnswerInference>());
+	inferences.push_back(make_shared<ModelIterationInference>());
+	inferences.push_back(make_shared<ModelIterationWithOutputVocInference>());
+        inferences.push_back(make_shared<TwoValuedIterator>());
 	return inferences;
 }

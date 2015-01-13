@@ -1,0 +1,101 @@
+procedure standardoptions(){
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.transformations=0
+	stdoptions.verbosity.creategrounders=0
+	stdoptions.groundwithbounds=true
+	stdoptions.liftedunitpropagation=true
+	stdoptions.satdelay=false
+	stdoptions.tseitindelay=false
+	stdoptions.lazyheur=false
+	stdoptions.xsb=false
+  	stdoptions.approxdef="none"
+}
+
+/**
+ * Drop in replacement of modelexpand.
+ */
+procedure modeliterate(T, S, V) {
+    local iterator = modelIterator(T, S, V);
+    local nbModels = stdoptions.nbmodels;
+    local count = 0;
+    local solutions = {};
+    for model in iterator do
+        count = count + 1;
+        solutions[count] = model;
+    end
+    return solutions;
+}
+
+procedure run(theory) {
+	if(theory == nil) then
+		//For backwards compatibility with tests calling run()
+		theory = T
+	end
+	if(allowed~=nil) then
+		if (not allowed()) then 
+			print("NOT running this test in this context!")
+			return 1
+		end
+	end
+	
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.transformations=0
+	stdoptions.verbosity.creategrounders=0
+	
+	stdoptions.mxtimeout = 2000
+	
+	stdoptions.nbmodels = getExpectedNbOfModels()+1 // NOTE: prevents finding tons of models and timing out when bugs are present
+	solutions = modeliterate(theory, S, Vout)
+	io.stderr:write("MX done\n")
+	standardoptions()
+	if(#solutions~=getExpectedNbOfModels()) then
+		if(#solutions>getExpectedNbOfModels()) then
+			io.stderr:write("Found more than "..getExpectedNbOfModels().." models.\n")
+		else
+			io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n") 
+		end
+		for i,v in ipairs(solutions) do
+			io.stderr:write(tostring(v))
+		end
+		check(solutions)
+		return 0
+	else
+		io.stderr:write("Found "..#solutions..", expected "..getExpectedNbOfModels().." models.\n")
+		return check(solutions)
+	end	
+}
+
+procedure check(solutions){
+	//avoid bootstrapping code while checking (too expensive to do it over and over again)
+	stdoptions.postprocessdefs = false
+	stdoptions.splitdefs = false
+	if(shouldNotCheck~=nil) then
+		print("NOTE: solutions unchecked because too expensive!")
+		return 1;
+	end
+	for i,v in ipairs(solutions) do
+		structure = v
+		if(Vout~=nil and Vout~=V)then
+			setvocabulary(structure,V)
+		end
+		if(not isconsistent(merge(S,structure)) or not value(T, structure)) then
+			io.stderr:write("Found an invalid solution:\n")
+			io.stderr:write(tostring(structure))
+			return 0
+		end
+	end
+	return 1
+}
+
+procedure nbmodelsOptionVerification() {
+	if getExpectedNbOfModels()<2 then return 1; end
+	stdoptions.nbmodels = getExpectedNbOfModels()-1
+	solutions = modeliterate(T, S, Vout)
+	if(#solutions==getExpectedNbOfModels()-1) then
+		return 1
+	else 
+		return 0
+	end
+}
