@@ -1,8 +1,6 @@
 #pragma once
 
 #include "utils/UniqueNames.hpp"
-#include "utils/BootstrappingUtils.hpp"
-#include "theory/TheoryUtils.hpp"
 #include "inferences/definitionevaluation/CalculateDefinitions.hpp"
 extern void parsefile(const std::string&);
 

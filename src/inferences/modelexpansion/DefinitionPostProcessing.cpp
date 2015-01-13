@@ -7,6 +7,8 @@
 
 #include "DefinitionPostProcessing.hpp"
 #include "ModelExpansion.hpp"
+#include "utils/BootstrappingUtils.hpp"
+#include "theory/TheoryUtils.hpp"
 
 std::vector<Definition*> simplifyTheoryForPostProcessableDefinitions(Theory* theory, Term* term, Structure* inputstructure, Vocabulary* fullvoc,
 		Vocabulary* outputvoc) {
