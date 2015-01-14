@@ -9,7 +9,7 @@
 #include "PartialStructureIterator.hpp"
 #include "Assert.hpp"
 
-TwoValuedStructureIterator::TwoValuedStructureIterator(Structure* original) {
+TwoValuedStructureIterator::TwoValuedStructureIterator(Structure* original) : position(0) {
 	structure = original->clone();
 	stack = create(original);
 }
