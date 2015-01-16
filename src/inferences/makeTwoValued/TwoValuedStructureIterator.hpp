@@ -21,6 +21,6 @@ public:
 	bool isFinished();
 private:
 	std::vector<TwoValuedSymbolIterator*> stack;
-	int position = 0;
+	int position;
 	Structure* structure;
 };

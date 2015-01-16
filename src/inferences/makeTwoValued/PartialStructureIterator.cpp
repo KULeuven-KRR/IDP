@@ -13,7 +13,7 @@
 #include "safeint3.hpp"
 
 PredicateSymbolIterator::PredicateSymbolIterator
-(const ElementTuple& tuple, std::pair<Predicate*, PredInter*> pair) : _tuple(tuple) {
+(const ElementTuple& tuple, std::pair<Predicate*, PredInter*> pair) : _tuple(tuple), state(0) {
 	_predicateInterpretation = pair;
 }
 
@@ -61,7 +61,7 @@ bool FunctionSymbolIterator::isFinished() {
 	return not _doPartial && _iterator == nullptr;
 }
 
-FunctionSymbolIterator::FunctionSymbolIterator(const ElementTuple& tuple, std::pair<Function*, FuncInter*> pair) : _tuple(tuple) {
+FunctionSymbolIterator::FunctionSymbolIterator(const ElementTuple& tuple, std::pair<Function*, FuncInter*> pair) : _tuple(tuple), _doPartial(false) {
 	_functionInterpretation = pair;
 
 	auto inter = _functionInterpretation.second;

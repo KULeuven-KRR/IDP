@@ -35,7 +35,7 @@ public:
 private:
 	std::pair<Predicate*, PredInter*> _predicateInterpretation;
 	ElementTuple _tuple;
-	int state = 0;
+	int state;
 };
 
 class FunctionSymbolIterator : public TwoValuedSymbolIterator {
@@ -51,7 +51,7 @@ private:
 	ElementTuple _tuple;
 	std::unique_ptr<SortIterator> _iterator;
 	ElementTuple _prevTuple;
-	bool _doPartial = false;
+	bool _doPartial;
 	std::vector<const DomainElement*> falsied;
 };
 
