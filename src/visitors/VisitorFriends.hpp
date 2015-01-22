@@ -101,6 +101,7 @@ class ReplaceVariableUsingEqualities;
 		friend class GraphFuncsAndAggs; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
+		friend class PushQuantificationsCompletely; \
 		friend class PullQuantifications; \
 		friend class EliminateUniversalQuantifications; \
 		friend class RemoveEquivalences; \

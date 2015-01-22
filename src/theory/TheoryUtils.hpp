@@ -252,9 +252,11 @@ T simplify(T theory, const Structure* structure);
 template<class T>
 T improveTheoryForInference(T theory, Structure* structure, bool skolemize, bool nbmodelsequivalent);
 
-/** Rewrite (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
+/** Rewrite (!x y: phi(x) | psi(y)) to (!x phi(x)) | (!y psi(y)) in the case phi does not contain y and psi not x. */
 Formula* pushQuantifiersAndNegations(Formula*);
 AbstractTheory* pushQuantifiersAndNegations(AbstractTheory*);
+/** Does what the above does, with the extra rewrite of (! x : phi & chi) to ((! x : phi) & (!x : chi)), and similarly for ?. */
+AbstractTheory* pushQuantifiersCompletely(AbstractTheory*);
 
 /** Rewrite (! x : phi(x)) to (~ ? x : ~ phi(x)) with the negation in front of phi pushed down. */
 Formula* eliminateUniversalQuantifications(Formula*);

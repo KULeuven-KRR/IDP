@@ -9,14 +9,18 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef REMOVEEQUATIONCHAINS_HPP_
-#define REMOVEEQUATIONCHAINS_HPP_
+#pragma once
+
 #include <cstddef>
 #include <vector>
 #include "visitors/TheoryMutatingVisitor.hpp"
 
 class Vocabulary;
 
+/**
+ * Removes EqChainForm formula's from theory by replacing them with conjunctions
+ * or disjunctions of binary comparisons (BoolForms and PredForms).
+ */
 class SplitComparisonChains: public TheoryMutatingVisitor {
 	VISITORFRIENDS()
 private:
@@ -31,5 +35,3 @@ public:
 protected:
 	Formula* visit(EqChainForm*);
 };
-
-#endif /* REMOVEEQUATIONCHAINS_HPP_ */
