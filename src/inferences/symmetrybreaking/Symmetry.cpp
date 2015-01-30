@@ -109,21 +109,22 @@ bool isBinarySymmetry(const Structure* s, const DomainElement* first, const Doma
 
 // TODO: method with variable argument number would be nice: #include <stdarg.h>
 // TODO: also, method belongs in AbstractGroundTheory
-void addClause(AbstractGroundTheory* gt, const int first, const int second){
+
+void addClause(AbstractGroundTheory* gt, const int first, const int second) {
 	int arr[] = {first, second};
-	vector<int> clause (arr, arr + sizeof(arr) / sizeof(arr[0]));
+	vector<int> clause(arr, arr + sizeof (arr) / sizeof (arr[0]));
 	gt->add(clause);
 }
 
-void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third){
+void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third) {
 	int arr[] = {first, second, third};
-	vector<int> clause (arr, arr + sizeof(arr) / sizeof(arr[0]));
+	vector<int> clause(arr, arr + sizeof (arr) / sizeof (arr[0]));
 	gt->add(clause);
 }
 
-void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third, const int fourth){
+void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third, const int fourth) {
 	int arr[] = {first, second, third, fourth};
-	vector<int> clause (arr, arr + sizeof(arr) / sizeof(arr[0]));
+	vector<int> clause(arr, arr + sizeof (arr) / sizeof (arr[0]));
 	gt->add(clause);
 }
 
@@ -131,6 +132,7 @@ void addClause(AbstractGroundTheory* gt, const int first, const int second, cons
  * 	given a symmetry in the form of two lists of domain elements which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
  */
 // TODO split up => Jo: how?
+
 void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<int>& literals, const list<int>& symLiterals) {
 	list<int>::const_iterator literals_it = literals.cbegin();
 	list<int>::const_iterator symLiterals_it = symLiterals.cbegin();
@@ -143,20 +145,22 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 
 	if (literals.size() > 0) {
 		// (~l1 | s(l1))
-		addClause(gt, -lit,symLit);
+		addClause(gt, -lit, symLit);
 	}
 	if (literals.size() > 1) {
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// (~t1 | l1 | ~s(l1))
-		addClause(gt, -tseitin,lit,-symLit);
+		addClause(gt, -tseitin, lit, -symLit);
 		// (t1 | ~l1)
-		addClause(gt, tseitin,-lit);
+		addClause(gt, tseitin, -lit);
 		// (t1 | s(l1))
-		addClause(gt, tseitin,symLit);
+		addClause(gt, tseitin, symLit);
 		// (~t1 | ~l2 | s(l2))
-		++literals_it; lit = *literals_it;
-		++symLiterals_it; symLit = *symLiterals_it;
-		addClause(gt, -tseitin,-lit,symLit);
+		++literals_it;
+		lit = *literals_it;
+		++symLiterals_it;
+		symLit = *symLiterals_it;
+		addClause(gt, -tseitin, -lit, symLit);
 	}
 	list<int>::const_iterator oneButLast_it = literals.cend();
 	--oneButLast_it;
@@ -164,17 +168,19 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const list<in
 		prevTseitin = tseitin;
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// ( ~tn | tn )
-		addClause(gt, -tseitin,prevTseitin);
+		addClause(gt, -tseitin, prevTseitin);
 		// ( ~tn | ln | ~s(ln) )
 		addClause(gt, -tseitin, lit, -symLit);
 		// ( tn | ~tn-1 | ~ln)
-		addClause(gt, tseitin,-prevTseitin,-lit);
+		addClause(gt, tseitin, -prevTseitin, -lit);
 		// ( tn | ~tn-1 | s(ln))
-		addClause(gt, tseitin,-prevTseitin,symLit);
+		addClause(gt, tseitin, -prevTseitin, symLit);
 		// ( ~tn | ~ln+1 | s(ln+1) )
-		++literals_it; lit = *literals_it;
-		++symLiterals_it; symLit = *symLiterals_it;
-		addClause(gt, -tseitin,-lit,symLit);
+		++literals_it;
+		lit = *literals_it;
+		++symLiterals_it;
+		symLit = *symLiterals_it;
+		addClause(gt, -tseitin, -lit, symLit);
 	}
 }
 
@@ -195,18 +201,20 @@ void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const
 
 	if (literals.size() > 0) {
 		// (~l1 | s(l1))
-		addClause(gt, -lit,symLit);
+		addClause(gt, -lit, symLit);
 	}
 	if (literals.size() > 1) {
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// (t1 | ~l1)
-		addClause(gt, tseitin,-lit);
+		addClause(gt, tseitin, -lit);
 		// (t1 | s(l1))
-		addClause(gt, tseitin,symLit);
+		addClause(gt, tseitin, symLit);
 		// (~t1 | ~l2 | s(l2))
-		++literals_it; lit = *literals_it;
-		++symLiterals_it; symLit = *symLiterals_it;
-		addClause(gt, -tseitin,-lit,symLit);
+		++literals_it;
+		lit = *literals_it;
+		++symLiterals_it;
+		symLit = *symLiterals_it;
+		addClause(gt, -tseitin, -lit, symLit);
 	}
 	list<int>::const_iterator oneButLast_it = literals.cend();
 	--oneButLast_it;
@@ -214,13 +222,15 @@ void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const
 		prevTseitin = tseitin;
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// ( tn | ~tn-1 | ~ln)
-		addClause(gt, tseitin,-prevTseitin,-lit);
+		addClause(gt, tseitin, -prevTseitin, -lit);
 		// ( tn | ~tn-1 | s(ln))
-		addClause(gt, tseitin,-prevTseitin,symLit);
+		addClause(gt, tseitin, -prevTseitin, symLit);
 		// ( ~tn | ~ln+1 | s(ln+1) )
-		++literals_it; lit = *literals_it;
-		++symLiterals_it; symLit = *symLiterals_it;
-		addClause(gt, -tseitin,-lit,symLit);
+		++literals_it;
+		lit = *literals_it;
+		++symLiterals_it;
+		symLit = *symLiterals_it;
+		addClause(gt, -tseitin, -lit, symLit);
 	}
 }
 
@@ -239,15 +249,16 @@ class OccurrencesCounter {
 private:
 	// Attributes
 	const Structure* structure_;
-	map<pair<const PFSymbol*, const Sort*> ,map<const DomainElement*, pair<int, int> > > occurrences_; //<! a pair of ints for each domain element representing its occurrences in ct and cf for each relation-sort combination
+	map<pair<const PFSymbol*, const Sort*>, map<const DomainElement*, pair<int, int> > > occurrences_; //<! a pair of ints for each domain element representing its occurrences in ct and cf for each relation-sort combination
 
 	// Static (should be static, is neither mutator nor inspector, counts stuff somewhere else)
 	map<const DomainElement*, pair<int, int> > count(PFSymbol*, Sort*);
 
 public:
 	// Constructors
+
 	OccurrencesCounter(const Structure* s)
-			: structure_(s) {
+	: structure_(s) {
 	}
 
 	// Inspectors
@@ -308,7 +319,7 @@ map<const DomainElement*, pair<int, int> > OccurrencesCounter::count(PFSymbol* r
  */
 pair<int, int> OccurrencesCounter::getOccurrences(const DomainElement* element, PFSymbol* relation, Sort* sort) {
 	Assert(!relation->argumentNrs(sort).empty());
-	auto occurrences_it = occurrences_.find(pair<const PFSymbol*, const Sort*> { relation, sort });
+	auto occurrences_it = occurrences_.find(pair<const PFSymbol*, const Sort*>{relation, sort});
 	if (occurrences_it != occurrences_.cend()) {
 		auto result_it = occurrences_it->second.find(element);
 		if (result_it != occurrences_it->second.cend()) {
@@ -389,12 +400,12 @@ const Structure* IVSet::getStructure() const {
  * 	The second invariant however, is not checked, and thus not enforced :(
  */
 IVSet::IVSet(const Structure* s, const set<const DomainElement*> elements, const set<Sort*> sorts, const set<PFSymbol*> relations)
-		: structure_(s), elements_(elements), sorts_(sorts), relations_(relations) {
-	Assert(elements_.size()>1);
+: structure_(s), elements_(elements), sorts_(sorts), relations_(relations) {
+	Assert(elements_.size() > 1);
 }
 
 ostream& IVSet::put(ostream& output) const {
-	output << "Set of interchangeable domain elements (" << getElements().size() <<" in size): \n";
+	output << "Set of interchangeable domain elements (" << getElements().size() << " in size): \n";
 	for (auto elements_it = getElements().cbegin(); elements_it != getElements().cend(); ++elements_it) {
 		output << print(*elements_it) << " | ";
 	}
@@ -404,9 +415,9 @@ ostream& IVSet::put(ostream& output) const {
 		output << print(*sorts_it) << " | ";
 	}
 	output << "\n";
-	if(isEnkelvoudig()){
+	if (isEnkelvoudig()) {
 		output << "The resulting symmetry group is broken completely.\n";
-	}else{
+	} else {
 		output << "The resulting symmetry group is probably not broken completely.\n";
 	}
 	return output;
@@ -476,7 +487,7 @@ bool IVSet::isEnkelvoudig() const {
  *	The given counter keeps track of already counted domain elements, so no double work is done.
  */
 vector<const IVSet*> IVSet::splitBasedOnOccurrences(OccurrencesCounter* counter) const {
-	Assert(counter->getStructure()==this->getStructure());
+	Assert(counter->getStructure() == this->getStructure());
 	map<vector<int>, set<const DomainElement*> > subSets;
 	auto occurrences = counter->getOccurrences(getElements(), getRelations(), getSorts());
 	for (auto occurrences_it = occurrences.cbegin(); occurrences_it != occurrences.cend(); ++occurrences_it) {
@@ -626,9 +637,9 @@ void IVSet::addSymBreakingPreds(AbstractGroundTheory* gt, bool nbModelsEquivalen
 	++bigger;
 	for (; bigger != getElements().cend(); ++bigger, ++smaller) {
 		pair<list<int>, list<int> > literals = getSymmetricLiterals(gt, *smaller, *bigger);
-		if(nbModelsEquivalent){
+		if (nbModelsEquivalent) {
 			addSymBreakingClausesToGroundTheory(gt, literals.first, literals.second);
-		}else{
+		} else {
 			addSymBreakingClausesToGroundTheoryShortest(gt, literals.first, literals.second);
 		}
 	}
@@ -751,7 +762,7 @@ void TheorySymmetryAnalyzer::markAsUnfitForSymmetry(const vector<Term*>& subTerm
 }
 
 void TheorySymmetryAnalyzer::visit(const PredForm* f) {
-//	clog << "Predform: " << print(f) << "\n";
+	//	clog << "Predform: " << print(f) << "\n";
 	if (f->symbol()->builtin() || f->symbol()->overloaded()) {
 		if (not is(f->symbol(), STDPRED::EQ)) {
 			for (unsigned int it = 0; it < f->args().size(); it++) {
@@ -798,13 +809,13 @@ void TheorySymmetryAnalyzer::visit(const EqChainForm* ef) {
 	traverse(ef);
 }
 
-void TheorySymmetryAnalyzer::visit(const AggForm* af){
+void TheorySymmetryAnalyzer::visit(const AggForm* af) {
 	markAsUnfitForSymmetry(af->getBound()->sort());
 	traverse(af);
 }
 
-void TheorySymmetryAnalyzer::visit(const AggTerm* at){
-	if(at->function()!=CARD){
+void TheorySymmetryAnalyzer::visit(const AggTerm* at) {
+	if (at->function() != CARD) {
 		markAsUnfitForSymmetry(at->sort());
 	}
 	traverse(at);
@@ -867,15 +878,17 @@ set<PFSymbol*> findNonTrivialRelationsWithSort(const Structure* s, const set<Sor
  *	@pre: t->vocabulary()==s->vocabulary()
  */
 set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, const Term* minimizeTerm) {
-	Assert(t->vocabulary()==s->vocabulary());
+	Assert(t->vocabulary() == s->vocabulary());
 	//cout << "token" << print(t) << endl;
 	TheorySymmetryAnalyzer tsa(s);
-	auto newt =t->clone();
-	FormulaUtils::graphFuncsAndAggs(newt, NULL, {}, true, false /*TODO check*/);
+	auto newt = t->clone();
+	FormulaUtils::graphFuncsAndAggs(newt, NULL,{}, true, false /*TODO check*/);
 	tsa.analyze(newt);
-	if(minimizeTerm!=NULL){tsa.analyzeForOptimization(minimizeTerm);}
+	if (minimizeTerm != NULL) {
+		tsa.analyzeForOptimization(minimizeTerm);
+	}
 
-// Find out what sorts can not be used in symmetry:
+	// Find out what sorts can not be used in symmetry:
 	set<Sort*> forbiddenSorts;
 	for (auto sort_it = tsa.getForbiddenSorts().cbegin(); sort_it != tsa.getForbiddenSorts().cend(); ++sort_it) {
 		forbiddenSorts.insert(*sort_it);
@@ -893,9 +906,9 @@ set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, 
 		clog << "\n";
 	}
 
-// Extract domain elements from forbidden sorts:
+	// Extract domain elements from forbidden sorts:
 	set<const DomainElement*> forbiddenElements;
-	for (auto domEl: tsa.getForbiddenElements()){
+	for (auto domEl : tsa.getForbiddenElements()) {
 		forbiddenElements.insert(domEl);
 	}
 
@@ -915,7 +928,7 @@ set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, 
 		clog << "\n";
 	}
 
-// Find out what sorts are used in the given theory:
+	// Find out what sorts are used in the given theory:
 	set<Sort*> allowedSorts;
 	for (auto relation_it = tsa.getUsedRelations().cbegin(); relation_it != tsa.getUsedRelations().cend(); ++relation_it) {
 		for (auto sort_it = (*relation_it)->sorts().cbegin(); sort_it != (*relation_it)->sorts().cend(); ++sort_it) {
@@ -933,25 +946,25 @@ set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, 
 		clog << "\n";
 	}
 
-// Extract elements that occur in interpretations of allowed sorts, and are not used in the forbidden sorts:
+	// Extract elements that occur in interpretations of allowed sorts, and are not used in the forbidden sorts:
 	map<const DomainElement*, set<Sort*> > allowedElements;
 	for (auto sort_it = allowedSorts.cbegin(); sort_it != allowedSorts.cend(); ++sort_it) {
-		for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it){
-			if(!forbiddenElements.count(*element_it)){
-				if(!allowedElements.count(*element_it)){
-					allowedElements.insert(pair<const DomainElement*, set<Sort*> >(*element_it,set<Sort*>()));
+		for (SortIterator element_it = (s->inter(*sort_it))->sortBegin(); not element_it.isAtEnd(); ++element_it) {
+			if (!forbiddenElements.count(*element_it)) {
+				if (!allowedElements.count(*element_it)) {
+					allowedElements.insert(pair<const DomainElement*, set<Sort*> >(*element_it, set<Sort*>()));
 				}
 				allowedElements.at(*element_it).insert(*sort_it);
 			}
 		}
 	}
 
-// Group allowed domain elements by the sorts they occur in:
+	// Group allowed domain elements by the sorts they occur in:
 	map<set<Sort*>, set<const DomainElement*> > initialIVSets;
-	for(auto elements_it = allowedElements.cbegin(); elements_it!=allowedElements.cend(); ++elements_it){
+	for (auto elements_it = allowedElements.cbegin(); elements_it != allowedElements.cend(); ++elements_it) {
 		set<Sort*> sortset = elements_it->second;
-		if(!initialIVSets.count(sortset)){
-			initialIVSets.insert(pair<set<Sort*>, set<const DomainElement*> >(sortset,set<const DomainElement*>()));
+		if (!initialIVSets.count(sortset)) {
+			initialIVSets.insert(pair<set<Sort*>, set<const DomainElement*> >(sortset, set<const DomainElement*>()));
 		}
 		initialIVSets.at(sortset).insert(elements_it->first);
 	}
@@ -959,28 +972,28 @@ set<const IVSet*> initializeIVSets(const Structure* s, const AbstractTheory* t, 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "Candidate sets of interchangeable domain elements: \n";
 		for (auto it = initialIVSets.cbegin(); it != initialIVSets.cend(); ++it) {
-			clog << "The elements: " ;
-			for(auto elements_it=it->second.cbegin(); elements_it!=it->second.cend(); ++elements_it){
+			clog << "The elements: ";
+			for (auto elements_it = it->second.cbegin(); elements_it != it->second.cend(); ++elements_it) {
 				clog << print(*elements_it) << " ";
 			}
 			clog << "\n";
-			clog << "With as sorts: " ;
-			for(auto sorts_it=it->first.cbegin(); sorts_it!=it->first.cend(); ++sorts_it){
+			clog << "With as sorts: ";
+			for (auto sorts_it = it->first.cbegin(); sorts_it != it->first.cend(); ++sorts_it) {
 				clog << print(*sorts_it) << " ";
 			}
 			clog << "\n";
 		}
 	}
 
-// Create invariant sets based on the grouped domain elements:
+	// Create invariant sets based on the grouped domain elements:
 	set<const IVSet*> result;
-	for(auto ivset_it = initialIVSets.cbegin(); ivset_it!=initialIVSets.cend(); ++ivset_it){
+	for (auto ivset_it = initialIVSets.cbegin(); ivset_it != initialIVSets.cend(); ++ivset_it) {
 		set<const DomainElement*> elements = ivset_it->second;
-		if(elements.size()>1){
+		if (elements.size() > 1) {
 			set<Sort*> sorts = ivset_it->first;
 			set<PFSymbol*> relations = findNonTrivialRelationsWithSort(s, sorts, tsa.getUsedRelations());
 			IVSet* ivset = new IVSet(s, elements, sorts, relations);
-			if(ivset->isRelevantSymmetry()){
+			if (ivset->isRelevantSymmetry()) {
 				result.insert(ivset);
 			} else {
 				delete ivset;
@@ -1056,7 +1069,7 @@ void splitByBinarySymmetries(set<const IVSet*>& potentials) {
  */
 
 vector<const IVSet*> findIVSets(const AbstractTheory* t, const Structure* s, const Term* minimizeTerm) {
-	Assert(t->vocabulary()==s->vocabulary());
+	Assert(t->vocabulary() == s->vocabulary());
 
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "Starting symmetry detection.\n";
@@ -1100,3 +1113,514 @@ void addSymBreakingPredicates(AbstractGroundTheory* gt, vector<const IVSet*> ivs
 	}
 }
 
+UFSymbolArg::UFSymbolArg() : forbiddenNode(new ForbiddenNode()) {
+}
+
+UFSymbolArg::~UFSymbolArg() {
+	for (auto pair : SAnodes) {
+		for (auto node : *pair.second) {
+			delete node;
+		}
+		delete pair.second;
+	}
+	for (auto pair : VARnodes) {
+		delete pair.second;
+	}
+	for (auto node : twoValuedNodes) {
+		delete node;
+	}
+	delete forbiddenNode;
+}
+
+UFNode* UFSymbolArg::get(const PFSymbol* sym, unsigned int arg, bool twoValued) {
+	if (twoValued) { // create a new, independent node, so that partitions are not merged
+		SymbolArgumentNode* result = new SymbolArgumentNode(sym, arg);
+		twoValuedNodes.push_back(result);
+		return result;
+	}
+
+	if (SAnodes.count(sym) == 0) {
+		std::vector<SymbolArgumentNode*>* argnodelist = new std::vector<SymbolArgumentNode*>();
+		for (unsigned int i = 0; i < sym->nrSorts(); ++i) {
+			argnodelist->push_back(new SymbolArgumentNode(sym, i));
+		}
+		SAnodes.insert({sym, argnodelist});
+	}
+	return SAnodes.at(sym)->at(arg);
+}
+
+UFNode* UFSymbolArg::get(const Variable* var) {
+	if (VARnodes.count(var) == 0) {
+		VARnodes.insert({var, new VariableNode(var)});
+	}
+	return VARnodes[var];
+}
+
+UFNode* UFSymbolArg::get(const Sort* s, const DomainElement* de) {
+	DomainElementNode* result = new DomainElementNode(s, de);
+	twoValuedNodes.push_back(result);
+	return result;
+}
+
+UFNode* UFSymbolArg::getForbiddenNode() {
+	return forbiddenNode;
+}
+
+UFNode* UFSymbolArg::find(UFNode* in) {
+	UFNode* rt = in->parent;
+	while (rt != rt->parent) { // find root
+		rt = rt->parent;
+	}
+	while (in != rt) { // adjust root all the way up
+		UFNode* oldparent = in->parent;
+		in->parent = rt;
+		in = oldparent;
+	}
+	return rt;
+}
+
+void UFSymbolArg::merge(UFNode* first, UFNode* second) {
+	UFNode* x = find(first);
+	UFNode* y = find(second);
+	if (x == y) return;
+	// make smaller root point to larger one
+	if (x->depth < y->depth) {
+		x->parent = y;
+	} else if (x->depth > y->depth) {
+		y->parent = x;
+	} else {
+		y->parent = x;
+		x->depth = x->depth + 1;
+	}
+}
+
+void UFSymbolArg::getPartition(std::unordered_multimap<UFNode*, UFNode*>& out) {
+	for (auto pair : SAnodes) {
+		for (auto node : *pair.second) {
+			out.insert({find(node), node});
+		}
+	}
+	for (auto pair : VARnodes) {
+		out.insert({find(pair.second), pair.second});
+	}
+	for (auto node : twoValuedNodes) {
+		out.insert({find(node), node});
+	}
+	out.insert({find(forbiddenNode), forbiddenNode});
+}
+
+void UFSymbolArg::printPartition(std::ostream& ostr) {
+	std::unordered_multimap<UFNode*, UFNode*> partition;
+	getPartition(partition);
+	UFNode* currentrep = nullptr;
+	for (auto pair : partition) {
+		if (pair.first != currentrep) {
+			if (currentrep != nullptr) {
+				ostr << std::endl;
+			}
+			currentrep = pair.first;
+			currentrep->put(ostr);
+			ostr << " <- ";
+		}
+		pair.second->put(ostr);
+		ostr << ", ";
+	}
+	ostr << std::endl;
+}
+
+InterchangeabilityAnalyzer::InterchangeabilityAnalyzer(const Structure* s)
+: _structure(s), subNode(nullptr), disjointSet(UFSymbolArg()) {
+}
+
+void InterchangeabilityAnalyzer::analyze(const AbstractTheory* t) {
+	t->accept(this);
+}
+
+void InterchangeabilityAnalyzer::analyzeForOptimization(const Term* t) {
+	t->accept(this);
+	disjointSet.merge(disjointSet.getForbiddenNode(), subNode);
+}
+
+void InterchangeabilityAnalyzer::visit(const PredForm* f) {
+	if (f->symbol()->builtin()) {
+		if (is(f->symbol(), STDPRED::EQ)) {
+			// due to lack of multiple dispatch we're simply storing the fact that the upper symbol is an equality
+			UFNode* equalityRep = nullptr;
+			for (size_t n = 0; n < f->subterms().size(); ++n) {
+				f->subterms()[n]->accept(this);
+				if (equalityRep == nullptr) {
+					equalityRep = subNode;
+				} else {
+					disjointSet.merge(equalityRep, subNode);
+				}
+			}
+		} else { // (is(f->symbol(), STDPRED::GT) || is(f->symbol(), STDPRED::LT))
+			// all occurrences in GT or LT are asymmetric:
+			for (size_t n = 0; n < f->subterms().size(); ++n) {
+				f->subterms()[n]->accept(this);
+				disjointSet.merge(disjointSet.getForbiddenNode(), subNode);
+			}
+		}
+	} else {
+		for (size_t n = 0; n < f->subterms().size(); ++n) {
+			f->subterms()[n]->accept(this);
+			disjointSet.merge(disjointSet.get(f->symbol(), n, _structure->inter(f->symbol())->approxTwoValued()), subNode);
+		}
+	}
+}
+
+void InterchangeabilityAnalyzer::visit(const EqChainForm*) {
+	Assert(false); // Assuming all eqchainforms are rewritten
+}
+
+void InterchangeabilityAnalyzer::visit(const EquivForm*) {
+	Assert(false); // Assuming all equivforms are rewritten
+}
+
+void InterchangeabilityAnalyzer::visit(const VarTerm* vt) {
+	subNode = disjointSet.get(vt->var());
+}
+
+void InterchangeabilityAnalyzer::visit(const FuncTerm* t) {
+	if (t->function()->builtin()) {
+		if (is(t->function(), STDFUNC::MINELEM)) { // treat this like a DomainTerm
+			Sort* srt = t->function()->outsort();
+			auto st = _structure->inter(srt);
+			Assert(not st->empty());
+			subNode = disjointSet.get(srt, st->first());
+		} else if (is(t->function(), STDFUNC::MAXELEM)) { // treat this like a DomainTerm
+			Sort* srt = t->function()->outsort();
+			auto st = _structure->inter(srt);
+			Assert(not st->empty());
+			subNode = disjointSet.get(srt, st->last());
+		} else { // all other builtin functions are asymmetrical
+			size_t n;
+			for (n = 0; n < t->subterms().size(); ++n) {
+				t->subterms()[n]->accept(this);
+				disjointSet.merge(disjointSet.getForbiddenNode(), subNode);
+			}
+			subNode = disjointSet.getForbiddenNode();
+		}
+	} else {
+		size_t n;
+		for (n = 0; n < t->subterms().size(); ++n) {
+			t->subterms()[n]->accept(this);
+			disjointSet.merge(disjointSet.get(t->function(), n, _structure->inter(t->function())->approxTwoValued()), subNode);
+		}
+		Assert(n == t->function()->nrSorts() - 1);
+		subNode = disjointSet.get(t->function(), n, _structure->inter(t->function())->approxTwoValued());
+	}
+}
+
+void InterchangeabilityAnalyzer::visit(const DomainTerm* dt) {
+	subNode = disjointSet.get(dt->_sort, dt->_value);
+}
+
+void InterchangeabilityAnalyzer::visit(const AggTerm* at) {
+	traverse(at);
+	subNode = disjointSet.getForbiddenNode(); // aggregate terms themselves break symmetry
+}
+
+void InterchangeabilityAnalyzer::visit(const QuantSetExpr* s) {
+	s->getTerm()->accept(this);
+	disjointSet.merge(disjointSet.getForbiddenNode(), subNode); // functions used in aggregate terms are asymmetric
+	s->getCondition()->accept(this);
+}
+
+void detectInterchangeability(const AbstractTheory* t, const Structure* s, const Term* obj) {
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
+		clog << "*** DETECTING SYMMETRY ***" << std::endl;
+	}
+
+	AbstractTheory* theo = t->clone();
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+		clog << "pushing quantifiers completely..." << std::endl;
+	}
+	theo = FormulaUtils::pushQuantifiersCompletely(theo);
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 2) {
+		theo->put(clog);
+	}
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+		clog << "partitioning connected arguments in theory..." << std::endl;
+	}
+	InterchangeabilityAnalyzer ia = InterchangeabilityAnalyzer(s);
+	ia.analyze(theo);
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+		ia.disjointSet.printPartition(clog);
+	}
+	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+		clog << "detecting interchangeable domains..." << std::endl;
+	}
+	// First, extract sets of related arguments not occurring in asymmetric symbols.
+	// A symbol is asymmetric if it has more than 1 argument, and the symbol has at least two of its three interpretation tables non-empty.
+	// The second condition is equivalent to stating that the symbol is not completely true, not completely false, or not completely unknown.
+	std::unordered_multimap<UFNode*, UFNode*> partition;
+	ia.disjointSet.getPartition(partition);
+
+	std::vector<InterchangeabilitySet*> intersets;
+	InterchangeabilitySet* currentset = nullptr;
+	UFNode* currentrep = nullptr;
+
+	for (auto pair : partition) {
+		if (pair.first != currentrep) { // we're entering a new partition, so reinitialize
+			currentrep = pair.first;
+			if (currentset != nullptr) {
+				intersets.push_back(currentset);
+			}
+			currentset = new InterchangeabilitySet(s);
+		}
+		if (currentset != nullptr) { // add the UFNode information in the current partition
+			bool stilSymmetric = pair.second->addTo(currentset);
+			if (!stilSymmetric) { // no longer symmetric, erase current interchangeability set
+				delete currentset;
+				currentset = nullptr;
+			}
+		}
+	}
+	if (currentset != nullptr) { // last set is not yet added
+		intersets.push_back(currentset);
+	}
+
+	for (auto ichset : intersets) {
+		ichset->calculateInterchangeableSets();
+		if (getOption(IntType::VERBOSE_SYMMETRY) > 2) {
+			ichset->print(clog);
+		}
+		std::vector<InterchangeabilityGroup*> intchgroups;
+		ichset->getIntchGroups(intchgroups);
+		for (auto icg : intchgroups) {
+			if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
+				icg->print(clog);
+			}
+		}
+	}
+
+
+	for (size_t i = 0; i < intersets.size(); ++i) {
+		delete intersets[i];
+	}
+	delete theo;
+}
+
+InterchangeabilityGroup::InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<const PFSymbol*> syms, std::vector<unsigned int> args) {
+	for (auto de : domels) {
+		elements.insert(de);
+	}
+	for (size_t i = 0; i < syms.size(); ++i) {
+		symbols.insert({syms.at(i), args.at(i)});
+	}
+}
+
+InterchangeabilityGroup::~InterchangeabilityGroup() {
+}
+
+void InterchangeabilityGroup::print(std::ostream& ostr) {
+	for (auto paar : symbols) {
+		paar.first->put(ostr);
+		ostr << "/" << paar.second << " ";
+	}
+	ostr << "<- ";
+	for (auto de : elements) {
+		de->put(ostr);
+		ostr << " ";
+	}
+	ostr << std::endl;
+}
+
+unsigned int InterchangeabilityGroup::getNrSwaps() {
+	return (elements.size()*(elements.size() - 1)) / 2;
+}
+
+bool InterchangeabilitySet::add(const PFSymbol* p, unsigned int arg) {
+	if (symbolargs.count(p) == 0) {
+		symbolargs.insert({p, new std::unordered_set<unsigned int>()});
+	}
+	symbolargs[p]->insert(arg);
+	sorts.insert(p->sort(arg));
+	return true;
+}
+
+bool InterchangeabilitySet::add(const Sort* s) {
+	sorts.insert(s);
+	return true;
+}
+
+bool InterchangeabilitySet::add(const DomainElement* de) {
+	occursAsConstant.insert(de);
+	return true;
+}
+
+void InterchangeabilitySet::calculateInterchangeableSets() {
+	std::unordered_set<const DomainElement*> allElements;
+	// run over all sorts to find relevant domain elements
+	for (auto s : sorts) {
+		auto sortiter = _struct->inter(s)->sortBegin();
+		while (!sortiter.isAtEnd()) {
+			if (occursAsConstant.count(*sortiter) == 0) {
+				allElements.insert(*sortiter);
+			}
+			++sortiter;
+		}
+	}
+	// partition domain elements based on isEqual method of ElementOccurrence
+	for (auto de : allElements) {
+		std::shared_ptr<ElementOccurrence> eloc(new ElementOccurrence(this, de));
+		auto part_iter = partition.insert({eloc, new ElementTuple()});
+		part_iter.first->second->push_back(de);
+	}
+}
+
+void InterchangeabilitySet::getIntchGroups(std::vector<InterchangeabilityGroup*>& out) {
+	std::vector<const PFSymbol*> currentSyms;
+	std::vector<unsigned int> currentArgs;
+
+	std::shared_ptr<ElementOccurrence> currentkey = nullptr;
+	for (auto it : partition) {
+		currentSyms.clear();
+		currentArgs.clear();
+		// Add the partition if sufficient number of elements:
+		if (it.second->size() < 2) {
+			continue;
+		}
+		for (auto sa : symbolargs) {
+			const PFSymbol* symb = sa.first;
+			if (!_struct->inter(symb)->approxTwoValued()) { // it's worth building sym-breaking formula's for this symbol
+				for (auto arg : *sa.second) {
+					currentSyms.push_back(symb);
+					currentArgs.push_back(arg);
+				}
+			}
+		}
+		if (currentSyms.size() > 0) {
+			out.push_back(new InterchangeabilityGroup(*it.second, currentSyms, currentArgs));
+		}
+	}
+}
+
+void InterchangeabilitySet::print(std::ostream& ostr) {
+	for (auto sa : symbolargs) {
+		sa.first->put(ostr);
+		for (auto arg : *sa.second) {
+			ostr << "/" << arg;
+		}
+		ostr << ", ";
+	}
+	ostr << ": ";
+
+	for (auto paar : partition) {
+		ostr << paar.first->hash << ", ";
+		for (auto de : *paar.second) {
+			de->put(ostr);
+			ostr << " ";
+		}
+		ostr << "| ";
+	}
+	ostr << std::endl;
+}
+
+ElementOccurrence::ElementOccurrence(InterchangeabilitySet* intset, const DomainElement* de) : ics(intset), domel(de) {
+	hash = (size_t) ics;
+	for (auto sa : ics->symbolargs) {
+		const PFSymbol* symb = sa.first;
+		if (symb->nrSorts() == 1) { // use unary symbols to create hash function
+			PredInter* pi = ics->_struct->inter(symb);
+			ElementTuple tmp;
+			tmp.push_back(de);
+			if (pi->isFalse(tmp)) {
+				hash = (hash << 5)^(hash * 3);
+			} else if (pi->isTrue(tmp)) {
+				hash = (hash << 7)^(hash * 5);
+			} else {
+				hash = (hash << 3)^(hash * 7);
+			}
+		}
+	}
+}
+
+bool checkTableForSwapConsistency(PredTable* table, const DomainElement* first, const DomainElement* second, std::unordered_set<unsigned int>* args) {
+	if (table->arity() == 1) {
+		return table->contains({first}) == table->contains({second});
+	}
+
+	// else: table has greater arity, iterate over table to check whether it is symmetrical under swap
+	TableIterator table_it = table->begin();
+	while (!table_it.isAtEnd()) {
+		// create symmetrical tuple
+		const ElementTuple& origTuple = *table_it;
+		ElementTuple swapTuple(origTuple.size());
+		bool swapIsDifferent = false;
+		for (unsigned int i = 0; i < origTuple.size(); ++i) {
+			if (args->count(i) > 0) {
+				if (origTuple[i] == first) {
+					swapTuple[i] = second;
+					swapIsDifferent = true;
+				} else if (origTuple[i] == second) {
+					swapTuple[i] = first;
+					swapIsDifferent = true;
+				} else {
+					swapTuple[i] = origTuple[i];
+				}
+			} else {
+				swapTuple[i] = origTuple[i];
+			}
+		}
+		if (swapIsDifferent && !table->contains(swapTuple)) {
+			return false;
+		}
+		++table_it;
+	}
+	return true;
+}
+
+bool ElementOccurrence::isEqualTo(const ElementOccurrence& other) const {
+	if (other.ics != ics) {
+		return false;
+	}
+	for (auto sa : ics->symbolargs) {
+		const PFSymbol* symb = sa.first;
+		PredInter* pi = ics->_struct->inter(symb);
+		// run over true and false table to check whether symmetrical tuples are also in there:
+		if (!checkTableForSwapConsistency(pi->ct(), domel, other.domel, sa.second)) {
+			return false;
+		}
+		if (!pi->approxTwoValued() && !checkTableForSwapConsistency(pi->cf(), domel, other.domel, sa.second)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void SymbolArgumentNode::put(std::ostream & outstr) {
+	symbol->put(outstr);
+	outstr << "/" << arg;
+}
+
+bool SymbolArgumentNode::addTo(InterchangeabilitySet * ichset) {
+	return ichset->add(symbol, arg);
+}
+
+void VariableNode::put(std::ostream & outstr) {
+	var->put(outstr);
+}
+
+bool VariableNode::addTo(InterchangeabilitySet * ichset) {
+	return ichset->add(var->sort());
+}
+
+void DomainElementNode::put(std::ostream & outstr) {
+	s->put(outstr);
+	outstr << "::";
+	de->put(outstr);
+}
+
+bool DomainElementNode::addTo(InterchangeabilitySet * ichset) {
+	return ichset->add(de);
+}
+
+void ForbiddenNode::put(std::ostream & outstr) {
+	outstr << "ASYMMETRIC";
+}
+
+bool ForbiddenNode::addTo(InterchangeabilitySet * ichset) {
+	return false;
+}

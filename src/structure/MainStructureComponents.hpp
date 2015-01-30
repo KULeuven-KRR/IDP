@@ -478,7 +478,6 @@ public:
 	PredInter* clone() const;
 	void put(std::ostream& stream) const;
 
-
 private:
 	//Can only be called if from and to are inverse tables
 	void moveTupleFromTo(const ElementTuple& tuple, PredTable* from, PredTable* to, bool ignoresortchecks);

@@ -172,6 +172,9 @@ private:
 		}
 		setOption(SATISFIABILITYDELAY, satdelay);
 		setOption(TSEITINDELAY, tseitindelay);
+		
+		// Detect symmetry
+		detectInterchangeability(_theory,_structure);
 
 		// Approximation
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
