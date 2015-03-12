@@ -37,7 +37,7 @@ std::set<PFSymbol*> ApproxRecursionOverNegationSymbols::execute(const Definition
 	for (auto rule : d->rules()) {
 		auto occs = FormulaUtils::collectSymbolOccurences(rule->body());
 		for (auto occ : occs) {
-			if (occ.second != Context::POSITIVE) { //Negative or both
+			if (occ.second != Context::POSITIVE && defsymbols.find(occ.first) != defsymbols.end()) { //Defined symbol negative or both
 				result.insert(occ.first);
 			}
 		}
