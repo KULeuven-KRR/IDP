@@ -184,6 +184,7 @@ public:
 private:
 	Lit getLiteral(SymbolOffset offset, const ElementTuple&);
 public:
+	Lit conjunction (const Lit l, const Lit r, TsType tstype); //Returns the conjunction of l and r
 	Lit reify(const litlist& cl, bool conj, TsType tp);
 	Lit reify(Weight bound, CompType comp, AggFunction aggtype, SetId setnr, TsType tstype);
 	Lit reify(CPTerm*, CompType, const CPBound&, TsType);
