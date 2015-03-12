@@ -1,0 +1,33 @@
+vocabulary V {
+	type pos isa nat
+	type id isa nat
+	
+	
+	
+	pointX(id):pos
+	
+    
+    
+    
+    type Int isa int
+    cost : Int 
+}
+
+structure S : V {
+    Int = {0..5}
+	pos = {0..1}
+	id = {1..2}
+}
+
+theory T : V {
+
+
+	
+	cost>0.
+    cost = sum{x y :  pointX(x) > pointX(y) : pointX(x)-pointX(y)}.
+    
+}
+
+procedure getExpectedNbOfModels(){
+	return 2
+}

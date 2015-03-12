@@ -407,17 +407,19 @@ CPTerm* GroundTheory<Policy>::foldCPTerm(CPTerm* cpterm, DefId defnr) {
 			if (cprelation != NULL) {
 				auto left = foldCPTerm(cprelation->left(), defnr);
 				auto leftassetterm = dynamic_cast<CPSetTerm*>(left);
-				if (leftassetterm!=NULL && leftassetterm->type()==AggFunction::SUM and cprelation->comp() == CompType::EQ) {
+				if (leftassetterm != NULL && leftassetterm->type() == AggFunction::SUM and cprelation->comp() == CompType::EQ) {
 					Assert(cprelation->right()._isvarid and cprelation->right()._varid == varid);
 					insertAtEnd(newvarids, leftassetterm->varids());
-					insertAtEnd(newconditions, leftassetterm->conditions());
+					//The new condition is the conjunction of the condition in the original set and the condition in the nested set
+					for (auto condition2 : leftassetterm->conditions()) {
+						auto newcond = translator()->conjunction(oldcondition, condition2, TsType::EQ);
+						newconditions.push_back(newcond);
+					}
 					for (auto weight2 : leftassetterm->weights()) {
 						newweights.push_back(weight1 * weight2);
 					}
 					continue;
-				}else if(leftassetterm!=NULL
-						and leftassetterm->type()==AggFunction::PROD
-						and cprelation->comp() == CompType::EQ
+				} else if (leftassetterm != NULL and leftassetterm->type() == AggFunction::PROD and cprelation->comp() == CompType::EQ
 						and leftassetterm->varids().size()==2){ // of the form varid = prod{(true,int),(true, term)} OR varid = prod{(true,int),(cond,term)} and oldcondition = true
 					auto varone = leftassetterm->varids()[0];
 					auto vartwo = leftassetterm->varids()[1];
