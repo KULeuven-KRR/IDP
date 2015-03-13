@@ -937,8 +937,8 @@ public:
 		_printTermsAsBlock = false;
 		Assert(isTheoryOpen());
 		output() << "w" <<print(cpt->type());
-		bool printweightinset = cpt->weights().size()!=1;
-		if(not printweightinset){
+		bool printweightinset = cpt->weights().size() > 1;
+		if(cpt->weights().size() == 1){
 			output() <<cpt->weights().back() <<"*";
 		}
 		output() <<"[ ";
