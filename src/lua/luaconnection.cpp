@@ -1613,9 +1613,11 @@ int optionsNewIndex(lua_State* L) {
 		/*case AT_DOUBLE: // TODO currently there are no float options
 		 return attempToSetValue(L, opts, option, value._value._double);*/
 	case AT_STRING:
+	{
 		string str2 = *(value._value._string);
 		delete(value._value._string);
 		return attempToSetValue(L, opts, option, str2);
+	}
 	case AT_BOOLEAN:
 		return attempToSetValue(L, opts, option, value._value._boolean);
 	default:
