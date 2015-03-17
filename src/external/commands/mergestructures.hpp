@@ -61,7 +61,8 @@ public:
 		// Predicates
 		for (auto pred2inter : result->getPredInters()) {
 			auto pred = pred2inter.first;
-			bool wasTwoValued = firstStructure->inter(pred)->approxTwoValued() | secondStructure->inter(pred)->approxTwoValued();
+			bool wasTwoValued =  (firstStructure->vocabulary()->contains(pred) && firstStructure->inter(pred)->approxTwoValued())
+									|| (secondStructure->vocabulary()->contains(pred) && secondStructure->inter(pred)->approxTwoValued());
 			if (wasTwoValued) {
 				if (not pred2inter.second->approxTwoValued()) {
 					std::stringstream ss;
@@ -73,7 +74,8 @@ public:
 		// Functions
 		for (auto func2inter : result->getFuncInters()) {
 			auto func = func2inter.first;
-			bool wasTwoValued = firstStructure->inter(func)->approxTwoValued() | secondStructure->inter(func)->approxTwoValued();
+			bool wasTwoValued = (firstStructure->vocabulary()->contains(func) && firstStructure->inter(func)->approxTwoValued())
+							|| (secondStructure->vocabulary()->contains(func) &&  secondStructure->inter(func)->approxTwoValued());
 			if (wasTwoValued) {
 				if (not func2inter.second->approxTwoValued()) {
 					std::stringstream ss;
@@ -100,21 +102,29 @@ public:
 
 		// Sorts
 		for (auto sort2inter : result->getSortInters()) {
-			addToSortTable(sort2inter.second, secondStructure->inter(sort2inter.first));
+			auto sort = sort2inter.first;
+			if (secondStructure->vocabulary()->contains(sort)) {
+				addToSortTable(sort2inter.second, secondStructure->inter(sort));
+			}
 		}
 		// Predicates
 		for (auto pred2inter : result->getPredInters()) {
-			addToPredInter(pred2inter.second, secondStructure->inter(pred2inter.first));
+			auto pred = pred2inter.first;
+			if (secondStructure->vocabulary()->contains(pred)) {
+				addToPredInter(pred2inter.second, secondStructure->inter(pred));
+			}
 		}
 		// Functions
 		for (auto func2inter : result->getFuncInters()) {
 			auto func = func2inter.first;
 			auto funcinter = func2inter.second;
 
-			//In case that the sorts have changed, the functable becomes invalid and we should remove it.
-			//We do this by setting thegraphinter again.
-			funcinter->graphInter(funcinter->graphInter()->clone(funcinter->universe()));
-			addToPredInter(funcinter->graphInter(), secondStructure->inter(func)->graphInter());
+			if (secondStructure->vocabulary()->contains(func)) {
+				//In case that the sorts have changed, the functable becomes invalid and we should remove it.
+				//We do this by setting thegraphinter again.
+				funcinter->graphInter(funcinter->graphInter()->clone(funcinter->universe()));
+				addToPredInter(funcinter->graphInter(), secondStructure->inter(func)->graphInter());
+			}
 		}
 
 		result->clean();
