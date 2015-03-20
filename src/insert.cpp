@@ -69,9 +69,9 @@ string predName(const longname& name, const vector<Sort*>& vs) {
 	stringstream sstr;
 	sstr << print(name);
 	if (!vs.empty()) {
-		sstr << '[' << vs[0]->name();
+		sstr << '[' << toString(vs[0]);
 		for (unsigned int n = 1; n < vs.size(); ++n)
-			sstr << ',' << vs[n]->name();
+			sstr << ',' << toString(vs[n]);
 		sstr << ']';
 	}
 	return sstr.str();
@@ -89,11 +89,11 @@ string funcName(const longname& name, const vector<Sort*>& vs) {
 	stringstream sstr;
 	sstr << print(name) << '[';
 	if (vs.size() > 1) {
-		sstr << vs[0]->name();
+		sstr << toString(vs[0]);
 		for (unsigned int n = 1; n < vs.size() - 1; ++n)
-			sstr << ',' << vs[n]->name();
+			sstr << ',' << toString(vs[n]);
 	}
-	sstr << ':' << vs.back()->name() << ']';
+	sstr << ':' << toString(vs.back()) << ']';
 	return sstr.str();
 }
 
