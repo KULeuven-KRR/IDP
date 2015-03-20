@@ -54,8 +54,9 @@ plist getLocations(const LocatedList& elems) {
 /**
  * Rewrite a vector of strings s1,s2,...,sn to the single string s1::s2::...::sn
  */
+
 template<>
-std::ostream& print(std::ostream& output, const longname& vs) {
+std::ostream& operator<<(std::ostream& output, const longname& vs){
 	if (!vs.empty()) {
 		output << vs[0];
 		for (unsigned int n = 1; n < vs.size(); ++n) {
