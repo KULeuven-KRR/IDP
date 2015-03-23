@@ -1,0 +1,54 @@
+vocabulary V {
+    type Int = {0..100} isa int 
+    type Software constructed from {Windows,Linux,Office,LaTeX}
+    isOS(Software)
+    install(Software)
+    multiboot : Int
+
+    cost : Int
+
+    cost(Software):Int
+    partial bootCost(Int):Int
+}
+
+theory T : V {
+    install(Office)=>install(Windows).
+    install(LaTeX) =>install(Linux).
+
+    multiboot = #{x[Software] : install(x) & isOS(x)}.
+   	multiboot > 0.
+
+    cost = sum{s[Software] : install(s) : cost(s)} + bootCost(multiboot).
+
+ {
+        install(Windows).
+        
+        isOS(Windows).
+        isOS(Linux).
+
+        cost(Windows) = 50.
+        cost(Linux) = 10.
+        cost(Office) = 40.
+        cost(LaTeX) = 0.
+
+        ! x [Int] : bootCost(x)= x.
+    }
+
+
+}
+
+structure S : V {
+
+}
+
+procedure main(){
+stdoptions.cpsupport=false
+    
+    stdoptions.nbmodels = 0
+    printmodels(modelexpand(T,S))
+
+
+    print(optimalpropagate(T,S))
+    
+    return 1
+}
