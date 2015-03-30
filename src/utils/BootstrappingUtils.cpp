@@ -183,26 +183,26 @@ Options* setBootstrappingOptions() {
 	//that specific bootstrapping procedure will not be executed again.
 	auto old = getGlobal()->getOptions();
 	auto newoptions = new Options(false);
-	getGlobal()->setOptions(newoptions);
-	setOption(POSTPROCESS_DEFS, false); //Important since postprocessing is implemented with bootstrapping
-	setOption(SPLIT_DEFS, false); //Important since splitting is implemented with bootstrapping
-	setOption(JOIN_DEFS_FOR_XSB, false); //Important since joining is implemented with bootstrapping
-	setOption(GUARANTEE_NO_REC_NEG, true); //Important since checking recursion over negation is implemented with bootstrapping
+	setOption(newoptions, POSTPROCESS_DEFS, false); //Important since postprocessing is implemented with bootstrapping
+	setOption(newoptions, SPLIT_DEFS, false); //Important since splitting is implemented with bootstrapping
+	setOption(newoptions, JOIN_DEFS_FOR_XSB, false); //Important since joining is implemented with bootstrapping
+	setOption(newoptions, GUARANTEE_NO_REC_NEG, true); //Important since checking recursion over negation is implemented with bootstrapping
 
-	setOption(GROUNDWITHBOUNDS, true);
-	setOption(LIFTEDUNITPROPAGATION, true);
-	setOption(LONGESTBRANCH, 12);
-	setOption(NRPROPSTEPS, 12);
-	setOption(CPSUPPORT, true);
-	setOption(TSEITINDELAY, false);
+	setOption(newoptions, GROUNDWITHBOUNDS, true);
+	setOption(newoptions, LIFTEDUNITPROPAGATION, true);
+	setOption(newoptions, LONGESTBRANCH, 12);
+	setOption(newoptions, NRPROPSTEPS, 12);
+	setOption(newoptions, CPSUPPORT, true);
+	setOption(newoptions, TSEITINDELAY, false);
 #ifndef WITHXSB
 	Warning::warning("Performing bootstrapping without XSB support. This might be inefficient.\n");
 #endif
-	setOption(XSB, true);
-	setOption(SATISFIABILITYDELAY, false);
-	setOption(NBMODELS, 1);
-	setOption(AUTOCOMPLETE, true);
-	setOption(BoolType::SHOWWARNINGS, false);
+	setOption(newoptions, XSB, true);
+	setOption(newoptions, SATISFIABILITYDELAY, false);
+	setOption(newoptions, NBMODELS, 1);
+	setOption(newoptions, AUTOCOMPLETE, true);
+	setOption(newoptions, BoolType::SHOWWARNINGS, false);
+	getGlobal()->setOptions(newoptions);
 	return old;
 }
 
