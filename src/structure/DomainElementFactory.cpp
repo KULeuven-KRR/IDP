@@ -91,7 +91,7 @@ const DomainElement* DomainElementFactory::create(int value) {
 	DomainElement* element = NULL;
 	// Check if the value is within the efficient range
 	if (value >= _firstfastint && value < _lastfastint) {
-		int lookupvalue = value + _firstfastint;
+		int lookupvalue = value - _firstfastint;
 		element = _fastintelements[lookupvalue];
 		if (element != NULL) {
 			return element;
