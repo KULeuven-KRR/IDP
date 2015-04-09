@@ -181,11 +181,16 @@ typename OptionTypeTraits<OptionsType>::ValueType getOption(OptionsType type) {
 
 template<typename OptionsType>
 void setOption(OptionsType type, typename OptionTypeTraits<OptionsType>::ValueType value) {
+	setOption(getGlobal()->getOptions(), type, value);
+}
+
+template<typename OptionsType>
+void setOption(Options* options, OptionsType type, typename OptionTypeTraits<OptionsType>::ValueType value) {
 	if (not isVerbosityOption(type)) {
-		getGlobal()->getOptions()->setValue(type, value);
+		options->setValue(type, value);
 		return;
 	}
-	getGlobal()->getOptions()->getValue(OptionType::VERBOSITY)->setValue(type, value);
+	options->getValue(OptionType::VERBOSITY)->setValue(type, value);
 }
 
 void callTerminate();
