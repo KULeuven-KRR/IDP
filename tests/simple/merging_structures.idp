@@ -1,0 +1,140 @@
+vocabulary V{
+    type Node isa int
+	edge_True(Node,Node)
+	edge_False(Node,Node)
+    no_edge(Node,Node)
+	Path_True(Node)
+	Path_Possible(Node)
+	End(Node)
+	
+	
+	type numbers isa int
+	partial Cost_edge_True(Node,Node): numbers
+	partial Cost_edge_False(Node,Node): numbers
+	Threshold: int
+}
+
+theory T1:V{
+	define {
+		!x y : Path_True(x) <- edge_True(x,y) & End(y).
+		!x : Path_True(x) <- ?z: edge_True(x,z) & Path_True(z).
+	}
+	
+	define {
+		!x y : Path_Possible(x) <- ~edge_False(x,y) & End(y).
+		!x : Path_Possible(x) <- ?z: ~edge_False(x,z) & Path_Possible(z).
+	}
+	
+    !x y: no_edge(x,y) | ~edge_True(x,y) | ~edge_False(x,y).
+    !x: ~Path_True(x) | Path_Possible(x).
+    
+    sum{x y: edge_True(x,y): Cost_edge_True(x,y)} + 
+    sum{x y: ~no_edge(x,y) & edge_False(x,y): Cost_edge_False(x,y)} =< Threshold.
+}
+
+
+vocabulary Vout {
+	
+}
+
+procedure main(){
+//Merging should be fast in both directions
+    	T = merge(T1,T2)
+    	S = merge(S1,S2)
+	print("PARSED!")
+	//lazy grounding options
+	stdoptions.tseitindelay=true
+	stdoptions.satdelay=true
+	stdoptions.lazyheur=true
+// 	stdoptions.lazysizelimit=50
+	stdoptions.relevancewatched=true
+
+	stdoptions.liftedunitpropagation=true
+	stdoptions.nrpropsteps=5
+	stdoptions.longestbranch=5
+	
+	//This is without minimization: 
+	//(he prints nothing because we asked no symbols to be two-valued...)
+	//What he grounds can be checked as follows 
+	//The actual partial model is not available now, but it should be possible to show it.
+	stdoptions.verbosity.solving=1  
+	stdoptions.verbosity.grounding=1
+	
+	sol = modelexpand(T,S,Vout)[1]
+
+	return 1
+}
+
+procedure tryminimize() {
+        //lazy grounding options
+        stdoptions.tseitindelay=true
+        stdoptions.satdelay=true
+        stdoptions.lazyheur=true
+        stdoptions.relevancewatched=true
+
+        stdoptions.liftedunitpropagation=true
+        stdoptions.nrpropsteps=5
+        stdoptions.longestbranch=5
+        
+        //Does not work yet, finds entirely twovalued interpretation. Probably because of this sum, which cannot be delayed on yet! 
+        //cfr lazy grounding paper: lazy grounding for aggregates is not yet developed
+        stdoptions.verbosity.solving=1
+        stdoptions.verbosity.grounding=1
+        print(minimize(T,S,t,Vout)[1])
+}
+
+theory T2:V{
+	~edge_True(0,1)|~edge_True(1,4)|~edge_True(4,3).
+	~edge_True(0,1)|~edge_True(1,2)|~edge_True(2,3).
+}
+
+
+structure S1:V{
+	Node={0..4}
+	numbers={0..1000}
+	End={3}
+	Path_True<ct>={0}
+	Path_True<cf>={}
+	edge_True<ct>={}
+	edge_True<u>={
+		1,4;
+		0,1;
+		4,3;
+		1,2;
+		2,3;
+	}
+	edge_False<cf>={}
+	edge_False<u>={
+		1,4;
+		0,1;
+		4,3;
+		1,2;
+		2,3;
+	}
+	no_edge<u>={}
+	no_edge<cf>={
+		1,4;
+		0,1;
+		4,3;
+		1,2;
+		2,3;
+	}
+	Cost_edge_True={
+		1,4->221;
+		0,1->569;
+		4,3->138;
+		1,2->430;
+		2,3->317;
+	}
+	Cost_edge_False={
+		1,4->748;
+		0,1->317;
+		4,3->1000;
+		1,2->430;
+		2,3->569;
+	}
+}
+
+structure S2:V{
+	Threshold={->22025}
+}
