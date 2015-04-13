@@ -190,7 +190,7 @@ prepare:
 	  ${link_cmd} ${src_config_prefix}/gppMakefile ./Makefile
 	@rm -f $(srcdir)/build/.*.tmp
 
-emulator: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+emulator: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h prepare
 	@echo ""; echo "Making emulator..." ; \
 		cd ${src_emudir} ; \
 		$(MAKE) depend 2>/dev/null || echo "*** Warning: The command 'makedepend' is not installed. Install it to speed up compilation of XSB." ; \
@@ -201,7 +201,7 @@ emulator: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 		(test ! -f $(srcdir)/build/.xsb_build_failed || \
 					(rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
 
-gpp_exe:
+gpp_exe: xsbdll
 	@echo ""; echo "Making gpp"
 	@cd $(srcdir)/gpp; $(MAKE) 2>&1 | tee -a ../build/Installation_summary
 
@@ -224,7 +224,7 @@ cygdll: prepare loccygdll do_cleaning inform_module
 
 # if supporting Oracle, then emumake_goal=xsbora; else emumake_goal=xsb
 # This invokes xsboramod and xsbmod goals in emuMakefile, respectively
-xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h emulator
 	@echo ""; echo "Making XSB module..."
 	@cd ${src_emudir}; \
 		$(MAKE) $(emumake_goal)mod
@@ -233,14 +233,14 @@ xsbdynmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	@cd ${src_emudir}; \
 		$(MAKE) $(emumake_goal)dynmod
 
-xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h xsbmod
 	@echo ""; echo "Making DLL... (if Cygwin)"
 	@cd ${src_emudir}; $(MAKE) dll
 
 loccygdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 	@cd ${src_emudir}; $(MAKE) cygdll
 
-emu_clean: do_cleaning inform_executable
+emu_clean: do_cleaning inform_executable remake_dot_O_files
 	@chmod 644  $(src_config_libdir)/xsb_configuration$(xsb_obj_extension)
 
 do_cleaning:
