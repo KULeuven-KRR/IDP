@@ -1,0 +1,53 @@
+vocabulary V1{
+	type T	
+	P(T)
+	f(T):T
+}
+
+vocabulary V2{
+	type T2
+	Q(T2)
+	C:T2
+}
+
+vocabulary V{
+	extern vocabulary V1
+	extern vocabulary V2
+}
+
+structure S1: V1{
+	T={1..2}
+	P<ct> = {1}
+}
+
+structure S2:V2{
+	T2={1..4}
+	C<cf>={3}
+}
+
+procedure main(){
+	S = merge(S1,S2)
+	s = merge(S2,S1)
+	print(S)
+	print(s)
+	setvocabulary(S,V)
+	setvocabulary(s,V)
+	print(S)
+	print(s)
+	S = merge(S,S2)
+	s = merge(S2,s)
+	print(S)
+	print(s)
+	setvocabulary(S,V1)
+	setvocabulary(s,V1)
+	print(S)
+	print(s)
+	S = merge(S,S1)
+	s = merge(S1,s)
+	print(S)
+	print(s)
+
+	merged = merge(S,s)
+	print(merged)
+	return 1
+}
