@@ -27,7 +27,7 @@ option(BUILDTESTS  "Run the gtest tests" ON)
 enable_testing()
 option(BUILDDOCUMENTATION "Build the documentation" ON)
 
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build.")
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "StaticRelease" "StaticDebug" "Profile")
 
 message(STATUS "Install path (CMAKE_INSTALL_PREFIX): ${CMAKE_INSTALL_PREFIX}")
