@@ -1,0 +1,65 @@
+
+vocabulary V_out{
+    type Num isa int
+    //The answer to the puzzle
+    r : Num
+}
+
+vocabulary V{
+    extern vocabulary V_out   
+    //The two first numbers
+	a : Num
+    b : Num
+    
+    //The two second numbers
+    c : Num
+    d : Num
+    
+}
+
+
+theory T: V{
+    
+    a-b = 20.
+    
+    r = (a*b) - (c*d).
+    
+    c-d = 26.
+    
+    c+d = a+b.
+}
+
+
+structure S:V{
+    Num = {-200..1000}
+}
+
+structure Sol : V {
+  Num = { -200..1000 }
+  a = 625
+  b = 605
+  c = 628
+  d = 602
+  r = 69
+}
+
+structure Sol2 : V {
+  Num = { -200..1000 }
+  a = 658
+  b = 638
+  c = 661
+  d = 635
+  r = 69
+}
+
+
+procedure main(){
+    stdoptions.cpsupport = true
+    stdoptions.nbmodels = 10
+    if #modelexpand(T,S,V_out) == 1 then
+    	return 1
+    else
+    	return 0
+    end
+    
+}   
