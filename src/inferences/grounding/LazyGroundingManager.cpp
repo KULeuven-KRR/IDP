@@ -572,7 +572,7 @@ void LazyGroundingManager::needWatch(bool watchedvalue, Lit translatedliteral) {
 
 // Note: none of the literals should be true/false
 void LazyGroundingManager::notifyForOutputVoc(PFSymbol* symbol, const litlist& literals) {
-	if (not getOption(SATISFIABILITYDELAY)) {
+	if(_outputvocabulary == NULL){
 		return;
 	}
 	if (_outputvocabulary != NULL && symbol != NULL && not _outputvocabulary->contains(symbol)) {
@@ -599,9 +599,7 @@ void LazyGroundingManager::notifyBecameTrue(const Lit& lit, bool onlyqueue) {
 }
 
 void LazyGroundingManager::notifyNewLiteral(PFSymbol* symbol, const ElementTuple&, Lit translatedliteral) {
-	if (not useLazyGrounding()) {
-		return;
-	}
+
 	Assert(translatedliteral!=_true && translatedliteral!=_false);
 	if (verbosity() > 2) {
 		clog << "Notified of new literal " << translator()->printLit(translatedliteral) << "\n";
@@ -609,6 +607,9 @@ void LazyGroundingManager::notifyNewLiteral(PFSymbol* symbol, const ElementTuple
 
 	notifyForOutputVoc(symbol, { translatedliteral });
 
+	if (not useLazyGrounding()) {
+		return;
+	}
 	auto needwatch = false;
 	bool needtrue = false, needfalse = false;
 
