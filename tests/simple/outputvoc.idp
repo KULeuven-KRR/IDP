@@ -1,0 +1,27 @@
+vocabulary V{
+P
+Q
+R
+}
+
+theory T:V{
+P | Q | R.
+}
+
+vocabulary Vout{
+	extern V::P/0
+}
+
+structure S:V{
+}
+procedure main(){
+ stdoptions.nbmodels=0
+ local models = modelexpand(T,S,Vout)
+ if #models == 2 then
+ 	print("OK")
+ 	return 1
+ else
+ 	print("Fail, found "..#models.." models")
+ 	return 0
+ end
+ }
