@@ -110,7 +110,7 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	It returns (1) a table of all models of the theory that extend the given structure and such that the term is minimal,
 	(2) a boolean indicating whether an optimum was found,
 	(3) the optimal value of the term,
-	and, if getoptions().trace == true, (4) a trace of the solver.
+	and, if stdoptions.trace == true, (4) a trace of the solver.
 	\item[modelIterator(theory, structure, vocabulary)]
 			Returns an iterator iterating over all possible two-valued models satisfying the given theory. See modelexpand for more information.
 \begin{lstlisting}
@@ -123,11 +123,11 @@ end
 \end{lstlisting}
 	\item[modelexpandpartial(theory,structure, vocabulary)]
 		Apply model expansion to theory T, structure S. The structure can interpret a subvocabulary of the vocabulary of the theory.
- 		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if getoptions().trace == true, a trace of the solver.
+ 		The result is a table of (possibly three-valued) structures that are more precise then S and that satisfy T  and, if stdoptions.trace == true, a trace of the solver.
 		The third argument (vocabulary) is optional and allows you to specify a subvocabulary containing only the symbols in which you're intersted.
 	\item[modelexpand(theory,structure,vocabulary)]
  		Apply model expansion to theory T, structure S. The structure can interpret a subvocabulary of the vocabulary of the theory.
- 		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if getoptions().trace == true, a trace of the solver.
+ 		The result is a table of two-valued structures that are more precise then S and that satisfy T and, if stdoptions.trace == true, a trace of the solver.
 		(this procedure is equivalent to first calling modelexpandpartial and subsequently calling alltwovaluedextensions) 
 		The third argument (vocabulary) is optional and allows you to specify a subvocabulary containing only the symbols in which you're intersted.
 	\item[onemodel(theory,structure)]
