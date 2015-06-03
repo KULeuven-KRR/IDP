@@ -106,7 +106,7 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	\item[isinvariant(theory, theory, structure)] uses the model expander to prove that the second theory is an invariant of the first theory in the context of the given structure. The second theory should be of the form : $\forall t[Time]:\varphi[t]$, where $\varphi$ can be a single-state formula or a bistate formula and the first should be an LTC theory. It uses the methods presented in progression inference$^1$.
 	\item[minimize(theory,structure,term,vocabulary)]
 	The structure can interpret a subvocabulary of the vocabulary of the theory, the vocabulary of the theory and the term have to be identical.
-	The fourth argument (vocabulary) is optional and allows you to specify a subvocabulary containing only the symbols in which you're intersted.			
+	The fourth argument (vocabulary) is optional and allows you to specify a subvocabulary containing only the symbols in which you're interested.			
 	It returns (1) a table of all models of the theory that extend the given structure and such that the term is minimal,
 	(2) a boolean indicating whether an optimum was found,
 	(3) the optimal value of the term,
