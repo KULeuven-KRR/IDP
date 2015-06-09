@@ -244,18 +244,6 @@ void SolverPolicy<Solver>::polNotifyLazyWatch(Atom atom, TruthValue watches, Laz
 }
 
 template<class Solver>
-void SolverPolicy<Solver>::polAdd(const std::vector<std::map<Lit, Lit> >& symmetries) {
-	for(auto symmap:symmetries){
-		std::map<MinisatID::Lit,MinisatID::Lit> symdata;
-		for(auto litpair:symmap){
-			symdata.insert({createLiteral(litpair.first), createLiteral(litpair.second)});
-		}
-		extAdd(getSolver(), MinisatID::Symmetry(symdata));
-		CHECKUNSAT;
-	}
-}
-
-template<class Solver>
 void SolverPolicy<Solver>::requestTwoValued(const std::vector<Lit>& lits) {
 	MinisatID::TwoValuedRequirement req( { });
 	for (auto lit : lits) {

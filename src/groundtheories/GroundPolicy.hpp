@@ -108,7 +108,6 @@ public:
 
 	void polAddOptimization(AggFunction, SetId);
 	void polAddOptimization(VarId);
-	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 
 	std::ostream& polPut(std::ostream& s, GroundTranslator* translator) const;
 };
