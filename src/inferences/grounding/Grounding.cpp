@@ -34,17 +34,6 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 		addSymBreakingPredicates(grounding, ivsets, nbModelsEquivalent);
 		break;
 	}
-	case SymmetryBreaking::DYNAMIC: {
-		// Add symmetry propagators
-		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
-			logActionAndTime("Constructing symmetry propagators at ");
-		}
-		auto ivsets = findIVSets(theory, structure, minimizeTerm);
-		for (auto ivset : ivsets) {
-			grounding->addSymmetries(ivset->getBreakingSymmetries(grounding));
-		}
-		break;
-	}
 	}
 }
 

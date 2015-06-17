@@ -260,17 +260,6 @@ void GroundTheory<Policy>::addOptimization(VarId varid) {
 }
 
 template<class Policy>
-void GroundTheory<Policy>::addSymmetries(const std::vector<std::map<Lit, Lit> >& symmetry) {
-	for(auto symm: symmetry){
-		notifyAtomsAdded(symm.size());
-		for(auto l2l: symm){
-			addTseitinInterpretations({l2l.first, l2l.second}, -1);
-		}
-	}
-	Policy::polAdd(symmetry);
-}
-
-template<class Policy>
 void GroundTheory<Policy>::addTseitinInterpretations(const std::vector<int>& vi, DefId defnr, bool skipfirst, bool propagated) {
 	for(uint i=0; i<vi.size(); ++i){
 		if(i==0 && skipfirst){

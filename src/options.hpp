@@ -128,9 +128,8 @@ enum class SolverHeuristic {
 enum class SymmetryBreaking {
 	NONE,
 	STATIC,
-	DYNAMIC,
 	FIRST = NONE,
-	LAST = DYNAMIC
+	LAST = STATIC
 };
 
 enum class ApproxDef {

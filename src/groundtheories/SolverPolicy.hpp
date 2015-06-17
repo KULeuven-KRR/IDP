@@ -74,7 +74,6 @@ protected:
 	void polAdd(Lit head, AggTsBody* body);
 	void polAdd(Lit tseitin, CPTsBody* body);
 	void polAdd(Lit tseitin, VarId varid);
-	void polAdd(const std::vector<std::map<Lit, Lit> >& symmetry);
 	void polAddLazyElement(Lit head, PFSymbol* symbol, const std::vector<GroundTerm>& args, AbstractGroundTheory* theory, bool recursive);
 
 	void polAddOptimization(AggFunction function, SetId setid);

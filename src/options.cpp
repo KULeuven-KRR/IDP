@@ -57,8 +57,6 @@ std::string str(SymmetryBreaking choice) {
 		return "none";
 	case SymmetryBreaking::STATIC:
 		return "static";
-	case SymmetryBreaking::DYNAMIC:
-		return "dynamic";
 	default:
 		throw IdpException("Invalid code path.");
 	}
