@@ -134,10 +134,10 @@ litlist MXAssumptions::toLitList(GroundTranslator* trans) const{
 		}
 	}
 	for(auto pf : assumeFalse){
-		assumptions.push_back(trans->translateNonReduced(pf.symbol, pf.args));
+		assumptions.push_back(-trans->translateNonReduced(pf.symbol, pf.args));
 	}
 	for(auto pt : assumeTrue){
-		assumptions.push_back(-trans->translateNonReduced(pt.symbol, pt.args));
+		assumptions.push_back(trans->translateNonReduced(pt.symbol, pt.args));
 	}
 	return assumptions;
 }

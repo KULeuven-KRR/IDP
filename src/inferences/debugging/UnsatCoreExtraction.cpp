@@ -253,6 +253,7 @@ protected:
 	}
 };
 
+#include "MinimizeMarkers.hpp"
 UnsatCoreResult UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
 	auto intheory = dynamic_cast<Theory*>(atheory);
 	if (intheory == NULL) {
@@ -281,58 +282,9 @@ UnsatCoreResult UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Struct
 	auto am = new AddMarkers();
 	newtheory = am->execute(newtheory);
 
-	auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { { }, am->getMarkers() });
-	if (not mxresult.unsat) {
-		cout << ">>> The given theory has models that extend the structure, so there are no unsat cores." << endl;
-		return UnsatCoreResult();
-	}
+	vector<DomainAtom> output = minimizeAssumps(newtheory, s, { { }, am->getMarkers() });
 
-	cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
-
-	// TODO should set remaining markers on true to allow ealier pruning
-	auto core = mxresult.unsat_in_function_of_ct_lits;
-	auto erased = true;
-	auto stop = false;
-	while (erased && not stop) {
-		if (getGlobal()->terminateRequested()) {
-			getGlobal()->reset();
-			stop = true;
-			break;
-		}
-		erased = false;
-		auto maxsize = core.size();
-		for (uint i = 0; i < maxsize;) {
-			if (getGlobal()->terminateRequested()) {
-				getGlobal()->reset();
-				stop = true;
-				break;
-			}
-			auto elem = core[i];
-                        
-			//This serves to prevent self-swapping (Cf. Issue 739)
-			if (not(core[i].symbol==core[maxsize - 1].symbol && core[i].args==core[maxsize - 1].args)) {
-				swap(core[i], core[maxsize - 1]);
-			}
-			core.pop_back();
-			maxsize--;
-			auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { core, { } });
-			if (mxresult._interrupted) {
-				stop = true;
-				break;
-			}
-			if (not mxresult.unsat) {
-				core.push_back(elem);
-			} else {
-				erased = true;
-				if (mxresult.unsat_in_function_of_ct_lits.size() < core.size()) {
-					core = mxresult.unsat_in_function_of_ct_lits;
-					break;
-				}
-			}
-		}
-	}
-
-	auto coreresult = am->getComponentsFromMarkers(mxresult.unsat_in_function_of_ct_lits);
+	auto coreresult = am->getComponentsFromMarkers(output);
 	delete (am);
 	newtheory->recursiveDelete();
 	delete (s);
