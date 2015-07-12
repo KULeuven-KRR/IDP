@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <memory>
 #include "Weight.hpp"
+#include "../grounding/GroundUtils.hpp"
 
 class Structure;
 class AbstractTheory;
@@ -44,11 +45,19 @@ struct MXResult{
 	std::vector<DomainAtom> unsat_in_function_of_ct_lits;
 };
 
+class GroundTranslator;
 struct MXAssumptions{
 	std::vector<DomainAtom> assumeFalse;
 	std::vector<Predicate*> assumeAllFalse;
+	std::vector<DomainAtom> assumeTrue;
 
-	MXAssumptions(const std::vector<DomainAtom>& assumeFalse = std::vector<DomainAtom>(), const std::vector<Predicate*>& assumeAllFalse = std::vector<Predicate*>()): assumeFalse(assumeFalse), assumeAllFalse(assumeAllFalse){
+
+	litlist toLitList(GroundTranslator* trans) const;
+
+	MXAssumptions(const std::vector<DomainAtom>& assumeFalse = std::vector<DomainAtom>()
+				, const std::vector<Predicate*>& assumeAllFalse = std::vector<Predicate*>()
+			  	, const std::vector<DomainAtom>& assumeTrue = std::vector<DomainAtom>()
+	): assumeFalse(assumeFalse), assumeAllFalse(assumeAllFalse), assumeTrue(assumeTrue){
 
 	}
 };
