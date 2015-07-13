@@ -25,9 +25,6 @@ class UnsatStructureExtraction {
 public:
     static Structure* extractStructure(AbstractTheory* atheory, Structure* structure, Vocabulary* v);
 private:
-    static void assume(const Vocabulary *vAssume, Structure *emptyStruc, std::vector<DomainAtom> &assumeNeg,
-                       std::vector<DomainAtom> &assumePos, PFSymbol *const symbol, const PredInter *pi);
-
     static void tableToVector(std::vector<DomainAtom> &assumeNeg, PFSymbol *const symbol, const PredTable *cfTab);
 };
 
