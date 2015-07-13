@@ -1,3 +1,3 @@
 #pragma once
 
-std::vector<DomainAtom> minimizeAssumps(Theory *newtheory, Structure *s, MXAssumptions markers);
+std::vector<DomainAtom> minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers);

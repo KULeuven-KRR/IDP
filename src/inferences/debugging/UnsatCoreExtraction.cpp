@@ -254,7 +254,7 @@ protected:
 };
 
 #include "MinimizeMarkers.hpp"
-UnsatCoreResult UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
+vector<TheoryComponent*> UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Structure* structure) {
 	auto intheory = dynamic_cast<Theory*>(atheory);
 	if (intheory == NULL) {
 		throw notyetimplemented("Unsatcore extraction for non first-order theories");
@@ -289,8 +289,5 @@ UnsatCoreResult UnsatCoreExtraction::extractCore(AbstractTheory* atheory, Struct
 	newtheory->recursiveDelete();
 	delete (s);
 	delete (voc);
-	UnsatCoreResult r;
-	r.succes = true;
-	r.core = coreresult;
-	return r;
+	return coreresult;
 }

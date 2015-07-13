@@ -13,21 +13,22 @@
 
 #include <vector>
 #include <vocabulary/vocabulary.hpp>
+#include <structure/MainStructureComponents.hpp>
 
 class TheoryComponent;
 class AbstractTheory;
 class Structure;
 class DomainAtom;
 
-struct UnsatStructureResult {
-    bool succes;
-    Structure* core;
-};
-
 
 class UnsatStructureExtraction {
 public:
-    static UnsatStructureResult extractStructure(AbstractTheory* atheory, Structure* structure, Vocabulary* v);
+    static Structure* extractStructure(AbstractTheory* atheory, Structure* structure, Vocabulary* v);
+private:
+    static void assume(const Vocabulary *vAssume, Structure *emptyStruc, std::vector<DomainAtom> &assumeNeg,
+                       std::vector<DomainAtom> &assumePos, PFSymbol *const symbol, const PredInter *pi);
+
+    static void tableToVector(std::vector<DomainAtom> &assumeNeg, PFSymbol *const symbol, const PredTable *cfTab);
 };
 
 

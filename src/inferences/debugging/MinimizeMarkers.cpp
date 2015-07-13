@@ -6,7 +6,7 @@
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "utils/ListUtils.hpp"
 
-std::vector<DomainAtom> minimizeAssumps(Theory *newtheory, Structure *s, MXAssumptions markers) {
+std::vector<DomainAtom> minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers) {
     auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL,  markers);
     if (not mxresult.unsat) {
         throw IdpException("Can not get unsatcore of satisfiable theory");

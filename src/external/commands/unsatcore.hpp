@@ -29,15 +29,11 @@ public:
 		try{
 			auto theory = get<0>(args);
 			auto core = UnsatCoreExtraction::extractCore(theory, get<1>(args));
-			if(core.succes){
-				auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
-				for(auto c: core.core){
-					coretheory->add(c);
-				}
-				return InternalArgument(coretheory);
-			}else{
-				return InternalArgument();
+			auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
+			for(auto c: core){
+				coretheory->add(c);
 			}
+			return InternalArgument(coretheory);
 		} catch(const IdpException& e) {
 			std::cerr << e.getMessage();
 			return InternalArgument();
@@ -62,15 +58,10 @@ public:
 		auto struc = get<1>(args);
 		auto voc = get<2>(args);
 		try{
-			auto core = UnsatStructureExtraction::extractStructure(theory, struc, voc);
-			if(core.succes){
-				return InternalArgument(core.core);
-			}else{
-				return InternalArgument();
-			}
+			return InternalArgument(UnsatStructureExtraction::extractStructure(theory, struc, voc));
 		} catch(const IdpException& e) {
-				std::cerr << e.getMessage();
-				return InternalArgument();
+			std::cerr << e.getMessage();
+			return InternalArgument();
 		}
 	}
 };
