@@ -14,6 +14,7 @@
 #include <vector>
 #include <vocabulary/vocabulary.hpp>
 #include <structure/MainStructureComponents.hpp>
+#include "AddMarkers.hpp"
 
 class TheoryComponent;
 class AbstractTheory;
@@ -26,6 +27,18 @@ public:
     static Structure* extractStructure(AbstractTheory* atheory, Structure* structure, Vocabulary* v);
 private:
     static void tableToVector(std::vector<DomainAtom> &assumeNeg, PFSymbol *const symbol, const PredTable *cfTab);
+
+    static void assumifyStructure(const Structure *structure, const Vocabulary *vAssume, const Theory *newtheory,
+                                  Structure *&emptyStruc, std::vector<DomainAtom> &assumeNeg,
+                                  std::vector<DomainAtom> &assumePos);
+
+    static void assumifyTheory(Theory * &newtheory, vector<Predicate*> &assumeAllFalse, AddMarkers * &am);
+
+    vector<DomainAtom> &outputStructure(const AbstractTheory *intheory, const Structure *structure,
+                                        const Structure *emptyStruc, vector<DomainAtom> &coreresult,
+                                        vector<DomainAtom> &theoryMarkers) const;
+
+    void outputTheory(bool assumeTheo, const AddMarkers *am, const vector<DomainAtom> &theoryMarkers) const;
 };
 
 

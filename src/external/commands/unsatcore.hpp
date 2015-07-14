@@ -29,10 +29,7 @@ public:
 		try{
 			auto theory = get<0>(args);
 			auto core = UnsatCoreExtraction::extractCore(theory, get<1>(args));
-			auto coretheory = new Theory("unsat_core", theory->vocabulary(), {});
-			for(auto c: core){
-				coretheory->add(c);
-			}
+
 			return InternalArgument(coretheory);
 		} catch(const IdpException& e) {
 			std::cerr << e.getMessage();
