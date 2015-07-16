@@ -315,7 +315,7 @@ procedure initialise(theory,structure,  timesym, startsym, nextsym) {
 
 /**
 * Prints a subsetminimal subset of the given theory (a core) that is still unsatisfiable given a structure.*/
-procedure printcore(theory,structure){
+procedure printunsatcore(theory,structure){
 	if type(theory) ~= "theory" then
 		io.stderr:write("Error: theory expected\n")
 		return
@@ -326,6 +326,13 @@ procedure printcore(theory,structure){
 	end
 	idpintern.unsatcore(theory,structure)
 	return;
+}
+
+/**
+* Deprecated. */
+procedure printcore(theory,structure){
+	print("Warning: using deprecated method \"printcore\". Please use \"printunsatcore\" instead.")
+	printunsatcore(theory, structure)
 }
 
 /*/**

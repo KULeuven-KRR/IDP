@@ -12,6 +12,6 @@ structure S1:V{
 }
 
 procedure main(){
-	printcore(T,S1)
+	printunsatcore(T,S1)
 	return 1
 }
