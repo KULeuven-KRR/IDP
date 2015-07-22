@@ -244,7 +244,7 @@ void yyerror(const char* s);
 	Global structure
 *********************/
 
-idp		: /* empty */
+idp		: %empty
 				| idp namespace 
 				| idp vocabulary 
 				| idp theory
@@ -289,7 +289,7 @@ vocab_name			: identifier	{ data().openvocab(*$1,@1); }
 vocab_pointer		: pointer_name	{ data().setvocab(*$1,@1); delete($1); }
 					;
 
-vocab_content		: /* empty */
+vocab_content		: %empty
 					| vocab_content NEWLINE
 					| vocab_content symbol_declaration NEWLINE
 					| vocab_content EXTERN extern_symbol NEWLINE 
@@ -439,7 +439,7 @@ theory		: THEORY_HEADER theory_name ':' vocab_pointer '{' def_forms '}'		{ data(
 theory_name	: identifier	{ data().opentheory(*$1,@1);  }
 			;
 
-def_forms	: /* empty */
+def_forms	: %empty
 			| def_forms definition		{ data().definition($2);	}
 			| def_forms formula '.'		{ data().sentence($2);		}
 			| def_forms fixpdef			{ data().fixpdef($2);		}
@@ -466,7 +466,7 @@ rule		: univquantvars head "<-" formula '.'	{ $$ = data().rule(*$1,$2,$4,@2); de
 			
 univquantvars 
 			: univquantvars '!' variables ':' 	{ $$ = $1; $1->insert($3->cbegin(), $3->cend()); delete($3);}
-			|  /* empty*/ 						{ $$ = new varset(); }
+			| %empty					{ $$ = new varset(); }
 			;
 
 head		: predicate				{ $$ = $1;										}
@@ -648,7 +648,7 @@ structure		: STRUCT_HEADER struct_name ':' vocab_pointer '{' interpretations '}'
 struct_name		: identifier	{ data().openstructure(*$1,@1); }
 				;
 
-interpretations	:  //empty
+interpretations	: %empty
 				| interpretations interpretation
 				| interpretations using
 				;
@@ -702,7 +702,7 @@ elements		: elements ';' charrange			{ $$ = $1; data().addElement($$,$3->first,$
 				
 func_list		: func_list ',' constr_func_decl { $$ = $1; $$->push_back($3); }
 				| constr_func_decl { $$ = new std::vector<Function*>(); $$->push_back($1); }
-				| {  $$ = new std::vector<Function*>(); }
+				| %empty {  $$ = new std::vector<Function*>(); }
 				;
 
 
@@ -852,7 +852,7 @@ identifier		: IDENTIFIER	{ $$ = $1;	}
 asp_structure	: ASP_HEADER struct_name ':' vocab_pointer '{' atoms '}'	{ data().closestructure(true);	}
 				;
 
-atoms	: /* empty */
+atoms	: %empty
 		| atoms predatom '.'
 		| atoms predatom '?'						{ Warning::aspQueriesAreParsedAsFacts();		}
 		| atoms using
@@ -881,7 +881,7 @@ term_tuple		: term_tuple ',' term						{ $$ = $1; $$->push_back($3);		}
 				| term										{ $$ = new std::vector<Term*>(1,$1);		}	
 				;
 
-sort_pointer_tuple	: /* empty */							{ $$ = new std::vector<Sort*>(0);		}
+sort_pointer_tuple	: %empty 								{ $$ = new std::vector<Sort*>(0);		}
 					| nonempty_spt							{ $$ = $1;							}
 					;
 					
