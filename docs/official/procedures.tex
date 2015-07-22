@@ -132,7 +132,7 @@ end
 		The third argument (vocabulary) is optional and allows you to specify a subvocabulary containing only the symbols in which you're intersted.
 	\item[onemodel(theory,structure)]
 		Does model expansion but only searches for one model (no matter what the \code{nbmodels} option is set to). Returns this structure (in contrast to the standard modelexpansion which returns a list of structures).
-	\item[printcore(theory,structure)]
+	\item[printunsatcore(theory,structure)]
 		Finds a theory that is a minimal ``subset'' of the given theory that is unsat in the given structure, or, in other words, a ``core''; it then prints this theory with 
 		references to how it was obtained from the given theory.
 		A subset in this respect is a subset of all instantiated formulas in conjunctive context in the theory and instantiated rules 
