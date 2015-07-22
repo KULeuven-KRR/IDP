@@ -174,6 +174,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		OptionPol::createOption(OptionType::VERBOSITY, "verbosity", { opt }, opt, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::FUNCDETECT, "functiondetection", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SKOLEMIZE, "skolemize", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::ADDEQUALITYTHEORY, "equalitytheory", boolvalues, false, PrintBehaviour::PRINT);

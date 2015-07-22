@@ -21,6 +21,7 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
 #include "inferences/modelexpansion/TraceMonitor.hpp"
+#include "inferences/functiondetection/FunctionDetection.hpp"
 #include "errorhandling/error.hpp"
 #include "creation/cppinterface.hpp"
 #include "utils/ResourceMonitor.hpp"
@@ -125,6 +126,20 @@ MXResult ModelExpansion::expand() const {
 	voc->add(newstructure->vocabulary());
 	newstructure->changeVocabulary(voc);
 	clonetheory->vocabulary(voc);
+
+	if (getOption(BoolType::FUNCDETECT)) {
+		if (getOption(IntType::VERBOSE_GROUNDING) > 0) {
+			logActionAndTime("Starting function detection at ");
+		}
+
+		FunctionDetection::doDetectAndRewriteIntoFunctions(clonetheory);
+		newstructure->changeVocabulary(clonetheory->vocabulary());
+		//Note: outputvoc remains unchanged
+
+		if (getOption(IntType::VERBOSE_GROUNDING) > 0) {
+			logActionAndTime("Finished function detection at ");
+		}
+	}
 
 	//TODO See Issue #523 DefinitionUtils::splitDefinitions(clonetheory); // TODO implement with same meta-level approach as below!
 
