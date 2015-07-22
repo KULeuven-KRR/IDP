@@ -12,6 +12,7 @@ procedure standardoptions(){
 	stdoptions.lazyheur=false
 	stdoptions.xsb=false
   	stdoptions.approxdef="none"
+	stdoptions.functiondetection=false
 }
 
 procedure mxnobounds(){
