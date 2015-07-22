@@ -36,6 +36,7 @@ To activate an option set, use the procedure \code{setascurrentoptions(MyOptionS
 	\item[{trace = [false, true]}] If true, the procedure modelexpand produces also an execution trace of \minisatid.
 	\item[{cpsupport = [false, true]}] If true, constants can occur in the grounding, which are taken care of through integration with Constraint Programming techniques. 
 	\item[{cpgroundatoms = [false, true]}] If true, the grounding can be full ground FO(.), which has an even smaller grounding (but might have reduced propagation).
+	\item[{functiondetection = [false, true]}] If true, function detection is used to replace predicate symbols by function symbols with smaller arity.
 	\item[{skolemize = [false, true]}] If true, existential quantification in sentences is replaced by introducing new function symbols. Only advantageous with cpsupport on.
 	\item[{tseitindelay = [false, true]}] If true, grounding can be delayed by lazily expanding quantifications and disjunctions/conjunctions.
 	\item[{satdelay = [false,true]}] If true, grounding can be delayed by maintaining justifications for non-ground sentences and rules.

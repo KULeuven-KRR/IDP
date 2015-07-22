@@ -54,12 +54,11 @@ procedure mxverylazy(){
 }
 
 procedure mxfuncdetect(){
+	stdoptions.functiondetection = true
 	stdoptions.timeout = 100
 	stdoptions.verbosity.functiondetection=0
 	stdoptions.verbosity.entails=0
-	newT = detectfunctions(clone(T))
-	setvocabulary(S,getvocabulary(newT))
-	return run(newT)
+	return run(T)
 }
 
 procedure mxnoboundslong(){
