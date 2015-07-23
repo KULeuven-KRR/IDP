@@ -17,6 +17,17 @@ set (idp_VERSION_MINOR 4)
 set (idp_VERSION_PATCH 0)
 set (idp_VERSION "${idp_VERSION_MAJOR}.${idp_VERSION_MINOR}.${idp_VERSION_PATCH}")
 
+execute_process (COMMAND "git" "rev-parse" "HEAD"
+                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                RESULT_VARIABLE git_result
+		ERROR_VARIABLE git_error
+                OUTPUT_VARIABLE git_hash)
+if (git_result OR git_error)
+  set (git_hash "\"Source not version controlled.\"")
+endif (git_result OR git_error)
+
+string(STRIP ${git_hash} git_hash)
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
