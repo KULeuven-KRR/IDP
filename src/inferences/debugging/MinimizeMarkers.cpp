@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <memory>
 #include <vector>
-
+#include "MinimizeMarkers.hpp"
 #include "IncludeComponents.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "utils/ListUtils.hpp"
@@ -9,7 +9,7 @@
 std::vector<DomainAtom> minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers) {
     auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL,  markers);
     if (not mxresult.unsat) {
-        throw IdpException("Can not get unsatcore of satisfiable theory");
+        throw AlreadySatisfiableException();
     }
 
     std::cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";

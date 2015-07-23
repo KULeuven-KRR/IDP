@@ -22,9 +22,9 @@ class Structure;
 class DomainAtom;
 
 
-class UnsatStructureExtraction {
+class UnsatExtraction {
 public:
-    static Structure* extractStructure(AbstractTheory* atheory, Structure* structure, Vocabulary* v);
+    static pair<Structure*,Theory*> extractCore(bool assumeStruc, bool assumeTheo, AbstractTheory* intheory, Structure* structure, Vocabulary* vAssume);
 private:
     static void tableToVector(std::vector<DomainAtom> &assumeNeg, PFSymbol *const symbol, const PredTable *cfTab);
 
@@ -34,11 +34,14 @@ private:
 
     static void assumifyTheory(Theory * &newtheory, vector<Predicate*> &assumeAllFalse, AddMarkers * &am);
 
-    vector<DomainAtom> &outputStructure(const AbstractTheory *intheory, const Structure *structure,
+    static void outputStructure(const AbstractTheory *intheory, const Structure *structure,
                                         const Structure *emptyStruc, vector<DomainAtom> &coreresult,
-                                        vector<DomainAtom> &theoryMarkers) const;
+                                        vector<DomainAtom> &theoryMarkers);
 
-    void outputTheory(bool assumeTheo, const AddMarkers *am, const vector<DomainAtom> &theoryMarkers) const;
+    static Theory* outputTheory(  const AddMarkers *am,
+                                  const vector<DomainAtom> &theoryMarkers,
+                                  Vocabulary* voc) ;
+
 };
 
 

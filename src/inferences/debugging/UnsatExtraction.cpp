@@ -2,8 +2,7 @@
 #include <vector>
 
 #include <inferences/modelexpansion/ModelExpansion.hpp>
-#include "UnsatStructureExtraction.hpp"
-#include "IncludeComponents.hpp"
+#include "UnsatExtraction.hpp"
 #include "vocabulary/vocabulary.hpp"
 #include "theory/TheoryUtils.hpp"
 #include "creation/cppinterface.hpp"
@@ -11,7 +10,7 @@
 #include "MinimizeMarkers.hpp"
 #include "AddMarkers.hpp"
 
-Structure* UnsatStructureExtraction::extractStructure(bool assumeStruc, bool assumeTheo, AbstractTheory* intheory, Structure* structure, Vocabulary* vAssume) {
+pair<Structure*,Theory*> UnsatExtraction::extractCore(bool assumeStruc, bool assumeTheo, AbstractTheory* intheory, Structure* structure, Vocabulary* vAssume) {
     //Clone theory/structure/vocabulary so we can modify them
     std::stringstream ss;
     ss << "unsatstruct_voc" << getGlobal()->getNewID();
@@ -36,41 +35,41 @@ Structure* UnsatStructureExtraction::extractStructure(bool assumeStruc, bool ass
 
     //Copy the literals from the result to the output structure
     vector<DomainAtom> coreresult = minimizeAssumps(newtheory, emptyStruc, assume);
-    vector<DomainAtom> theoryMarkers;
+    vector<DomainAtom> theoryMarkers = coreresult;
 
     if(assumeStruc){
-        theoryMarkers = outputStructure(intheory, structure, emptyStruc, coreresult, theoryMarkers);
+        outputStructure(intheory, structure, emptyStruc, coreresult, theoryMarkers);
     }
+    Theory* outTheo = 0;
     if(assumeTheo){
-        outputTheory(assumeTheo, am, theoryMarkers);
+        outTheo = outputTheory(am, theoryMarkers, intheory->vocabulary());
+        newtheory->recursiveDelete();
     }
 
     emptyStruc->changeVocabulary(intheory->vocabulary());
     delete (voc);
-    newtheory->recursiveDelete();
-    return emptyStruc;
+    return pair<Structure*,Theory*>(emptyStruc,outTheo);
 }
 
-void UnsatStructureExtraction::outputTheory(bool assumeTheo, const AddMarkers *am,
-                                            const vector<DomainAtom> &theoryMarkers) const {
+Theory*UnsatExtraction::outputTheory(const AddMarkers *am,
+                                            const vector<DomainAtom> &theoryMarkers,
+                                            Vocabulary* voc) {
     Theory* outputTheo;
-    if(assumeTheo){
-            auto core = am->getComponentsFromMarkers(theoryMarkers);
-            outputTheo = new Theory("unsat_core", theory->vocabulary(), {});
-            for(auto c: core){
-                outputTheo->add(c);
-            }
-            delete (am);
-        }
+    auto core = am->getComponentsFromMarkers(theoryMarkers);
+    outputTheo = new Theory("unsat_core", voc, ParseInfo());
+    for(auto c: core){
+        outputTheo->add(c);
+    }
+    delete (am);
+    return outputTheo;
 }
 
-vector<DomainAtom> &UnsatStructureExtraction::outputStructure(const AbstractTheory *intheory,
+void UnsatExtraction::outputStructure(const AbstractTheory *intheory,
                                                               const Structure *structure, const Structure *emptyStruc,
                                                               vector<DomainAtom> &coreresult,
-                                                              vector<DomainAtom> &theoryMarkers) const {
+                                                              vector<DomainAtom> &theoryMarkers) {
     for(DomainAtom da : coreresult){
             if(intheory->vocabulary()->contains(da.symbol)){
-                cout << da.symbol->nameNoArity();
                 PredInter* orig = structure->inter(da.symbol);
                 PredInter* target = emptyStruc->inter(da.symbol);
                 if(orig->isTrue(da.args,true)){
@@ -83,16 +82,15 @@ vector<DomainAtom> &UnsatStructureExtraction::outputStructure(const AbstractTheo
             }
         }
     coreresult = theoryMarkers;
-    return theoryMarkers;
 }
 
-void UnsatStructureExtraction::assumifyTheory(Theory *&newtheory, vector<Predicate*> &assumeAllFalse, AddMarkers *&am) {
+void UnsatExtraction::assumifyTheory(Theory *&newtheory, vector<Predicate*> &assumeAllFalse, AddMarkers *&am) {
     am = new AddMarkers();
     newtheory = am->execute(newtheory);
     assumeAllFalse = am->getMarkers();
 }
 
-void UnsatStructureExtraction::assumifyStructure(const Structure *structure, const Vocabulary *vAssume,
+void UnsatExtraction::assumifyStructure(const Structure *structure, const Vocabulary *vAssume,
                                                  const Theory *newtheory, Structure *&emptyStruc,
                                                  vector<DomainAtom> &assumeNeg, vector<DomainAtom> &assumePos) {
     emptyStruc= new Structure("empty", newtheory->vocabulary(), ParseInfo());
@@ -126,7 +124,7 @@ void UnsatStructureExtraction::assumifyStructure(const Structure *structure, con
     }
 }
 
-void UnsatStructureExtraction::tableToVector(std::vector<DomainAtom> &assumeNeg, PFSymbol *const symbol,
+void UnsatExtraction::tableToVector(std::vector<DomainAtom> &assumeNeg, PFSymbol *const symbol,
                                              const PredTable *cfTab) {
     for(auto it = cfTab->begin(); not it.isAtEnd() ; ++it){
         DomainAtom da;

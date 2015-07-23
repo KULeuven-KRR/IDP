@@ -12,51 +12,40 @@
 #pragma once
 
 #include <iostream>
+#include <internalargument.hpp>
 #include "commandinterface.hpp"
+#include "inferences/debugging/UnsatExtraction.hpp"
+#include "inferences/debugging/MinimizeMarkers.hpp"
 
-#include "inferences/debugging/UnsatCoreExtraction.hpp"
 
-typedef TypedInference<LIST(AbstractTheory*, Structure*)> ModelExpandInferenceBase;
-class UnsatCoreInference: public ModelExpandInferenceBase {
+typedef TypedInference<LIST(bool, bool, AbstractTheory*, Structure*, Vocabulary*)> ModelExpandVocInferenceBase;
+class UnsatCoreInference: public ModelExpandVocInferenceBase {
 public:
 	UnsatCoreInference()
-			: ModelExpandInferenceBase("unsatcore",
-					"Returns a theory, subset of the given theory, that is unsatisfiable in the given structure.", false) {
-		setNameSpace(getInternalNamespaceName());
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		try{
-			auto theory = get<0>(args);
-			auto core = UnsatCoreExtraction::extractCore(theory, get<1>(args));
-
-			return InternalArgument(coretheory);
-		} catch(const IdpException& e) {
-			std::cerr << e.getMessage();
-			return InternalArgument();
-		}
-
-		
-	}
-};
-
-#include "inferences/debugging/UnsatStructureExtraction.hpp"
-typedef TypedInference<LIST(AbstractTheory*, Structure*, Vocabulary*)> ModelExpandVocInferenceBase;
-class UnsatStructureInference: public ModelExpandVocInferenceBase {
-public:
-	UnsatStructureInference()
-			: ModelExpandVocInferenceBase("unsatstructure",
+			: ModelExpandVocInferenceBase("unsatcore",
 									   "Returns a structure, subset of the given structure, that is unsatisfiable for the given theory.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		auto theory = get<0>(args);
-		auto struc = get<1>(args);
-		auto voc = get<2>(args);
+		auto assumeTheo = get<0>(args);
+		auto assumeStruc = get<1>(args);
+		auto theory = get<2>(args);
+		auto struc = get<3>(args);
+		auto voc = get<4>(args);
 		try{
-			return InternalArgument(UnsatStructureExtraction::extractStructure(theory, struc, voc));
-		} catch(const IdpException& e) {
+			auto core = UnsatExtraction::extractCore(assumeTheo,assumeStruc,theory, struc, voc);
+			InternalArgument output;
+			output._type = AT_MULT;
+
+			output._value._table = new std::vector<InternalArgument>();
+			output._value._table->push_back(InternalArgument(core.first));
+			if(core.second){
+				output._value._table->push_back(InternalArgument(core.second));
+			}
+
+			return output;
+		} catch(const AlreadySatisfiableException& e) {
 			std::cerr << e.getMessage();
 			return InternalArgument();
 		}

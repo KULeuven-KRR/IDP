@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <memory>
 #include "Weight.hpp"
-#include "../grounding/GroundUtils.hpp"
+#include "inferences/grounding/GroundUtils.hpp"
 
 class Structure;
 class AbstractTheory;
