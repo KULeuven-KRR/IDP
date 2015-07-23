@@ -324,7 +324,7 @@ procedure printunsatcore(theory,structure){
 		io.stderr:write("Error: structure expected\n")
 		return
 	end
-	idpintern.unsatcore(theory,structure)
+	idpintern.unsatcore(false,true,theory,structure,getvocabulary(theory))
 	return;
 }
 
@@ -355,9 +355,36 @@ procedure unsatstructure(theory, structure, vocabulary) {
 	end
 
 	if(vocabulary~=nil) then
-		return idpintern.unsatstructure(theory,structure, vocabulary)
+		return idpintern.unsatcore(true,false,theory,structure,vocabulary)
 	else
-		return idpintern.unsatstructure(theory,structure, getvocabulary(structure))
+		return idpintern.unsatcore(true,false,theory,structure,getvocabulary(theory))
+	end
+}
+
+
+
+/**
+ * Returns a subset-minimal subset of the given structure and theory, so that the structure does not satisfy the theory. This will also print the theory.
+ * Possibly over a vocabulary, in which case the structure will only be subset-minimal over this vocabulary.
+ */
+procedure explainUnsat(theory, structure, vocabulary) {
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	if vocabulary ~= nil and type(vocabulary) ~= "vocabulary" then
+		io.stderr:write("Error: vocabulary expected\n")
+		return
+	end
+
+	if(vocabulary~=nil) then
+		return idpintern.unsatcore(true,true,theory,structure,vocabulary)
+	else
+		return idpintern.unsatcore(true,true,theory,structure,getvocabulary(theory))
 	end
 }
 

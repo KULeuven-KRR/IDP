@@ -35,8 +35,7 @@ private:
     static void assumifyTheory(Theory * &newtheory, vector<Predicate*> &assumeAllFalse, AddMarkers * &am);
 
     static void outputStructure(const AbstractTheory *intheory, const Structure *structure,
-                                        const Structure *emptyStruc, vector<DomainAtom> &coreresult,
-                                        vector<DomainAtom> &theoryMarkers);
+                                        const Structure *emptyStruc, vector<DomainAtom> &coreresult);
 
     static Theory* outputTheory(  const AddMarkers *am,
                                   const vector<DomainAtom> &theoryMarkers,

@@ -35,14 +35,14 @@ pair<Structure*,Theory*> UnsatExtraction::extractCore(bool assumeStruc, bool ass
 
     //Copy the literals from the result to the output structure
     vector<DomainAtom> coreresult = minimizeAssumps(newtheory, emptyStruc, assume);
-    vector<DomainAtom> theoryMarkers = coreresult;
+    //vector<DomainAtom> theoryMarkers = coreresult;
 
     if(assumeStruc){
-        outputStructure(intheory, structure, emptyStruc, coreresult, theoryMarkers);
+        outputStructure(intheory, structure, emptyStruc, coreresult);
     }
     Theory* outTheo = 0;
     if(assumeTheo){
-        outTheo = outputTheory(am, theoryMarkers, intheory->vocabulary());
+        outTheo = outputTheory(am, coreresult, intheory->vocabulary());
         newtheory->recursiveDelete();
     }
 
@@ -66,22 +66,18 @@ Theory*UnsatExtraction::outputTheory(const AddMarkers *am,
 
 void UnsatExtraction::outputStructure(const AbstractTheory *intheory,
                                                               const Structure *structure, const Structure *emptyStruc,
-                                                              vector<DomainAtom> &coreresult,
-                                                              vector<DomainAtom> &theoryMarkers) {
+                                                              vector<DomainAtom> &coreresult) {
     for(DomainAtom da : coreresult){
-            if(intheory->vocabulary()->contains(da.symbol)){
-                PredInter* orig = structure->inter(da.symbol);
-                PredInter* target = emptyStruc->inter(da.symbol);
-                if(orig->isTrue(da.args,true)){
-                    target->makeTrueExactly(da.args,true);
-                }else{
-                    target->makeFalseExactly(da.args,true);
-                }
+        if(intheory->vocabulary()->contains(da.symbol)){
+            PredInter* orig = structure->inter(da.symbol);
+            PredInter* target = emptyStruc->inter(da.symbol);
+            if(orig->isTrue(da.args,true)){
+                target->makeTrueExactly(da.args,true);
             }else{
-                theoryMarkers.push_back(da);
+                target->makeFalseExactly(da.args,true);
             }
         }
-    coreresult = theoryMarkers;
+    }
 }
 
 void UnsatExtraction::assumifyTheory(Theory *&newtheory, vector<Predicate*> &assumeAllFalse, AddMarkers *&am) {

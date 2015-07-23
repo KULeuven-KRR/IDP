@@ -23,18 +23,18 @@ class UnsatCoreInference: public ModelExpandVocInferenceBase {
 public:
 	UnsatCoreInference()
 			: ModelExpandVocInferenceBase("unsatcore",
-									   "Returns a structure, subset of the given structure, that is unsatisfiable for the given theory.", false) {
+									   "Extracts a subset minimal inconsistent part of structure/theory. The first argument decides whether the structure is minimized, the second whether the theory is minimized. The thrid and fourth are the theory and structure which need to be minimized. The last argument is the (sub)vocabulary of the structure which needs to be minimized.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		auto assumeTheo = get<0>(args);
-		auto assumeStruc = get<1>(args);
+		auto assumeStruc = get<0>(args);
+		auto assumeTheo = get<1>(args);
 		auto theory = get<2>(args);
 		auto struc = get<3>(args);
 		auto voc = get<4>(args);
 		try{
-			auto core = UnsatExtraction::extractCore(assumeTheo,assumeStruc,theory, struc, voc);
+			auto core = UnsatExtraction::extractCore(assumeStruc,assumeTheo,theory, struc, voc);
 			InternalArgument output;
 			output._type = AT_MULT;
 

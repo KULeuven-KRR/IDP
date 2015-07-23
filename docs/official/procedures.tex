@@ -81,6 +81,8 @@ The \code{inferences} namespace and all its procedures are included in the globa
 		Returns all models of the theory that extend the given structure.
 	\item[calculatedefinitions(theory,structure)]
 		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or  nil if inconsistency is detected.
+	\item[explainUnsat(theory, structure, vocabulary)]
+		Returns a subset-minimal subset of the given structure and theory, so that the structure does not satisfy the theory. This will also print the theory. Possibly over a vocabulary, in which case the structure will only be subset-minimal over this vocabulary.
 	\item[ground(theory,structure)]
  		Create the reduced grounding of the given theory and structure. 
  	\item[groundeq(theory,structure,modeleq)]
