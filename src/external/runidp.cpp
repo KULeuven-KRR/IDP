@@ -113,7 +113,7 @@ vector<string> read_options(int argc, char* argv[], CLOptions& cloptions) {
 		} else if (str == "--nowarnings") {
 			setOption(BoolType::SHOWWARNINGS, false);
 		} else if (str == "-v" || str == "--version") {
-			cout << GIDLVERSION << "\n";
+			cout << GIDLVERSION << " - (git hash: " << GITHASH << ")\n";
 			exit(0);
 		} else if (str == "-h" || str == "--help") {
 			usage(name);
