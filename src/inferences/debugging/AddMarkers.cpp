@@ -27,8 +27,7 @@ vector<TheoryComponent*> AddMarkers::getComponentsFromMarkers(const vector<Domai
     vector<TheoryComponent*> core;
     stringstream outputwithparseinfo;
     outputwithparseinfo << "The following is an unsatisfiable subset, "
-            "given that functions can map to at most one element (and exactly one if not partial) "
-            "and the interpretation of types and symbols in the structure:\n";
+            "given that functions can map to at most one element (and exactly one if not partial):\n";
     for (auto pf : pfs) {
         auto pred = dynamic_cast<Predicate*>(pf.symbol);
         if (contains(marker2formula, pred)) {
@@ -52,8 +51,6 @@ vector<TheoryComponent*> AddMarkers::getComponentsFromMarkers(const vector<Domai
             } else {
                 outputwithparseinfo << "\t" << print(newrule) << " instantiated from line " << newrule->pi().linenumber() << ss.str() << ".\n";
             }
-        } else {
-            core.push_back(&Gen::atom(pf.symbol, pf.args));
         }
     }
     cout << outputwithparseinfo.str();

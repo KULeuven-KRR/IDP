@@ -23,7 +23,7 @@ class UnsatCoreInference: public ModelExpandVocInferenceBase {
 public:
 	UnsatCoreInference()
 			: ModelExpandVocInferenceBase("unsatcore",
-									   "Extracts a subset minimal inconsistent part of structure/theory. The first argument decides whether the structure is minimized, the second whether the theory is minimized. The thrid and fourth are the theory and structure which need to be minimized. The last argument is the (sub)vocabulary of the structure which needs to be minimized.", false) {
+									   "Extracts a subset minimal inconsistent part of structure/theory. The first argument decides whether the structure is minimized, the second whether the theory is minimized. The third and fourth are the theory and structure which need to be minimized. The last argument is the (sub)vocabulary of the structure which needs to be minimized.", false) {
 		setNameSpace(getInternalNamespaceName());
 	}
 
