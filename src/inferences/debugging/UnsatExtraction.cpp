@@ -89,7 +89,7 @@ void UnsatExtraction::assumifyTheory(Theory *&newtheory, vector<Predicate*> &ass
 void UnsatExtraction::assumifyStructure(const Structure *structure, const Vocabulary *vAssume,
                                                  const Theory *newtheory, Structure *&emptyStruc,
                                                  vector<DomainAtom> &assumeNeg, vector<DomainAtom> &assumePos) {
-    emptyStruc= new Structure("empty", newtheory->vocabulary(), ParseInfo());
+    emptyStruc= new Structure(emptyStruc->name() + "_reduced", newtheory->vocabulary(), ParseInfo());
     //The new structure is completely empty except for the sortsauto sorts = structure->getSortInters();
     for (const auto& kv : structure->getSortInters()) {
         emptyStruc->changeInter(kv.first,kv.second);
