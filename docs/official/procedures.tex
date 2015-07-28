@@ -82,7 +82,16 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	\item[calculatedefinitions(theory,structure)]
 		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or  nil if inconsistency is detected.
 	\item[explainunsat(theory, structure, vocabulary)]
-		Returns and prints a subset-minimal subset of the given structure and theory, so that the structure does not satisfy the theory. Possibly over a vocabulary, in which case the structure will only be subset-minimal over this vocabulary.
+		Given input structure S_i, input theory T_i and vocabulary V_i, this procedure searches for a structure S_O and a theory T_O such that the following hold * S_O is less precise than S_i.
+		\begin{description}
+		\item T_O is entailed by T_i (obtained by instantiating universal quantifiers in rules and sentences)
+		\item S_O equals S_i on symbols not in V_i
+		\item S_O is maximally imprecise with respect to the above criteria
+		\item T_O is maximally restrictive w r t the above criteria
+		\end{description}
+Furthermore, this procedure also prints S_O and T_O in a human-readable way
+(note: with respect to definitions, the entailment is not always strictly respected since it is currently impossible to partially define symbols)
+
 	\item[ground(theory,structure)]
  		Create the reduced grounding of the given theory and structure. 
  	\item[groundeq(theory,structure,modeleq)]
