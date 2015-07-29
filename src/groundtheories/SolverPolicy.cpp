@@ -253,6 +253,14 @@ void SolverPolicy<Solver>::requestTwoValued(const std::vector<Lit>& lits) {
 	CHECKUNSAT;
 }
 
+template<class Solver>
+void SolverPolicy<Solver>::requestTwoValued( VarId& varid) {
+	MinisatID::TwoValuedVarIdRequirement req( convert(varid));
+	extAdd(getSolver(), req);
+	CHECKUNSAT;
+}
+
+
 class RealElementGrounder: public MinisatID::LazyAtomGrounder {
 private:
 	Lit headatom;

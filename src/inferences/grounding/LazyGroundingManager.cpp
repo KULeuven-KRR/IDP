@@ -938,3 +938,17 @@ std::vector<Definition*> LazyGroundingManager::extendStructure(Structure* struct
 void DelayedSentence::put(std::ostream& stream) const {
 	stream << "Delayed " << toString(sentence->getFormula()) << " on " << toString(delay) << "\n";
 }
+
+void LazyGroundingManager::notifyNewVarId(Function *symbol, const std::vector<GroundTerm>& vector, VarId& id) {
+	if (not getOption(SATISFIABILITYDELAY) && _outputvocabulary == NULL) {
+		return;
+	}
+	if (_outputvocabulary != NULL && symbol != NULL && not _outputvocabulary->contains(symbol)) {
+		return;
+	}
+	auto solver = dynamic_cast<SolverTheory*>(getGrounding());
+	if (solver == NULL) {
+		return;
+	}
+	solver->requestTwoValued(id);
+}

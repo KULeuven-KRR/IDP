@@ -595,7 +595,11 @@ VarId GroundTranslator::translateTerm(SymbolOffset offset, const vector<GroundTe
 VarId GroundTranslator::translateTerm(Function* function, const vector<GroundTerm>& args) {
 	Assert(CPSupport::eligibleForCP(function, vocabulary()));
 	auto offset = addSymbol(function);
-	return translateTerm(offset, args);
+	VarId trans = translateTerm(offset, args);
+	if(_groundingmanager!=NULL){
+		_groundingmanager->notifyNewVarId(function,args,trans);
+	}
+	return trans;
 }
 
 VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
