@@ -27,7 +27,7 @@ typedef std::vector<const DomainElement*> ElementTuple;
 struct LazyInstantiation;
 class DelayGrounder;
 class LazyGroundingManager;
-
+class VarID;
 /**
  *	A SolverTheory is a ground theory, stored as an instance of a SAT solver
  */
