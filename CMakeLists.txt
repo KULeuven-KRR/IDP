@@ -39,7 +39,7 @@ enable_testing()
 option(BUILDDOCUMENTATION "Build the documentation" ON)
 
 set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build.")
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "StaticRelease" "StaticDebug" "Profile")
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "DebugProfile" "Release" "StaticRelease" "StaticDebug" "Profile")
 
 message(STATUS "Install path (CMAKE_INSTALL_PREFIX): ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build type (CMAKE_BUILD_TYPE): ${CMAKE_BUILD_TYPE}")
