@@ -439,6 +439,21 @@ SymbolOffset GroundTranslator::addSymbol(PFSymbol* pfs) {
 		return n;
 	}
 }
+Lit GroundTranslator::conjunction(const Lit l, const Lit r, TsType tstype) {
+	if (l == trueLit()) {
+		return r;
+	}
+	if (l == falseLit()) {
+		return l;
+	}
+	if (r == trueLit()) {
+		return l;
+	}
+	if (r == falseLit()) {
+		return r;
+	}
+	return reify( { l, r }, true, tstype);
+}
 
 Lit GroundTranslator::reify(const litlist& clause, bool conj, TsType tstype) {
 	int head = nextNumber(AtomType::TSEITINWITHSUBFORMULA);
