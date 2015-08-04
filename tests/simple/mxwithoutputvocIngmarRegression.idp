@@ -31,25 +31,7 @@ theory T: V{
 
 
 structure S:V{
-    Num = {-200..1000}
-}
-
-structure Sol : V {
-  Num = { -200..1000 }
-  a = 625
-  b = 605
-  c = 628
-  d = 602
-  r = 69
-}
-
-structure Sol2 : V {
-  Num = { -200..1000 }
-  a = 658
-  b = 638
-  c = 661
-  d = 635
-  r = 69
+    Num = {0..100}
 }
 
 

@@ -55,6 +55,7 @@ public:
 	void polNotifyLazyWatch(Atom atom, TruthValue watches, LazyGroundingManager* manager);
 
 	void requestTwoValued(const litlist& lit);
+	void requestTwoValued(VarId& vid);
 
 protected:
 	void polRecursiveDelete() {

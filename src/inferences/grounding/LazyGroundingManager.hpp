@@ -12,6 +12,7 @@
 #include "inferences/grounding/grounders/Grounder.hpp"
 #include "inferences/grounding/grounders/FormulaGrounders.hpp"
 #include "inferences/grounding/grounders/DefinitionGrounders.hpp"
+#include <vector>
 
 struct ContainerAtom {
 	PFSymbol* symbol;
@@ -157,6 +158,8 @@ public:
 	}
 
 	virtual void put(std::ostream&) const;
+
+	void notifyNewVarId(Function *pFunction, const std::vector<GroundTerm>& vector, VarId& id);
 
 private:
 	bool split(Grounder* grounder);
