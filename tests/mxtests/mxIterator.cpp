@@ -15,7 +15,7 @@ using namespace std;
 
 namespace Tests {
 
-TEST_P(MXIteratorTest, FindAllModels) {
+TEST_P(MXnbTest, VerifyAllStructures) {
 	runTests("modeliteration.idp", GetParam(), "run()");
 }
 
