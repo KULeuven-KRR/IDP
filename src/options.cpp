@@ -173,7 +173,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		auto opt = new Options(true);
 		OptionPol::createOption(OptionType::VERBOSITY, "verbosity", { opt }, opt, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SHOWWARNINGS, "showwarnings", boolvalues, true, PrintBehaviour::DONOTPRINT);
-		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::CPSUPPORT, "cpsupport", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::FUNCDETECT, "functiondetection", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::SKOLEMIZE, "skolemize", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::CPGROUNDATOMS, "cpgroundatoms", boolvalues, false, PrintBehaviour::PRINT);

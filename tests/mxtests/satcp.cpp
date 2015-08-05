@@ -14,7 +14,7 @@
 namespace Tests {
 
 TEST_P(MXsatTest, DoesMXWithCP) {
-	runTests("satisfiability.idp", GetParam(), "satwithcp()");
+	runTests("satisfiability.idp", GetParam(), "satwithoutcp()");
 }
 TEST_P(MXsatTest, DoesMXWithFullCP) {
 	runTests("satisfiability.idp", GetParam(), "satwithfullcp()");

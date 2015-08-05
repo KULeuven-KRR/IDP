@@ -62,8 +62,8 @@ procedure satwithboundslong(){
 	return run()
 }
 
-procedure satwithcp(){
-	stdoptions.cpsupport = true
+procedure satwithoutcp(){
+	stdoptions.cpsupport = false
 	stdoptions.cpgroundatoms = false
 	stdoptions.timeout = 5
 	return run()

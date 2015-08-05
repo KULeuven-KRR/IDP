@@ -18,7 +18,7 @@ TEST_P(MXnbTest, DoesMXWithLazyTseitinDelaying) {
 }
 
 TEST_P(MXnbTest, DoesMXWithLazyCPTseitinDelaying) {
-	runTests("modelexpansion.idp", GetParam(), "mxlazycp()");
+	runTests("modelexpansion.idp", GetParam(), "mxlazywithoutcp()");
 }
 
 TEST_P(MXsatTest, DoesSatMXWithLazyTseitinDelaying) {

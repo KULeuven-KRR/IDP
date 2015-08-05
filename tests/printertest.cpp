@@ -35,7 +35,7 @@ void runTests2(const string& instancefile, const std::string& command="") {
 
 	ASSERT_NO_THROW(result=test( {instancefile, testfile}, command););
 	ASSERT_EQ(Status::SUCCESS, result);
-	ASSERT_NO_THROW( result = test( {getTestDirectory() +"modelexpansion.idp", testfile2, "tmp.idp"}, "mxwithcp()"););
+	ASSERT_NO_THROW( result = test( {getTestDirectory() +"modelexpansion.idp", testfile2, "tmp.idp"}, "mxwithoutcp()"););
 	ASSERT_EQ(Status::SUCCESS, result);
 
 }

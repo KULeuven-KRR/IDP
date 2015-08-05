@@ -31,8 +31,8 @@ procedure mxlazy(){
 	return run(T)
 }
 
-procedure mxlazycp(){
-	stdoptions.cpsupport = true
+procedure mxlazywithoutcp(){
+	stdoptions.cpsupport = false
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
 	stdoptions.xsb=false
@@ -118,8 +118,8 @@ procedure mxnonreduced(){
 	return run(T)
 }
 
-procedure mxwithcp(){
-	stdoptions.cpsupport = true
+procedure mxwithoutcp(){
+	stdoptions.cpsupport = false
 	stdoptions.cpgroundatoms = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
