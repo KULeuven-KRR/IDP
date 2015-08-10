@@ -38,6 +38,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
 	DefinitionCalculationResult result(structure);
+	result._hasModel = true;
 #ifdef WITHXSB
 	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
 	if (withxsb) {
