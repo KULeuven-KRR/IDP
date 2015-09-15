@@ -38,6 +38,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
 	DefinitionCalculationResult result(structure);
+	result._hasModel = true;
 #ifdef WITHXSB
 	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
 	if (withxsb) {
@@ -161,6 +162,15 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 		SolverConnection::addTerms(*model, grounding->translator(), structure);
 		structure->clean();
 	}
+	for (auto symbol : definition->defsymbols()) {
+		if (isa<Function>(*symbol)) {
+			auto fun = dynamic_cast<Function*>(symbol);
+			if (not structure->inter(fun)->approxTwoValued()) { // Check for functions that are defined badly
+				result._hasModel = false;
+			}
+		}
+	}
+
 	// Cleanup
 	grounding->recursiveDelete();
 	theory->recursiveDelete();
@@ -168,7 +178,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	delete (mx);
 	delete (grounder);
 
-	result._hasModel=(not abstractsolutions.empty() && structure->isConsistent());
+	result._hasModel &= (not abstractsolutions.empty() && structure->isConsistent());
 	return result;
 }
 
