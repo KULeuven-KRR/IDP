@@ -14,7 +14,7 @@
 namespace Tests {
 
 TEST_P(MXnbTest, DoesMXWithCP) {
-	runTests("modelexpansion.idp", GetParam(), "mxwithcp()");
+	runTests("modelexpansion.idp", GetParam(), "mxwithoutcp()");
 }
 
 TEST_P(MXnbTest, DoesMXWithFullCP) {

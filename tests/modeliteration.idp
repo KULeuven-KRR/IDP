@@ -1,16 +1,4 @@
-procedure standardoptions(){
-	stdoptions.verbosity.solving=0
-	stdoptions.verbosity.grounding=0
-	stdoptions.verbosity.transformations=0
-	stdoptions.verbosity.creategrounders=0
-	stdoptions.groundwithbounds=true
-	stdoptions.liftedunitpropagation=true
-	stdoptions.satdelay=false
-	stdoptions.tseitindelay=false
-	stdoptions.lazyheur=false
-	stdoptions.xsb=false
-  	stdoptions.approxdef="none"
-}
+include "standardoptions.idp"
 
 /**
  * Drop in replacement of modelexpand.
@@ -28,6 +16,7 @@ procedure modeliterate(T, S, V) {
 }
 
 procedure run(theory) {
+  standardoptions()
 	if(theory == nil) then
 		//For backwards compatibility with tests calling run()
 		theory = T

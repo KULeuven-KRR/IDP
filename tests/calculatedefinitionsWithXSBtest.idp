@@ -20,6 +20,7 @@ procedure checkForRandomInputStructure(theory, structure, nrtimes) {
 }
 
 procedure checkDefinitionEvaluation(theory, structure) {
+  standardoptions()
 	stdoptions.timeout = 10
 	stdoptions.xsb=false
 	NOXSBMODEL=calculatedefinitions(theory,structure)
@@ -102,6 +103,7 @@ procedure checkDefinitionRefining(theory, structure) {
 }
 
 procedure runCalcDefWithXSB(theory,structure) {
+  standardoptions()
 	stdoptions.timeout = 5
 	stdoptions.xsb=true
 	XSBMODEL=calculatedefinitions(theory,structure)

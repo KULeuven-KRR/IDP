@@ -1,6 +1,8 @@
 include <mx>
+include "standardoptions.idp"
 
 procedure satnobounds(){
+  standardoptions()
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 10
@@ -8,6 +10,7 @@ procedure satnobounds(){
 }
 
 procedure satnoboundslong(){
+  standardoptions()
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 200
@@ -16,6 +19,7 @@ procedure satnoboundslong(){
 
 // NOTE: only based on lazy tseitin delaying!!!!
 procedure satlazy(){
+  standardoptions()
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 10
 	stdoptions.xsb=false
@@ -24,6 +28,8 @@ procedure satlazy(){
 
 // NOTE: never enable delaying here which depends on well-founded definitions!
 procedure satverylazy(){
+  standardoptions()
+  stdoptions.cpsupport=false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation=false
 	stdoptions.satdelay=true
@@ -33,6 +39,7 @@ procedure satverylazy(){
 }
 
 procedure satwithbounds(){
+  standardoptions()
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 10
@@ -40,6 +47,7 @@ procedure satwithbounds(){
 }
 
 procedure satstable(){
+  standardoptions()
 	stdoptions.stablesemantics=true
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
@@ -48,6 +56,7 @@ procedure satstable(){
 }
 
 procedure satnonreduced(){
+  standardoptions()
 	stdoptions.reducedgrounding = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
@@ -56,25 +65,29 @@ procedure satnonreduced(){
 }
 
 procedure satwithboundslong(){
+  standardoptions()
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 200
 	return run()
 }
 
-procedure satwithcp(){
-	stdoptions.cpsupport = true
+procedure satwithoutcp(){
+  standardoptions()
+	stdoptions.cpsupport = false
 	stdoptions.cpgroundatoms = false
 	stdoptions.timeout = 5
 	return run()
 }
 procedure satwithfullcp(){
+  standardoptions()
 	stdoptions.cpsupport = true
 	stdoptions.cpgroundatoms = true
 	stdoptions.timeout = 10
 	return run()
 }
 procedure satwithskolems(){
+  standardoptions()
 	stdoptions.cpsupport = true
 	stdoptions.cpgroundatoms = true
 	stdoptions.skolemize=true
@@ -83,6 +96,7 @@ procedure satwithskolems(){
 }
 
 procedure satwithsymm(){
+  standardoptions()
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
@@ -91,6 +105,7 @@ procedure satwithsymm(){
 }
 
 procedure satwithxsb(){
+  standardoptions()
 	stdoptions.timeout = 5
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false

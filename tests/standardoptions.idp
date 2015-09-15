@@ -1,0 +1,15 @@
+procedure standardoptions(){
+	stdoptions.verbosity.solving=0
+	stdoptions.verbosity.grounding=0
+	stdoptions.verbosity.transformations=0
+	stdoptions.verbosity.creategrounders=0
+	stdoptions.groundwithbounds=true
+	stdoptions.liftedunitpropagation=true
+	stdoptions.satdelay=false
+	stdoptions.tseitindelay=false
+	stdoptions.lazyheur=false
+  stdoptions.approxdef="none"
+	stdoptions.functiondetection=false
+	stdoptions.xsb=false // TODO: xsb=true is the actual standard option :/
+  stdoptions.cpsupport=true
+}
