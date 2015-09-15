@@ -1,21 +1,8 @@
 include <mx>
-
-procedure standardoptions(){
-	stdoptions.verbosity.solving=0
-	stdoptions.verbosity.grounding=0
-	stdoptions.verbosity.transformations=0
-	stdoptions.verbosity.creategrounders=0
-	stdoptions.groundwithbounds=true
-	stdoptions.liftedunitpropagation=true
-	stdoptions.satdelay=false
-	stdoptions.tseitindelay=false
-	stdoptions.lazyheur=false
-	stdoptions.xsb=false
-  	stdoptions.approxdef="none"
-	stdoptions.functiondetection=false
-}
+include "standardoptions.idp"
 
 procedure mxnobounds(){
+  standardoptions()
 	stdoptions.groundwithbounds = false	
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 7
@@ -25,6 +12,7 @@ procedure mxnobounds(){
 // NOTE: only based on lazy tseitin delaying!!!!
 // NOTE: never enable delaying here which depends on well-founded definitions!
 procedure mxlazy(){
+  standardoptions()
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
 	stdoptions.xsb=false
@@ -32,6 +20,7 @@ procedure mxlazy(){
 }
 
 procedure mxlazywithoutcp(){
+  standardoptions()
 	stdoptions.cpsupport = false
 	stdoptions.tseitindelay = true
 	stdoptions.timeout = 7
@@ -41,6 +30,8 @@ procedure mxlazywithoutcp(){
 
 // NOTE: never enable delaying here which depends on well-founded definitions!
 procedure mxverylazy(){
+  standardoptions()
+  stdoptions.cpsupport=false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation=false
 	stdoptions.lazyheur=true
@@ -55,6 +46,7 @@ procedure mxverylazy(){
 }
 
 procedure mxfuncdetect(){
+  standardoptions()
 	stdoptions.functiondetection = true
 	stdoptions.timeout = 100
 	stdoptions.verbosity.functiondetection=0
@@ -63,6 +55,7 @@ procedure mxfuncdetect(){
 }
 
 procedure mxnoboundslong(){
+  standardoptions()
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 200
@@ -70,6 +63,7 @@ procedure mxnoboundslong(){
 }
 
 procedure mxwithbounds(){
+  standardoptions()
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	stdoptions.timeout = 7
@@ -77,6 +71,7 @@ procedure mxwithbounds(){
 }
 
 procedure mxwithmeta(){
+  standardoptions()
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
 	metastruc = tometa(T)
@@ -87,6 +82,7 @@ procedure mxwithmeta(){
 }
 
 procedure mxwithxsb(){
+  standardoptions()
 	stdoptions.xsb=true
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
@@ -95,6 +91,7 @@ procedure mxwithxsb(){
 }
 
 procedure mxwithapproxdefs(){
+  standardoptions()
 	stdoptions.xsb=true
   	stdoptions.approxdef="cheap"
   	stdoptions.groundwithbounds = true
@@ -104,6 +101,7 @@ procedure mxwithapproxdefs(){
 }
 
 procedure mxwithboundswithoutLUP(){
+  standardoptions()
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = false
 	stdoptions.timeout = 7
@@ -111,6 +109,7 @@ procedure mxwithboundswithoutLUP(){
 }
 
 procedure mxnonreduced(){
+  standardoptions()
 	stdoptions.reducedgrounding = false
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
@@ -119,6 +118,7 @@ procedure mxnonreduced(){
 }
 
 procedure mxwithoutcp(){
+  standardoptions()
 	stdoptions.cpsupport = false
 	stdoptions.cpgroundatoms = false
 	stdoptions.groundwithbounds = true
@@ -128,6 +128,7 @@ procedure mxwithoutcp(){
 }
 
 procedure mxwithfullcp(){
+  standardoptions()
 	stdoptions.cpsupport = true
 	stdoptions.cpgroundatoms = true
 	stdoptions.groundwithbounds = true
@@ -138,6 +139,7 @@ procedure mxwithfullcp(){
 
 
 procedure mxwithSharedTseitins(){
+  standardoptions()
 	stdoptions.sharedtseitins = true
 	stdoptions.groundwithbounds = true
 	stdoptions.liftedunitpropagation = true
@@ -146,6 +148,7 @@ procedure mxwithSharedTseitins(){
 }
 
 procedure mxwithsymm(){
+  standardoptions()
 	stdoptions.timeout = 7
 	stdoptions.groundwithbounds = false
 	stdoptions.liftedunitpropagation = false
@@ -167,6 +170,7 @@ procedure mxwithsymm(){
 }
 
 procedure mxCardFO(){
+  standardoptions()
 	newT = clone(T)
 	removecardinalities(newT,10)
 	return run(newT)
