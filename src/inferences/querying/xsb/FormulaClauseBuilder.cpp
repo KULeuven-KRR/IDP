@@ -212,7 +212,6 @@ void FormulaClauseBuilder::visit(const AggTerm* a) {
 	term->agg_type(_translator->to_prolog_term(a->function()));
 	enter(term);
 	a->set()->accept(this);
-	// TODO: what does this vars thing actually do? it's immediatly re-set as the variables of term (see 6 lines ahead)
 	for (auto it = a->freeVars().begin(); it != a->freeVars().end(); ++it) {
 		auto var = createPrologVar(*it);
 		term->instantiatedVariables().insert(var);
