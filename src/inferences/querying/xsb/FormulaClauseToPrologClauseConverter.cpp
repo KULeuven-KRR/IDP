@@ -97,10 +97,11 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateClause* ac) {
 	term->addArgument(ac->term());
 	term->addArgument(ac->aggterm()->result());
 	if (isa<PrologVariable>(*(ac->term()))) {
-		term->addInputvarToCheck((PrologVariable*) ac->term());
+		term->addOutputvarToCheck((PrologVariable*) ac->term());
 	}
 	body.push_back(term);
 	ac->aggterm()->accept(this);
+	
 	_pp->addClause(new PrologClause(ac->asTerm(), body, false));
 }
 

@@ -1,0 +1,15 @@
+vocabulary V {    
+    type t
+    C : nat
+}
+
+theory T : V {
+    {
+        C = #{l : t(l)}. 
+    } 
+}
+
+
+structure S : V {
+    t = {}
+}

@@ -147,7 +147,6 @@ void FormulaClauseBuilder::visit(const EnumSetExpr* e) {
 	}
 	term->arguments(PrologTerm::vars2terms(term->variables()));
 	leave();
-	_parent->addVariables(term->variables());
 }
 
 void FormulaClauseBuilder::visit(const QuantSetExpr* q) {
