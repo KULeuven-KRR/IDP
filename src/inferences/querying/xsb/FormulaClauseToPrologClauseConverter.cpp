@@ -97,7 +97,11 @@ void FormulaClauseToPrologClauseConverter::visit(AggregateClause* ac) {
 	term->addArgument(ac->term());
 	term->addArgument(ac->aggterm()->result());
 	if (isa<PrologVariable>(*(ac->term()))) {
-		term->addOutputvarToCheck((PrologVariable*) ac->term());
+		if (ac->comparison_type() == "=") { // if we're doing an assignment, check the OUTPUT
+			term->addOutputvarToCheck((PrologVariable*) ac->term());
+		} else { // else, instantiate the var before the comparison
+			term->addInputvarToCheck((PrologVariable*) ac->term());
+		}
 	}
 	body.push_back(term);
 	ac->aggterm()->accept(this);
