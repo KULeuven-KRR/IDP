@@ -141,7 +141,7 @@ MXResult ModelExpansion::expand() const {
 		}
 	}
 
-	//TODO See Issue #523 DefinitionUtils::splitDefinitions(clonetheory); // TODO implement with same meta-level approach as below!
+	DefinitionUtils::splitDefinitions(clonetheory);
 
 	std::vector<Definition*> postprocessdefs;
 	if(getOption(POSTPROCESS_DEFS)){
