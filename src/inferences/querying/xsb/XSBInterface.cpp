@@ -90,12 +90,6 @@ XSBInterface::XSBInterface() {
 		ss1 << "set_prolog_flag(warning_action,silent_warning).";
 		commandCall(ss1.str());
 	}
-	stringstream ss2;
-	// We choose to load_dyn in the basic file for two reasons:
-	// 1: the file isn't that big, compiling wouldn't really offer that much benefits
-	// 2: compiling the file requires writing permissions, which may not be present at run-time
-	ss2 << "load_dyn('" << getInstallDirectoryPath() << "/share/std/xsb_compiler.P').";
-	commandCall(ss2.str());
 }
 
 void XSBInterface::load(const Definition* d, Structure* structure) {
@@ -116,12 +110,13 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	auto str2 = _pp->getFacts();
 	auto str = _pp->getCode();
 	auto str3 = _pp->getRanges();
+	auto compiler = PrologProgram::getCompilerCode();
 
 	// TODO: lost the optimisation of using load_dyn/2 when facts are two-valued, refactoring code is in order to realise this again
 	// Currently all 3 files are loaded into XSB at the same time always, but this should be just when the facts are three-valued.
 	// In this way, the table declarations are joined into one file
 	stringstream ss;
-	ss << "%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3;
+	ss << compiler << "\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3;
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << "\n";
 	}
