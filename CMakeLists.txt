@@ -180,7 +180,7 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
 	message(STATUS "compile with XSB support: ON")
 	addToCXX("-D WITHXSB")
 	set(XSB_VERSION "3.5.0")
-	set(XSB_INSTALL_URL "/bin/xsb/xsb-${XSB_VERSION}/")
+	set(XSB_INSTALL_URL "bin/xsb-${XSB_VERSION}/")
 	addToCXX("-D XSB_INSTALL_URL=\\\\\"\"${XSB_INSTALL_URL}/\\\\\"\" ") # This has a bunch of layers of \ characters, because it gets evaluated a lot... don't ask. Version below also works (less unnesting)
 #	 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D XSB_INSTALL_URL2=\\\"\"${XSB_INSTALL_URL}/\\\"\" ")
 	set(XSB_COPIED_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/XSB")
