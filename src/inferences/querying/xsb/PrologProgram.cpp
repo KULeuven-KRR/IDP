@@ -40,6 +40,9 @@ void PrologProgram::setDefinition(Definition* d) {
 			table(symbol);
 		}
 	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
+		clog << "Definition before XSB transformation: " << toString(d) << std::endl;
+	}
 	FormulaClauseBuilder builder(this, d, _translator);
 	FormulaClauseToPrologClauseConverter converter(this, _translator);
 	for (auto clause = builder.clauses().begin(); clause != builder.clauses().end(); ++clause) {

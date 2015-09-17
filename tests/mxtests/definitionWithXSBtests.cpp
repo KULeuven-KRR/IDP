@@ -92,17 +92,4 @@ TEST_P(DefinitionShouldFailWithXSBTest, CalculatesFailingDefinitionWithXSB) {
 INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, DefinitionShouldFailWithXSBTest,  ::testing::ValuesIn(generateListOfFailingDefXSBFiles()));
 
 
-// 3: Tests for the "refinedefinitions(t,s)" call with stdoptions.xsb=true
-//-------------------------------------------------------------------------
-
-// Dedicated definition refining test from the definitiontests and definitionWithXSBtests
-TEST_P(RefineDefinitionsWithXSBTest, RefinesDefinitionWithXSB) {
-	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
-	cerr << "Testing " << GetParam() << "\n";
-	Status result = Status::FAIL;
-	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionRefining(T,S)"););
-	ASSERT_EQ(result, Status::SUCCESS);
 }
-INSTANTIATE_TEST_CASE_P(RefinesDefinitionWithXSB, RefineDefinitionsWithXSBTest,  ::testing::ValuesIn(generateListOfThreevaluedDefsFiles()));
-}
-
