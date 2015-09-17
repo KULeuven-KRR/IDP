@@ -141,7 +141,7 @@ MXResult ModelExpansion::expand() const {
 		}
 	}
 
-	DefinitionUtils::splitDefinitions(clonetheory); 
+	DefinitionUtils::splitDefinitions(clonetheory);
 
 	std::vector<Definition*> postprocessdefs;
 	if(getOption(POSTPROCESS_DEFS)){
