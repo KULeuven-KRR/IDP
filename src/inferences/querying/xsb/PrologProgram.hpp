@@ -48,6 +48,9 @@ public:
 			  	_translator(translator) {
 	}
 	~PrologProgram();
+	
+	static std::string getCompilerCode();
+	
 	void table(PFSymbol*);
 	void addClause(PrologClause* pc) {
 		_clauses.push_back(pc);
