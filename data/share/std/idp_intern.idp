@@ -353,11 +353,11 @@ procedure unsatstructure(theory, structure, vocabulary) {
 		return
 	end
 
-	if(vocabulary~=nil) then
-		return idpintern.unsatcore(true,false,theory,structure,vocabulary)
-	else
-		return idpintern.unsatcore(true,false,theory,structure,getvocabulary(theory))
+	if(vocabulary == nil) then 
+		vocabulary = getvocabulary(theory)
 	end
+	
+	return idpintern.unsatcore(true,false,theory,structure,vocabulary)
 }
 
 
@@ -385,15 +385,13 @@ procedure explainunsat(theory, structure, vocabulary) {
 		return
 	end
 
-	if(vocabulary~=nil) then
-		s,t = idpintern.unsatcore(true,true,theory,structure,vocabulary)
-		print(s)
-		return s,t
-	else
-		s,t = idpintern.unsatcore(true,true,theory,structure,getvocabulary(theory))
-		print(s)
-		return s,t
+	if(vocabulary == nil) then 
+		vocabulary = getvocabulary(theory)
 	end
+	
+	s,t = idpintern.unsatcore(true,true,theory,structure,vocabulary)
+	print(s)
+	return s,t
 }
 
 /*/**
