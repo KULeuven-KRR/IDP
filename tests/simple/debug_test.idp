@@ -13,7 +13,7 @@ structure S1:V{
 }
 
 procedure main(){
-    core = idpintern.unsatcore(T,S1)
+    nothing,core = idpintern.unsatcore(false,true,T,S1,V)
     if(not entails(T,core)) then
         return -1
     end
