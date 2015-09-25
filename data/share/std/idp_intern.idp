@@ -324,7 +324,7 @@ procedure printunsatcore(theory,structure){
 		io.stderr:write("Error: structure expected\n")
 		return
 	end
-	idpintern.unsatcore(theory,structure)
+	idpintern.unsatcore(false,true,theory,structure,getvocabulary(theory))
 	return;
 }
 
@@ -333,6 +333,65 @@ procedure printunsatcore(theory,structure){
 procedure printcore(theory,structure){
 	print("Warning: using deprecated method \"printcore\". Please use \"printunsatcore\" instead.")
 	printunsatcore(theory, structure)
+}
+
+/**
+ * Returns a structure S that is less precise than the input structure such that the given theory has no models that expand S. Furthermore S is a precision-minimal structure with this property. If the optional third argument is provided, the resulting structure S must furthermore equal the input structures on all symbols not in the provided vocabulary.
+ */
+
+procedure unsatstructure(theory, structure, vocabulary) {
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	if vocabulary ~= nil and type(vocabulary) ~= "vocabulary" then
+		io.stderr:write("Error: vocabulary expected\n")
+		return
+	end
+
+	if(vocabulary == nil) then 
+		vocabulary = getvocabulary(theory)
+	end
+	
+	return idpintern.unsatcore(true,false,theory,structure,vocabulary)
+}
+
+
+
+/**
+ * Given input structure S_i, input theory T_i and vocabulary V_i, this procedure searches for a structure S_O and a theory T_O such that the following hold * S_O is less precise than S_i
+ - T_O is entailed by T_i (obtained by instantiating universal quantifiers in rules and sentences)
+ - S_O equals S_i on symbols not in V_i
+ - S_O is maximally imprecise with respect to the above criteria
+ - T_O is maximally restrictive w r t the above criteria
+Furthermore, this procedure also prints S_O and T_O in a human-readable way
+(note: with respect to definitions, the entailment is not always strictly respected since it is currently impossible to partially define symbols)
+ */
+procedure explainunsat(theory, structure, vocabulary) {
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	if vocabulary ~= nil and type(vocabulary) ~= "vocabulary" then
+		io.stderr:write("Error: vocabulary expected\n")
+		return
+	end
+
+	if(vocabulary == nil) then 
+		vocabulary = getvocabulary(theory)
+	end
+	
+	s,t = idpintern.unsatcore(true,true,theory,structure,vocabulary)
+	print(s)
+	return s,t
 }
 
 /*/**

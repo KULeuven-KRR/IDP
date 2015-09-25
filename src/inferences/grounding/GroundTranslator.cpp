@@ -614,6 +614,7 @@ VarId GroundTranslator::translateTerm(CPTerm* cpterm, SortTable* domain) {
 	}
 
 	auto varid = nextVarNumber(domain);
+
 	CPBound bound(varid);
 	auto cprelation = new CPTsBody(TsType::EQ, cpterm, CompType::EQ, bound);
 	var2CTsBody[varid.id] = cprelation;

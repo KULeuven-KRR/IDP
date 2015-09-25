@@ -81,6 +81,18 @@ The \code{inferences} namespace and all its procedures are included in the globa
 		Returns all models of the theory that extend the given structure.
 	\item[calculatedefinitions(theory,structure)]
 		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or  nil if inconsistency is detected.
+	\item[explainunsat(theory, structure, vocabulary)]
+		Given input structure $S_i$, input theory $T_i$ and vocabulary $V_i$, this procedure searches for a structure $S_O$ and a theory $T_O$ such that the following hold:
+		\begin{description}
+		\item $S_O$ is less precise than $S_i$.
+		\item $T_O$ is entailed by $T_i$ (obtained by instantiating universal quantifiers in rules and sentences)
+		\item $S_O$ equals $S_i$ on symbols not in $V_i$
+		\item $S_O$ is maximally imprecise with respect to the above criteria
+		\item $T_O$ is maximally restrictive w r t the above criteria
+		\end{description}
+Furthermore, this procedure also prints $S_O$ and $T_O$ in a human-readable way
+(note: with respect to definitions, the entailment is not always strictly respected since it is currently impossible to partially define symbols)
+
 	\item[ground(theory,structure)]
  		Create the reduced grounding of the given theory and structure. 
  	\item[groundeq(theory,structure,modeleq)]
@@ -146,6 +158,8 @@ end
 		Make the structure more precise than the given one by refining all defined symbols using the definitions until fixpoint. This procedure returns a new structure or nil if inconsistency is detected.
 	\item[sat(theory,structure)]
 		Checks satisfiability of the given theory-structure combination. Returns true if and only if there exists a model extending the structure and satisfying the theory.
+	\item[unsatstructure(theory,structure,vocabulary)]
+		Returns a structure S that is less precise than the input structure such that the given theory has no models that expand S. Furthermore S is a precision-minimal structure with this property. If the optional third argument is provided, the resulting structure S must furthermore equal the input structures on all symbols not in the provided vocabulary.
 	\item[value(formula/term,structure)]
 		Evaluate a variable-free formula or term in a two-valued structure, returning true/false for a formula and a domainelement or nil for a term.
 	\item[equal(obj,obj)]

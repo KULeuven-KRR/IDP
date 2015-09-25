@@ -1,0 +1,31 @@
+vocabulary V{
+    p
+    q
+}
+theory T:V{
+    p.
+    q.
+}
+
+structure S1:V{
+    p = false
+    q = true
+}
+
+procedure main(){
+    nothing,core = idpintern.unsatcore(false,true,T,S1,V)
+    if(not entails(T,core)) then
+        return -1
+    end
+
+    S2 = unsatstructure(T,S1)
+    if (size(S2[V::q].ct)==1 or size(S2[V::q].cf)==1) then
+        return -1
+    end
+    if size(S2[V::p].ct)== 1 or size(S2[V::p].cf)== 0 then
+        return -1
+    end
+
+    return 1
+
+}

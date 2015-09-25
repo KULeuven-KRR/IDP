@@ -115,6 +115,33 @@ public:
 		delete (data);\
 		delete (mx);
 
+litlist MXAssumptions::toLitList(GroundTranslator* trans) const{
+	litlist assumptions;
+	for(auto p: assumeAllFalse){
+		for(auto atom: trans->getIntroducedLiteralsFor(p)){ // TODO should be introduced ATOMS
+			assumptions.push_back(-abs(atom.second));
+		}
+		std::vector<Variable*> vars;
+		std::vector<Term*> varterms;
+		for(uint i=0; i<p->arity(); ++i){
+			vars.push_back(new Variable(p->sorts()[i]));
+			varterms.push_back(new VarTerm(vars.back(), {}));
+		}
+		auto table = Querying::doSolveQuery(new Query("", vars, new PredForm(SIGN::POS, p, varterms, {}), {}), trans->getConcreteStructure(), trans->getSymbolicStructure());
+		for(auto i=table->begin(); not i.isAtEnd(); ++i){
+			auto atom = trans->translateNonReduced(p, *i);
+			assumptions.push_back(-abs(atom));
+		}
+	}
+	for(auto pf : assumeFalse){
+		assumptions.push_back(-trans->translateNonReduced(pf.symbol, pf.args));
+	}
+	for(auto pt : assumeTrue){
+		assumptions.push_back(trans->translateNonReduced(pt.symbol, pt.args));
+	}
+	return assumptions;
+}
+
 MXResult ModelExpansion::expand() const {
 	auto mxverbosity = max(getOption(IntType::VERBOSE_SOLVING),getOption(IntType::VERBOSE_SOLVING_STATISTICS));
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
@@ -166,27 +193,7 @@ MXResult ModelExpansion::expand() const {
 	auto grounding = groundingAndExtender.first;
 	auto extender = groundingAndExtender.second;
 
-	litlist assumptions;
-	auto trans = grounding->translator();
-	for(auto p: _assumeFalse.assumeAllFalse){
-		for(auto atom: trans->getIntroducedLiteralsFor(p)){ // TODO should be introduced ATOMS
-			assumptions.push_back(-abs(atom.second));
-		}
-		std::vector<Variable*> vars;
-		std::vector<Term*> varterms;
-		for(uint i=0; i<p->arity(); ++i){
-			vars.push_back(new Variable(p->sorts()[i]));
-			varterms.push_back(new VarTerm(vars.back(), {}));
-		}
-		auto table = Querying::doSolveQuery(new Query("", vars, new PredForm(SIGN::POS, p, varterms, {}), {}), trans->getConcreteStructure(), trans->getSymbolicStructure());
-		for(auto i=table->begin(); not i.isAtEnd(); ++i){
-			auto atom = grounding->translator()->translateNonReduced(p, *i);
-			assumptions.push_back(-abs(atom));
-		}
-	}
-	for(auto pf : _assumeFalse.assumeFalse){
-		assumptions.push_back(grounding->translator()->translateNonReduced(pf.symbol, pf.args));
-	}
+	litlist assumptions = _assumeFalse.toLitList(grounding->translator());
 
 	// Run solver
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS), assumptions);
