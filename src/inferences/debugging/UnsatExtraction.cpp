@@ -34,11 +34,10 @@ pair<Structure*,Theory*> UnsatExtraction::extractCore(bool assumeStruc, bool ass
     }
 
     //Copy the literals from the result to the output structure
-    vector<DomainAtom> coreresult = minimizeAssumps(newtheory, emptyStruc, assume);
-    //vector<DomainAtom> theoryMarkers = coreresult;
+    MXAssumptions coreresult = minimizeAssumps(newtheory, emptyStruc, assume);
 
     if(assumeStruc){
-        outputStructure(intheory, structure, emptyStruc, coreresult);
+        outputStructure(intheory, emptyStruc, coreresult);
     }
     Theory* outTheo = 0;
     if(assumeTheo){
@@ -52,10 +51,10 @@ pair<Structure*,Theory*> UnsatExtraction::extractCore(bool assumeStruc, bool ass
 }
 
 Theory*UnsatExtraction::outputTheory(const AddMarkers *am,
-                                            const vector<DomainAtom> &theoryMarkers,
-                                            Vocabulary* voc) {
+                                     MXAssumptions &theoryMarkers,
+                                        Vocabulary* voc) {
     Theory* outputTheo;
-    auto core = am->getComponentsFromMarkers(theoryMarkers);
+    auto core = am->getComponentsFromMarkers(theoryMarkers.assumeFalse);
     outputTheo = new Theory("unsat_core", voc, ParseInfo());
     for(auto c: core){
         outputTheo->add(c);
@@ -64,18 +63,18 @@ Theory*UnsatExtraction::outputTheory(const AddMarkers *am,
     return outputTheo;
 }
 
-void UnsatExtraction::outputStructure(const AbstractTheory *intheory,
-                                                              const Structure *structure, const Structure *emptyStruc,
-                                                              vector<DomainAtom> &coreresult) {
-    for(DomainAtom da : coreresult){
+void UnsatExtraction::outputStructure(const AbstractTheory *intheory, const Structure *emptyStruc,
+                                      MXAssumptions &coreresult) {
+    for(DomainAtom da : coreresult.assumeTrue){
         if(intheory->vocabulary()->contains(da.symbol)){
-            PredInter* orig = structure->inter(da.symbol);
             PredInter* target = emptyStruc->inter(da.symbol);
-            if(orig->isTrue(da.args,true)){
-                target->makeTrueExactly(da.args,true);
-            }else{
-                target->makeFalseExactly(da.args,true);
-            }
+            target->makeTrueExactly(da.args,true);
+        }
+    }
+    for(DomainAtom da : coreresult.assumeFalse){
+        if(intheory->vocabulary()->contains(da.symbol)){
+            PredInter* target = emptyStruc->inter(da.symbol);
+            target->makeFalseExactly(da.args,true);
         }
     }
 }
