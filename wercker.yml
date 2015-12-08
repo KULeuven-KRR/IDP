@@ -1,0 +1,89 @@
+box: bendiken/cxx14@0.0.8
+no-response-timeout: 10
+build:
+  steps:
+  - install-packages:
+        packages: bison flex libgetopt-argvfile-perl libgetopt-long-descriptive-perl libregexp-common-perl texinfo
+  - script:
+        name: config
+        code: |
+            mkdir ~/buildfolder/ 
+            cd ~/buildfolder
+            cmake $WERCKER_SOURCE_DIR -DCMAKE_INSTALL_PREFIX=~/install/ -DCMAKE_BUILD_TYPE="Release" -DBUILDDOCUMENTATION=FALSE
+  - script:
+        name: install
+        code: |
+            cd ~/buildfolder
+            make install
+  - script:
+        name: basic
+        code: |
+            ~/buildfolder/tests/basic
+  - script:
+        name: bounds
+        code: |
+            ~/buildfolder/tests/bounds
+  - script:
+        name: boundsNoLUP
+        code: |
+            ~/buildfolder/tests/boundsNoLUP
+  - script:
+        name: cp
+        code: |
+            ~/buildfolder/tests/cp
+  - script:
+        name: entailment
+        code: |
+            ~/buildfolder/tests/entailment
+  - script:
+        name: focard
+        code: |
+            ~/buildfolder/tests/focard
+  - script:
+        name: funcdetect
+        code: |
+            ~/buildfolder/tests/funcdetect
+  - script:
+        name: lazy
+        code: |
+            ~/buildfolder/tests/lazy
+  - script:
+        name: metarep
+        code: |
+            ~/buildfolder/tests/metarep
+  - script:
+        name: nobounds
+        code: |
+            ~/buildfolder/tests/nobounds
+  - script:
+        name: optim
+        code: |
+            ~/buildfolder/tests/optim
+  - script:
+        name: printertests
+        code: |
+            ~/buildfolder/tests/printertests
+  - script:
+        name: satbounds
+        code: |
+            ~/buildfolder/tests/satbounds
+  - script:
+        name: satcp
+        code: |
+            ~/buildfolder/tests/satcp
+  - script:
+        name: satnobounds
+        code: |
+            ~/buildfolder/tests/satnobounds
+  - script:
+        name: symm
+        code: |
+            ~/buildfolder/tests/symm
+  - script:
+        name: verylazy
+        code: |
+            ~/buildfolder/tests/verylazy
+  - script:
+        name: xsbtest
+        code: |
+            ~/buildfolder/tests/xsbtest
