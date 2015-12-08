@@ -53,7 +53,7 @@ bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <Doma
             break;
         }
         auto elem = curArr[curElem];
-        curArr.pop_back();
+        curArr.erase(curArr.begin()+curElem);
 
         auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, core);
         if (mxresult._interrupted) {
