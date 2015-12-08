@@ -44,7 +44,7 @@ struct MXAssumptions{
 
 
 	litlist toLitList(GroundTranslator* trans) const;
-	int size(){
+	uint size(){
 		return assumeFalse.size() + assumeTrue.size();
 	}
 
@@ -53,6 +53,19 @@ struct MXAssumptions{
 			  	, const std::vector<DomainAtom>& assumeTrue = std::vector<DomainAtom>()
 	): assumeFalse(assumeFalse), assumeAllFalse(assumeAllFalse), assumeTrue(assumeTrue){
 
+	}
+
+	void doPrint(){
+		std::cout << "size:" << this->size();
+		std::cout << "AssumeFalse:" << std::endl;
+		for(DomainAtom a : assumeFalse){
+			std::cout << print(a.args) << std::endl;
+		}
+
+		std::cout << "AssumeTrue:" << std::endl;
+		for(DomainAtom a : assumeTrue){
+			std::cout << print(a.args) << std::endl;
+		}
 	}
 };
 

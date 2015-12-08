@@ -99,7 +99,7 @@ void UnsatExtraction::assumifyStructure(const Structure *structure, const Vocabu
         //If the symbol is in the assumption vocabulary, it is assumed
         if(vAssume->contains(symbol)){
             tableToVector(assumeNeg, symbol, pi->cf());
-            tableToVector(assumePos,symbol,pi->ct());
+            tableToVector(assumePos, symbol, pi->ct());
         }else{
             //Else it is added to the empty structure
             emptyStruc->changeInter(symbol,pi->clone());

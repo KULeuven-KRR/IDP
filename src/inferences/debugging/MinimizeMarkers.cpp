@@ -6,6 +6,8 @@
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "utils/ListUtils.hpp"
 
+
+
 bool minimizeSubArray(const AbstractTheory *newtheory, const Structure *s, std::vector <DomainAtom> &curArr,
                       MXAssumptions &core, bool &stop);
 
@@ -18,7 +20,7 @@ bool minimizeSubArray(const AbstractTheory *newtheory, const Structure *s, std::
     std::cout <<
     ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
 
-    // TODO should set remaining markers on true to allow ealier pruning
+    // TODO should set remaining markers on true to allow earlier pruning
     auto core = mxresult.unsat_explanation;
     auto erased = true;
     auto stop = false;
@@ -33,30 +35,26 @@ bool minimizeSubArray(const AbstractTheory *newtheory, const Structure *s, std::
         while(
                 !stop && (
                 minimizeSubArray(newtheory, s, core.assumeTrue, core, stop,core.size()) ||
-                minimizeSubArray(newtheory, s, core.assumeFalse, core, stop,core.size()))
-        );
+                minimizeSubArray(newtheory, s, core.assumeFalse, core, stop,core.size())));
+
     }
-    auto output = mxresult.unsat_explanation;
-    return output;
+
+    return core;
 }
 
 bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <DomainAtom> &curArr,
                       MXAssumptions &core, bool &stop, uint goal) {
-    uint maxsize = curArr.size();
-    for (uint i = 0; i < maxsize;) {
+
+    //-1 == uint.maxsize -> catch this by checking curElem < arraysize
+    for(uint curElem = curArr.size()-1 ; curElem < curArr.size() ; curElem--){
         if (getGlobal()->terminateRequested()) {
             getGlobal()->reset();
             stop = true;
             break;
         }
-        auto elem = curArr[i];
-
-//This serves to prevent self-swapping (Cf. Issue 739)
-        if (not (curArr[i].symbol == curArr[maxsize - 1].symbol && curArr[i].args == curArr[maxsize - 1].args)) {
-            std::swap(curArr[i], curArr[maxsize - 1]);
-        }
+        auto elem = curArr[curElem];
         curArr.pop_back();
-        maxsize--;
+
         auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, core);
         if (mxresult._interrupted) {
             stop = true;
@@ -64,11 +62,9 @@ bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <Doma
         }
         if (not mxresult.unsat) {
             curArr.push_back(elem);
-        } else {
-            if (mxresult.unsat_explanation.size() < goal) {
-                core = mxresult.unsat_explanation;
-                return true;
-            }
+        } else if (mxresult.unsat_explanation.size() < goal) {
+            core = mxresult.unsat_explanation;
+            return true;
         }
     }
     return false;

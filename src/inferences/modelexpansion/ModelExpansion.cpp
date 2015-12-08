@@ -262,9 +262,9 @@ MXResult ModelExpansion::expand() const {
 			auto symbol = grounding->translator()->getSymbol(lit.getAtom());
 			auto args = grounding->translator()->getArgs(lit.getAtom());
 			if(lit.hasSign()){
-				result.unsat_explanation.assumeFalse.push_back({symbol, args});
-			}else{
 				result.unsat_explanation.assumeTrue.push_back({symbol, args});
+			}else{
+				result.unsat_explanation.assumeFalse.push_back({symbol, args});
 			}
 		}
 		cleanup;
