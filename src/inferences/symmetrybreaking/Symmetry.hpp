@@ -32,6 +32,8 @@ class Predicate;
 class Function;
 class Variable;
 class OccurrencesCounter;
+class PredInter;
+class FuncInter;
 
 /** 
  *	\brief	Abstract base class to represent a symmetry group
@@ -198,18 +200,23 @@ struct ElOcEqual {
 };
 
 class InterchangeabilityGroup {
+	
 private:
-	// TODO: check if order on symbol / element pointer is ok...
-	// answer: nope, is not
-	std::multimap<const PFSymbol*, unsigned int> symbols; // ordered symbols, with their arguments
-	std::set<const DomainElement*> elements; // ordered ;
-
+	std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* > symbolargs;
+	std::unordered_set<const DomainElement*> elements;
+  
+  void getSymmetricLiterals(AbstractGroundTheory* gt, Structure* struc, const DomainElement* smaller, const DomainElement* bigger, std::vector<int>& out, std::vector<int>& sym_out) const;
+	
 public:
-	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<const PFSymbol*> syms, std::vector<unsigned int> args);
+	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*> symbs3val, 
+		std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* >& symbargs);
 	~InterchangeabilityGroup();
 	void print(std::ostream& ostr);
 
 	unsigned int getNrSwaps();
+	bool hasSymbArg(PFSymbol* symb, unsigned int arg);
+  
+  void breakSymmetry(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent) const;
 };
 
 class InterchangeabilitySet {
@@ -220,7 +227,7 @@ private:
 
 public:
 	const Structure* _struct;
-	std::unordered_map<const PFSymbol*, std::unordered_set<unsigned int>* > symbolargs; // symbols with corresponding arguments
+	std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* > symbolargs; // symbols with corresponding arguments
 
 	InterchangeabilitySet(const Structure* s) : _struct(s) {
 		for (auto part : partition) {
@@ -234,7 +241,7 @@ public:
 		}
 	}
 
-	bool add(const PFSymbol* p, unsigned int arg);
+	bool add(PFSymbol* p, unsigned int arg);
 	bool add(const Sort* s);
 	bool add(const DomainElement* de);
 
@@ -260,10 +267,10 @@ public:
 
 class SymbolArgumentNode : public UFNode {
 public:
-	const PFSymbol* symbol;
+	PFSymbol* symbol;
 	const unsigned int arg;
 
-	SymbolArgumentNode(const PFSymbol* pf, unsigned int a) : symbol(pf), arg(a) {
+	SymbolArgumentNode(PFSymbol* pf, unsigned int a) : symbol(pf), arg(a) {
 	}
 
 	virtual ~SymbolArgumentNode() {
@@ -319,7 +326,7 @@ public:
  * UFSymbolArg uses a union-find datastructure (also known as disjoint-set) to efficiently partition the set of symbol-argument pairs.
  */
 class UFSymbolArg {
-	std::unordered_map<const PFSymbol*, std::vector<SymbolArgumentNode*>* > SAnodes; // map of PFSymbol and argument to SymbolArgumentNode;
+	std::unordered_map<PFSymbol*, std::vector<SymbolArgumentNode*>* > SAnodes; // map of PFSymbol and argument to SymbolArgumentNode;
 	std::unordered_map<const Variable*, VariableNode*> VARnodes; // map of Variable to VariableNode
 	ForbiddenNode* forbiddenNode;
 	std::vector<UFNode*> twoValuedNodes;
@@ -328,7 +335,7 @@ public:
 	UFSymbolArg();
 	~UFSymbolArg();
 
-	UFNode* get(const PFSymbol* sym, unsigned int arg, bool twoValued = false);
+	UFNode* get(PFSymbol* sym, unsigned int arg, bool twoValued = false);
 	UFNode* get(const Variable* var);
 	UFNode* get(const Sort* s, const DomainElement* de);
 	UFNode* getForbiddenNode();
@@ -407,4 +414,15 @@ protected:
 	virtual void visit(const QuantSetExpr*);
 };
 
-void detectInterchangeability(const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
+struct SymbArg{
+	PFSymbol* symb;
+	unsigned int arg;
+};
+
+void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
+// NOTE: t will be modified, so make sure a clone was made before!
+void getIntchGroups2(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<std::pair<PFSymbol*, unsigned int> >& symbargs); 
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups);
+// TODO: fix the "3 and "2"
+void detectNeighborhoods(const Theory* t, const Structure* s, const Term* obj, std::vector<const Definition*>& objDefs, 
+		std::vector<InterchangeabilityGroup*>& outHard, std::vector<InterchangeabilityGroup*>& outRelaxed, Theory* relaxedConstraints);
