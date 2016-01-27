@@ -677,6 +677,10 @@ void InterchangeabilitySet::calculateInterchangeableSets() {
 	std::unordered_set<const DomainElement*> allElements;
 	// run over all sorts to find relevant domain elements
 	for (auto s : sorts) {
+        if(!_struct->inter(s)->finite()){
+          allElements.clear();
+          break; // not going to detect symmetry over an infinite domain ;)
+        }
 		auto sortiter = _struct->inter(s)->sortBegin();
 		while (!sortiter.isAtEnd()) {
 			if (occursAsConstant.count(*sortiter) == 0) {
