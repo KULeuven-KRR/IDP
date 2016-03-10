@@ -99,7 +99,7 @@ public:
 				}
 				auto inter2 = s2->inter(pred);
 				equal &= inter->ct()->approxEqual(inter2->ct()) || checkEquality(inter->ct(), inter2->ct());
-				equal &= inter->cf()->approxEqual(inter2->cf()) || checkEquality(inter->ct(), inter2->ct());
+				equal &= inter->cf()->approxEqual(inter2->cf()) || checkEquality(inter->cf(), inter2->cf());
 			}
 			for(auto func2inter : s1->getFuncInters()){
 				auto func = func2inter.first;
@@ -109,7 +109,7 @@ public:
 				}
 				auto inter2 = s2->inter(func)->graphInter();
 				equal &= inter->ct()->approxEqual(inter2->ct()) || checkEquality(inter->ct(), inter2->ct());
-				equal &= inter->cf()->approxEqual(inter2->cf()) || checkEquality(inter->ct(), inter2->ct());
+				equal &= inter->cf()->approxEqual(inter2->cf()) || checkEquality(inter->cf(), inter2->cf());
 			}
 		}
 
