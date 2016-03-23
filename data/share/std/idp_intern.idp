@@ -63,6 +63,10 @@ procedure modelexpand(theory, structure, vocabulary) {
 	if stdoptions.verbosity.grounding>0 then
 		io.stderr:write("Extending partial models to full models\n")
 	end
+	if solutions == nil then
+		//some error took place: probably bad input... 
+		return
+	end
 	local solutions2 = nbModelsTwoValuedExtensions(solutions)
 	return solutions2, trace
 }
@@ -461,6 +465,10 @@ procedure explainunsat(theory, structure, vocabulary) {
 	
 	/** Prints a given list of models or unsatisfiable if the list is empty */
 	procedure printmodels(sols) {
+		if sols == nil then
+			io.stderr:write("Error: printmodels was called with nil as input (possibly due to a previous error)\n")
+			return
+		end
 		if #sols == 0 then
 			print("Unsatisfiable")
 		end
