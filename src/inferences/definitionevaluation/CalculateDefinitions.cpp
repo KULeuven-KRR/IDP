@@ -147,6 +147,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	AbstractGroundTheory* grounding = dynamic_cast<SolverTheory*>(grounder->getGrounding());
 
 	// Run solver
+	data->finishParsing();
 	auto mx = SolverConnection::initsolution(data, 1);
 	mx->execute();
 	if (getGlobal()->terminateRequested()) {

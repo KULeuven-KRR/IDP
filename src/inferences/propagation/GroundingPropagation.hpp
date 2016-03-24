@@ -44,6 +44,7 @@ public:
 
 		auto grounding = GroundingInference<PCSolver>::doGrounding(clonetheory, result, NULL, NULL, NULL, true, data);
 
+		data->finishParsing();
 		auto mx = SolverConnection::initpropsolution(data);
 		mx->execute();
 

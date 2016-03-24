@@ -196,6 +196,7 @@ MXResult ModelExpansion::expand() const {
 	litlist assumptions = _assumeFalse.toLitList(grounding->translator());
 
 	// Run solver
+	data->finishParsing();
 	auto mx = SolverConnection::initsolution(data, getOption(NBMODELS), assumptions);
 	auto startTime = clock();
 	if (mxverbosity > 0) {

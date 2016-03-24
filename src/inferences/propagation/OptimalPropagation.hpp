@@ -47,6 +47,7 @@ public:
 		}
 		auto grounding = grounder->getGrounding();
 
+		data->finishParsing();
 		auto mx = SolverConnection::initsolution(data, 0);
 		mx->execute();
 

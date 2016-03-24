@@ -157,6 +157,7 @@ public:
 };
 
 void ModelIterator::prepareSolver() {
+    _data->finishParsing();
     _mx = SolverConnection::createIteratorSolution(_data, 1, *_assumptions);
 	_mx->initialise();
 }
