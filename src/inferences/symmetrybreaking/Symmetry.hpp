@@ -242,30 +242,13 @@ public:
 	void analyzeForOptimization(const Term* t); // TODO use this, and push quantifiers
 
 protected:
-	//virtual void visit(const Theory*);
-	//virtual void visit(const AbstractGroundTheory*);
-	//virtual void visit(const GroundTheory<GroundPolicy>*);
-
 	virtual void visit(const PredForm*);
 	virtual void visit(const EqChainForm*);
 	virtual void visit(const EquivForm*);
-	//virtual void visit(const BoolForm*);
-	//virtual void visit(const QuantForm*);
-	//virtual void visit(const AggForm*);
-
-	//virtual void visit(const GroundDefinition*);
-	//virtual void visit(const PCGroundRule*);
-	//virtual void visit(const AggGroundRule*);
-	//virtual void visit(const GroundSet*);
-	//virtual void visit(const GroundAggregate*);
 
 	//virtual void visit(const CPReification*) {
 	// TODO
 	//}
-
-	//virtual void visit(const Rule*);
-	//virtual void visit(const Definition*);
-	//virtual void visit(const FixpDef*);
 
 	virtual void visit(const VarTerm*);
 	virtual void visit(const FuncTerm*);
@@ -279,7 +262,6 @@ protected:
 	// TODO
 	//}
 
-	//virtual void visit(const EnumSetExpr*);
 	virtual void visit(const QuantSetExpr*);
 };
 

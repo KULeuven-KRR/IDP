@@ -18,7 +18,7 @@
 class Vocabulary;
 
 /**
- * Removes EqChainForm formula's from theory by replacing them with conjunctions
+ * Removes EqChainForm formulas from theory by replacing them with conjunctions
  * or disjunctions of binary comparisons (BoolForms and PredForms).
  */
 class SplitComparisonChains: public TheoryMutatingVisitor {

@@ -176,7 +176,7 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 	}
 }
 
-// returns true if the variable was pushable through f
+// returns true if the variable was pushable through f and the push was performed
 
 bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/, Formula* f) {
 	if (f->sign() == SIGN::NEG) {
@@ -190,7 +190,7 @@ bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/,
 	// which is possible when
 	// - a quantified subformula has the same quantifier as v
 	// - a boolean subformula's conjunctivity status is equal to v's universality
-	// - a boolean subformula's conjunctivity status is opposite to v's universality, but not all subformula's use v
+	// - a boolean subformula's conjunctivity status is opposite to v's universality, but not all subformulas use v
 
 	auto quantf = dynamic_cast<QuantForm*> (f);
 	if (quantf != NULL) {
@@ -206,7 +206,7 @@ bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/,
 
 	auto boolf = dynamic_cast<BoolForm*> (f);
 	if (boolf != NULL) {
-		// first, gather all indexes for subformula's in which v occurs:
+		// first, gather all indexes for subformulas in which v occurs:
 		std::vector<size_t> v_inds;
 		for (size_t i = 0; i < boolf->subformulas().size(); ++i) {
 			if (boolf->subformulas().at(i)->freeVars().count(v) > 0) {

@@ -306,7 +306,7 @@ void UFSymbolArg::printPartition(std::ostream& ostr) {
 }
 
 InterchangeabilityAnalyzer::InterchangeabilityAnalyzer(const Structure* s)
-: _structure(s), subNode(nullptr), disjointSet(UFSymbolArg()) {
+	: _structure(s), subNode(nullptr), disjointSet(UFSymbolArg()) {
 }
 
 void InterchangeabilityAnalyzer::analyze(const AbstractTheory* t) {
@@ -411,7 +411,7 @@ void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups,
 
 	AbstractTheory* theo = t->clone();
 	
-	if(obj!=nullptr){
+	if (obj!=nullptr) {
 		Term* obj_clone = obj->clone();
 		DomainTerm* dummyTerm = new DomainTerm(obj->sort(),s->inter(obj->sort())->last(),TermParseInfo());
 		theo->add(new PredForm(SIGN::POS,get(STDPRED::LT,obj_clone->sort()),{obj_clone,dummyTerm},FormulaParseInfo()));
@@ -429,7 +429,7 @@ void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups,
 	theo->recursiveDelete();
 }
 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<std::pair<PFSymbol*, unsigned int> >& forcedSymbArgs){
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<std::pair<PFSymbol*, unsigned int> >& forcedSymbArgs) {
 	// TODO: fix forcedSymbArgs usage. If provided, should _only_ look for those arguments!
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
 		clog << "pushing quantifiers completely..." << std::endl;
@@ -446,7 +446,7 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	ia.analyze(theo);
 	// add to partition all forced symbol arguments
 	// these may not appear in the theory, but the caller of the function is interested in their status nonetheless
-	for(auto sa: forcedSymbArgs){
+	for(auto sa: forcedSymbArgs) {
 		ia.disjointSet.get(sa.first,sa.second);
 	}
 	
@@ -490,12 +490,12 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	for (auto ichset : intersets) {
 		// TODO: this is a rather ugly hack. ichset should not have been derived before...
 		bool hasCorrectSymbArgs = (forcedSymbArgs.size()==0); // so if no forcedsymbargs are provided, look for symmetry in all symbargs in the theory. Otherwise, look for those connected to forcedsymbargs
-		for(auto sa:forcedSymbArgs){
-			if(ichset->symbolargs.count(sa.first)>0 && ichset->symbolargs[sa.first]->count(sa.second)>0){
+		for(auto sa:forcedSymbArgs) {
+			if (ichset->symbolargs.count(sa.first)>0 && ichset->symbolargs[sa.first]->count(sa.second)>0) {
 				hasCorrectSymbArgs=true;
 			}
 		}
-		if(!hasCorrectSymbArgs){
+		if (!hasCorrectSymbArgs) {
 			continue;
 		}
 		
@@ -511,14 +511,14 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	}
 }
 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups){
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups) {
 	std::vector<std::pair<PFSymbol*, unsigned int> > tmp;
 	getIntchGroups(theo, s, out_groups, tmp);
 }
 
 template<class T>
-void deleteAndClear(std::vector<T*>& vec){
-	for(auto x: vec){
+void deleteAndClear(std::vector<T*>& vec) {
+	for(auto x: vec) {
 		delete x;
 	}
 	vec.clear();
@@ -526,39 +526,39 @@ void deleteAndClear(std::vector<T*>& vec){
 
 enum PredVal {T, F, U};
 
-PredVal getImage(PredInter* pi, ElementTuple& tup){
-	if(pi->isTrue(tup,true)){
+PredVal getImage(PredInter* pi, ElementTuple& tup) {
+	if (pi->isTrue(tup,true)) {
 		return PredVal::T;
-	}else if(pi->isFalse(tup,true)){
+	} else if (pi->isFalse(tup,true)) {
 		return PredVal::F;
-	}else{
+	} else {
 		return PredVal::U;
 	}
 }
 
-void setImage(PredInter* pi, ElementTuple& tup, PredVal& img){
-	if(img==PredVal::T){
+void setImage(PredInter* pi, ElementTuple& tup, PredVal& img) {
+	if (img==PredVal::T) {
 		pi->makeTrueExactly(tup,true);
-	}else if(img==PredVal::F){
+	} else if (img==PredVal::F) {
 		pi->makeFalseExactly(tup,true);
-	}else{
+	} else {
 		pi->makeUnknownExactly(tup,true);
 	}
 }
 
 InterchangeabilityGroup::InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*> symbs3val, 
-		std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* >& symbargs){
+		std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>*>& symbargs) {
 	for (auto de : domels) {
 		elements.insert(de);
 	}
-	for(auto symb: symbs3val){
+	for(auto symb: symbs3val) {
 		std::unordered_set<unsigned int>* args = new std::unordered_set<unsigned int>(*(symbargs[symb]));
 		symbolargs.insert({symb,args});
 	}
 }
 
 InterchangeabilityGroup::~InterchangeabilityGroup() {
-	for(auto paar: symbolargs){
+	for(auto paar: symbolargs) {
 		delete paar.second;
 	}
 }
@@ -567,7 +567,7 @@ void InterchangeabilityGroup::print(std::ostream& ostr) {
 	for (auto paar : symbolargs) {
 		paar.first->put(ostr);
 		ostr << "/";
-		for(auto arg: *(paar.second)){
+		for(auto arg: *(paar.second)) {
 			ostr << arg << " ";
 		}
 	}
@@ -583,7 +583,7 @@ unsigned int InterchangeabilityGroup::getNrSwaps() {
 	return (elements.size()*(elements.size() - 1)) / 2;
 }
 
-bool InterchangeabilityGroup::hasSymbArg(PFSymbol* symb, unsigned int arg){
+bool InterchangeabilityGroup::hasSymbArg(PFSymbol* symb, unsigned int arg) {
 	return symbolargs.count(symb)>0 && symbolargs[symb]->count(arg)>0;
 }
 
@@ -619,15 +619,15 @@ void InterchangeabilityGroup::getSymmetricLiterals(AbstractGroundTheory* gt, Str
 	excludedSet.insert(bigger);
 	const set<const DomainElement*> emptySet;
 
-    for(auto symbarg: symbolargs){
+    for(auto symbarg: symbolargs) {
       PFSymbol* symb = symbarg.first;
       std::set<unsigned int> argumentPlaces;
       argumentPlaces.insert(symbarg.second->cbegin(),symbarg.second->cend());
-      if(struc->inter(symb)->approxTwoValued()){
+      if (struc->inter(symb)->approxTwoValued()) {
         continue; // no need to construct sym breaking constraints for this symbol
       }
       
-      for (auto arg : argumentPlaces){
+      for (auto arg : argumentPlaces) {
           vector<vector<const DomainElement*> > groundElements(1);
           groundElements[0] = vector<const DomainElement*>(symb->nrSorts());
           for (unsigned int argument = 0; argument < arg; ++argument) {
@@ -677,7 +677,7 @@ void InterchangeabilitySet::calculateInterchangeableSets() {
 	std::unordered_set<const DomainElement*> allElements;
 	// run over all sorts to find relevant domain elements
 	for (auto s : sorts) {
-        if(!_struct->inter(s)->finite()){
+        if (!_struct->inter(s)->finite()) {
           allElements.clear();
           break; // not going to detect symmetry over an infinite domain ;)
         }
@@ -711,7 +711,7 @@ void InterchangeabilitySet::getIntchGroups(std::vector<InterchangeabilityGroup*>
 				symbs3val.push_back(symb);
 			}
 		}
-		if(symbs3val.size()==0){
+		if (symbs3val.size()==0) {
 			continue;
 		}
 		out.push_back(new InterchangeabilityGroup(*it.second,symbs3val,symbolargs));
