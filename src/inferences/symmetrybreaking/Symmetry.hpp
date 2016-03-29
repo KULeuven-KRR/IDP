@@ -31,8 +31,6 @@ class Predicate;
 class Function;
 class Variable;
 class OccurrencesCounter;
-class PredInter;
-class FuncInter;
 
 class InterchangeabilitySet;
 
@@ -209,7 +207,7 @@ public:
 	UFNode* get(const Sort* s, const DomainElement* de);
 	UFNode* getForbiddenNode();
 
-	UFNode* find(UFNode* in);
+	UFNode* find(UFNode* in) const;
 	void merge(UFNode* first, UFNode* second);
 
 	void getPartition(std::unordered_multimap<UFNode*, UFNode*>& out);
@@ -246,21 +244,10 @@ protected:
 	virtual void visit(const EqChainForm*);
 	virtual void visit(const EquivForm*);
 
-	//virtual void visit(const CPReification*) {
-	// TODO
-	//}
-
 	virtual void visit(const VarTerm*);
 	virtual void visit(const FuncTerm*);
 	virtual void visit(const DomainTerm*);
 	virtual void visit(const AggTerm*);
-
-	//virtual void visit(const CPVarTerm*) {
-	// TODO
-	//}
-	//virtual void visit(const CPSetTerm*) {
-	// TODO
-	//}
 
 	virtual void visit(const QuantSetExpr*);
 };
@@ -271,9 +258,5 @@ struct SymbArg{
 };
 
 void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
-// NOTE: t will be modified, so make sure a clone was made before!
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<std::pair<PFSymbol*, unsigned int> >& symbargs); 
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, const std::vector<std::pair<PFSymbol*, unsigned int> >& symbargs); 
 void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups);
-
-void detectNeighborhoods(const Theory* t, const Structure* s, const Term* obj, std::vector<const Definition*>& objDefs, 
-		std::vector<InterchangeabilityGroup*>& outHard, std::vector<InterchangeabilityGroup*>& outRelaxed, Theory* relaxedConstraints);

@@ -49,10 +49,13 @@ void splitOverSameQuant(const VarSet& quantset, const FormulaList& formulasToSpl
 }
 
 Rule* PushQuantifications::visit(Rule* rule) {
+    // push universal quantifiers with only variables in the body
 	varset bodyonlyvars, rem;
 	for (auto var : rule->quantVars()) {
 		if (not contains(rule->head()->freeVars(), var)) {
-			bodyonlyvars.insert(var);
+            if(contains(rule->body()->freeVars(), var)){
+                bodyonlyvars.insert(var);
+            }// else variable also not occurs in the body -> ignore it
 		} else {
 			rem.insert(var);
 		}
@@ -61,6 +64,10 @@ Rule* PushQuantifications::visit(Rule* rule) {
 	if (not bodyonlyvars.empty()) {
 		rule->body(new QuantForm(SIGN::POS, QUANT::EXIST, bodyonlyvars, rule->body(), FormulaParseInfo()));
 	}
+    
+    // visit body
+	rule->body(rule->body()->accept(this));
+    
 	return rule;
 }
 
@@ -176,8 +183,8 @@ Formula* PushQuantifications::visit(QuantForm* qf) {
 	}
 }
 
+// Recursive method that pushes a quantified variable as deep as possible.
 // returns true if the variable was pushable through f and the push was performed
-
 bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/, Formula* f) {
 	if (f->sign() == SIGN::NEG) {
 		return false; // this method currently works best if all negations are pushed TODO: fix this
@@ -196,7 +203,7 @@ bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/,
 	if (quantf != NULL) {
 		if (quantf->isUniv() != univ) {
 			return false;
-		} else { // we can push through this one, e.g. !x y: P(x,y) | Q(y) --> !y x: P(x,y) | Q(y) (useful later)
+		} else { // we can push through this one, e.g. !x y: P(x,y) | Q(y) --> !y x: P(x,y) | Q(y) (now x can be pushed past Q(y))
 			if (!pushQuantifiedVariableThrough(v, univ, quantf->subformula())) {
 				quantf->addQuantVar(v); // add v to the current quantifiers.
 			}
@@ -238,7 +245,9 @@ bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/,
 			}
 			return true;
 		} else { // now for the case where boolf->conj()!=univ
-			if (v_inds.size() == 1) {// e.g. !x y: P(x) | Q(y) --> !x:P(x) | !y:Q(y)
+            if (v_inds.size() == boolf->subformulas().size()) {
+				return false; // cannot push through any subformula
+            } else if (v_inds.size() == 1) {// e.g. !y: P(x) | Q(y) --> P(x) | !y:Q(y)
 				size_t firstIndex = v_inds.at(0);
 				Formula* subf = boolf->subformulas().at(firstIndex);
 				if (!pushQuantifiedVariableThrough(v, univ, subf)) {
@@ -246,8 +255,6 @@ bool pushQuantifiedVariableThrough(Variable* v, bool univ/*ersally quantified*/,
 					boolf->subformula(firstIndex, newQF);
 				}
 				return true;
-			} else if (v_inds.size() == boolf->subformulas().size()) {
-				return false; // cannot push through any subformula
 			} else { // can push through at least one, but also not through at least two
 				// example where pushing would be useful: ?x: !y: P(x) | Q(y) | R(y) --> [?x:P(x)] | [!y:Q(y)|R(y)]
 				// create a new sibling (to boolf) quantform with boolform child (with all boolf subforms that contain v)
@@ -275,7 +282,7 @@ Rule* PushQuantificationsCompletely::visit(Rule* rule) {
 	// first handle the body:
 	Formula* newBod = rule->body()->accept(this);
 	if (newBod != rule->body()) {
-		delete rule->body(); // hoping for a shallow delete, since subsubformulas are still needed
+		delete rule->body(); // a shallow delete, since subsubformulas are still needed
 		rule->body(newBod);
 	}
 
@@ -294,6 +301,7 @@ Rule* PushQuantificationsCompletely::visit(Rule* rule) {
 		rule->body(new QuantForm(SIGN::POS, QUANT::EXIST, unpushableBodyVars, rule->body(), FormulaParseInfo()));
 		rule->setQuantVars(rem);
 	}
+    rule->body()->accept(this);
 	return rule;
 }
 

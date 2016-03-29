@@ -13,7 +13,6 @@
 #include "IncludeComponents.hpp"
 #include "groundtheories/AbstractGroundTheory.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-#include "inferences/modelexpansion/DefinitionPostProcessing.hpp"
 
 #include "theory/TheoryUtils.hpp"
 
@@ -38,31 +37,10 @@ ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement*
 	return symmetrical;
 }
 
-// TODO: method with variable argument number would be nice: #include <stdarg.h>
-// TODO: also, method belongs in AbstractGroundTheory
-
-void addClause(AbstractGroundTheory* gt, const int first, const int second) {
-	int arr[] = {first, second};
-	vector<int> clause(arr, arr + sizeof (arr) / sizeof (arr[0]));
-	gt->add(clause);
-}
-
-void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third) {
-	int arr[] = {first, second, third};
-	vector<int> clause(arr, arr + sizeof (arr) / sizeof (arr[0]));
-	gt->add(clause);
-}
-
-void addClause(AbstractGroundTheory* gt, const int first, const int second, const int third, const int fourth) {
-	int arr[] = {first, second, third, fourth};
-	vector<int> clause(arr, arr + sizeof (arr) / sizeof (arr[0]));
-	gt->add(clause);
-}
-
 /**
- * 	given a symmetry in the form of two lists of literals which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
+ * 	Given a symmetry in the form of two lists of literals which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
+ *  These clausal formulas are the same as implemented by BreakID (bitbucket.org/krr/breakid).
  */
-
 void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const std::vector<int>& literals, const std::vector<int>& symLiterals) {
 	std::vector<int>::const_iterator literals_it = literals.cbegin();
 	std::vector<int>::const_iterator symLiterals_it = symLiterals.cbegin();
@@ -75,22 +53,22 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const std::ve
 
 	if (literals.size() > 0) {
 		// (~l1 | s(l1))
-		addClause(gt, -lit, symLit);
+        gt->add({-lit, symLit});
 	}
 	if (literals.size() > 1) {
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// (~t1 | l1 | ~s(l1))
-		addClause(gt, -tseitin, lit, -symLit);
+		gt->add({-tseitin, lit, -symLit});
 		// (t1 | ~l1)
-		addClause(gt, tseitin, -lit);
+		gt->add({tseitin, -lit});
 		// (t1 | s(l1))
-		addClause(gt, tseitin, symLit);
+		gt->add({tseitin, symLit});
 		// (~t1 | ~l2 | s(l2))
 		++literals_it;
 		lit = *literals_it;
 		++symLiterals_it;
 		symLit = *symLiterals_it;
-		addClause(gt, -tseitin, -lit, symLit);
+		gt->add({-tseitin, -lit, symLit});
 	}
 	std::vector<int>::const_iterator oneButLast_it = literals.cend();
 	--oneButLast_it;
@@ -98,26 +76,28 @@ void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const std::ve
 		prevTseitin = tseitin;
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// ( ~tn | tn )
-		addClause(gt, -tseitin, prevTseitin);
+		gt->add({-tseitin, prevTseitin});
 		// ( ~tn | ln | ~s(ln) )
-		addClause(gt, -tseitin, lit, -symLit);
+		gt->add({-tseitin, lit, -symLit});
 		// ( tn | ~tn-1 | ~ln)
-		addClause(gt, tseitin, -prevTseitin, -lit);
+		gt->add({tseitin, -prevTseitin, -lit});
 		// ( tn | ~tn-1 | s(ln))
-		addClause(gt, tseitin, -prevTseitin, symLit);
+		gt->add({tseitin, -prevTseitin, symLit});
 		// ( ~tn | ~ln+1 | s(ln+1) )
 		++literals_it;
 		lit = *literals_it;
 		++symLiterals_it;
 		symLit = *symLiterals_it;
-		addClause(gt, -tseitin, -lit, symLit);
+		gt->add({-tseitin, -lit, symLit});
 	}
 }
 
 /**
- * 	given a symmetry in the form of two lists of domain elements which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
+ * 	Given a symmetry in the form of two lists of domain elements which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
  *
  * 	This variation induces extra solutions by relaxing the constraints on the tseitin variables. The advantage is less and smaller clauses.
+ * 
+ *  These clausal formulas are the same as implemented by BreakID (bitbucket.org/krr/breakid).
  */
 void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const std::vector<int>& literals, const std::vector<int>& symLiterals) {
 	std::vector<int>::const_iterator literals_it = literals.cbegin();
@@ -131,20 +111,20 @@ void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const
 
 	if (literals.size() > 0) {
 		// (~l1 | s(l1))
-		addClause(gt, -lit, symLit);
+		gt->add({-lit, symLit});
 	}
 	if (literals.size() > 1) {
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// (t1 | ~l1)
-		addClause(gt, tseitin, -lit);
+		gt->add({tseitin, -lit});
 		// (t1 | s(l1))
-		addClause(gt, tseitin, symLit);
+		gt->add({tseitin, symLit});
 		// (~t1 | ~l2 | s(l2))
 		++literals_it;
 		lit = *literals_it;
 		++symLiterals_it;
 		symLit = *symLiterals_it;
-		addClause(gt, -tseitin, -lit, symLit);
+		gt->add({-tseitin, -lit, symLit});
 	}
 	std::vector<int>::const_iterator oneButLast_it = literals.cend();
 	--oneButLast_it;
@@ -152,15 +132,15 @@ void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const
 		prevTseitin = tseitin;
 		tseitin = gt->translator()->createNewUninterpretedNumber();
 		// ( tn | ~tn-1 | ~ln)
-		addClause(gt, tseitin, -prevTseitin, -lit);
+		gt->add({tseitin, -prevTseitin, -lit});
 		// ( tn | ~tn-1 | s(ln))
-		addClause(gt, tseitin, -prevTseitin, symLit);
+		gt->add({tseitin, -prevTseitin, symLit});
 		// ( ~tn | ~ln+1 | s(ln+1) )
 		++literals_it;
 		lit = *literals_it;
 		++symLiterals_it;
 		symLit = *symLiterals_it;
-		addClause(gt, -tseitin, -lit, symLit);
+		gt->add({-tseitin, -lit, symLit});
 	}
 }
 
@@ -243,7 +223,7 @@ UFNode* UFSymbolArg::getForbiddenNode() {
 	return forbiddenNode;
 }
 
-UFNode* UFSymbolArg::find(UFNode* in) {
+UFNode* UFSymbolArg::find(UFNode* in) const {
 	UFNode* rt = in->parent;
 	while (rt != rt->parent) { // find root
 		rt = rt->parent;
@@ -425,11 +405,10 @@ void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups,
 		}
 	}
 	
-	//delete theo; // TODO: is this sufficient, given all the theory manipulation that has been done?
 	theo->recursiveDelete();
 }
 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<std::pair<PFSymbol*, unsigned int> >& forcedSymbArgs) {
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, const std::vector<std::pair<PFSymbol*, unsigned int> >& forcedSymbArgs) {
 	// TODO: fix forcedSymbArgs usage. If provided, should _only_ look for those arguments!
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
 		clog << "pushing quantifiers completely..." << std::endl;
