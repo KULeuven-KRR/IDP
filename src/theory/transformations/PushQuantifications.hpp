@@ -13,7 +13,8 @@
 
 #include "visitors/TheoryMutatingVisitor.hpp"
 
-class PushQuantifications: public TheoryMutatingVisitor {
+class PushQuantifications : public TheoryMutatingVisitor {
+
 	VISITORFRIENDS()
 public:
 	// NOTE: requires pushed quantifications, which IS guaranteed when going through theoryUtils.
@@ -24,20 +25,21 @@ public:
 	}
 
 protected:
-	Rule* visit(Rule* rule) {
-		varset bodyonlyvars, rem;
-		for(auto var : rule->quantVars()){
-			if(not contains(rule->head()->freeVars(), var)){
-				bodyonlyvars.insert(var);
-			}else{
-				rem.insert(var);
-			}
-		}
-		rule->setQuantVars(rem);
-		if(not bodyonlyvars.empty()){
-			rule->body(new QuantForm(SIGN::POS, QUANT::EXIST, bodyonlyvars, rule->body(), FormulaParseInfo()));
-		}
-		return rule;
+	Rule* visit(Rule* rule);
+	Formula* visit(QuantForm*);
+};
+
+class PushQuantificationsCompletely : public TheoryMutatingVisitor {
+	// NOTE: requires pushed equivalences, pushed negations and pushed quantifications
+
+	VISITORFRIENDS()
+public:
+	template<typename T>
+	T execute(T t) {
+		return t->accept(this);
 	}
+
+protected:
+	Rule* visit(Rule* rule);
 	Formula* visit(QuantForm*);
 };

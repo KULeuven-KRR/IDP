@@ -26,13 +26,19 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 	case SymmetryBreaking::NONE:
 		break;
 	case SymmetryBreaking::STATIC: {
-		// Add symmetry breakers
 		if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
 			logActionAndTime("Constructing symmetry breakers at ");
 		}
-		auto ivsets = findIVSets(theory, structure, minimizeTerm);
-		addSymBreakingPredicates(grounding, ivsets, nbModelsEquivalent);
-		break;
+		// Detect symmetry
+		std::vector<InterchangeabilityGroup*> intchgroups;
+		detectInterchangeability(intchgroups, theory,structure,minimizeTerm);
+		// Break symmetry
+		if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
+		  clog << "Breaking " << intchgroups.size() << " interchangeability groups." << std::endl;
+		}
+		for(auto icg: intchgroups){
+		  icg->breakSymmetry(grounding, structure, nbModelsEquivalent);
+		}
 	}
 	}
 }

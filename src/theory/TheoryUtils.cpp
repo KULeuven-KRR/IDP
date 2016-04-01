@@ -626,6 +626,14 @@ AbstractTheory* pushQuantifiersAndNegations(AbstractTheory* t) {
 	return transform<PushQuantifications, AbstractTheory*>(t);
 }
 
+AbstractTheory* pushQuantifiersCompletely(AbstractTheory* t) {
+	FormulaUtils::splitComparisonChains(t);
+	FormulaUtils::removeEquivalences(t);
+	FormulaUtils::pushNegations(t);
+	FormulaUtils::flatten(t);
+	return transform<PushQuantificationsCompletely, AbstractTheory*>(t);
+}
+
 Formula* eliminateUniversalQuantifications(Formula* f) {
 	return transform<EliminateUniversalQuantifications, Formula*>(f);
 }

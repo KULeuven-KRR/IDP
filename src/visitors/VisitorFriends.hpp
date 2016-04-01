@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef VISITORFRIENDS_HPP_
-#define VISITORFRIENDS_HPP_
+#pragma once
 
 class TheoryVisitor;
 class DefaultTraversingTheoryVisitor;
@@ -91,6 +90,7 @@ class ReplaceVariableUsingEqualities;
 		friend class CountQuantVars; \
 		friend class TheorySupportedChecker; \
 		friend class TheorySymmetryAnalyzer; \
+		friend class InterchangeabilityAnalyzer; \
 		friend class TheoryMutatingVisitor; \
 		friend class ReplaceDefinitionsWithCompletion; \
 		friend class AddFuncConstraints; \
@@ -101,6 +101,7 @@ class ReplaceVariableUsingEqualities;
 		friend class GraphFuncsAndAggs; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
+		friend class PushQuantificationsCompletely; \
 		friend class PullQuantifications; \
 		friend class EliminateUniversalQuantifications; \
 		friend class RemoveEquivalences; \
@@ -238,5 +239,3 @@ protected:\
 	Type* VisitingType::accept(TheoryMutatingVisitor* v) {\
 		return v->visit(this);\
 	}
-
-#endif /* VISITORFRIENDS_HPP_ */
