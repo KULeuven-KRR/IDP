@@ -97,14 +97,14 @@ public:
 	std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* > symbolargs; // symbols with corresponding arguments
 
 	InterchangeabilitySet(const Structure* s) : _struct(s) {
-		for (auto part : partition) {
-			delete part.second;
-		}
 	}
 
 	~InterchangeabilitySet() {
 		for (auto sa : symbolargs) {
 			delete sa.second;
+		}
+        for (auto part : partition) {
+			delete part.second;
 		}
 	}
 

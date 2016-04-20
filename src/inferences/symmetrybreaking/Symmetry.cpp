@@ -16,6 +16,8 @@
 
 #include "theory/TheoryUtils.hpp"
 
+#include "SaucyGraph.hpp"
+
 using namespace std;
 
 /**********
@@ -465,6 +467,10 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	if (currentset != nullptr) { // last set is not yet added
 		intersets.push_back(currentset);
 	}
+    
+    //*** intersets contains all relevant argument positions
+    saucy::Graph sg = saucy::Graph();
+    sg.addNode();
 
 	for (auto ichset : intersets) {
 		// TODO: this is a rather ugly hack. ichset should not have been derived before...
