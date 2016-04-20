@@ -16,6 +16,8 @@
 
 #include "theory/TheoryUtils.hpp"
 
+#include "SaucyGraph.hpp"
+
 using namespace std;
 
 /**********
@@ -384,7 +386,7 @@ void InterchangeabilityAnalyzer::visit(const QuantSetExpr* s) {
 	s->getCondition()->accept(this);
 }
 
-void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, const AbstractTheory* t, const Structure* s, const Term* obj) {
+void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj) {
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		clog << "*** DETECTING SYMMETRY ***" << std::endl;
 	}
@@ -397,18 +399,21 @@ void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups,
 		theo->add(new PredForm(SIGN::POS,get(STDPRED::LT,obj_clone->sort()),{obj_clone,dummyTerm},FormulaParseInfo()));
 	}
 	
-	getIntchGroups(theo,s,out_groups);
+	getIntchGroups(theo,s,out_groups,out_syms);
 	
-	for (auto icg : out_groups) {
-		if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-			icg->print(clog);
-		}
-	}
+    if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+      for (auto icg : out_groups) {
+        icg->print(clog);
+      }
+      for(auto sym: out_syms){
+        sym->print(clog);
+      }
+    }
 	
 	theo->recursiveDelete();
 }
 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, const std::vector<std::pair<PFSymbol*, unsigned int> >& forcedSymbArgs) {
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const std::vector<std::pair<PFSymbol*, unsigned int> >& forcedSymbArgs) {
 	// TODO: fix forcedSymbArgs usage. If provided, should _only_ look for those arguments!
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
 		clog << "pushing quantifiers completely..." << std::endl;
@@ -466,23 +471,50 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 		intersets.push_back(currentset);
 	}
 
+    // Calculate both interchangeable domains and local domain permutations
 	for (auto ichset : intersets) {
 		// TODO: this is a rather ugly hack. ichset should not have been derived before...
 		bool hasCorrectSymbArgs = (forcedSymbArgs.size()==0); // so if no forcedsymbargs are provided, look for symmetry in all symbargs in the theory. Otherwise, look for those connected to forcedsymbargs
 		for(auto sa:forcedSymbArgs) {
-			if (ichset->symbolargs.count(sa.first)>0 && ichset->symbolargs[sa.first]->count(sa.second)>0) {
+			if (ichset->symbolargs.hasArgPos(sa.first,sa.second)) {
 				hasCorrectSymbArgs=true;
 			}
 		}
 		if (!hasCorrectSymbArgs) {
 			continue;
 		}
+        
+        bool allTwoValued = true;
+        for(auto symb: ichset->symbolargs.symbols){
+          if(!s->inter(symb)->approxTwoValued()){
+            allTwoValued=false;
+            break;
+          }
+        }
+        if(allTwoValued){
+          continue; // no symmetry breaking possible
+        }
 		
 		ichset->calculateInterchangeableSets();
 		if (getOption(IntType::VERBOSE_SYMMETRY) > 2) {
 			ichset->print(clog);
 		}
 		ichset->getIntchGroups(out_groups);
+        
+        
+        bool hasNonTrivialSymbol = false;
+        for(auto argpos: ichset->symbolargs.argPositions){
+          if(argpos.second.size()>1){ // TODO: also require the table to be non-trivial (totally true, false or unknown)
+            hasNonTrivialSymbol=true;
+            break;
+          }
+        }
+        if(!hasNonTrivialSymbol){
+          continue; // all symmetry is broken by interchangeability
+        }        
+        saucy_::Graph sg = saucy_::Graph(ichset);
+        sg.addInterpretations(s);  
+        sg.runSaucy(out_syms);
 	}
 
 	for (size_t i = 0; i < intersets.size(); ++i) {
@@ -490,9 +522,34 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	}
 }
 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups) {
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms) {
 	std::vector<std::pair<PFSymbol*, unsigned int> > tmp;
-	getIntchGroups(theo, s, out_groups, tmp);
+	getIntchGroups(theo, s, out_groups, out_syms, tmp);
+}
+
+void ArgPosSet::addArgPos(PFSymbol* symb, unsigned int arg){
+  if(argPositions.count(symb)==0){
+    std::set<unsigned int> newSet;
+    argPositions[symb]=newSet;
+  }
+  argPositions.at(symb).insert(arg);
+  symbols.insert(symb);
+}
+bool ArgPosSet::hasArgPos(PFSymbol* symb, unsigned int arg){
+  if(argPositions.count(symb)==0){
+    return false;
+  }
+  return argPositions.at(symb).count(arg);
+}
+
+void ArgPosSet::print(std::ostream& ostr){
+  for(auto paar: argPositions){
+    paar.first->put(ostr);
+    ostr << "/";
+    for(auto arg: paar.second) {
+        ostr << arg << " ";
+    }
+  }
 }
 
 template<class T>
@@ -525,31 +582,21 @@ void setImage(PredInter* pi, ElementTuple& tup, PredVal& img) {
 	}
 }
 
-InterchangeabilityGroup::InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*> symbs3val, 
-		std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>*>& symbargs) {
+InterchangeabilityGroup::InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*>& symbs3val, 
+		ArgPosSet& symbargs) {
 	for (auto de : domels) {
 		elements.insert(de);
 	}
 	for(auto symb: symbs3val) {
-		std::unordered_set<unsigned int>* args = new std::unordered_set<unsigned int>(*(symbargs[symb]));
-		symbolargs.insert({symb,args});
-	}
-}
-
-InterchangeabilityGroup::~InterchangeabilityGroup() {
-	for(auto paar: symbolargs) {
-		delete paar.second;
+        Assert(symbargs.argPositions.count(symb)>0);
+        for(auto arg: symbargs.argPositions.at(symb)){
+          symbolargs.addArgPos(symb,arg);
+        }
 	}
 }
 
 void InterchangeabilityGroup::print(std::ostream& ostr) {
-	for (auto paar : symbolargs) {
-		paar.first->put(ostr);
-		ostr << "/";
-		for(auto arg: *(paar.second)) {
-			ostr << arg << " ";
-		}
-	}
+	symbolargs.print(ostr);
 	ostr << "<- ";
 	for (auto de : elements) {
 		de->put(ostr);
@@ -563,25 +610,37 @@ unsigned int InterchangeabilityGroup::getNrSwaps() {
 }
 
 bool InterchangeabilityGroup::hasSymbArg(PFSymbol* symb, unsigned int arg) {
-	return symbolargs.count(symb)>0 && symbolargs[symb]->count(arg)>0;
+	return symbolargs.hasArgPos(symb,arg);
 }
 
-void InterchangeabilityGroup::breakSymmetry(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent) const {
-  set<const DomainElement*> ordered_els;
-  ordered_els.insert(elements.cbegin(),elements.cend());
-  set<const DomainElement*>::const_iterator smaller = ordered_els.cbegin();
-  set<const DomainElement*>::const_iterator bigger = ordered_els.cbegin();
-  ++bigger;
-  for (; bigger != ordered_els.cend(); ++bigger, ++smaller) {
-    std::vector<int> lits;
-    std::vector<int> sym_lits;
-    getSymmetricLiterals(gt,struc, *smaller,*bigger,lits,sym_lits);
-    
-    if (nbModelsEquivalent) {
-      addSymBreakingClausesToGroundTheory(gt, lits, sym_lits);
-    } else {
-      addSymBreakingClausesToGroundTheoryShortest(gt, lits, sym_lits);
-    }
+void InterchangeabilityGroup::addBreakingClauses(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent) const {
+  std::vector<Symmetry*> generators;
+  getGoodGenerators(generators);
+  for(auto gen: generators){
+    gen->addBreakingClauses(gt,struc,nbModelsEquivalent);
+    delete gen;
+  }
+}
+
+void InterchangeabilityGroup::getGoodGenerators(std::vector<Symmetry*>& out) const{
+  Assert(elements.size()>1);
+  std::map<DomainElement,const DomainElement*> sortedEls; // sort the els according to the internal sort (crucial for getting the right generators for complete breaking)
+  for(auto el: elements){
+    sortedEls[*el]=el;
+  }
+
+  auto sortedIt = sortedEls.cbegin();
+  auto first = sortedIt->second;
+  ++sortedIt;
+  
+  while(sortedIt!=sortedEls.cend()){
+    Symmetry* newSym = new Symmetry(symbolargs);
+    auto second = sortedIt->second;
+    newSym->addImage(first,second);
+    newSym->addImage(second,first);
+    out.push_back(newSym);
+    first=second;
+    ++sortedIt;
   }
 }
 
@@ -598,19 +657,18 @@ void InterchangeabilityGroup::getSymmetricLiterals(AbstractGroundTheory* gt, Str
 	excludedSet.insert(bigger);
 	const set<const DomainElement*> emptySet;
 
-    for(auto symbarg: symbolargs) {
+    for(auto symbarg: symbolargs.argPositions) {
       PFSymbol* symb = symbarg.first;
-      std::set<unsigned int> argumentPlaces;
-      argumentPlaces.insert(symbarg.second->cbegin(),symbarg.second->cend());
       if (struc->inter(symb)->approxTwoValued()) {
         continue; // no need to construct sym breaking constraints for this symbol
       }
       
+      auto argumentPlaces = symbarg.second;
       for (auto arg : argumentPlaces) {
           vector<vector<const DomainElement*> > groundElements(1);
           groundElements[0] = vector<const DomainElement*>(symb->nrSorts());
           for (unsigned int argument = 0; argument < arg; ++argument) {
-              if (symbarg.second->count(argument)) {
+              if (argumentPlaces.count(argument)) {
                   groundElements = fillGroundElementsOneRank(groundElements, struc->inter(symb->sort(argument)), argument, excludedSet);
               } else {
                   groundElements = fillGroundElementsOneRank(groundElements, struc->inter(symb->sort(argument)), argument, emptySet);
@@ -634,11 +692,10 @@ void InterchangeabilityGroup::getSymmetricLiterals(AbstractGroundTheory* gt, Str
 }
 
 bool InterchangeabilitySet::add(PFSymbol* p, unsigned int arg) {
-	if (symbolargs.count(p) == 0) {
-		symbolargs.insert({p, new std::unordered_set<unsigned int>()});
-	}
-	symbolargs[p]->insert(arg);
-	sorts.insert(p->sort(arg));
+    symbolargs.addArgPos(p,arg);
+    Sort* srt = p->sort(arg);
+	sorts.insert(srt);
+    symbolargs.addArgPos(srt->pred(),0); // don't forget to add the sort predicates as well (type hierarchies...)!
 	return true;
 }
 
@@ -652,22 +709,27 @@ bool InterchangeabilitySet::add(const DomainElement* de) {
 	return true;
 }
 
-void InterchangeabilitySet::calculateInterchangeableSets() {
-	std::unordered_set<const DomainElement*> allElements;
-	// run over all sorts to find relevant domain elements
+void InterchangeabilitySet::getDomain(std::unordered_set<const DomainElement*>& allElements, bool includeConstants){
+  	// run over all sorts to find relevant domain elements
 	for (auto s : sorts) {
         if (!_struct->inter(s)->finite()) {
           allElements.clear();
-          break; // not going to detect symmetry over an infinite domain ;)
+          return; // not going to detect symmetry over an infinite domain ;)
         }
 		auto sortiter = _struct->inter(s)->sortBegin();
 		while (!sortiter.isAtEnd()) {
-			if (occursAsConstant.count(*sortiter) == 0) {
+			if (includeConstants || occursAsConstant.count(*sortiter) == 0) { // ignore domain elements occurring as constants in theory
 				allElements.insert(*sortiter);
 			}
 			++sortiter;
 		}
 	}
+}
+
+void InterchangeabilitySet::calculateInterchangeableSets() {
+	std::unordered_set<const DomainElement*> allElements;
+    getDomain(allElements);
+    
 	// partition domain elements based on isEqual method of ElementOccurrence
 	for (auto de : allElements) {
 		std::shared_ptr<ElementOccurrence> eloc(new ElementOccurrence(this, de));
@@ -684,8 +746,7 @@ void InterchangeabilitySet::getIntchGroups(std::vector<InterchangeabilityGroup*>
 		}
 		// Find the non-two-valued symbols:
 		std::vector<PFSymbol*> symbs3val;
-		for (auto sa : symbolargs) {
-			PFSymbol* symb = sa.first;
+		for (auto symb : symbolargs.symbols) {
 			if (!_struct->inter(symb)->approxTwoValued()) {
 				symbs3val.push_back(symb);
 			}
@@ -698,15 +759,8 @@ void InterchangeabilitySet::getIntchGroups(std::vector<InterchangeabilityGroup*>
 }
 
 void InterchangeabilitySet::print(std::ostream& ostr) {
-	for (auto sa : symbolargs) {
-		sa.first->put(ostr);
-		for (auto arg : *sa.second) {
-			ostr << "/" << arg;
-		}
-		ostr << ", ";
-	}
+    symbolargs.print(ostr);
 	ostr << ": ";
-
 	for (auto paar : partition) {
 		//ostr << paar.first->hash << ", ";
 		for (auto de : *paar.second) {
@@ -720,7 +774,7 @@ void InterchangeabilitySet::print(std::ostream& ostr) {
 
 ElementOccurrence::ElementOccurrence(InterchangeabilitySet* intset, const DomainElement* de) : ics(intset), domel(de) {
 	hash = (size_t) ics;
-	for (auto sa : ics->symbolargs) {
+	for (auto sa : ics->symbolargs.argPositions) {
 		PFSymbol* symb = sa.first;
 		if (symb->nrSorts() == 1) { // use unary symbols to create hash function
 			PredInter* pi = ics->_struct->inter(symb);
@@ -737,7 +791,7 @@ ElementOccurrence::ElementOccurrence(InterchangeabilitySet* intset, const Domain
 	}
 }
 
-bool checkTableForSwapConsistency(PredTable* table, const DomainElement* first, const DomainElement* second, std::unordered_set<unsigned int>* args) {
+bool checkTableForSwapConsistency(PredTable* table, const DomainElement* first, const DomainElement* second, std::set<unsigned int>& args) {
 	if (table->arity() == 1) {
 		return table->contains({first}) == table->contains({second});
 	}
@@ -752,7 +806,7 @@ bool checkTableForSwapConsistency(PredTable* table, const DomainElement* first, 
 		ElementTuple swapTuple(origTuple.size());
 		bool swapIsDifferent = false;
 		for (unsigned int i = 0; i < origTuple.size(); ++i) {
-			if (args->count(i) > 0) {
+			if (args.count(i) > 0) {
 				if (origTuple[i] == first) {
 					swapTuple[i] = second;
 					swapIsDifferent = true;
@@ -778,7 +832,7 @@ bool ElementOccurrence::isEqualTo(const ElementOccurrence& other) const {
 	if (other.ics != ics) {
 		return false;
 	}
-	for (auto sa : ics->symbolargs) {
+	for (auto sa : ics->symbolargs.argPositions) {
 		PFSymbol* symb = sa.first;
 		PredInter* pi = ics->_struct->inter(symb);
 		// run over true and false table to check whether symmetrical tuples are also in there:
@@ -825,4 +879,97 @@ void ForbiddenNode::put(std::ostream & outstr) {
 
 bool ForbiddenNode::addTo(InterchangeabilitySet * ichset) {
 	return false;
+}
+
+Symmetry::Symmetry(const ArgPosSet& ap):argpositions(ap){}
+
+void Symmetry::addImage(const DomainElement* first, const DomainElement* second){
+  if(first==second){
+    return;
+  }
+  image[first]=second;
+}
+
+void Symmetry::print(std::ostream& ostr){
+  argpositions.print(ostr);
+  clog << ": ";
+  for(auto paar: image){
+    ostr << "(";
+    paar.first->put(ostr); 
+    clog << " "; 
+    paar.second->put(ostr); 
+    ostr << ")";
+  }
+  ostr << std::endl;
+}
+
+bool Symmetry::transformToSymmetric(std::vector<const DomainElement*>& tuple, std::set<unsigned int>& positions){
+  bool hasChanged = false;
+  for(unsigned int i: positions){
+    if(image.count(tuple[i])){
+      tuple[i]=image[tuple[i]];
+      hasChanged = true;
+    }
+  }
+  return hasChanged;
+}
+
+void Symmetry::getGroundSymmetry(AbstractGroundTheory* gt, Structure* struc, std::unordered_map<unsigned int, unsigned int>& groundSym, std::vector<unsigned int>& groundOrder){
+    for(auto symbarg: argpositions.argPositions) {
+      PFSymbol* symb = symbarg.first;
+      if (struc->inter(symb)->approxTwoValued()) {
+        continue; // no need to construct sym breaking constraints for this symbol
+      }
+      
+      // run over pt get unknown tuples
+      auto inter = struc->inter(symb);      
+      auto ptit = inter->pt()->begin();
+      for(;!ptit.isAtEnd(); ++ptit){  // iterating over possibly true tuples
+        ElementTuple eltup = *ptit;
+        ElementTuple symtup = eltup;
+        if(!inter->isUnknown(eltup,true) || !transformToSymmetric(symtup,symbarg.second)){
+          continue; // no use adding constraints for known tuples or for tuples mapping to themselves
+        }
+        Assert(inter->isUnknown(symtup,true));
+        unsigned int groundtup = gt->translator()->translateReduced(symb, eltup, false);
+        groundOrder.push_back(groundtup);
+        groundSym[groundtup]=gt->translator()->translateReduced(symb, symtup, false);
+      }
+    }
+}
+
+void Symmetry::getUsefulAtoms(std::unordered_map<unsigned int, unsigned int>& groundSym, std::vector<unsigned int>& groundOrder, std::vector<int>& out_orig, std::vector<int>& out_sym){
+  std::unordered_set<unsigned int> useful;
+  for(int i=groundOrder.size()-1; i>=0; --i){
+    unsigned int last = groundOrder[i]; 
+    if(useful.count(last)){
+      continue; // not last in the cycle
+    }
+    // last in the cycle
+    unsigned int sym = groundSym[last];
+    while(sym!=last){
+      useful.insert(sym); // images of last are useful, but not last itself
+      sym=groundSym[sym];
+    }
+  }
+  for(auto atom: groundOrder){
+    if(useful.count(atom)>0){
+      out_orig.push_back(atom);
+      out_sym.push_back(groundSym[atom]);
+    }
+  }
+}
+
+void Symmetry::addBreakingClauses(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent){
+  std::unordered_map<unsigned int, unsigned int> groundSym;
+  std::vector<unsigned int> groundOrder;
+  getGroundSymmetry(gt,struc,groundSym,groundOrder);
+  std::vector<int> lits;
+  std::vector<int> sym_lits;
+  getUsefulAtoms(groundSym,groundOrder,lits,sym_lits);
+  if (nbModelsEquivalent) {
+    addSymBreakingClausesToGroundTheory(gt, lits, sym_lits);
+  } else {
+    addSymBreakingClausesToGroundTheoryShortest(gt, lits, sym_lits);
+  }
 }

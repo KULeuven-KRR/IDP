@@ -1,0 +1,192 @@
+/*****************************************************************************
+ * Copyright 2010-2012 Katholieke Universiteit Leuven
+ *
+ * Use of this software is governed by the GNU LGPLv3.0 license
+ *
+ * Written by Broes De Cat, Bart Bogaerts, Stef De Pooter, Johan Wittocx,
+ * Jo Devriendt, Joachim Jansen and Pieter Van Hertum 
+ * K.U.Leuven, Departement Computerwetenschappen,
+ * Celestijnenlaan 200A, B-3001 Leuven, Belgium
+ ****************************************************************************/
+
+#include "saucy.hpp"
+#include "IncludeComponents.hpp"
+#include "SaucyGraph.hpp"
+
+namespace saucy_ {
+  
+Graph::Graph(InterchangeabilitySet* ics):symbolargs(ics->symbolargs){
+  unsigned int maxArity=0;
+  for(auto sa: symbolargs.argPositions){
+    PFSymbol* symb = sa.first;
+    if(maxArity < symb->nrSorts()){
+      maxArity = symb->nrSorts();
+    }
+  }
+  domElArgNodes.resize(maxArity);
+  
+  std::unordered_set<const DomainElement*> domain;
+  ics->getDomain(domain, true); // includes elements occurring as constants
+  Assert(domain.size()>=ics->occursAsConstant.size());
+  
+  highestNode = -1;
+  highestColor = maxArity;
+  
+  for(auto de: domain){
+    auto deNode = getNextNode();
+    domEl2Node[de]=deNode;
+    node2DomEl[deNode]=de;
+    color[deNode]=0; // give each domElNode the same color
+    
+    for(unsigned int i=0; i<maxArity; ++i){
+      auto deArgNode = getNextNode();
+      domElArgNodes[i][de]=deArgNode;
+      color[deArgNode]=i+1; // give each domElArgNode with the same argument the same color
+      edges.push_back({deNode,deArgNode}); // put an edge between each domElArgNode and its corresponding domElNode
+    }
+  }
+  
+  for(auto de: ics->occursAsConstant){
+    // TODO: fix the case where they already have a unique color and Saucy will complain because there is a node without the color
+    color[domEl2Node[de]]=getNextColor(); // domain elements occurring in theory should have unique color so they never take part in an isomorphism
+  }
+  
+  Assert(highestNode+1==(maxArity+1)*domain.size());
+}
+  
+unsigned int Graph::getNextNode(){
+  ++highestNode;
+  return highestNode;
+}
+
+unsigned int Graph::getNextColor(){
+  ++highestColor;
+  return highestColor;
+}
+
+void Graph::addTuple(PFSymbol* symb, const std::vector<const DomainElement*>& args, unsigned int truth_value){  
+  unsigned int newnode = getNextNode();
+  TupleNode tn(symb,truth_value);
+  for(unsigned int i=0; i<args.size(); ++i){
+    if(symbolargs.hasArgPos(symb,i)){
+      edges.push_back({newnode,domElArgNodes[i][args[i]]}); // edge between tuplenode and domelargnode
+    }else{
+      tn.args.push_back(args[i]);
+    }
+  }
+  if(tupleColors.count(tn)==0){
+    tupleColors[tn]=getNextColor();
+  }
+  color[newnode]=tupleColors[tn];
+}
+
+void Graph::addPredTable(PFSymbol* symb, const PredTable* pt, unsigned int truthval){
+  if(!pt->finite()){
+    throw IdpException("Symmetry breaking does not support infinite interpretations.");
+  }
+  auto ptIt = pt->begin();
+  while(!ptIt.isAtEnd()){
+    addTuple(symb,*ptIt,truthval);
+    ++ptIt;
+  }
+}
+
+void Graph::addInterpretations(const Structure* s){
+  for(auto symb: symbolargs.symbols){
+    PredInter* pi = s->inter(symb);
+    addPredTable(symb,pi->ct(),1);
+    if(!pi->approxTwoValued()){
+      addPredTable(symb,pi->cf(),2); // TODO: find out how to extract the two finite tables instead of always ct and cf
+    }
+  }
+}
+
+// This method is given to Saucy as a polymorphic consumer of the detected generator permutations
+
+std::vector<std::unordered_map<unsigned int, unsigned int> > generators;
+
+int addPermutation(int n, const int *ct_perm, int nsupp, int *support, void *arg) {
+  if (n == 0 || nsupp == 0) {
+    return 1;
+  }
+  
+  std::unordered_map<unsigned int, unsigned int> generator;
+  generators.push_back(generator);
+  for(int i=0; i<n; ++i) {
+    if(i!=ct_perm[i]){
+      generators.back()[i]=ct_perm[i];
+    }
+  }
+  
+  return 1;
+}
+
+void Graph::runSaucy(std::vector<Symmetry*>& out){
+  createSaucy();
+  
+  struct saucy* s = saucy_alloc(sg->n);
+  struct saucy_stats stats;
+  saucy_search(s, sg, 0, addPermutation, 0, &stats);
+  saucy_free(s);
+  
+  for(auto gen: generators){
+    Symmetry* newSym = new Symmetry(symbolargs);
+    for(auto paar: gen){
+      if(node2DomEl.count(paar.first)){ // else the node permuted is not a domain node
+        newSym->addImage(node2DomEl[paar.first], node2DomEl[paar.second]);
+      }
+    }
+    out.push_back(newSym);
+  }
+  
+  freeSaucy();
+}
+
+void Graph::freeSaucy(){
+  free(sg->adj);
+  free(sg->edg);
+  free(sg->colors);
+  free(sg);
+  generators.clear();
+}
+
+void Graph::createSaucy(){
+  sg = (saucy_graph*) malloc(sizeof (struct saucy_graph));
+  
+  unsigned int n = highestNode+1;
+  // set the colors right
+  sg->colors = (int*) malloc(n * sizeof (int));
+  for(auto nc: color){
+    sg->colors[nc.first]=nc.second;
+  }
+  
+  std::vector<std::vector<uint> > neighbours(n);
+  for(auto edge: edges){
+    neighbours[edge.first].push_back(edge.second);
+    neighbours[edge.second].push_back(edge.first);
+  }
+  
+    // now count the number of neighboring nodes
+  sg->adj = (int*) malloc((n + 1) * sizeof (int));
+  sg->adj[0] = 0;
+  int ctr = 0;
+  for (auto nblist : neighbours) {
+    sg->adj[ctr + 1] = sg->adj[ctr] + nblist.size();
+    ++ctr;
+  }
+
+  // finally, initialize the lists of neighboring nodes, C-style
+  sg->edg = (int*) malloc(sg->adj[n] * sizeof (int));
+  ctr = 0;
+  for (auto nblist : neighbours) {
+    for (auto l : nblist) {
+      sg->edg[ctr] = l;
+      ++ctr;
+    }
+  }
+
+  sg->n = n;
+  sg->e = sg->adj[n] / 2;
+}
+
+}

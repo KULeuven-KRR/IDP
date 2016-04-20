@@ -30,14 +30,27 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 			logActionAndTime("Constructing symmetry breakers at ");
 		}
 		// Detect symmetry
-		std::vector<InterchangeabilityGroup*> intchgroups;
-		detectInterchangeability(intchgroups, theory,structure,minimizeTerm);
+        std::vector<Symmetry*> generators;
+        std::vector<InterchangeabilityGroup*> intchgroups;
+		detectInterchangeability(intchgroups, generators, theory,structure,minimizeTerm);
 		// Break symmetry
 		if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		  clog << "Breaking " << intchgroups.size() << " interchangeability groups." << std::endl;
 		}
 		for(auto icg: intchgroups){
-		  icg->breakSymmetry(grounding, structure, nbModelsEquivalent);
+		  icg->addBreakingClauses(grounding, structure, nbModelsEquivalent);
+          delete icg;
+		}
+        if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
+          clog << "Also breaking " << generators.size() << " symmetry generators found by Saucy." << std::endl;
+		}
+        for(auto sym: generators){
+		  sym->addBreakingClauses(grounding, structure, nbModelsEquivalent);
+          delete sym;
+		}
+        
+        if (getOption(IntType::VERBOSE_GROUNDING) >= 1) {
+			logActionAndTime("Ending construction of symmetry breakers at ");
 		}
 	}
 	}

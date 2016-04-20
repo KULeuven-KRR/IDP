@@ -53,57 +53,79 @@ public:
 };
 
 struct ElOcHash {
-
 	size_t operator()(std::shared_ptr<ElementOccurrence> eloc) const {
 		return eloc->hash;
 	}
 };
 
 struct ElOcEqual {
-
 	bool operator()(std::shared_ptr<ElementOccurrence> a, std::shared_ptr<ElementOccurrence> b) const {
 		return a->isEqualTo(*b);
 	}
 };
 
+class ArgPosSet {
+public:
+  std::map<PFSymbol*,std::set<unsigned int> > argPositions; // ordered because of easy literal ordering when breaking symmetry
+  std::set<PFSymbol*> symbols;
+  
+  void addArgPos(PFSymbol* symb, unsigned int arg);
+  bool hasArgPos(PFSymbol* symb, unsigned int arg);
+  void print(std::ostream& ostr);
+};
+
+class Symmetry {
+private:
+  ArgPosSet argpositions;
+  std::map<const DomainElement*, const DomainElement*> image;
+  
+  // returns true iff the tuple was transformed to a different tuple
+  bool transformToSymmetric(std::vector<const DomainElement*>& tuple, std::set<unsigned int>& positions);
+  void getUsefulAtoms(std::unordered_map<unsigned int, unsigned int>& groundSym, std::vector<unsigned int>& groundOrder, std::vector<int>& out_orig, std::vector<int>& out_sym);
+  void getGroundSymmetry(AbstractGroundTheory* gt, Structure* struc, std::unordered_map<unsigned int, unsigned int>& groundSym, std::vector<unsigned int>& groundOrder);
+  
+public:
+  Symmetry(const ArgPosSet& ap);
+  void addImage(const DomainElement* first, const DomainElement* second);
+  void print(std::ostream& ostr);
+  
+  void addBreakingClauses(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent);
+};
+
 class InterchangeabilityGroup {
 	
 private:
-	std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* > symbolargs;
-	std::unordered_set<const DomainElement*> elements;
+	ArgPosSet symbolargs;
+	std::set<const DomainElement*> elements;
   
   void getSymmetricLiterals(AbstractGroundTheory* gt, Structure* struc, const DomainElement* smaller, const DomainElement* bigger, std::vector<int>& out, std::vector<int>& sym_out) const;
 	
 public:
-	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*> symbs3val, 
-		std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* >& symbargs);
-	~InterchangeabilityGroup();
+	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*>& symbs3val, 
+		ArgPosSet& symbargs);
 	void print(std::ostream& ostr);
 
 	unsigned int getNrSwaps();
 	bool hasSymbArg(PFSymbol* symb, unsigned int arg);
   
-  void breakSymmetry(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent) const;
+  void addBreakingClauses(AbstractGroundTheory* gt, Structure* struc, bool nbModelsEquivalent) const;
+  void getGoodGenerators(std::vector<Symmetry*>& out) const;
 };
 
 class InterchangeabilitySet {
 private:
 	std::unordered_set<const Sort*> sorts;
-	std::unordered_set<const DomainElement*> occursAsConstant;
 	std::unordered_map<std::shared_ptr<ElementOccurrence>, std::vector<const DomainElement*>*, ElOcHash, ElOcEqual> partition;
 
 public:
+  std::unordered_set<const DomainElement*> occursAsConstant;
 	const Structure* _struct;
-	std::unordered_map<PFSymbol*, std::unordered_set<unsigned int>* > symbolargs; // symbols with corresponding arguments
+	ArgPosSet symbolargs; // symbols with corresponding arguments
 
-	InterchangeabilitySet(const Structure* s) : _struct(s) {
-	}
+	InterchangeabilitySet(const Structure* s) : _struct(s) {}
 
 	~InterchangeabilitySet() {
-		for (auto sa : symbolargs) {
-			delete sa.second;
-		}
-        for (auto part : partition) {
+    for (auto part : partition) {
 			delete part.second;
 		}
 	}
@@ -111,6 +133,8 @@ public:
 	bool add(PFSymbol* p, unsigned int arg);
 	bool add(const Sort* s);
 	bool add(const DomainElement* de);
+  
+  void getDomain(std::unordered_set<const DomainElement*>& out, bool includeConstants=false);
 
 	void calculateInterchangeableSets();
 	void getIntchGroups(std::vector<InterchangeabilityGroup*>& out);
@@ -257,6 +281,6 @@ struct SymbArg{
 	unsigned int arg;
 };
 
-void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, const std::vector<std::pair<PFSymbol*, unsigned int> >& symbargs); 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups);
+void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const std::vector<std::pair<PFSymbol*, unsigned int> >& symbargs); 
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms);
