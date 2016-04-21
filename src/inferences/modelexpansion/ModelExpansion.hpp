@@ -34,16 +34,7 @@ struct DomainAtom{
 	ElementTuple args;
 };
 
-struct MXResult{
-	MXResult():_models({}), _optimalvalue(MinisatID::Weight{0}), _optimumfound(false), unsat(false),_interrupted(false), unsat_in_function_of_ct_lits({}){
-	}
-	std::vector<Structure*> _models;
-	MinisatID::Weight _optimalvalue; //Only relevant when minimizing. This equals the optimal value.
-	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
-	bool unsat;
-	bool _interrupted;
-	std::vector<DomainAtom> unsat_in_function_of_ct_lits;
-};
+
 
 class GroundTranslator;
 struct MXAssumptions{
@@ -53,6 +44,9 @@ struct MXAssumptions{
 
 
 	litlist toLitList(GroundTranslator* trans) const;
+	uint size(){
+		return assumeFalse.size() + assumeTrue.size();
+	}
 
 	MXAssumptions(const std::vector<DomainAtom>& assumeFalse = std::vector<DomainAtom>()
 				, const std::vector<Predicate*>& assumeAllFalse = std::vector<Predicate*>()
@@ -60,6 +54,30 @@ struct MXAssumptions{
 	): assumeFalse(assumeFalse), assumeAllFalse(assumeAllFalse), assumeTrue(assumeTrue){
 
 	}
+
+	void doPrint(){
+		std::cout << "size:" << this->size();
+		std::cout << "AssumeFalse:" << std::endl;
+		for(DomainAtom a : assumeFalse){
+			std::cout << print(a.args) << std::endl;
+		}
+
+		std::cout << "AssumeTrue:" << std::endl;
+		for(DomainAtom a : assumeTrue){
+			std::cout << print(a.args) << std::endl;
+		}
+	}
+};
+
+struct MXResult{
+	MXResult():_models({}), _optimalvalue(MinisatID::Weight{0}), _optimumfound(false), unsat(false),_interrupted(false), unsat_explanation(){
+	}
+	std::vector<Structure*> _models;
+	MinisatID::Weight _optimalvalue; //Only relevant when minimizing. This equals the optimal value.
+	bool _optimumfound; //Only relevant when minimizing. If this bool is true, all returned models are optimal. If false, nothing is guaranteed.
+	bool unsat;
+	bool _interrupted;
+	MXAssumptions unsat_explanation;
 };
 
 /**

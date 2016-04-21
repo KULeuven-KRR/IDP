@@ -9,4 +9,11 @@ public:
     AlreadySatisfiableException() : IdpException("Cannot get core of theory which is already satisfiable") { }
 };
 
-std::vector<DomainAtom> minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers);
+namespace MinimizeMarkers {
+
+MXAssumptions minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers);
+
+bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <DomainAtom> &curArr,
+                      MXAssumptions &core, uint goal);
+
+};

@@ -262,7 +262,11 @@ MXResult ModelExpansion::expand() const {
 		for(auto lit: mx->getUnsatExplanation()){
 			auto symbol = grounding->translator()->getSymbol(lit.getAtom());
 			auto args = grounding->translator()->getArgs(lit.getAtom());
-			result.unsat_in_function_of_ct_lits.push_back({symbol, args});
+			if(lit.hasSign()){
+				result.unsat_explanation.assumeTrue.push_back({symbol, args});
+			}else{
+				result.unsat_explanation.assumeFalse.push_back({symbol, args});
+			}
 		}
 		cleanup;
 		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){

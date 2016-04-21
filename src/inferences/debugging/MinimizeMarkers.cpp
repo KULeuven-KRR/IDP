@@ -6,56 +6,49 @@
 #include "inferences/modelexpansion/ModelExpansion.hpp"
 #include "utils/ListUtils.hpp"
 
-std::vector<DomainAtom> minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers) {
-    auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL,  markers);
+
+namespace MinimizeMarkers {
+MXAssumptions minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers) {
+    auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, markers);
     if (not mxresult.unsat) {
         throw AlreadySatisfiableException();
     }
 
-    std::cout << ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
+    std::cout <<
+    ">>> Unsatisfiable subset found, trying to reduce its size (might take some time, can be interrupted with ctrl-c.\n";
 
-    // TODO should set remaining markers on true to allow ealier pruning
-    auto core = mxresult.unsat_in_function_of_ct_lits;
-    auto erased = true;
-    auto stop = false;
-    while (erased && not stop) {
+    // TODO should set remaining markers on true to allow earlier pruning
+    auto core = mxresult.unsat_explanation;
+
+    while(minimizeSubArray(newtheory, s, core.assumeTrue, core, core.size()));
+    while(minimizeSubArray(newtheory, s, core.assumeFalse, core, core.size()));
+        
+    return core;
+}
+
+bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <DomainAtom> &curArr,
+                      MXAssumptions &core, uint goal) {
+    //-1 == uint.maxsize -> catch this by checking curElem < arraysize
+    for(uint curElem = curArr.size()-1 ; curElem < curArr.size() ; curElem--){
         if (getGlobal()->terminateRequested()) {
             getGlobal()->reset();
-            stop = true;
-            break;
+            return false;
         }
-        erased = false;
-        auto maxsize = core.size();
-        for (uint i = 0; i < maxsize;) {
-            if (getGlobal()->terminateRequested()) {
-                getGlobal()->reset();
-                stop = true;
-                break;
-            }
-            auto elem = core[i];
+        auto elem = curArr[curElem];
+        curArr.erase(curArr.begin()+curElem);
 
-            //This serves to prevent self-swapping (Cf. Issue 739)
-            if (not(core[i].symbol==core[maxsize - 1].symbol && core[i].args==core[maxsize - 1].args)) {
-                std::swap(core[i], core[maxsize - 1]);
-            }
-            core.pop_back();
-            maxsize--;
-            auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, { core, { } });
-            if (mxresult._interrupted) {
-                stop = true;
-                break;
-            }
-            if (not mxresult.unsat) {
-                core.push_back(elem);
-            } else {
-                erased = true;
-                if (mxresult.unsat_in_function_of_ct_lits.size() < core.size()) {
-                    core = mxresult.unsat_in_function_of_ct_lits;
-                    break;
-                }
-            }
+        auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, core);
+        if (mxresult._interrupted) {
+            return false;
+        }
+        if (not mxresult.unsat) {
+            curArr.push_back(elem);
+        } else if (mxresult.unsat_explanation.size() < goal) {
+            core = mxresult.unsat_explanation;
+            return true;
         }
     }
-    auto output = mxresult.unsat_in_function_of_ct_lits;
-    return output;
+    return false;
+}
+
 }
