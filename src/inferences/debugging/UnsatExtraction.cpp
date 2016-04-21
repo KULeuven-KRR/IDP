@@ -34,7 +34,7 @@ pair<Structure*,Theory*> UnsatExtraction::extractCore(bool assumeStruc, bool ass
     }
 
     //Copy the literals from the result to the output structure
-    MXAssumptions coreresult = minimizeAssumps(newtheory, emptyStruc, assume);
+    MXAssumptions coreresult = MinimizeMarkers::minimizeAssumps(newtheory, emptyStruc, assume);
 
     if(assumeStruc){
         outputStructure(intheory, emptyStruc, coreresult);

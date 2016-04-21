@@ -7,6 +7,7 @@
 #include "utils/ListUtils.hpp"
 
 
+namespace MinimizeMarkers {
 
 bool minimizeSubArray(const AbstractTheory *newtheory, const Structure *s, std::vector <DomainAtom> &curArr,
                       MXAssumptions &core, bool &stop);
@@ -68,4 +69,6 @@ bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <Doma
         }
     }
     return false;
+}
+
 }
