@@ -14,6 +14,6 @@ namespace MinimizeMarkers {
 MXAssumptions minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers);
 
 bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <DomainAtom> &curArr,
-                      MXAssumptions &core, bool &stop, uint goal);
+                      MXAssumptions &core, uint goal);
 
 };

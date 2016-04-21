@@ -19,42 +19,26 @@ MXAssumptions minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumpt
 
     // TODO should set remaining markers on true to allow earlier pruning
     auto core = mxresult.unsat_explanation;
-    auto erased = true;
-    auto stop = false;
-    while (erased && not stop) {
-        if (getGlobal()->terminateRequested()) {
-            getGlobal()->reset();
-            stop = true;
-            break;
-        }
-        erased = false;
 
-        while(
-                !stop && (
-                minimizeSubArray(newtheory, s, core.assumeTrue, core, stop,core.size()) ||
-                minimizeSubArray(newtheory, s, core.assumeFalse, core, stop,core.size())));
-
-    }
-
+    while(minimizeSubArray(newtheory, s, core.assumeTrue, core, core.size()));
+    while(minimizeSubArray(newtheory, s, core.assumeFalse, core, core.size()));
+        
     return core;
 }
 
 bool minimizeSubArray(AbstractTheory *newtheory, Structure *s, std::vector <DomainAtom> &curArr,
-                      MXAssumptions &core, bool &stop, uint goal) {
-
+                      MXAssumptions &core, uint goal) {
     //-1 == uint.maxsize -> catch this by checking curElem < arraysize
     for(uint curElem = curArr.size()-1 ; curElem < curArr.size() ; curElem--){
         if (getGlobal()->terminateRequested()) {
             getGlobal()->reset();
-            stop = true;
-            break;
+            return false;
         }
         auto elem = curArr[curElem];
         curArr.erase(curArr.begin()+curElem);
 
         auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, core);
         if (mxresult._interrupted) {
-            stop = true;
             return false;
         }
         if (not mxresult.unsat) {
