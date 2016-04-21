@@ -8,11 +8,7 @@
 
 
 namespace MinimizeMarkers {
-
-bool minimizeSubArray(const AbstractTheory *newtheory, const Structure *s, std::vector <DomainAtom> &curArr,
-                      MXAssumptions &core, bool &stop);
-
- MXAssumptions minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers) {
+MXAssumptions minimizeAssumps(AbstractTheory *newtheory, Structure *s, MXAssumptions markers) {
     auto mxresult = ModelExpansion::doModelExpansion(newtheory, s, NULL, NULL, markers);
     if (not mxresult.unsat) {
         throw AlreadySatisfiableException();
