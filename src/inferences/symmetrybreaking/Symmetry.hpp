@@ -93,12 +93,9 @@ public:
 };
 
 class InterchangeabilityGroup {
-	
 private:
 	ArgPosSet symbolargs;
 	std::set<const DomainElement*> elements;
-  
-  void getSymmetricLiterals(AbstractGroundTheory* gt, Structure* struc, const DomainElement* smaller, const DomainElement* bigger, std::vector<int>& out, std::vector<int>& sym_out) const;
 	
 public:
 	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*>& symbs3val, 
@@ -134,7 +131,7 @@ public:
 	bool add(const Sort* s);
 	bool add(const DomainElement* de);
   
-  void getDomain(std::unordered_set<const DomainElement*>& out, bool includeConstants=false);
+    void getDomain(std::unordered_set<const DomainElement*>& out, bool includeConstants=false);
 
 	void calculateInterchangeableSets();
 	void getIntchGroups(std::vector<InterchangeabilityGroup*>& out);
@@ -274,11 +271,6 @@ protected:
 	virtual void visit(const AggTerm*);
 
 	virtual void visit(const QuantSetExpr*);
-};
-
-struct SymbArg{
-	PFSymbol* symb;
-	unsigned int arg;
 };
 
 void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);

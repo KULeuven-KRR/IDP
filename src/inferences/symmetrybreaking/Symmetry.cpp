@@ -20,25 +20,6 @@
 
 using namespace std;
 
-/**********
- * Miscellaneous methods
- **********/
-
-/**
- *	returns a tuple of domain elements symmetrical under a binary permutation of domain elements to a given tuple, for the given arguments
- */
-ElementTuple symmetricalTuple(const ElementTuple& original, const DomainElement* first, const DomainElement* second, const set<unsigned int>& argumentPlaces) {
-	ElementTuple symmetrical = original;
-	for (auto argumentPlaces_it = argumentPlaces.cbegin(); argumentPlaces_it != argumentPlaces.cend(); ++argumentPlaces_it) {
-		if (symmetrical[*argumentPlaces_it] == first) {
-			symmetrical[*argumentPlaces_it] = second;
-		} else if (symmetrical[*argumentPlaces_it] == second) {
-			symmetrical[*argumentPlaces_it] = first;
-		}
-	}
-	return symmetrical;
-}
-
 /**
  * 	Given a symmetry in the form of two lists of literals which represent a bijection, this method adds CNF-clauses to the theory which break the symmetry.
  *  These clausal formulas are the same as implemented by BreakID (bitbucket.org/krr/breakid).
@@ -144,32 +125,6 @@ void addSymBreakingClausesToGroundTheoryShortest(AbstractGroundTheory* gt, const
 		symLit = *symLiterals_it;
 		gt->add({-tseitin, -lit, symLit});
 	}
-}
-
-/**
- *	Method used to generate ordered tuples of domain elements which represent (partial) ground elements, useful for generating SAT variables.
- *
- *	This method extends a collection of ground elements by replacing each ground element g with for each domain element d in domainTable but not in excludedElements, the ground elements resulting from extending g with d at argument rank.
- *	So if (a . .) is a ground element, and domainTable is {a, b, c}, and excludedElements is {b}, and the rank is 1, (a . .) will be replaced by (a a .) and (a c .).
- */
-vector<vector<const DomainElement*> > fillGroundElementsOneRank(vector<vector<const DomainElement*> >& groundElements, const SortTable* domainTable,
-		const int rank, const set<const DomainElement*>& excludedElements) {
-	set<const DomainElement*> domain; //set to order the elements
-	for (SortIterator domain_it = domainTable->sortBegin(); not domain_it.isAtEnd(); ++domain_it) {
-		if (!excludedElements.count(*domain_it)) {
-			domain.insert(*domain_it);
-		}
-	}
-	vector<vector<const DomainElement*> > newGroundElements(groundElements.size() * domain.size());
-	for (unsigned int ge = 0; ge < groundElements.size(); ++ge) {
-		int index = 0;
-		for (auto domain_it = domain.cbegin(); domain_it != domain.cend(); ++domain_it) {
-			newGroundElements[ge * domain.size() + index] = groundElements[ge];
-			newGroundElements[ge * domain.size() + index][rank] = (*domain_it);
-			++index;
-		}
-	}
-	return newGroundElements;
 }
 
 UFSymbolArg::UFSymbolArg() : forbiddenNode(new ForbiddenNode()) {
@@ -552,36 +507,6 @@ void ArgPosSet::print(std::ostream& ostr){
   }
 }
 
-template<class T>
-void deleteAndClear(std::vector<T*>& vec) {
-	for(auto x: vec) {
-		delete x;
-	}
-	vec.clear();
-}
-
-enum PredVal {T, F, U};
-
-PredVal getImage(PredInter* pi, ElementTuple& tup) {
-	if (pi->isTrue(tup,true)) {
-		return PredVal::T;
-	} else if (pi->isFalse(tup,true)) {
-		return PredVal::F;
-	} else {
-		return PredVal::U;
-	}
-}
-
-void setImage(PredInter* pi, ElementTuple& tup, PredVal& img) {
-	if (img==PredVal::T) {
-		pi->makeTrueExactly(tup,true);
-	} else if (img==PredVal::F) {
-		pi->makeFalseExactly(tup,true);
-	} else {
-		pi->makeUnknownExactly(tup,true);
-	}
-}
-
 InterchangeabilityGroup::InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*>& symbs3val, 
 		ArgPosSet& symbargs) {
 	for (auto de : domels) {
@@ -642,53 +567,6 @@ void InterchangeabilityGroup::getGoodGenerators(std::vector<Symmetry*>& out) con
     first=second;
     ++sortedIt;
   }
-}
-
-/**
- *	Given a binary symmetry S represented by two domain elements, this method generates two disjunct lists of SAT variables which represent S.
- *	The first list is ordered, and for the ith variable v in either of the lists, S(v) is the ith variable in the other list.
- *	This method is useful in creating short symmetry breaking formulae.
- *
- *	Order is based on the pointers of the domain elements, not on the order given by for instance a SortIterator!
- */
-void InterchangeabilityGroup::getSymmetricLiterals(AbstractGroundTheory* gt, Structure* struc, const DomainElement* smaller, const DomainElement* bigger, std::vector<int>& originals, std::vector<int>& symmetricals) const{
-	set<const DomainElement*> excludedSet;
-	excludedSet.insert(smaller);
-	excludedSet.insert(bigger);
-	const set<const DomainElement*> emptySet;
-
-    for(auto symbarg: symbolargs.argPositions) {
-      PFSymbol* symb = symbarg.first;
-      if (struc->inter(symb)->approxTwoValued()) {
-        continue; // no need to construct sym breaking constraints for this symbol
-      }
-      
-      auto argumentPlaces = symbarg.second;
-      for (auto arg : argumentPlaces) {
-          vector<vector<const DomainElement*> > groundElements(1);
-          groundElements[0] = vector<const DomainElement*>(symb->nrSorts());
-          for (unsigned int argument = 0; argument < arg; ++argument) {
-              if (argumentPlaces.count(argument)) {
-                  groundElements = fillGroundElementsOneRank(groundElements, struc->inter(symb->sort(argument)), argument, excludedSet);
-              } else {
-                  groundElements = fillGroundElementsOneRank(groundElements, struc->inter(symb->sort(argument)), argument, emptySet);
-              }
-          }
-          for (unsigned int it = 0; it < groundElements.size(); it++) {
-              groundElements[it][arg] = smaller;
-          }
-          for (unsigned int argument = arg + 1; argument < symb->nrSorts(); ++argument) {
-              Sort* currSort = symb->sort(argument);
-              groundElements = fillGroundElementsOneRank(groundElements, struc->inter(currSort), argument, emptySet);
-          }
-          for (auto ge_it = groundElements.cbegin(); ge_it != groundElements.cend(); ++ge_it) {
-              ElementTuple original = *ge_it;
-              ElementTuple symmetrical = symmetricalTuple(original, smaller, bigger, argumentPlaces);
-              originals.push_back(gt->translator()->translateReduced(symb, original, false));
-              symmetricals.push_back(gt->translator()->translateReduced(symb, symmetrical, false));
-          }
-      }
-    }
 }
 
 bool InterchangeabilitySet::add(PFSymbol* p, unsigned int arg) {
