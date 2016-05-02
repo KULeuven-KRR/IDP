@@ -18,10 +18,11 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "inferences/grounding/Grounding.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-
 #include "inferences/SolverConnection.hpp"
 #include "utils/ResourceMonitor.hpp"
 #include "vocabulary/vocabulary.hpp"
+
+#include "../../../lib/minisatid/src/external/Lit.hpp"
 
 
 //Somehow max is included here %Ruben
@@ -236,6 +237,21 @@ MXResult ModelIterator::calculate() {
     }
     result = getStructure(result, startTime, model);
     return result;
+}
+
+void ModelIterator::addAssumption(const Lit l, bool b) {
+    MinisatID::Lit l1 = MinisatID::Lit();
+    l1.x = l;
+    _mx->addAssumption(l1, b);
+}
+void ModelIterator::removeAssumption(const Lit l, bool b){
+    MinisatID::Lit l1 = MinisatID::Lit();
+    l1.x = l;
+    _mx->removeAssumption(l1, b);
+}
+
+GroundTranslator* ModelIterator::translator() {
+    return _grounding->translator();
 }
 
 

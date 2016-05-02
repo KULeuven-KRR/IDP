@@ -75,7 +75,7 @@ public:
 	bool hasInter(const Sort* s) const;
 	SortTable* inter(const Sort* s) const; // Return the domain of s. NOTE: it is unsafe to store this SortTable
 	SortTable* storableInter(const Sort* s) const; // Return a clone of the domain of s. NOTE: it is safe to store this
-	PredInter* inter(const Predicate* p) const; // Return the interpretation of p.
+PredInter* inter(const Predicate* p) const; // Return the interpretation of p.
 	FuncInter* inter(const Function* f) const; // Return the interpretation of f.
 	PredInter* inter(const PFSymbol* s) const; // Return the interpretation of s.
 	Structure* clone() const; //!< take a clone of this structure

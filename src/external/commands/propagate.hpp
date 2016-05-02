@@ -18,6 +18,7 @@
 #include "inferences/propagation/GroundingPropagation.hpp"
 #include "inferences/propagation/SymbolicPropagation.hpp"
 #include "inferences/propagation/OptimalPropagation.hpp"
+#include "inferences/propagation/FullPropagation.hpp"
 
 InternalArgument postProcess(std::vector<Structure*> sols) {
 	if (sols.size() == 0) {
@@ -115,6 +116,23 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		OptimalPropagation propagator;
 		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		return postProcess(sols);
+	}
+};
+
+class FullPropagateInference: public TheoryStructureBase {
+public:
+	FullPropagateInference()
+			: TheoryStructureBase("fullpropagate",
+								  "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
+		setNameSpace(getInternalNamespaceName());
+
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		FullPropagation propagator;
+		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		Warning::warning("Full propping!!!!");
 		return postProcess(sols);
 	}
 };

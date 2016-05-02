@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <inferences/grounding/GroundTranslator.hpp>
 #include "common.hpp"
 #include "../modelexpansion/ModelExpansion.hpp"
 #include "inferences/SolverInclude.hpp"
@@ -36,6 +37,10 @@ public:
 	~ModelIterator();
 	void init();
 	MXResult calculate();
+	void addAssumption(const Lit, bool = true);
+	void removeAssumption(const Lit, bool = true);
+	GroundTranslator* translator();
+
 private:
 	std::vector<Definition*> preprocess(Theory*);
 	void ground(Theory*);
