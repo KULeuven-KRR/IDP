@@ -239,15 +239,13 @@ MXResult ModelIterator::calculate() {
     return result;
 }
 
-void ModelIterator::addAssumption(const Lit l, bool b) {
-    MinisatID::Lit l1 = MinisatID::Lit();
-    l1.x = l;
-    _mx->addAssumption(l1, b);
+MinisatID::Lit ModelIterator::addAssumption(const Lit l) {
+    Atom a = (l>= 0) ? l : (-1)*l;
+    return _mx->addAssumption(a, (l>=0));
 }
-void ModelIterator::removeAssumption(const Lit l, bool b){
-    MinisatID::Lit l1 = MinisatID::Lit();
-    l1.x = l;
-    _mx->removeAssumption(l1, b);
+void ModelIterator::removeAssumption(MinisatID::Lit l){
+    //Atom a = (l>= 0) ? l : (-1)*l;
+    _mx->removeAssumption(l);
 }
 
 GroundTranslator* ModelIterator::translator() {

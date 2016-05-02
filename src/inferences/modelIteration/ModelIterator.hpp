@@ -37,8 +37,8 @@ public:
 	~ModelIterator();
 	void init();
 	MXResult calculate();
-	void addAssumption(const Lit, bool = true);
-	void removeAssumption(const Lit, bool = true);
+	MinisatID::Lit addAssumption(const Lit);
+	void removeAssumption(MinisatID::Lit);
 	GroundTranslator* translator();
 
 private:

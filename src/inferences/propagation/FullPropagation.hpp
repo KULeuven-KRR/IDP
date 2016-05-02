@@ -53,20 +53,21 @@ public:
 		 }
 
          std::set<Lit> underapproximation = getLiteralSet(safe, translator);
-
+         cout << underapproximation;
          Structure* currModel = *(model._models).cbegin();
 
 		 // Contains all literals contained in every model seen so far, except for those in underapproximation.
 		 std::set<Lit> overapproximation = getLiteralSet(currModel, translator);
-
+         cout << overapproximation;
 		 // Take the intersection of all models
 		 for (auto it = underapproximation.cbegin(); it != underapproximation.cend(); ++it) {
 			 overapproximation.erase(*it);
 		 }
-
+         cout << overapproximation;
 		 while(! overapproximation.empty()) {
 			 Lit a = *(overapproximation.cbegin());
-			 miter.addAssumption(a, false);
+			 auto assump = miter.addAssumption(-a);
+             cout << a;
 			 MXResult m = miter.calculate();
 			 if(m.unsat) {
                  underapproximation.insert(a);
@@ -77,7 +78,12 @@ public:
 				 currModel = *(m._models.cbegin());
 				 intersectLiterals(&overapproximation, currModel, translator);
 			 }
-			 miter.removeAssumption(a, false);
+			 miter.removeAssumption(assump);
+             cout << "\n Under: ";
+             cout << underapproximation;
+             cout << "\n Over: ";
+             cout << overapproximation;
+             cout << "\n";
 		 }
 
 		setOption(CPSUPPORT, storedcp);
@@ -109,12 +115,20 @@ public:
         for(auto s : symbols) {
             auto l = translator->getIntroducedLiteralsFor(s);
             cout << l ;
-            for (auto p = l.cbegin(); p != l.cend(); ++p) {
+            auto ct = struc->inter(s)->ct();
+            for(auto el = ct->begin(); ! el.isAtEnd(); ++el) {
+                set.insert(translator->translateNonReduced(s, *el));
+            }
+            auto cf = struc->inter(s)->cf();
+            for(auto el = cf->begin(); ! el.isAtEnd(); ++el) {
+                set.insert((-1)*translator->translateNonReduced(s, *el));
+            }
+            /*for (auto p = l.cbegin(); p != l.cend(); ++p) {
                 if (struc->inter(s)->isFalse(p->first))
                     set.insert((-1) * (p->second));
                 if (struc->inter(s)->isTrue(p->first))
                     set.insert(p->second);
-            }
+            }*/
         }
         return set;
     }
@@ -125,6 +139,4 @@ public:
 			l->erase((-1)*(*it));
 		}
 	}
-
-
 };
