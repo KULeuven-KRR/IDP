@@ -66,7 +66,7 @@ public:
          cout << overapproximation;
 		 while(! overapproximation.empty()) {
 			 Lit a = *(overapproximation.cbegin());
-			 auto assump = miter.addAssumption(-a);
+			 auto assump = miter.addAssumption(a);
              cout << a;
 			 MXResult m = miter.calculate();
 			 if(m.unsat) {
@@ -113,14 +113,22 @@ public:
         std::set<Lit> set;
         auto symbols = translator->vocabulary()->getNonBuiltinNonOverloadedSymbols();
         for(auto s : symbols) {
-            auto l = translator->getIntroducedLiteralsFor(s);
-            cout << l ;
+            //auto l = translator->getIntroducedLiteralsFor(s);
+            //cout << l ;
             auto ct = struc->inter(s)->ct();
             for(auto el = ct->begin(); ! el.isAtEnd(); ++el) {
+                cout << s->fqn_name();
+                cout << ": ";
+                cout << translator->translateNonReduced(s, *el);
+                cout << ", ";
                 set.insert(translator->translateNonReduced(s, *el));
             }
             auto cf = struc->inter(s)->cf();
             for(auto el = cf->begin(); ! el.isAtEnd(); ++el) {
+                cout << s->fqn_name();
+                cout << ": ";
+                cout << (-1)*translator->translateNonReduced(s, *el);
+                cout << ", ";
                 set.insert((-1)*translator->translateNonReduced(s, *el));
             }
             /*for (auto p = l.cbegin(); p != l.cend(); ++p) {
@@ -129,6 +137,7 @@ public:
                 if (struc->inter(s)->isTrue(p->first))
                     set.insert(p->second);
             }*/
+            cout << "\n";
         }
         return set;
     }
