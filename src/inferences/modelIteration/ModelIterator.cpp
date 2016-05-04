@@ -239,13 +239,13 @@ MXResult ModelIterator::calculate() {
     return result;
 }
 
-MinisatID::Lit ModelIterator::addAssumption(const Lit l) {
+void ModelIterator::addAssumption(const Lit l) {
     Atom a = (l>= 0) ? l : (-1)*l;
-    return _mx->addAssumption(a, (l>=0));
+    _mx->addAssumption(a, (l < 0));
 }
-void ModelIterator::removeAssumption(MinisatID::Lit l){
-    //Atom a = (l>= 0) ? l : (-1)*l;
-    _mx->removeAssumption(l);
+void ModelIterator::removeAssumption(const Lit l){
+    Atom a = (l>= 0) ? l : (-1)*l;
+    _mx->removeAssumption(a, (l < 0));
 }
 
 GroundTranslator* ModelIterator::translator() {
@@ -268,10 +268,10 @@ MXResult ModelIterator::getStructure(MXResult result, clock_t startTime, std::sh
             logActionAndValue("nrmodels", 1);
             logActionAndTimeSince("total-solving-time", startTime);
         }
-		auto solution = handleSolution(_structure, *model, _grounding, 
-			_extender, _outputvoc, postprocessdefs);
-		solutions.push_back(solution);
-		result._models = solutions;
+			auto solution = handleSolution(_structure, *model, _grounding, 
+				_extender, _outputvoc, postprocessdefs);
+			solutions.push_back(solution);
+			result._models = solutions;
     }
     return result;
 }

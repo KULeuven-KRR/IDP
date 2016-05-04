@@ -35,6 +35,7 @@ public:
       Warning::warning("Optimal propagator does not work with non-propositional grounding yet, so disabling cpsupport.");
     }
     setOption(CPSUPPORT, false);
+    setOption(POSTPROCESS_DEFS, false);
 
     Structure* safe = structure->clone();
 
@@ -67,7 +68,7 @@ public:
     while (!overapproximation.empty()) {
       Lit a = *overapproximation.begin();
       cout << "Assumption: " << -a << std::endl;
-      auto assump = miter.addAssumption(-a);
+      miter.addAssumption(-a);
       MXResult m = miter.calculate();
       if (m.unsat) {
         std::cout << "Unsat" << std::endl;
@@ -79,7 +80,7 @@ public:
         currModel = m._models[0];
         intersectLiterals(overapproximation, currModel, translator);
       }
-      miter.removeAssumption(assump);
+      miter.removeAssumption(-a);
       cout << "Under: " << underapproximation << std::endl;
       cout << "Over: " << overapproximation << std::endl;
     }
