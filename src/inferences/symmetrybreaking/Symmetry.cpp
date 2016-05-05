@@ -342,10 +342,6 @@ void InterchangeabilityAnalyzer::visit(const QuantSetExpr* s) {
 }
 
 void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj) {
-	if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
-		clog << "*** DETECTING SYMMETRY ***" << std::endl;
-	}
-
 	AbstractTheory* theo = t->clone();
 	
 	if (obj!=nullptr) {
@@ -770,11 +766,11 @@ void Symmetry::addImage(const DomainElement* first, const DomainElement* second)
 
 void Symmetry::print(std::ostream& ostr){
   argpositions.print(ostr);
-  clog << ": ";
+  ostr << ": ";
   for(auto paar: image){
     ostr << "(";
     paar.first->put(ostr); 
-    clog << " "; 
+    ostr << " "; 
     paar.second->put(ostr); 
     ostr << ")";
   }

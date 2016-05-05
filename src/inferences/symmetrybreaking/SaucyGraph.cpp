@@ -123,6 +123,10 @@ int addPermutation(int n, const int *ct_perm, int nsupp, int *support, void *arg
 
 void Graph::runSaucy(std::vector<Symmetry*>& out){
   createSaucy();
+  if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+    std::clog << "saucy nodes: " << sg->n << std::endl;
+    std::clog << "saucy edges: " << sg->e << std::endl;
+  }
   
   struct saucy* s = saucy_alloc(sg->n);
   struct saucy_stats stats;
