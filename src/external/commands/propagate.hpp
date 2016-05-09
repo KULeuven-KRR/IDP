@@ -132,7 +132,6 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		FullPropagation propagator;
 		auto sols = propagator.propagate(get<0>(args), get<1>(args));
-		Warning::warning("Full propping!!!!");
 		return postProcess(sols);
 	}
 };

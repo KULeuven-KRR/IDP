@@ -28,11 +28,11 @@
 class FullPropagation {
 public:
   std::vector<Structure*> propagate(AbstractTheory* theory, Structure* structure) {
-    // TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented)
-
+    // TODO: doens't work with cp support (because a.o.(?) backtranslation is not implemented
+    auto verbosity = max(getOption(IntType::VERBOSE_SOLVING),getOption(IntType::VERBOSE_SOLVING_STATISTICS));
     auto storedcp = getOption(CPSUPPORT);
     if (storedcp) {
-      Warning::warning("Optimal propagator does not work with non-propositional grounding yet, so disabling cpsupport.");
+      Warning::warning("Full propagator does not work with non-propositional grounding yet, so disabling cpsupport.");
     }
     setOption(CPSUPPORT, false);
     setOption(POSTPROCESS_DEFS, false);
@@ -54,51 +54,53 @@ public:
     }
 
     std::set<Lit> underapproximation = getLiteralSet(safe, translator);
-    cout << "UnderApprox: " << underapproximation << std::endl;
-    Structure* currModel = model._models[0];
+    if (verbosity > 0) {
+      logActionAndValue("UnderApproximation", underapproximation);
+    }
 
-    // Contains all literals contained in every model seen so far, except for those in underapproximation.
+    Structure* currModel = model._models[0];
     std::set<Lit> overapproximation = getLiteralSet(currModel, translator);
-    cout << "Overapprox: " << overapproximation << std::endl;
-    // Take the intersection of all models
+    if (verbosity > 0) {
+      logActionAndValue("OverApproximation", overapproximation);
+    }
+
     for (auto it = underapproximation.cbegin(); it != underapproximation.cend(); ++it) {
       overapproximation.erase(*it);
     }
-    cout << "Over \\ Under: " << overapproximation << std::endl;
+    if (verbosity > 0) {
+      logActionAndValue("Over \\ Under", overapproximation);
+    }
+
     while (!overapproximation.empty()) {
       Lit a = *overapproximation.begin();
-      cout << "Assumption: " << -a << std::endl;
+      if (verbosity > 0) {
+        logActionAndValue("Assumption", -a);
+      }
       miter.addAssumption(-a);
       MXResult m = miter.calculate();
       if (m.unsat) {
-        std::cout << "Unsat" << std::endl;
         underapproximation.insert(a);
         overapproximation.erase(a);
-        // add literal a to structure safe
+        miter.removeAssumption(-a);
+        miter.addAssumption(a);
+                // add literal a to structure safe
       } else {
-        std::cout << "Sat" << std::endl;
+        miter.removeAssumption(-a);
         currModel = m._models[0];
         intersectLiterals(overapproximation, currModel, translator);
       }
-      miter.removeAssumption(-a);
-      cout << "Under: " << underapproximation << std::endl;
-      cout << "Over: " << overapproximation << std::endl;
+
+      if (verbosity > 0) {
+        logActionAndValue("UnderApproximation", overapproximation);
+        logActionAndValue("OverApproximation", overapproximation);
+      }
     }
 
     setOption(CPSUPPORT, storedcp);
 
     //Translate the result
     for (auto literal = underapproximation.cbegin(); literal != underapproximation.cend(); ++literal) {
-      int atomnr = (*literal > 0) ? *literal : (-1) * (*literal);
-      if (translator->isInputAtom(atomnr)) {
-        auto symbol = translator->getSymbol(atomnr);
-        const auto& args = translator->getArgs(atomnr);
-        if (*literal < 0) {
-          safe->inter(symbol)->makeFalseAtLeast(args);
-        } else {
-          safe->inter(symbol)->makeTrueAtLeast(args);
-        }
-      }
+      addToStructure(*literal, safe, translator);
     }
     safe->clean();
 
@@ -108,13 +110,23 @@ public:
     return {safe};
   }
 
+  void addToStructure(Lit literal, Structure* struc, GroundTranslator* translator) {
+    int atomnr = (literal > 0) ? literal : (-1) * (literal);
+    if (translator->isInputAtom(atomnr)) {
+      auto symbol = translator->getSymbol(atomnr);
+      const auto& args = translator->getArgs(atomnr);
+      if (literal < 0) {
+        struc->inter(symbol)->makeFalseAtLeast(args);
+      } else {
+        struc->inter(symbol)->makeTrueAtLeast(args);
+      }
+    }
+  }
+
   std::set<Lit> getLiteralSet(Structure* struc, GroundTranslator* translator) {
     std::set<Lit> set;
     auto symbols = translator->vocabulary()->getNonBuiltinNonOverloadedSymbols();
     for (auto s : symbols) {
-      //auto l = translator->getIntroducedLiteralsFor(s);
-      //cout << "Symbol: " << s << std::endl;
-      //cout << "Literal: " << l << std::endl;
       auto ct = struc->inter(s)->ct();
       for (auto el = ct->begin(); !el.isAtEnd(); ++el) {
         set.insert(translator->translateNonReduced(s, *el));
@@ -123,12 +135,6 @@ public:
       for (auto el = cf->begin(); !el.isAtEnd(); ++el) {
         set.insert((-1) * translator->translateNonReduced(s, *el));
       }
-      /*for (auto p = l.cbegin(); p != l.cend(); ++p) {
-          if (struc->inter(s)->isFalse(p->first))
-              set.insert((-1) * (p->second));
-          if (struc->inter(s)->isTrue(p->first))
-              set.insert(p->second);
-      }*/
     }
     return set;
   }
