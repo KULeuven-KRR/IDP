@@ -20,7 +20,6 @@
  */
 class FullPropagation {
 public:
-
   std::vector<Structure*> propagate(AbstractTheory* theory, Structure* structure);
   std::vector<Structure*> propagateNoAssumps(AbstractTheory* theory, Structure* structure);
 };

@@ -31,6 +31,7 @@ public:
 	~ModelIterator();
 	void init();
 	MXResult calculate();
+  MXResult calculateMonitor();
 	void addAssumption(const Lit);
 	void removeAssumption(const Lit);
   void addClause(const std::vector<Lit>& lits);

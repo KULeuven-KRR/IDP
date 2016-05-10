@@ -167,6 +167,7 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<EqualInference<double> >());
 	inferences.push_back(make_shared<EqualInference<int> >());
 	inferences.push_back(make_shared<FullPropagateInference>());
+	inferences.push_back(make_shared<BestPropagateInference>());
 
 	inferences.push_back(make_shared<ToMetaInference>());
 	inferences.push_back(make_shared<FromMetaInference>());

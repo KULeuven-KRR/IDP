@@ -271,6 +271,23 @@ procedure fullpropagate(theory,structure){
 }
 
 /**
+* Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.
+* This propagation is complete: everything that can be derived from the theory will be derived.
+* Returns nil when propagation results in an inconsistent structure.*/
+procedure bestpropagate(theory,structure){
+	if type(theory) ~= "theory" then
+		io.stderr:write("Error: theory expected\n")
+		return
+	end
+	if type(structure) ~= "structure" then
+		io.stderr:write("Error: structure expected\n")
+		return
+	end
+	local clonetheo = clone(theory)
+	return idpintern.bestpropagate(clonetheo,structure)
+}
+
+/**
 * Return a structure, made more precise than the input by grounding and unit propagation on the theory. 
 * Returns nil when propagation results in an inconsistent structure.*/
 procedure groundpropagate(theory,structure){

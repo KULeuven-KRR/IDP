@@ -156,30 +156,42 @@ void ModelIterator::prepareSolver() {
 	_mx->initialise();
 }
 
-
-#define cleanup \
-		getGlobal()->removeTerminationMonitor(terminator);\
-		delete (terminator);
+MXResult ModelIterator::calculateMonitor() {
+	auto terminator = std::make_shared<SolverTermination>(_mx);
+    getGlobal()->addTerminationMonitor(terminator.get());
+    auto t = basicResourceMonitor(
+				[]() { return getOption(MXTIMEOUT); }, 
+				[]() { return getOption(MXMEMORYOUT);}, 
+				[terminator]() {terminator->notifyTerminateRequested(); });
+	tthread::thread time(&resourceMonitorLoop, &t);
+	try{
+		auto result = calculate();
+		t.requestStop();
+		time.join();
+		getGlobal()->removeTerminationMonitor(terminator.get());
+		if (t.outOfResources()) {
+			result._optimumfound = false;
+			result._interrupted = true;
+			getGlobal()->reset();
+		}
+		return result;
+	} catch (...) {
+		t.requestStop();
+		time.join();
+		getGlobal()->removeTerminationMonitor(terminator.get());
+		throw;
+	}
+}
 
 MXResult ModelIterator::calculate() {
-    auto terminator = new SolverTermination(_mx);
-    getGlobal()->addTerminationMonitor(terminator);
-    auto t = basicResourceMonitor([]() {
-        return getOption(MXTIMEOUT);
-    }, []() {
-        return getOption(MXMEMORYOUT);
-    }, [terminator]() {
-        terminator->notifyTerminateRequested();
-    });
-    tthread::thread time(&resourceMonitorLoop, &t);
-	auto startTime = clock();
+    auto startTime = clock();
     if (getMXVerbosity() > 0) {
         logActionAndTime("Starting solving at ");
     }
     MXResult result;
-	std::shared_ptr<MinisatID::Model> model = nullptr;
+		std::shared_ptr<MinisatID::Model> model = nullptr;
     try {
-		model = _mx->findNext();
+				model = _mx->findNext();
         result.unsat = (model == nullptr);
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
@@ -188,22 +200,10 @@ MXResult ModelIterator::calculate() {
     } catch (MinisatID::idpexception& error) {
         std::stringstream ss;
         ss << "Solver was aborted with message \"" << error.what() << "\"";
-        
-        t.requestStop();
-        time.join();
-        cleanup;
         throw IdpException(ss.str());
     } catch (UnsatException& ex) {
         result.unsat = true;
-    } catch (...) {
-        t.requestStop();
-        time.join();
-		cleanup;
-        throw;
-    }
-    t.requestStop();
-    time.join();
-	cleanup;
+		}
 
     if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
         logActionAndValue("effective-size", _grounding->getSize());
@@ -217,12 +217,7 @@ MXResult ModelIterator::calculate() {
         throw IdpException("Solver was terminated");
     }
     result._optimumfound = not result._interrupted;
-    if (t.outOfResources()) {
-        Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
-        result._optimumfound = false;
-        result._interrupted = true;
-        getGlobal()->reset();
-    } else if (result.unsat) {
+    if (result.unsat) {
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "unsat");
         }
