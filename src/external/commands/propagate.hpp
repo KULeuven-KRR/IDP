@@ -9,8 +9,7 @@
  * Celestijnenlaan 200A, B-3001 Leuven, Belgium
  ****************************************************************************/
 
-#ifndef PROPAGATE_HPP_
-#define PROPAGATE_HPP_
+#pragma once
 
 #include "commandinterface.hpp"
 #include "theory/TheoryUtils.hpp"
@@ -131,9 +130,7 @@ public:
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		FullPropagation propagator;
-		auto sols = propagator.propagate(get<0>(args), get<1>(args));
+		auto sols = propagator.propagateNoAssumps(get<0>(args), get<1>(args));
 		return postProcess(sols);
 	}
 };
-
-#endif /* PROPAGATE_HPP_ */

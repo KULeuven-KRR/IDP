@@ -1,9 +1,3 @@
-/* 
- * File:   ModelIterator.hpp
- * Author: rupsbant
- *
- * Created on October 3, 2014, 9:56 AM
- */
 #pragma once
 
 #include <memory>
@@ -39,6 +33,7 @@ public:
 	MXResult calculate();
 	void addAssumption(const Lit);
 	void removeAssumption(const Lit);
+  void addClause(const std::vector<Lit>& lits);
 	GroundTranslator* translator();
 
 private:

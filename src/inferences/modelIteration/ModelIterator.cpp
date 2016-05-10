@@ -1,10 +1,3 @@
-/* 
- * File:   ModelIterator.cpp
- * Author: rupsbant
- * 
- * Created on October 3, 2014, 9:56 AM
- */
-
 #include "ModelIterator.hpp"
 #include "inferences/modelexpansion/DefinitionPostProcessing.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
@@ -25,7 +18,7 @@
 #include "../../../lib/minisatid/src/external/Lit.hpp"
 
 
-//Somehow max is included here %Ruben
+//Somehow max is included here %Ruben // Jo: huh? Why not simply include <algorithm> in header?
 #include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
 
 using namespace std;
@@ -239,13 +232,24 @@ MXResult ModelIterator::calculate() {
     return result;
 }
 
+std::pair<Atom,bool> getAtomSign(const Lit l){
+  Atom a = (l>= 0) ? l : (-1)*l;
+  return {a,(l<0)};
+}
 void ModelIterator::addAssumption(const Lit l) {
-    Atom a = (l>= 0) ? l : (-1)*l;
-    _mx->addAssumption(a, (l < 0));
+    auto atomsign = getAtomSign(l);
+    _mx->addAssumption(atomsign.first,atomsign.second);
 }
 void ModelIterator::removeAssumption(const Lit l){
-    Atom a = (l>= 0) ? l : (-1)*l;
-    _mx->removeAssumption(a, (l < 0));
+    auto atomsign = getAtomSign(l);
+    _mx->removeAssumption(atomsign.first,atomsign.second);
+}
+void ModelIterator::addClause(const std::vector<Lit>& lits){
+    std::vector<std::pair<Atom,bool> > atomsigns;
+    for(auto l: lits){
+      atomsigns.push_back(getAtomSign(l));
+    }
+    _mx->addClause(atomsigns);
 }
 
 GroundTranslator* ModelIterator::translator() {
