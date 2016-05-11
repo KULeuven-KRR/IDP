@@ -41,9 +41,9 @@ std::set<Lit> getLiteralSet(Structure* struc, GroundTranslator* translator) {
 }
 
 void intersectLiterals(std::set<Lit>& l, Structure* s, GroundTranslator* translator) {
-  std::set<Lit> l1 = getLiteralSet(s, translator);
-  for (auto it = l1.cbegin(); it != l1.cend(); ++it) {
-    l.erase((-1)*(*it));
+  std::set<Lit> structLits = getLiteralSet(s, translator);
+  for(auto ll: structLits){
+    l.erase(-ll);
   }
 }
 }
@@ -77,7 +77,7 @@ std::vector<Structure*> FullPropagation::propagateNoAssumps(AbstractTheory* theo
     
     std::vector<Lit> approx_negation;
     for(auto l: overapproximation){
-      approx_negation.push_back(l);
+      approx_negation.push_back(-l);
     }
     miter.addClause(approx_negation);
     model = miter.calculate();
