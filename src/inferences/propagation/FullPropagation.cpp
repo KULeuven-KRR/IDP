@@ -46,6 +46,7 @@ void intersectLiterals(std::set<Lit>& l, Structure* s, GroundTranslator* transla
     l.erase(-ll);
   }
 }
+
 }
 
 std::vector<Structure*> FullPropagation::propagateNoAssumps(AbstractTheory* theory, Structure* structure) {
@@ -67,19 +68,26 @@ std::vector<Structure*> FullPropagation::propagateNoAssumps(AbstractTheory* theo
   MXResult model = miter.calculate();
   MAssert(!model.unsat && !model._models.empty());
 
-  std::set<Lit> overapproximation = getLiteralSet(model._models[0], translator);
+  std::set<Lit> firstmodel = getLiteralSet(model._models[0], translator);
+  std::vector<Lit> intersectionnegation;
+  for(auto ll: firstmodel){
+    intersectionnegation.push_back(-ll);
+  }
 
   while (!model.unsat) {
-    intersectLiterals(overapproximation,model._models[0],translator);
-    if (verbosity > 0) {
-      logActionAndValue("OverApproximation", overapproximation);
+    std::set<Lit> structLits =getLiteralSet(model._models[0], translator);
+    for(unsigned int i=0; i<intersectionnegation.size(); ++i){
+      if(!structLits.count(-intersectionnegation[i])){
+        intersectionnegation[i]=intersectionnegation.back();
+        intersectionnegation.pop_back();
+        --i;
+      }
+    }
+    if (verbosity > 1) {
+      logActionAndValue("Models invalidating clause: ", intersectionnegation);
     }
     
-    std::vector<Lit> approx_negation;
-    for(auto l: overapproximation){
-      approx_negation.push_back(-l);
-    }
-    miter.addClause(approx_negation);
+    miter.addClause(intersectionnegation);
     model = miter.calculate();
   }
 
@@ -87,8 +95,8 @@ std::vector<Structure*> FullPropagation::propagateNoAssumps(AbstractTheory* theo
 
   Structure* safe = structure->clone();
   //Translate the result
-  for (auto l: overapproximation) {
-    addToStructure(l, safe, translator);
+  for (auto l: intersectionnegation) {
+    addToStructure(-l, safe, translator);
   }
   safe->clean();
   MAssert(safe->isConsistent());
