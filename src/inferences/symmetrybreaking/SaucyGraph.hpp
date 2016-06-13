@@ -14,6 +14,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 
 #include "Symmetry.hpp"
 
@@ -68,7 +69,7 @@ struct TNEqual {
 
 class Graph {
 private:
-  ArgPosSet symbolargs; // symbolargs[symb][i] denotes whether (symb,i) is part of the set of symbol arguments
+  InterchangeabilitySet* ics;
   
   unsigned int highestNode = -1;
   std::unordered_map<const DomainElement*, unsigned int> domEl2Node; // denotes the nodes associated with this domain element
@@ -83,8 +84,8 @@ private:
   unsigned int getNextNode();
   unsigned int getNextColor();
   
-  void addTuple(PFSymbol* symb, const std::vector<const DomainElement*>& args, unsigned int truth_value);
-  void addPredTable(PFSymbol* symb, const PredTable* pt, unsigned int truth_value);
+  void addTuple(PFSymbol* symb, const std::vector<const DomainElement*>& args, unsigned int truth_value, std::set<unsigned int>& argpos);
+  void addPredTable(PFSymbol* symb, const PredTable* pt, unsigned int truth_value, std::set<unsigned int>& argpos);
   
   saucy_graph* sg;
   

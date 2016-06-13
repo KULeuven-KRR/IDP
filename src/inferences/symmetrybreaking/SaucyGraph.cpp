@@ -15,9 +15,9 @@
 
 namespace saucy_ {
   
-Graph::Graph(InterchangeabilitySet* ics):symbolargs(ics->symbolargs){
+Graph::Graph(InterchangeabilitySet* ic):ics(ic){
   unsigned int maxArity=0;
-  for(auto sa: symbolargs.argPositions){
+  for(auto sa: ics->symbargs){
     PFSymbol* symb = sa.first;
     if(maxArity < symb->nrSorts()){
       maxArity = symb->nrSorts();
@@ -64,11 +64,11 @@ unsigned int Graph::getNextColor(){
   return highestColor;
 }
 
-void Graph::addTuple(PFSymbol* symb, const std::vector<const DomainElement*>& args, unsigned int truth_value){  
+void Graph::addTuple(PFSymbol* symb, const std::vector<const DomainElement*>& args, unsigned int truth_value, std::set<unsigned int>& argpos){  
   unsigned int newnode = getNextNode();
   TupleNode tn(symb,truth_value);
   for(unsigned int i=0; i<args.size(); ++i){
-    if(symbolargs.hasArgPos(symb,i)){
+    if(argpos.count(i)){
       edges.push_back({newnode,domElArgNodes[i][args[i]]}); // edge between tuplenode and domelargnode
     }else{
       tn.args.push_back(args[i]);
@@ -80,23 +80,25 @@ void Graph::addTuple(PFSymbol* symb, const std::vector<const DomainElement*>& ar
   color[newnode]=tupleColors[tn];
 }
 
-void Graph::addPredTable(PFSymbol* symb, const PredTable* pt, unsigned int truthval){
+void Graph::addPredTable(PFSymbol* symb, const PredTable* pt, unsigned int truthval, std::set<unsigned int>& argpos){
   if(!pt->finite()){
     throw IdpException("Symmetry breaking does not support infinite interpretations.");
   }
   auto ptIt = pt->begin();
   while(!ptIt.isAtEnd()){
-    addTuple(symb,*ptIt,truthval);
+    addTuple(symb,*ptIt,truthval,argpos);
     ++ptIt;
   }
 }
 
 void Graph::addInterpretations(const Structure* s){
-  for(auto symb: symbolargs.symbols){
+  for(auto sa: ics->symbargs){
+    PFSymbol* symb = sa.first;
+    std::set<unsigned int>& argpos = sa.second;
     PredInter* pi = s->inter(symb);
-    addPredTable(symb,pi->ct(),1);
+    addPredTable(symb,pi->ct(),1,argpos);
     if(!pi->approxTwoValued()){
-      addPredTable(symb,pi->cf(),2); // TODO: find out how to extract the two finite tables instead of always ct and cf
+      addPredTable(symb,pi->cf(),2,argpos); // TODO: find out how to extract the two finite tables instead of always ct and cf
     }
   }
 }
@@ -122,6 +124,12 @@ int addPermutation(int n, const int *ct_perm, int nsupp, int *support, void *arg
 }
 
 void Graph::runSaucy(std::vector<Symmetry*>& out){
+  ArgPosSet threeval;
+  ics->getThreeValuedArgPositions(threeval);
+  if(threeval.symbols.size()==0){
+    return; // no symbols to break symmetry for
+  }
+  
   createSaucy();
   if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
     std::clog << "saucy nodes: " << sg->n << std::endl;
@@ -134,7 +142,7 @@ void Graph::runSaucy(std::vector<Symmetry*>& out){
   saucy_free(s);
   
   for(auto gen: generators){
-    Symmetry* newSym = new Symmetry(symbolargs);
+    Symmetry* newSym = new Symmetry(threeval);
     for(auto paar: gen){
       if(node2DomEl.count(paar.first)){ // else the node permuted is not a domain node
         newSym->addImage(node2DomEl[paar.first], node2DomEl[paar.second]);

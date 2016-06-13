@@ -30,12 +30,10 @@ class PFSymbol;
 class Predicate;
 class Function;
 class Variable;
-class OccurrencesCounter;
 
 class InterchangeabilitySet;
 
 // This class functions as representative of a set of interchangeable domain elements
-
 class ElementOccurrence {
 private:
 	InterchangeabilitySet* ics;
@@ -94,12 +92,11 @@ public:
 
 class InterchangeabilityGroup {
 private:
-	ArgPosSet symbolargs;
+	ArgPosSet symbolargs; // symbols with corresponding arguments. None of these symbols are interpreted
 	std::set<const DomainElement*> elements;
 	
 public:
-	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, std::vector<PFSymbol*>& symbs3val, 
-		ArgPosSet& symbargs);
+	InterchangeabilityGroup(std::vector<const DomainElement*>& domels, ArgPosSet& symbargs);
 	void print(std::ostream& ostr);
 
 	unsigned int getNrSwaps();
@@ -109,15 +106,39 @@ public:
   void getGoodGenerators(std::vector<Symmetry*>& out) const;
 };
 
+struct DecArgPos{
+  unsigned int decomposition;
+  PFSymbol* symbol;
+  unsigned int argument;
+  
+  void print(std::ostream& ostr);
+  bool equals(const DecArgPos& other) const;
+  size_t getHash() const;
+  
+};
+
+struct DecArgPosHash {
+	size_t operator()(const DecArgPos& dap) const {
+		return dap.getHash();
+	}
+};
+struct DecArgPosEqual {
+	bool operator()(const DecArgPos& a, const DecArgPos& b) const {
+		return a.equals(b);
+	}
+};
+
 class InterchangeabilitySet {
 private:
 	std::unordered_set<const Sort*> sorts;
 	std::unordered_map<std::shared_ptr<ElementOccurrence>, std::vector<const DomainElement*>*, ElOcHash, ElOcEqual> partition;
+    
 
 public:
-  std::unordered_set<const DomainElement*> occursAsConstant;
+    std::unordered_set<const DomainElement*> occursAsConstant;
+    std::unordered_set<DecArgPos,DecArgPosHash,DecArgPosEqual> argpositions; // decomposed argument positions
+    std::vector<std::pair<PFSymbol*, std::set<unsigned int> > > symbargs; // symbols associated with argument sets
 	const Structure* _struct;
-	ArgPosSet symbolargs; // symbols with corresponding arguments
 
 	InterchangeabilitySet(const Structure* s) : _struct(s) {}
 
@@ -127,17 +148,20 @@ public:
 		}
 	}
 
-	bool add(PFSymbol* p, unsigned int arg);
+	bool add(DecArgPos& dap);
 	bool add(const Sort* s);
 	bool add(const DomainElement* de);
   
     void getDomain(std::unordered_set<const DomainElement*>& out, bool includeConstants=false);
 
+    void initializeSymbargs();
+    void getThreeValuedArgPositions(ArgPosSet& out);
 	void calculateInterchangeableSets();
 	void getIntchGroups(std::vector<InterchangeabilityGroup*>& out);
 	void print(std::ostream& ostr);
 };
 
+// node in Union Find algorithm for symmetry detection
 class UFNode {
 public:
 	UFNode* parent;
@@ -153,12 +177,12 @@ public:
 	virtual bool addTo(InterchangeabilitySet* ichset) = 0;
 };
 
+// node for argument positions in theory
 class SymbolArgumentNode : public UFNode {
 public:
-	PFSymbol* symbol;
-	const unsigned int arg;
+    DecArgPos dap;
 
-	SymbolArgumentNode(PFSymbol* pf, unsigned int a) : symbol(pf), arg(a) {
+	SymbolArgumentNode(DecArgPos& in) : dap(in) {
 	}
 
 	virtual ~SymbolArgumentNode() {
@@ -168,6 +192,7 @@ public:
 	bool addTo(InterchangeabilitySet* ichset);
 };
 
+// node for variables in theory
 class VariableNode : public UFNode {
 public:
 	const Variable* var;
@@ -182,6 +207,7 @@ public:
 	bool addTo(InterchangeabilitySet* ichset);
 };
 
+// node for domain element occurring in theory
 class DomainElementNode : public UFNode {
 public:
 	const Sort* s;
@@ -197,6 +223,7 @@ public:
 	bool addTo(InterchangeabilitySet* ichset);
 };
 
+// node for forbidden terms (sum, disequality, ...)
 class ForbiddenNode : public UFNode {
 public:
 
@@ -214,16 +241,16 @@ public:
  * UFSymbolArg uses a union-find datastructure (also known as disjoint-set) to efficiently partition the set of symbol-argument pairs.
  */
 class UFSymbolArg {
-	std::unordered_map<PFSymbol*, std::vector<SymbolArgumentNode*>* > SAnodes; // map of PFSymbol and argument to SymbolArgumentNode;
+	std::unordered_map<DecArgPos, SymbolArgumentNode*, DecArgPosHash, DecArgPosEqual> SAnodes; // map of DecArgPos to SymbolArgumentNode;
 	std::unordered_map<const Variable*, VariableNode*> VARnodes; // map of Variable to VariableNode
 	ForbiddenNode* forbiddenNode;
-	std::vector<UFNode*> twoValuedNodes;
-
+    std::vector<UFNode*> twoValuedNodes; // TODO transform to DENode* // TODO can this be erased?
+    
 public:
 	UFSymbolArg();
 	~UFSymbolArg();
 
-	UFNode* get(PFSymbol* sym, unsigned int arg, bool twoValued = false);
+	UFNode* get(DecArgPos dap);
 	UFNode* get(const Variable* var);
 	UFNode* get(const Sort* s, const DomainElement* de);
 	UFNode* getForbiddenNode();
@@ -248,6 +275,7 @@ class InterchangeabilityAnalyzer : public DefaultTraversingTheoryVisitor {
 private:
 	const Structure* _structure;
 	UFNode* subNode; // functions as a return value for visiting terms, so that their occurrence in a parent symbol can be taken into account	
+    unsigned int decomposition_counter=0;
 
 public:
 	UFSymbolArg disjointSet;
@@ -274,5 +302,4 @@ protected:
 };
 
 void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const std::vector<std::pair<PFSymbol*, unsigned int> >& symbargs); 
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms);
+void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms); 
