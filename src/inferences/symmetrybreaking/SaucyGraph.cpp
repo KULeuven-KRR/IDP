@@ -131,7 +131,7 @@ void Graph::runSaucy(std::vector<Symmetry*>& out){
   }
   
   createSaucy();
-  if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+  if (getOption(IntType::VERBOSE_SYMMETRY) > 2) {
     std::clog << "saucy nodes: " << sg->n << std::endl;
     std::clog << "saucy edges: " << sg->e << std::endl;
   }
@@ -149,6 +149,9 @@ void Graph::runSaucy(std::vector<Symmetry*>& out){
       }
     }
     out.push_back(newSym);
+    if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+        newSym->print(std::clog);
+    }
   }
   
   freeSaucy();

@@ -211,20 +211,19 @@ void UFSymbolArg::getPartition(std::unordered_multimap<UFNode*, UFNode*>& out) {
 void UFSymbolArg::printPartition(std::ostream& ostr) {
 	std::unordered_multimap<UFNode*, UFNode*> partition;
 	getPartition(partition);
-	UFNode* currentrep = nullptr;
+    UFNode* currentrep = nullptr;
 	for (auto pair : partition) {
 		if (pair.first != currentrep) {
 			if (currentrep != nullptr) {
-				ostr << std::endl;
+				ostr << "}" << std::endl;
 			}
 			currentrep = pair.first;
-			currentrep->put(ostr);
-			ostr << " <- ";
+			ostr << "{";
 		}
 		pair.second->put(ostr);
-		ostr << ", ";
+		ostr << ",";
 	}
-	ostr << std::endl;
+	ostr << "}" << std::endl;
 }
 
 InterchangeabilityAnalyzer::InterchangeabilityAnalyzer(const Structure* s)
@@ -317,7 +316,7 @@ void InterchangeabilityAnalyzer::visit(const FuncTerm* t) {
 			disjointSet.merge(disjointSet.get({decomposition,t->function(), n}), subNode);
 		}
 		Assert(n == t->function()->nrSorts() - 1);
-		subNode = disjointSet.get({decomposition,t->function(), n}); // TODO: change so argument position 0 is output position...
+		subNode = disjointSet.get({decomposition,t->function(), n}); // NOTE: output argument position is not 0 but arity+1 because of PredTable implementation...
 	}
 }
 
@@ -346,17 +345,7 @@ void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups,
 		theo->add(new PredForm(SIGN::POS,get(STDPRED::LT,obj_clone->sort()),{obj_clone,dummyTerm},FormulaParseInfo()));
 	}
 	
-	getIntchGroups(theo,s,out_groups,out_syms);
-	
-    if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
-      for (auto icg : out_groups) {
-        icg->print(clog);
-      }
-      for(auto sym: out_syms){
-        sym->print(clog);
-      }
-    }
-	
+	getIntchGroups(theo,s,out_groups,out_syms);	
 	theo->recursiveDelete();
 }
 
@@ -370,7 +359,7 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	}
 	
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
-		clog << "partitioning connected arguments in theory..." << std::endl;
+		clog << "partitioning connected argument positions in decomposed theory..." << std::endl;
 	}
 	InterchangeabilityAnalyzer ia = InterchangeabilityAnalyzer(s);
 	ia.analyze(theo);
@@ -379,7 +368,7 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 		ia.disjointSet.printPartition(clog);
 	}
 	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
-		clog << "detecting interchangeable domains..." << std::endl;
+		clog << "for each partition, detecting interchangeable subdomains and/or generator symmetries..." << std::endl;
 	}
 	
 	// First, extract sets of related arguments not occurring in asymmetric symbols.
@@ -471,10 +460,10 @@ bool ArgPosSet::hasArgPos(PFSymbol* symb, unsigned int arg){
 void ArgPosSet::print(std::ostream& ostr){
   for(auto paar: argPositions){
     paar.first->put(ostr);
-    ostr << "/";
     for(auto arg: paar.second) {
-        ostr << arg << " ";
+        ostr << "|" << arg;
     }
+    ostr << " ";
   }
 }
 
@@ -487,12 +476,12 @@ InterchangeabilityGroup::InterchangeabilityGroup(std::vector<const DomainElement
 
 void InterchangeabilityGroup::print(std::ostream& ostr) {
 	symbolargs.print(ostr);
-	ostr << "<- ";
+	ostr << "-> {";
 	for (auto de : elements) {
 		de->put(ostr);
-		ostr << " ";
+		ostr << ",";
 	}
-	ostr << std::endl;
+	ostr << "}" << std::endl;
 }
 
 unsigned int InterchangeabilityGroup::getNrSwaps() {
@@ -535,9 +524,8 @@ void InterchangeabilityGroup::getGoodGenerators(std::vector<Symmetry*>& out) con
 }
 
 void DecArgPos::print(std::ostream& ostr){
-  ostr << decomposition;
   symbol->put(ostr);
-  ostr << "|" << argument;
+  ostr << decomposition << "|" << argument;
 }
 bool DecArgPos::equals(const DecArgPos& other) const{
   return symbol==other.symbol && decomposition==other.decomposition && argument==other.argument;
@@ -651,7 +639,11 @@ void InterchangeabilitySet::getIntchGroups(std::vector<InterchangeabilityGroup*>
 		if (it.second->size() < 2) {
 			continue; // only one element to generate locdomsym with, skip this trivial group
 		}
-		out.push_back(new InterchangeabilityGroup(*it.second,threeval));
+        auto newgroup = new InterchangeabilityGroup(*it.second,threeval);
+		out.push_back(newgroup);
+        if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+          newgroup->print(std::clog);
+        }
 	}
 }
 
@@ -662,7 +654,6 @@ void InterchangeabilitySet::print(std::ostream& ostr) {
     }
 	ostr << ": ";
 	for (auto paar : partition) {
-		//ostr << paar.first->hash << ", ";
 		for (auto de : *paar.second) {
 			de->put(ostr);
 			ostr << " ";
@@ -793,7 +784,7 @@ void Symmetry::addImage(const DomainElement* first, const DomainElement* second)
 
 void Symmetry::print(std::ostream& ostr){
   argpositions.print(ostr);
-  ostr << ": ";
+  ostr << "-> ";
   for(auto paar: image){
     ostr << "(";
     paar.first->put(ostr); 

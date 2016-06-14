@@ -275,7 +275,7 @@ class InterchangeabilityAnalyzer : public DefaultTraversingTheoryVisitor {
 private:
 	const Structure* _structure;
 	UFNode* subNode; // functions as a return value for visiting terms, so that their occurrence in a parent symbol can be taken into account	
-    unsigned int decomposition_counter=0;
+    unsigned int decomposition_counter=1;
 
 public:
 	UFSymbolArg disjointSet;
