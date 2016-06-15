@@ -389,7 +389,7 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 			}
 			currentset = new InterchangeabilitySet(s);
 		}
-		if (currentset != nullptr) { // add the UFNode information in the current partition //TODO unnecessary check?
+		if (currentset != nullptr) { // add the UFNode information in the current partition
 			bool stilSymmetric = pair.second->addTo(currentset);
 			if (!stilSymmetric) { // no longer symmetric, erase current interchangeability set
 				delete currentset;
@@ -413,14 +413,13 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
         if(allTwoValued){
           continue; // no symmetry breaking possible
         }
-        
+
         ichset->initializeSymbargs();
 		ichset->calculateInterchangeableSets();
 		if (getOption(IntType::VERBOSE_SYMMETRY) > 2) {
 			ichset->print(clog);
 		}
 		ichset->getIntchGroups(out_groups);
-        
         
         bool hasNonTrivialSymbol = false;
         for(auto argpos: ichset->symbargs){
@@ -525,7 +524,7 @@ void InterchangeabilityGroup::getGoodGenerators(std::vector<Symmetry*>& out) con
 
 void DecArgPos::print(std::ostream& ostr){
   symbol->put(ostr);
-  ostr << decomposition << "|" << argument;
+  ostr << "_" << decomposition << "|" << argument;
 }
 bool DecArgPos::equals(const DecArgPos& other) const{
   return symbol==other.symbol && decomposition==other.decomposition && argument==other.argument;
@@ -663,23 +662,51 @@ void InterchangeabilitySet::print(std::ostream& ostr) {
 	ostr << std::endl;
 }
 
+size_t getTableHash(TableIterator table_it, const DomainElement* de, std::set<unsigned int>& permutedArgs){
+  size_t permutedHash = 0; // hash based on occurrence count of de at permuted positions
+  size_t unpermutedHash = 0; // hash based on domain elements at unpermuted positions in a tuple containing de
+  while (!table_it.isAtEnd()) {
+    const ElementTuple& origTuple = *table_it;
+    bool containsDE = false;
+    size_t tupleHash=0;
+    for(unsigned int i=0; i<origTuple.size(); ++i){
+      if(permutedArgs.count(i)>0){
+        if(origTuple[i]==de){
+          permutedHash+= (1 + i);
+          containsDE=true;
+        }
+      }else{
+        tupleHash+= (((size_t) origTuple[i]) + i);
+      }
+    }
+    if(containsDE){
+      unpermutedHash^=tupleHash;
+    }
+    ++table_it;
+  }
+  return unpermutedHash^permutedHash;
+}
+
 ElementOccurrence::ElementOccurrence(InterchangeabilitySet* intset, const DomainElement* de) : ics(intset), domel(de) {
 	hash = (size_t) ics;
     ElementTuple deTup;
     deTup.push_back(de);
 	for (auto sa: ics->symbargs) {
 		PFSymbol* symb = sa.first;
+        PredInter* pi = ics->_struct->inter(symb);
 		if (symb->nrSorts() == 1) { // use unary symbols to create hash function
-			PredInter* pi = ics->_struct->inter(symb);
-			if (pi->isFalse(deTup)) {
-				hash = (hash << 1)^(hash + 1);
-			} else if (pi->isTrue(deTup)) {
-				hash = (hash << 3)^(hash + 3);
-			} else {
-				hash = (hash << 5)^(hash + 5);
-			}
+            Assert(sa.second.count(0)>0); // the one sort is also the argument of concern
+			if (pi->isTrue(deTup)) {
+				hash^= ((size_t) symb) >> 1;
+			}else if (pi->isFalse(deTup)){
+                hash^= ((size_t) symb) << 1;
+            }
 		}else{ // symb->nrSorts()>1
-          // TODO: count number of occurrences
+            hash^=(size_t) symb;
+            hash^=getTableHash(pi->ct()->begin(), de, sa.second);
+            if(!pi->approxTwoValued()){
+              hash^=getTableHash(pi->cf()->begin(), de, sa.second);
+            }
         }
 	}
 }
@@ -722,7 +749,6 @@ bool checkTableForSwapConsistency(PredTable* table, const DomainElement* first, 
 }
 
 bool ElementOccurrence::isEqualTo(const ElementOccurrence& other) const {
-    //TODO: use hash!
 	if (ics != other.ics) {
 		return false;
 	}
