@@ -137,7 +137,7 @@ UFSymbolArg::~UFSymbolArg() {
 	for (auto pair : VARnodes) {
 		delete pair.second;
 	}
-	for (auto node : twoValuedNodes) {
+	for (auto node : DEnodes) {
 		delete node;
 	}
 	delete forbiddenNode;
@@ -159,7 +159,7 @@ UFNode* UFSymbolArg::get(const Variable* var) {
 
 UFNode* UFSymbolArg::get(const Sort* s, const DomainElement* de) {
 	DomainElementNode* result = new DomainElementNode(s, de);
-	twoValuedNodes.push_back(result);
+	DEnodes.push_back(result);
 	return result;
 }
 
@@ -202,7 +202,7 @@ void UFSymbolArg::getPartition(std::unordered_multimap<UFNode*, UFNode*>& out) {
 	for (auto pair : VARnodes) {
 		out.insert({find(pair.second), pair.second});
 	}
-	for (auto node : twoValuedNodes) {
+	for (auto node : DEnodes) {
 		out.insert({find(node), node});
 	}
 	out.insert({find(forbiddenNode), forbiddenNode});
@@ -335,22 +335,17 @@ void InterchangeabilityAnalyzer::visit(const QuantSetExpr* s) {
 	s->getCondition()->accept(this);
 }
 
-void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj) {
+void detectSymmetry(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj) {
 	AbstractTheory* theo = t->clone();
-	
-    // add objective function to theory
+    
+    // hack: add objective function to theory
 	if (obj!=nullptr) {
 		Term* obj_clone = obj->clone();
 		DomainTerm* dummyTerm = new DomainTerm(obj->sort(),s->inter(obj->sort())->last(),TermParseInfo());
 		theo->add(new PredForm(SIGN::POS,get(STDPRED::LT,obj_clone->sort()),{obj_clone,dummyTerm},FormulaParseInfo()));
 	}
 	
-	getIntchGroups(theo,s,out_groups,out_syms);	
-	theo->recursiveDelete();
-}
-
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms) {
-	if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
+    if (getOption(IntType::VERBOSE_SYMMETRY) > 1) {
 		clog << "pushing quantifiers completely..." << std::endl;
 	}
 	theo = FormulaUtils::pushQuantifiersCompletely(theo);
@@ -439,6 +434,7 @@ void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<Interc
 	for (size_t i = 0; i < intersets.size(); ++i) {
 		delete intersets[i];
 	}
+	theo->recursiveDelete();
 }
 
 void ArgPosSet::addArgPos(PFSymbol* symb, unsigned int arg){

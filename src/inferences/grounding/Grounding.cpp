@@ -32,7 +32,7 @@ void addSymmetryBreaking(AbstractTheory* theory, Structure* structure, AbstractG
 		// Detect symmetry
         std::vector<Symmetry*> generators;
         std::vector<InterchangeabilityGroup*> intchgroups;
-		detectInterchangeability(intchgroups, generators, theory,structure,minimizeTerm);
+		detectSymmetry(intchgroups, generators, theory, structure, minimizeTerm);
 		// Break symmetry
 		if (getOption(IntType::VERBOSE_SYMMETRY) > 0) {
 		  clog << "Breaking " << intchgroups.size() << " interchangeability groups." << std::endl;

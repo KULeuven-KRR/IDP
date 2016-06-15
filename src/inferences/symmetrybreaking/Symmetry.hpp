@@ -244,7 +244,7 @@ class UFSymbolArg {
 	std::unordered_map<DecArgPos, SymbolArgumentNode*, DecArgPosHash, DecArgPosEqual> SAnodes; // map of DecArgPos to SymbolArgumentNode;
 	std::unordered_map<const Variable*, VariableNode*> VARnodes; // map of Variable to VariableNode
 	ForbiddenNode* forbiddenNode;
-    std::vector<UFNode*> twoValuedNodes; // TODO transform to DENode* // TODO can this be erased?
+  std::vector<DomainElementNode*> DEnodes;
     
 public:
 	UFSymbolArg();
@@ -301,5 +301,4 @@ protected:
 	virtual void visit(const QuantSetExpr*);
 };
 
-void detectInterchangeability(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
-void getIntchGroups(AbstractTheory* theo, const Structure* s, std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms); 
+void detectSymmetry(std::vector<InterchangeabilityGroup*>& out_groups, std::vector<Symmetry*>& out_syms, const AbstractTheory* t, const Structure* s, const Term* obj = nullptr);
