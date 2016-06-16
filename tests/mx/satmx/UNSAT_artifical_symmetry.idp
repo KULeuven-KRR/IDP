@@ -1,0 +1,18 @@
+procedure getExpectedAModel(){
+	return false
+}
+
+vocabulary V{
+	type T
+	P(T,T,T)
+    B:T
+    A:T
+}
+
+theory T:V{
+	P(B,B,A) | P(A,A,B).
+}
+
+structure S:V{
+    P={a,b,d;b,c,d;c,a,d;}
+}
