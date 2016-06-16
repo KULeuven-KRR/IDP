@@ -71,14 +71,13 @@ class Graph {
 private:
   InterchangeabilitySet* ics;
   
-  unsigned int highestNode = -1;
+  unsigned int highestColor = -1;
+  std::vector<unsigned int> color; // color[i] is the color of the ith node
+  std::vector<std::pair<unsigned int,unsigned int> > edges;
+  
   std::unordered_map<const DomainElement*, unsigned int> domEl2Node; // denotes the nodes associated with this domain element
   std::unordered_map<unsigned int, const DomainElement*> node2DomEl; // denotes the nodes associated with this domain element
   std::vector<std::unordered_map<const DomainElement*, unsigned int> > domElArgNodes; // denotes the argument nodes associated with this domain element domEl2Node[i][de] represents the node for de coupled to argument i
-  std::vector<std::pair<unsigned int,unsigned int> > edges;
-  
-  unsigned int highestColor = -1;
-  std::unordered_map<unsigned int, unsigned int> color; // colors of nodes
   std::unordered_map<TupleNode, unsigned int, TNHash, TNEqual> tupleColors; // denotes the different colors for tupleNodes, e.g. maps tuple P(_,a)=t to the appropriate color tupleNodes[P(_,a)=t]
   
   unsigned int getNextNode();

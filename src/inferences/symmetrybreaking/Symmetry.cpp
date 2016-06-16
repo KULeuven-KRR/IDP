@@ -668,11 +668,11 @@ size_t getTableHash(TableIterator table_it, const DomainElement* de, std::set<un
     for(unsigned int i=0; i<origTuple.size(); ++i){
       if(permutedArgs.count(i)>0){
         if(origTuple[i]==de){
-          permutedHash+= (1 + i);
+          permutedHash+= (1 + i); // add i parameter to take position in tuple into account
           containsDE=true;
         }
       }else{
-        tupleHash+= (((size_t) origTuple[i]) + i);
+        tupleHash+= (((size_t) origTuple[i]) + i); // add i parameter to take position in tuple into account
       }
     }
     if(containsDE){

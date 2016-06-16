@@ -16,6 +16,7 @@
 namespace saucy_ {
   
 Graph::Graph(InterchangeabilitySet* ic):ics(ic){
+  // first get max arity+1 of symbols
   unsigned int maxArity=0;
   for(auto sa: ics->symbargs){
     PFSymbol* symb = sa.first;
@@ -25,13 +26,13 @@ Graph::Graph(InterchangeabilitySet* ic):ics(ic){
   }
   domElArgNodes.resize(maxArity);
   
+  // enumerate domain
   std::unordered_set<const DomainElement*> domain;
   ics->getDomain(domain, true); // includes elements occurring as constants
   Assert(domain.size()>=ics->occursAsConstant.size());
   
-  highestNode = -1;
+  // create domain element nodes and corresponding argument nodes
   highestColor = maxArity;
-  
   for(auto de: domain){
     auto deNode = getNextNode();
     domEl2Node[de]=deNode;
@@ -46,17 +47,23 @@ Graph::Graph(InterchangeabilitySet* ic):ics(ic){
     }
   }
   
+  // fix colors for those domain elements occurring as constants
   for(auto de: ics->occursAsConstant){
-    // TODO: fix the case where they already have a unique color and Saucy will complain because there is a node without the color
     color[domEl2Node[de]]=getNextColor(); // domain elements occurring in theory should have unique color so they never take part in an isomorphism
   }
   
-  Assert(highestNode+1==(maxArity+1)*domain.size());
+  Assert(color.size()==(maxArity+1)*domain.size());
+  
+  if(ics->occursAsConstant.size()==domain.size()){
+    // no more nodes with color 0, introduce dummy node for Saucy
+    unsigned int dummy = getNextNode();
+    color[dummy]=0;
+  }
 }
   
 unsigned int Graph::getNextNode(){
-  ++highestNode;
-  return highestNode;
+  color.push_back(0);
+  return color.size()-1;
 }
 
 unsigned int Graph::getNextColor(){
@@ -168,11 +175,11 @@ void Graph::freeSaucy(){
 void Graph::createSaucy(){
   sg = (saucy_graph*) malloc(sizeof (struct saucy_graph));
   
-  unsigned int n = highestNode+1;
+  unsigned int n = color.size();
   // set the colors right
   sg->colors = (int*) malloc(n * sizeof (int));
-  for(auto nc: color){
-    sg->colors[nc.first]=nc.second;
+  for(unsigned int i=0; i<n; ++i){
+    sg->colors[i]=color[i];
   }
   
   std::vector<std::vector<uint> > neighbours(n);
