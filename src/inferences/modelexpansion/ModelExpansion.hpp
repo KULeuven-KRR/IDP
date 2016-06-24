@@ -105,6 +105,7 @@ private:
 	ModelExpansion(Theory* theory, Structure* structure, Term* minimize, TraceMonitor* tracemonitor, const MXAssumptions& assumeFalse = MXAssumptions());
 
 	void setOutputVocabulary(Vocabulary* v);
+	Vocabulary* calculateOutputVocabulary() const;
 
 	MXResult expand() const;
 };

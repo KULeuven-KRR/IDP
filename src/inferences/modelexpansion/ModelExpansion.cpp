@@ -145,7 +145,7 @@ litlist MXAssumptions::toLitList(GroundTranslator* trans) const{
 MXResult ModelExpansion::expand() const {
 	auto mxverbosity = max(getOption(IntType::VERBOSE_SOLVING),getOption(IntType::VERBOSE_SOLVING_STATISTICS));
 	auto data = SolverConnection::createsolver(getOption(IntType::NBMODELS));
-	auto targetvoc = _outputvoc == NULL ? _theory->vocabulary() : _outputvoc;
+	auto targetvoc = calculateOutputVocabulary();
 	auto clonetheory = _theory->clone();
 	auto newstructure = _structure->clone();
 	auto voc = new Vocabulary(createName());
@@ -183,7 +183,7 @@ MXResult ModelExpansion::expand() const {
 
 	std::pair<AbstractGroundTheory*, StructureExtender*> groundingAndExtender = {NULL, NULL};
 	try{
-		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, _outputvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, data);
+		groundingAndExtender = GroundingInference<PCSolver>::createGroundingAndExtender(clonetheory, newstructure, targetvoc, _minimizeterm, _tracemonitor, getOption(IntType::NBMODELS) != 1, data);
 	}catch(...){
 		if(getOption(VERBOSE_GROUNDING_STATISTICS) > 0){
 			logActionAndValue("effective-size", groundingAndExtender.first->getSize()); //Grounder::groundedAtoms());
@@ -338,4 +338,18 @@ Structure* handleSolution(Structure const * const structure, const MinisatID::Mo
 	newsolution->clean();
 	Assert(newsolution->isConsistent());
 	return newsolution;
+}
+
+Vocabulary* ModelExpansion::calculateOutputVocabulary() const {
+	if (_outputvoc == NULL) {
+		return _theory->vocabulary();
+	} else if (_minimizeterm != NULL) {
+		// In this case, return new vocabulary that is outputvoc + all symbols in minimization term
+		auto retVoc = new Vocabulary(*_outputvoc);
+		for (auto symbol : FormulaUtils::collectSymbols(_minimizeterm)) {
+			retVoc->add(symbol);
+		}
+		return retVoc;
+	}
+	return _outputvoc;
 }
