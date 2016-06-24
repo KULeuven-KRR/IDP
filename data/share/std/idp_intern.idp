@@ -64,7 +64,7 @@ procedure modelexpand(theory, structure, vocabulary) {
 		io.stderr:write("Extending partial models to full models\n")
 	end
 	if solutions == nil then
-		//some error took place: probably bad input... 
+		io.stderr:write("Error: probably bad input\n")
 		return
 	end
 	local solutions2 = nbModelsTwoValuedExtensions(solutions)
