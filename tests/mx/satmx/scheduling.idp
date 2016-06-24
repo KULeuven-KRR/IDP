@@ -1,0 +1,53 @@
+vocabulary V {
+	type Room
+	type Time
+	type Course
+	type LargeRoom isa Room
+	type MultimediaRoom isa Room
+	type PopularCourse isa Course
+	type Lecture
+	Prec(Time,Time)
+	DependsOn(Lecture,Lecture)
+	LectureWithMM(Lecture)
+	LectureBelongsToCourse(Lecture,Course)
+	LectureOnTimeSlot(Lecture,Time)
+	LectureInRoom(Lecture,Room)
+}
+
+theory T : V {
+	//if K depend on L, L must be taught before K.
+	! l [Lecture] : ! k [Lecture] : DependsOn(k, l) => ? t [Time] : ? s [Time] : LectureOnTimeSlot(l, t) & LectureOnTimeSlot(k, s) & Prec(t, s).
+	
+	//Multimedia lectures need multimedia rooms
+	! l [Lecture] : LectureWithMM(l) => (? r [MultimediaRoom] : LectureInRoom(l, r)).
+	//Popular courses are taught in large rooms
+	! c [PopularCourse] : ! l [Lecture] : LectureBelongsToCourse(l, c) => (? r [LargeRoom] : LectureInRoom(l, r)).
+	
+	
+	//Every lecture is taught at some time.
+	! l [Lecture] : ? t [Time] : LectureOnTimeSlot(l, t).
+	//Every lecture is taught in some room.
+	! l [Lecture] : ? r [Room] : LectureInRoom(l, r).
+	
+	// Every lecture has exactly one time and room
+	! l [Lecture] : ! t [Time] : ! s [Time] : LectureOnTimeSlot(l, t) & LectureOnTimeSlot(l, s) => t = s.
+	! l [Lecture] : ! t [Room] : ! s [Room] : LectureInRoom(l, t) & LectureInRoom(l, s) => t = s.
+}
+
+structure S : V{
+	Course = { C1;C2;C3;}
+	PopularCourse = { C1;}
+	Room = { R1;R2;R3;}
+	Lecture = { C11;C12;C13;C21;C22;C23;C31;C32;C33;}
+	Time = { T1;T2;T3;}
+	MultimediaRoom = { R1;}
+	LargeRoom = { R1;R2;}
+	DependsOn = { C12,C11;C13,C12;C22,C21;}
+	LectureBelongsToCourse = { C11,C1;C12,C1;C13,C1;C21,C2;C22,C2;C23,C2;C31,C3;C32,C3;C33,C3;}
+	Prec = { T1,T2;T1,T3;T2,T3;}
+	LectureWithMM = { C21;C13;C33;}
+}
+
+procedure getExpectedAModel(){
+	return true
+}

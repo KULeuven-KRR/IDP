@@ -97,9 +97,9 @@ procedure satwithskolems(){
 
 procedure satwithsymm(){
   standardoptions()
-	stdoptions.timeout = 5
-	stdoptions.groundwithbounds = false
-	stdoptions.liftedunitpropagation = false
+	stdoptions.timeout = 30
+	stdoptions.cpsupport = true
+	stdoptions.xsb=true
 	stdoptions.symmetrybreaking = "static"
 	return run()
 }
