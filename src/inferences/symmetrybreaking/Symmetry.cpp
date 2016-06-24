@@ -534,15 +534,17 @@ size_t DecArgPos::getHash() const{
 
 bool InterchangeabilitySet::add(DecArgPos& dap) {
     argpositions.insert(dap);
-    Sort* srt = dap.symbol->sort(dap.argument);
-	sorts.insert(srt);
-    argpositions.insert({0,srt->pred(),0}); // don't forget to add the sort predicates as well (type hierarchies...)
-    // we can safely say this is the 0th decomposition of this sort symbol, as sort symbols have arity 0.
+    add(dap.symbol->sort(dap.argument)); // add sort
 	return true;
 }
 
 bool InterchangeabilitySet::add(const Sort* s) {
 	sorts.insert(s);
+    argpositions.insert({0,s->pred(),0}); // don't forget to add the sort predicates as well
+    // we can safely say this is the 0th decomposition of this sort symbol, as sort symbols have arity 0.
+    for(auto sub: s->children()){
+      add(sub);
+    }
 	return true;
 }
 
