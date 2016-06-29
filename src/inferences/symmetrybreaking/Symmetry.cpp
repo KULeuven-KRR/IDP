@@ -25,6 +25,10 @@ using namespace std;
  *  These clausal formulas are the same as implemented by BreakID (bitbucket.org/krr/breakid).
  */
 void addSymBreakingClausesToGroundTheory(AbstractGroundTheory* gt, const std::vector<int>& literals, const std::vector<int>& symLiterals) {
+    Assert(symLiterals.size()==literals.size());
+    if(literals.size()==0){
+      return;
+    }
 	std::vector<int>::const_iterator literals_it = literals.cbegin();
 	std::vector<int>::const_iterator symLiterals_it = symLiterals.cbegin();
 	// this is the current literal and its symmetric:
@@ -445,9 +449,9 @@ void ArgPosSet::addArgPos(PFSymbol* symb, unsigned int arg){
   if(argPositions.count(symb)==0){
     std::set<unsigned int> newSet;
     argPositions[symb]=newSet;
+    symbols.insert(symb);
   }
   argPositions.at(symb).insert(arg);
-  symbols.insert(symb);
 }
 bool ArgPosSet::hasArgPos(PFSymbol* symb, unsigned int arg){
   if(argPositions.count(symb)==0){
