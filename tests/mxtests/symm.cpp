@@ -17,4 +17,8 @@ TEST_P(MXnbTest, DoesMXWithSymmetryBreaking) {
 	runTests("modelexpansion.idp", GetParam(), "mxwithsymm()");
 }
 
+TEST_P(MXsatTest, DoesSatWithSymmetryBreaking) {
+	runTests("satisfiability.idp", GetParam(), "satwithsymm()");
+}
+
 }

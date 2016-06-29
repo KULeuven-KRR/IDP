@@ -8,7 +8,7 @@ theory T:V{
 	?x: X(x) & Y(x) & P(x) & Q(x).
 }
 structure S:V{
-	X = {1..100000}
+	X = {1..10000}
 	Y = {1..10}
 }
 
