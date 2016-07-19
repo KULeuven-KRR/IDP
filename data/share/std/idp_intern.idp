@@ -141,6 +141,15 @@ procedure sat(theory, structure) {
 	Opts.nbmodels = oldnbmodels
 	return #solutions>0
 }
+/**
+ *  Return a vector of models of the given theory, more precise than the given structure,
+ *  and (optional) projected to the given vocabulary (a.k.a. the output vocabulary).
+ * The second return value is a boolean, representing whether or not the models are optimal with respect to the given term.
+ * The third return argument is the value of the term in the optimal model.
+ * The (optional) fourth argument is a trace of the solver (depending on stdoptions.trace)*/
+ procedure maximize(theory,structure,term,vocabulary){
+ return minimize(theory,structure,idpintern.negateterm(term),vocabulary)
+ }
 
 /**
  *  Return a vector of models of the given theory, more precise than the given structure, 

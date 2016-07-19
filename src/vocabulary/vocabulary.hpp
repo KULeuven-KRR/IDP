@@ -487,6 +487,7 @@ bool is(const PFSymbol* symbol, SymbolType type) {
 
 Sort* get(STDSORT type);
 Function* get(STDFUNC type); // NOTE might not have an interpretation yet, as it might be overloaded
+Function* getStdFunc(STDFUNC type, const std::vector<Sort*>& sorts, Vocabulary* voc);
 Function* get(STDFUNC type, const std::vector<Sort*>& sorts, Vocabulary* voc);
 Predicate* get(STDPRED type); // NOTE might not have an interpretation yet, as it might be overloaded
 Predicate* get(STDPRED type, Sort* sort);

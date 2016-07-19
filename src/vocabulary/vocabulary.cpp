@@ -1853,6 +1853,9 @@ Function* get(STDFUNC type) {
 	Assert(result->builtin() || result->overloaded());
 	return result;
 }
+Function* getStdFunc(STDFUNC type, const std::vector<Sort*>& sorts, Vocabulary* voc) {
+	return get(type,sorts,voc);
+}
 Function* get(STDFUNC type, const std::vector<Sort*>& sorts, Vocabulary* voc) {
 	auto result = Vocabulary::std()->func(getSymbolName(type))->disambiguate(sorts, voc);
 	Assert(result!=NULL);
