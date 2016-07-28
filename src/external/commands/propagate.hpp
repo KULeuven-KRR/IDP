@@ -109,45 +109,22 @@ public:
 			: TheoryStructureBase("optimalpropagate",
 					"Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
 		setNameSpace(getInternalNamespaceName());
-
 	}
-
+    
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		OptimalPropagation propagator;
-		auto sols = propagator.propagate(get<0>(args), get<1>(args));
-		return postProcess(sols);
-	}
-};
-
-class FullPropagateInference: public TheoryStructureBase {
-public:
-	FullPropagateInference()
-			: TheoryStructureBase("fullpropagate",
-								  "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
-		setNameSpace(getInternalNamespaceName());
-
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		FullPropagation propagator;
-		auto sols = propagator.propagate(get<0>(args), get<1>(args));
-		return postProcess(sols);
-	}
-};
-
-
-class BestPropagateInference: public TheoryStructureBase {
-public:
-	BestPropagateInference()
-			: TheoryStructureBase("bestpropagate",
-								  "Return a structure, made more precise than the input by generating all models and checking which literals always have the same truth value.\nThis propagation is complete: everything that can be derived from the theory will be derived. Returns nil when propagation results in an inconsistent structure") {
-		setNameSpace(getInternalNamespaceName());
-
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		FullPropagation propagator;
-		auto sols = propagator.propagateNoAssumps(get<0>(args), get<1>(args));
-		return postProcess(sols);
-	}
+        std::vector<Structure*> sols;
+        if(getGlobal()->getOptions()->fullPropagation()==FullProp::ENUMERATION){
+            OptimalPropagation propagator;
+            sols = propagator.propagate(get<0>(args), get<1>(args));
+        }else if(getGlobal()->getOptions()->fullPropagation()==FullProp::ASSUMPTIONS){
+            FullPropagation propagator;
+            sols = propagator.propagate(get<0>(args), get<1>(args));
+        }else if(getGlobal()->getOptions()->fullPropagation()==FullProp::INTERSECTION){
+            FullPropagation propagator;
+            sols = propagator.propagateNoAssumps(get<0>(args), get<1>(args));
+        }else{
+            Assert(false); // all options have been exhausted
+        }
+        return postProcess(sols);
+    }
 };

@@ -50,6 +50,18 @@ std::string str(SolverHeuristic choice) {
 	}
 }
 
+std::string str(FullProp choice) {
+	switch (choice) {
+      case FullProp::ASSUMPTIONS:
+        return "assumptions";
+      case FullProp::INTERSECTION:
+        return "intersection";
+      case FullProp::ENUMERATION:
+        return "enumeration";
+	default:
+		throw IdpException("Invalid code path.");
+	}
+}
 
 std::string str(SymmetryBreaking choice) {
 	switch (choice) {
@@ -85,6 +97,9 @@ inline Language operator++(Language& x) {
 inline SolverHeuristic operator++(SolverHeuristic& x) {
 	return x = (SolverHeuristic) (((int) (x) + 1));
 }
+inline FullProp operator++(FullProp& x) {
+	return x = (FullProp) (((int) (x) + 1));
+}
 inline SymmetryBreaking operator++(SymmetryBreaking& x) {
 	return x = (SymmetryBreaking) (((int) (x) + 1));
 }
@@ -97,6 +112,9 @@ inline Language operator*(Language& x) {
 inline SolverHeuristic operator*(SolverHeuristic& x){
 	return x;
 }
+inline FullProp operator*(FullProp& x) {
+	return x;
+}
 inline SymmetryBreaking operator*(SymmetryBreaking& x) {
 	return x;
 }
@@ -104,6 +122,9 @@ inline ApproxDef operator*(ApproxDef& x) {
 	return x;
 }
 inline bool operator<(Language x, Language y) {
+	return (int)x < (int)y;
+}
+inline bool operator<(FullProp x, FullProp y) {
 	return (int)x < (int)y;
 }
 inline bool operator<(SymmetryBreaking x, SymmetryBreaking y) {
@@ -233,6 +254,8 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		StringPol::createOption(StringType::PROVERCOMMAND, "provercommand", "", PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::PROVER_SUPPORTS_TFA, "proversupportsTFA", boolvalues, false, PrintBehaviour::PRINT); // TFA = Typed FO + arithmetic
 		StringPol::createOption(StringType::LANGUAGE, "language", possibleStringValues<Language>(), str(Language::IDP), PrintBehaviour::PRINT);
+        StringPol::createOption(StringType::OPTIMALPROPAGATION, "optimalpropagation", possibleStringValues<FullProp>(), str(FullProp::DEFAULT),
+                PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::SYMMETRYBREAKING, "symmetrybreaking", possibleStringValues<SymmetryBreaking>(), str(SymmetryBreaking::NONE),
 				PrintBehaviour::PRINT);
 		StringPol::createOption(StringType::APPROXDEF, "approxdef", possibleStringValues<ApproxDef>(), str(ApproxDef::NONE),
@@ -415,6 +438,18 @@ Language Options::language() const {
 	}
 	Warning::warning("Encountered unsupported language option, assuming ECNF.\n");
 	return Language::ECNF;
+}
+
+FullProp Options::fullPropagation() const {
+	auto values = possibleValues<FullProp>();
+	const std::string& value = StringPol::getValue(StringType::OPTIMALPROPAGATION);
+	for (auto i = values.cbegin(); i != values.cend(); ++i) {
+		if (value.compare(str(*i)) == 0) {
+			return *i;
+		}
+	}
+	Warning::warning("Encountered unsupported language option, assuming default.\n");
+	return FullProp::DEFAULT;
 }
 
 SymmetryBreaking Options::symmetryBreaking() const {

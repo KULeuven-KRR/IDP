@@ -35,6 +35,7 @@ enum Format {
 
 enum StringType {
 	LANGUAGE,
+    OPTIMALPROPAGATION,
 	SYMMETRYBREAKING,
 	PROVERCOMMAND,
 	APPROXDEF,
@@ -125,6 +126,14 @@ enum class SolverHeuristic {
 	LAST = VMTF
 };
 
+enum class FullProp {
+	ASSUMPTIONS,
+	INTERSECTION,
+    ENUMERATION,
+    DEFAULT = ASSUMPTIONS,
+	FIRST = ASSUMPTIONS,
+	LAST = ENUMERATION
+};
 
 enum class SymmetryBreaking {
 	NONE,
@@ -445,6 +454,7 @@ public:
 	std::ostream& put(std::ostream&) const;
 
 	Language language() const;
+    FullProp fullPropagation() const;
 	SymmetryBreaking symmetryBreaking() const;
 	ApproxDef approxDef() const;
 	SolverHeuristic solverHeuristic() const;
