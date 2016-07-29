@@ -1912,7 +1912,6 @@ FuncTerm* Insert::arterm(char c, Term* lt, Term* rt, YYLTYPE l) const {
 
 FuncTerm* Insert::arterm(const string& s, Term* t, YYLTYPE l) const {
 	if (t == NULL) {
-		t->recursiveDelete();
 		return NULL;
 	}
 	Function* f = _currvocabulary->func(s + "/1");
