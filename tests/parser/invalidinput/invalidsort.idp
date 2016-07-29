@@ -1,0 +1,22 @@
+vocabulary V {
+	type t isa int
+	P(t)
+	
+	Q(t,t)
+}
+
+theory T : V {
+	? x : P(x).
+	? x y : Q(x, y).
+}
+structure S : V {
+	t = {1..3}
+	P = {1..3}
+}
+
+vocabulary Vout {
+	extern V::Q[V::t,V::P]
+}
+procedure main() {
+	return 1
+}
