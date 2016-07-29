@@ -72,23 +72,33 @@ xsbBool incr_eval_builtin(CTXTdecl)
   
   switch(builtin_number) {
 
-  case GET_AFFECTED_CALLS: {
+    //  case GET_AFFECTED_CALLS: {
     /* This builtin creates a (prolog) list which contains all the
       affected calls in postorder.     */
-    int rc = create_call_list(CTXT);
-    affected_gl=empty_calllist();
-    changed_gl=empty_calllist();
-    return rc;
-    break;
-  }
+    //    int rc = call_list_to_prolog(CTXTc affected_gl);
+    //  printterm(stddbg,reg[4],25); printf(" -4i-\n");
+    //  printterm(stddbg,reg[3],25); printf(" -3i- \n");
+    //    return rc;
+    //    break;
+    //  }
 
-  case GET_CHANGED_CALLS: {
-    /* This builtin creates a (prolog) list which contains all the
-      changed calls.          */
+    //  case CONSUME_AFFECTED_CALLS: {
+    //    /* This builtin creates a (prolog) list which contains all the
+    //      affected calls in postorder.     */
+    //    int rc = return_affected_list_for_update(CTXT);
+    //    affected_gl=empty_calllist();
+    //    changed_gl=empty_calllist();
+    //    return rc;
+    //    break;
+    //  }
 
-    return create_changed_call_list(CTXT);    
-    break;
-  }
+    //  case GET_CHANGED_CALLS: {
+    //    /* This builtin creates a (prolog) list which contains all the
+    //      changed calls.          */
+    //
+    //    return return_changed_call_list(CTXT);    
+    //    break;
+    //  }
     
 /*  
 | case GET_CALL_GRAPH: {
@@ -108,7 +118,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
 			   "incr_invalidate_call",1);
     }
     c=subg_callnode_ptr(sf);
-    invalidate_call(CTXTc c); 
+    invalidate_call(CTXTc c,NOT_ABOLISHING); 
 
     break;
   }
@@ -118,14 +128,14 @@ xsbBool incr_eval_builtin(CTXTdecl)
     
     const int callreg=2;
     callnodeptr c=ptoc_addr(callreg);
-    invalidate_call(CTXTc c); 
+    invalidate_call(CTXTc c,NOT_ABOLISHING); 
     break;
   }
   
   case  GET_CALLNODEPTR_INCR:{
     const int regLeafChild=3; 
     if(IsNULL(BTN_Child(Last_Nod_Sav))){
-      xsb_warn("Callnodeptr is NULL! Invalid incrdynamic predicate.");
+      xsb_warn(CTXTc "Callnodeptr is NULL! Invalid incrdynamic predicate.");
       return FALSE;
     }
     ctop_int(CTXTc regLeafChild, (Integer)BTN_Child(Last_Nod_Sav));    
@@ -167,7 +177,19 @@ xsbBool incr_eval_builtin(CTXTdecl)
 	ctop_int(CTXTc 3,INCREMENTAL);
     else if (get_opaque(psc))
       ctop_int(CTXTc 3,OPAQUE);
-    else if (get_intern(psc))
+    else ctop_int(CTXTc 3,0);
+    break;
+  }
+
+  case PSC_SET_INTERN: {
+    Psc psc = (Psc)ptoc_addr(2);   
+    set_intern(psc,(int)ptoc_int(CTXTc 3));
+    break;    
+  }
+
+  case PSC_GET_INTERN: {
+    Psc psc = (Psc)ptoc_addr(2);   
+    if (get_intern(psc))
       ctop_int(CTXTc 3,T_INTERN);
     else ctop_int(CTXTc 3,0);
     break;
@@ -194,31 +216,44 @@ xsbBool incr_eval_builtin(CTXTdecl)
   }
 
   case IS_AFFECTED: {
-    const int sfreg=2;
-    VariantSF sf=ptoc_addr(sfreg);
-    if(IsNonNULL(sf)){
-      callnodeptr c=sf->callnode;
-      if(IsNonNULL(c)&&(c->falsecount!=0))
-	return TRUE;
-      else
+    
+    Psc psc = term_psc((Cell)(ptoc_tag(CTXTc 2)));
+    if (get_type(psc) != T_DYNA && get_incr(psc)) {    /* make sure its incremental, but  isn't a leaf node of the IDG */
+      VariantSF sf  = get_call(CTXTc ptoc_tag(CTXTc 2), NULL);
+      if(IsNonNULL(sf)){
+	callnodeptr c=sf->callnode;
+	if(IsNonNULL(c) &&  (c->falsecount!=0))
+	  return TRUE;
+	else
+	  return FALSE;
+      } else
 	return FALSE;
-    } else
-      return FALSE;
+    }
+    else return FALSE;
     
     break;
   }
     
   case INVALIDATE_CALLNODE_TRIE: {
     const int callreg=2;
+    int index = (int)ptoc_int(CTXTc callreg);
+    callnodeptr c; // Declare this earlier to please Visual C++ 2010 Express
 
-    callnodeptr c = itrie_array[ptoc_int(CTXTc callreg)].callnode;
-    invalidate_call(CTXTc c); 
+    if (!itrie_array[ptoc_int(CTXTc callreg)].incremental) {
+      //      sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF)ptcpreg);  dont think this is relevant
+      xsb_abort("Trying to invalidate trie number %d, which is non-incremental.\n",index);
+    }
+
+    //    printf("invalidating trie %d callnode w. cn %p\n",index,itrie_array[index].callnode);
+
+    c = itrie_array[index].callnode;
+    invalidate_call(CTXTc c,NOT_ABOLISHING); 
     break;
   }
 
   /*  This builtin creates a (prolog) list which contains all the 
       affected calls that the input call depends on, in postorder.         */
-  case CREATE_LAZY_CALL_LIST: {
+  case RETURN_LAZY_CALL_LIST: {
     VariantSF sf;
     int rc = 0, flag, dfs_ret;
 
@@ -228,7 +263,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
     if (IsNonNULL(sf))  {
       flag = (int)ptoc_int(CTXTc 3);
       if (flag == CALL_LIST_EVAL) {
-	rc = create_lazy_call_list(CTXTc sf->callnode);
+	rc = return_lazy_call_list(CTXTc sf->callnode);
 	return rc;
       }
       else if (flag == CALL_LIST_CREATE_EVAL) {
@@ -236,7 +271,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
 	dfs_ret = dfs_inedges(CTXTc subg_callnode_ptr(sf),  &lazy_affected, CALL_LIST_EVAL);
 	//	fprintf(stddbg,"dfs returned %d flag = %d\n",dfs_ret,flag);
 	if (!dfs_ret ) 
-	  rc = create_lazy_call_list(CTXTc sf->callnode);
+	  rc = return_lazy_call_list(CTXTc sf->callnode);
 	else rc = FALSE;
 	return rc;
       }
@@ -244,7 +279,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
 	lazy_affected = empty_calllist();
 	dfs_ret = dfs_inedges(CTXTc subg_callnode_ptr(sf),  &lazy_affected, CALL_LIST_INSPECT);
 	//	fprintf(stddbg,"dfs returned %d flag = %d\n",dfs_ret,flag);
-	rc = create_lazy_call_list(CTXTc sf->callnode);
+	rc = return_lazy_call_list(CTXTc sf->callnode);
 	return rc;
       }
     }
@@ -292,7 +327,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
     sf  = get_call(CTXTc ptoc_tag(CTXTc 2), NULL);
     //    printf("sf1 %p\n",sf);
     if (IsNonNULL(sf)) {
-      ctop_int(CTXTc 3, (long) sf);
+      ctop_int(CTXTc 3, (Integer) sf);
       return TRUE;
     }
     else return FALSE;
@@ -314,6 +349,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
   }
 
   default:
+    xsb_abort("Unknown Incremental Evaluation Builtin");
     xsb_exit("Unknown Incremental Evaluation Builtin: %d\n.", builtin_number);
     break;
   }

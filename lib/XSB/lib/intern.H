@@ -37,7 +37,7 @@
 	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1,
 	  trie_set_last_int/2, trie_create/2,
 	  trie_unintern_nr/2, trie_reclaim_uninterned_nr/1, 
-   unmark_uninterned_nr/2, incr_unmark_uninterned_nr_inval/2,
+   unmark_uninterned_nr/2, incr_unmark_uninterned_nr_inval/2, incr_unmark_uninterned_nr_immed/2,
    incr_unmark_uninterned_nr/2.
 
 :- import integer/1, abort/1 from standard.

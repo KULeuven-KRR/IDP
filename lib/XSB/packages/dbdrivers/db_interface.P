@@ -27,7 +27,7 @@
 
 :- compiler_options([xpp_on]).
 
-#define DB_INTERFACE_TERM_SYMBOL   '\377'
+#define DB_INTERFACE_TERM_SYMBOL   '\177'
 
 :- import file_read_canonical/3 from machine.
 :- import length/2 from basics.
@@ -40,25 +40,23 @@ db_connect(Handle, Driver, Server, Database, User, Password) :-
 	-> true
 	; 
 	    exception(Number, Mesg),
-	    throw(xsb_error(database(Number), Mesg))
+	    throw(dbdrivers_error(Number, Mesg))
 	).
 
 db_connect(Handle, Driver, Dsn, User, Password) :-
-	(openConnection(Handle, Driver, '', Dsn, User, Password)
-	-> true
+	(openConnection(Handle, Driver, '', Dsn, User, Password) -> true
 	; 
 	    exception(Number, Mesg),
-	    throw(xsb_error(database(Number), Mesg))
+	    throw(dbdrivers_error(Number, Mesg))
 	).
 
 %% closing connection to the database 
 
 db_disconnect(Handle) :- 
-	(closeConnection(Handle)
-	-> true
+	(closeConnection(Handle) -> true
 	; 
 	    exception(Number, Mesg),
-	    throw(xsb_error(database(Number), Mesg))
+	    throw(dbdrivers_error(Number, Mesg))
 	).
 
 %% direct querying
@@ -71,7 +69,7 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	;
 	    (exception(Number, Mesg)
 	    ->  db_statement_close(QueryHandle),
-		throw(xsb_error(database(Number), Mesg))
+		throw(dbdrivers_error(Number, Mesg))
 	    ;
 		fail)
 	).
@@ -92,7 +90,7 @@ db_prepare(ConnHandle, QueryHandle, SQLQueryList) :-
 	-> true
 	;
 	    exception(Number, Mesg),
-	    throw(xsb_error(database(Number), Mesg))
+	    throw(dbdrivers_error(Number, Mesg))
 	).
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
@@ -102,7 +100,7 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 	-> db_term(ReturnList, List)
 	;
 	    (exception(Number, Mesg)
-	    -> throw(xsb_error(database(Number), Mesg))
+	    -> throw(dbdrivers_error(Number, Mesg))
 	    ;
 		fail)
 	).
@@ -122,7 +120,7 @@ db_statement_close(QueryHandle) :-
 	-> true
 	; 
 	    exception(Number, Mesg),
-	    throw(xsb_error(database(Number), Mesg))
+	    throw(dbdrivers_error(Number, Mesg))
 	).
 
 
@@ -131,6 +129,7 @@ db_statement_close(QueryHandle) :-
 db_term([], []).
 
 db_term([X|ReturnListTail], [term(Y)|ListTail]):-
+	!,
 	open(atom(Y), read, IO), file_read_canonical(IO, X, _), 
 	close(IO),
 	db_term(ReturnListTail, ListTail).
@@ -141,8 +140,9 @@ db_term([X|ReturnListTail], [X|ListTail]) :-
 stringify_compound_terms([], []).
 
 stringify_compound_terms([X|List], [Z|CanonicalList]) :-
-        ((compound(X) ; X == [])
-	-> term_to_atom(X, Y, [ignore_ops(canonical),quoted(true)]),
+        (X == 'NULL'() -> Z = 'NULL' %% 'NULL'() is the database NULL
+	; (compound(X) ; X == []) ->
+	    term_to_atom(X, Y, [ignore_ops(canonical),quoted(true)]),
 	    atom_concat(DB_INTERFACE_TERM_SYMBOL,Y,Z)
 	; Z = X
 	),

@@ -150,7 +150,7 @@ typedef struct Deleted_Table_Frame {
 
 #define Free_Private_DelTF_Subgoal(pDTF,pTIF) {				\
   if (DTF_PrevDTF(pDTF) == 0) {						\
-    private_deltf_chain_begin = DTF_NextDTF(pDTF);				\
+    private_deltf_chain_begin = DTF_NextDTF(pDTF);			\
   }									\
   else {								\
     DTF_NextDTF(DTF_PrevDTF(pDTF)) = DTF_NextDTF(pDTF);			\
@@ -207,15 +207,13 @@ typedef struct {
 
 /* Can't use CTXTdeclc here because its included early in context.h */
 #ifdef MULTI_THREAD
-extern xsbBool assert_buff_to_clref_p(struct th_context *, prolog_term, byte, 
-				      PrRef, int, prolog_term, int, ClRef *);
+extern xsbBool assert_buff_to_clref_p(struct th_context *, prolog_term, byte, PrRef, int, prolog_term, int, ClRef *);
+extern void c_assert_code_to_buff(struct th_context *, prolog_term);
 
-extern int assert_code_to_buff_p(struct th_context *, prolog_term);
 #else
-extern xsbBool assert_buff_to_clref_p(prolog_term, byte, PrRef, int,
-			       prolog_term, int, ClRef *);
+extern xsbBool assert_buff_to_clref_p(prolog_term, byte, PrRef, int, prolog_term, int, ClRef *);
 
-extern int assert_code_to_buff_p(prolog_term);
+extern void c_assert_code_to_buff(prolog_term);
 #endif
 
 
@@ -283,6 +281,7 @@ typedef struct Deleted_Clause_Frame {
 
 #define isSharedTIF(pTIF)   (TIF_EvalMethod(pTIF) != DISPATCH_BLOCK)
 #define isPrivateTIF(pTIF)  (TIF_EvalMethod(pTIF) == DISPATCH_BLOCK)
+#define isIncrementalTif(pTIF) (get_incr(TIF_PSC(pTIF)))
 
 typedef byte TabledEvalMethod;
 
@@ -291,7 +290,9 @@ typedef struct Table_Info_Frame {
   Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
   byte method;	                /* eval pred using variant or subsumption? */
   byte mark;                    /* (bit) to indicate tif marked for gc */
-  byte visited;                 /* (bit) to indicate tif visited during cascading deletes */
+  unsigned int visited:1;       /* (bit) to indicate tif visited during cascading deletes */
+  unsigned int skip_forest_log:1;
+  unsigned int unused:6;
   byte intern_strs;		/* (bit) to indicate if variant table interns ground terms */
   DelTFptr del_tf_ptr;          /* pointer to first deletion frame for pred */
   BTNptr call_trie;		/* pointer to the root of the call trie */
@@ -312,6 +313,8 @@ typedef struct Table_Info_Frame {
 #define TIF_EvalMethod(pTIF)	   ( (pTIF)->method )
 #define TIF_Mark(pTIF)	           ( (pTIF)->mark )
 #define TIF_Visited(pTIF)          ( (pTIF)->visited )
+#define TIF_SkipForestLog(pTIF)    ( (pTIF)->skip_forest_log )
+
 #define TIF_Interning(pTIF)         ( (pTIF)->intern_strs )
 #define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
 #define TIF_Subgoals(pTIF)	   ( (pTIF)->subgoals )
@@ -324,6 +327,7 @@ typedef struct Table_Info_Frame {
 #endif
 #define	TIF_SubgoalDepth(pTIF)      ( (pTIF)->subgoal_depth )
 #define TIF_AnswerDepth(pTIF)       ( (pTIF)->answer_depth )
+
 
 #define	gc_mark_tif(pTIF)   TIF_Mark(pTIF) = 0x1
 #define	gc_unmark_tif(pTIF)   TIF_Mark(pTIF) = 0x0
@@ -467,7 +471,7 @@ struct TDispBlkHdr_t {
     if (!tip) {								\
       /* this may not be possible, as it may always be initted in get_tip? */\
       tip = New_TIF(CTXTc tdispblk->psc_ptr);			\
-      TDB_PrivateTIF(tdispblk,xsb_thread_entry) = tip;				\
+      TDB_PrivateTIF(tdispblk,xsb_thread_entry) = tip;			\
     }									\
   }
 
@@ -516,6 +520,7 @@ struct completion_stack_frame {
 } ;
 
 #define COMPLFRAMESIZE	(sizeof(struct completion_stack_frame)/sizeof(CPtr))
+#define COMPLSTACKSIZE (COMPLSTACKBOTTOM - openreg)/COMPLFRAMESIZE
 
 #define compl_subgoal_ptr(b)	((ComplStackFrame)(b))->subgoal_ptr
 #define compl_level(b)		((ComplStackFrame)(b))->_level_num
@@ -532,16 +537,40 @@ struct completion_stack_frame {
 #define prev_compl_frame(b)	(((CPtr)(b))+COMPLFRAMESIZE)
 #define next_compl_frame(b)	(((CPtr)(b))-COMPLFRAMESIZE)
 
-#define adjust_level(CS_FRAME) {					\
-  int new_level = compl_level(CS_FRAME);				\
-  if ( new_level < compl_level(openreg) ) {				\
-    CPtr csf = CS_FRAME;						\
-    while ( (csf >= openreg) && (compl_level(csf) >= new_level) ) {	\
-      compl_level(csf) = new_level;					\
-      csf = next_compl_frame(csf);					\
+#define check_scc_subgoals_tripwire {					\
+    if (subgoals_in_scc > flags[MAX_SCC_SUBGOALS]) { /* account for 0-index */ \
+      if (flags[MAX_SCC_SUBGOALS_ACTION] == XSB_ERROR)			\
+	xsb_abort("Tripwire max_scc_subgoals hit.  The user-set limit of %d incomplete subgoals within a single SCC" \
+		  " has been exceeded\n",				\
+		  flags[MAX_SCC_SUBGOALS]);				\
+      else { /* flags[MAX_SCC_SUBGOALS_ACTION] == XSB_SUSPEND */	\
+	/* printf("Debug: suspending on max_scc_subgoals\n"); */        \
+	tripwire_interrupt(CTXTc "max_scc_subgoals_handler");		\
+      }									\
     }									\
-  }									\
-}
+  }
+
+#define adjust_level(CS_FRAME) {					\
+    int new_level = compl_level(CS_FRAME);				\
+    UInteger subgoals_in_scc = 0;					\
+    if ( new_level < compl_level(openreg) ) {				\
+      CPtr csf = CS_FRAME;						\
+      while ( (csf >= openreg) && (compl_level(csf) >= new_level) ) {	\
+	compl_level(csf) = new_level;					\
+	csf = next_compl_frame(csf);					\
+      }									\
+      /* if flag is turned on, and complstacksize is "big" need to find leader */\
+      if (COMPLSTACKSIZE > flags[MAX_SCC_SUBGOALS]) {   \
+	csf = CS_FRAME;							\
+	while (csf < COMPLSTACKBOTTOM && compl_level(csf) == new_level) { \
+	  csf = prev_compl_frame(csf);					\
+	} /* finding frame right before leader */			\
+	subgoals_in_scc = (csf-openreg)/COMPLFRAMESIZE;			\
+	/*	printf("subgoals in SCC: %d\n",subgoals_in_scc);*/	\
+	check_scc_subgoals_tripwire;					\
+      }									\
+    }									\
+  }									
 
 /*
  *  The overflow test MUST be placed after the initialization of the
@@ -551,7 +580,26 @@ struct completion_stack_frame {
  *  solution to not leaving any dangling pointers to the old area.
  */
 
+#define check_incomplete_subgoals_tripwire {	    \
+    /*    printf("Level num %d active goals %d flag %d\n",level_num,COMPLSTACKSIZE,flags[MAX_INCOMPLETE_SUBGOALS]);*/ \
+    /*    if ((UInteger)level_num > flags[MAX_INCOMPLETE_SUBGOALS] -1) { */ /* account for 0-index */ \
+    if (COMPLSTACKSIZE > flags[MAX_INCOMPLETE_SUBGOALS]) { \
+      if (flags[MAX_INCOMPLETE_SUBGOALS_ACTION] == XSB_ERROR)		\
+	xsb_abort("Tripwire max_incomplete_subgoals hit.  The user-set limit of %d incomplete subgoals within a derivation" \
+		  " has been exceeded\n",				\
+		  flags[MAX_INCOMPLETE_SUBGOALS]);			\
+      else { /* flags[MAX_INCOMPLETE_SUBGOALS_ACTION] == XSB_SUSPEND */	\
+	/* printf("Debug: suspending on max_incomplete_subgoals\n"); */	\
+	tripwire_interrupt(CTXTc "max_incomplete_subgoals_handler");	\
+      }									\
+    }									\
+  }
+
+
+
+
 #define push_completion_frame_common(subgoal) \
+  check_incomplete_subgoals_tripwire; \
   level_num++; \
   openreg -= COMPLFRAMESIZE; \
   compl_subgoal_ptr(openreg) = subgoal; \
@@ -623,27 +671,28 @@ enum SubgoalFrameType {
 typedef struct subgoal_frame {
   byte sf_type;		  /* The type of subgoal frame */
   byte is_complete;	  /* If producer, whether its answer set is complete */
-  byte is_reclaimed;	  /* Whether structs for supporting answer res from an
+  byte is_reclaimed:1;	  /* Whether structs for supporting answer res from an
 			     incomplete table have been reclaimed */
+  byte negative_initial_call:1;
+  byte unused:6;
   byte visited;
   TIFptr tif_ptr;	  /* Table of which this call is a part */
   BTNptr leaf_ptr;	  /* Handle for call in the CallTrie */
   BTNptr ans_root_ptr;	  /* Root of the return trie */
-  ALNptr ans_list_ptr;	  /* Pointer to the list of returns in the ret trie (pre-compl)*/
-  union{
-    ALNptr ans_list_tail;   /* pointer to the tail of the answer list (pre-compl) */
-    DelTFptr deltf_ptr;     /* pointer to deltf (post-compl) */
-  };
+  ALNptr ans_list_ptr;	  /* Pointer to the list of returns in the ret trie */
+  ALNptr ans_list_tail;   /* pointer to the tail of the answer list */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
   void *next_subgoal;	  
   void *prev_subgoal;
-  CPtr  cp_ptr;		  /* Pointer to the Generator CP (pre-compl)*/
-  CPtr pos_cons;	  /* Pointer to list of (CP) active subgoal frames (pre-compl) */
+  CPtr  cp_ptr;		  /* Pointer to the Generator CP (cannot be used as union w. post-compl)*/
+  union{ 
+    CPtr pos_cons;	  /* Pointer to list of (CP) active subgoal frames (pre-compl) */
+    DelTFptr deltf_ptr;     /* pointer to deltf (post-compl) */
+  };
   union{
     CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame (pre-compl) */
     long visitors;};
   CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr (pre-compl)  */
-  Integer calls_ans_ctr; 
 #ifdef MULTI_THREAD
   Thread_T tid;	  /* Thread id of the generator thread for this sg */
 #endif
@@ -654,12 +703,16 @@ typedef struct subgoal_frame {
   byte grabbed; 	  /* Subgoal is marked to be computed for leader in
 			     deadlock detection */
 #endif
-#ifndef BITS_64
-  long callsto_number;    /* if 64 bits double-use call_ans_ctr */
-#endif
-
  /* The following field is added for incremental evaluation: */
   callnodeptr callnode;
+#ifdef BITS64
+  unsigned int callsto_number:32;
+  unsigned int ans_ctr:32;
+#else
+  Integer callsto_number;    /* if 64 bits double-use call_ans_ctr */
+  UInteger ans_ctr; 
+#endif
+
 
 } variant_subgoal_frame;
 
@@ -676,6 +729,7 @@ typedef struct subgoal_frame {
 #define subg_cp_ptr(b)		( ((VariantSF)(b))->cp_ptr )
 #define subg_deltf_ptr(b)     	( ((VariantSF)(b))->deltf_ptr )
 /*#define subg_deltf_ptr(b)     	( (DelTFptr)((VariantSF)(b))->ans_list_tail )*/
+#define subg_forest_log_off(b)       (TIF_SkipForestLog(subg_tif_ptr(b)))
 
 #define subg_pos_cons(b)	( ((VariantSF)(b))->pos_cons )
 #define subg_callnode_ptr(b)    ( ((VariantSF)(b))->callnode ) /* incremental evaluation */
@@ -684,14 +738,15 @@ typedef struct subgoal_frame {
 #define subg_compl_stack_ptr(b)	( ((VariantSF)(b))->compl_stack_ptr )
 #define subg_compl_susp_ptr(b)	( ((VariantSF)(b))->compl_suspens_ptr )
 #define subg_nde_list(b)	( ((VariantSF)(b))->nde_list )
-#define subg_call_ans_ctr(b)	( ((VariantSF)(b))->calls_ans_ctr )
+#define subg_call_ans_ctr(b)	( ((VariantSF)(b))->call_ans_ctr )
 
 #define subg_tid(b)		( ((VariantSF)(b))->tid )
 #define subg_tag(b)		( ((VariantSF)(b))->tag )
 #define subg_grabbed(b)		( ((VariantSF)(b))->grabbed )
 #define subg_callsto_number(b)		( ((VariantSF)(b))->callsto_number )
-#define subg_visitors(b)		( ((VariantSF)(b))->visitors )
-
+#define subg_ans_ctr(b)		( ((VariantSF)(b))->ans_ctr )
+#define subg_visitors(b)	( ((VariantSF)(b))->visitors )
+#define subg_negative_initial_call(b) 	( ((VariantSF)(b))->negative_initial_call )
 /* The subgoal visited field can be used for both marking during GC
    (the GC_MARK mask) and during table traversal to transitively remove
    depending subgoals (the VISITED mask).  */
@@ -703,6 +758,7 @@ typedef struct subgoal_frame {
 
 #define VISITED_SUBGOAL(subgoal)  ((subgoal->visited) & VISITED_SUBGOAL_MASK)
 #define MARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = VISITED_SUBGOAL_MASK | (subgoal->visited);}
+//Unmarked are not yet used
 #define UNMARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = (subgoal->visited) & (VISITED_SUBGOAL_NEG_MASK);}
 #define GC_MARKED_SUBGOAL(subgoal)  ((subgoal->visited) & GC_SUBGOAL_MASK)
 #define GC_MARK_SUBGOAL(subgoal) {(subgoal->visited) = GC_SUBGOAL_MASK | (subgoal->visited);}
@@ -711,27 +767,33 @@ typedef struct subgoal_frame {
 #define DELETED_SUBGOAL_FRAME(subgoal)  ((subgoal->visited) & DELETED_SUBGOAL_MASK)
 #define DELETE_SUBGOAL_FRAME(subgoal) {(subgoal->visited) = DELETED_SUBGOAL_MASK | (subgoal->visited);}
 
-#define is_completed(SUBG_PTR)		(subg_is_complete(SUBG_PTR) == TRUE)
-#define subg_is_completed(SUBG_PTR)		(subg_is_complete(SUBG_PTR) == TRUE)
+#define is_completed(SUBG_PTR)		(subg_is_complete(SUBG_PTR) & 1)
+#define subg_is_completed(SUBG_PTR)		(subg_is_complete(SUBG_PTR) & 1)
+#define complete_subg(SUBG_PTR)    subg_is_complete((SUBG_PTR)) |= 1
 
-#define subg_is_ec_scheduled(SUBG_PTR)		(subg_is_complete(SUBG_PTR) == 2)
-#define schedule_ec(SUBG_PTR)                   (subg_is_complete(SUBG_PTR) = 2)
+#define subg_is_answer_completed(SUBG_PTR) !(subg_is_complete(SUBG_PTR) & 4)
+#define answer_complete_subg(SUBG_PTR) subg_is_complete((SUBG_PTR)) &= ~4
+#define subg_needs_answer_completion(SUBG_PTR) subg_is_complete((SUBG_PTR)) |= 4
 
+#define subg_is_ec_scheduled(SUBG_PTR)		(subg_is_complete(SUBG_PTR) & 2)
+#define schedule_ec(SUBG_PTR)                   subg_is_complete(SUBG_PTR) |= 2
 
-#ifdef BITS64
-#define SUBG_INCREMENT_CALLSTO_SUBGOAL(subgoal)  \
-  subg_call_ans_ctr(subgoal) =  subg_call_ans_ctr(subgoal) + 0x100000000
-#define get_subgoal_callsto_number(subgoal) (subg_call_ans_ctr(subgoal_frame) >> 32)
-#define INIT_SUBGOAL_CALLSTO_NUMBER(pNewSF)  subg_call_ans_ctr(pNewSF) = 0x100000000
-#define get_subgoal_answer_number(subgoal) (subg_call_ans_ctr(subgoal) & 0xffffffff)
-#else
 #define SUBG_INCREMENT_CALLSTO_SUBGOAL(subgoal)  (subgoal -> callsto_number)++
-#define get_subgoal_callsto_number(subgoal) (subgoal -> callsto_number)
 #define INIT_SUBGOAL_CALLSTO_NUMBER(subgoal) subg_callsto_number(subgoal)  = 1
-#define get_subgoal_answer_number(subgoal) subg_call_ans_ctr(subgoal)
-#endif
 
-#define SUBG_INCREMENT_ANSWER_CTR(subgoal) subg_call_ans_ctr(subgoal)++
+#define SUBG_INCREMENT_ANSWER_CTR(subgoal) {	\
+    if (++subg_ans_ctr(subgoal) > (unsigned) flags[MAX_ANSWERS_FOR_SUBGOAL]) { \
+      if (flags[MAX_ANSWERS_FOR_SUBGOAL_ACTION] == XSB_ERROR) {		\
+	sprint_subgoal(CTXTc forest_log_buffer_1,0, subgoal);		\
+xsb_abort("Tripwire max_answers_for_subgoal hit. The user-set limit on the number of %d answers for a single subgoaol has been exceeded for %s\n",flags[MAX_ANSWERS_FOR_SUBGOAL],forest_log_buffer_1->fl_buffer); \
+      }									\
+      else { /* flags[MAX_SCC_SUBGOALS_ACTION] == XSB_SUSPEND */	\
+	tripwire_interrupt(CTXTc "max_answers_for_subgoal_handler");	\
+      }									\
+    }									\
+  }
+
+
 
 
 /* Subsumptive Producer Subgoal Frame
@@ -950,7 +1012,7 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
    CallTrieLeaf_SetSF(Leaf,pNewSF);				\
    conssf_producer(pNewSF) = (SubProdSF)Producer;		\
    if ( ! ProducerSubsumesSubgoals(Producer) )			\
-     tstCreateTSIs_handle((TSTNptr)subg_ans_root_ptr(Producer));		\
+     tstCreateTSIs_handle((TSTNptr)subg_ans_root_ptr(Producer));	\
    subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		\
    conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
    conssf_consumers(pNewSF) = subg_consumers(Producer);		\
@@ -1029,16 +1091,16 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 
 #ifndef MULTI_THREAD   
 #define mark_as_completed(SUBG_PTR) {		\
-    if (  subg_is_complete(SUBG_PTR) != TRUE) { \
-      subg_is_complete(SUBG_PTR) = TRUE;	\
+    if (  !subg_is_completed(SUBG_PTR) ) { \
+      complete_subg(SUBG_PTR);			\
       reclaim_del_ret_list(SUBG_PTR);		\
     }						\
   }
 #else
 #define mark_as_completed(SUBG_PTR) {		\
-    if (  subg_is_complete(SUBG_PTR) != TRUE) { \
-          subg_is_complete(SUBG_PTR) = TRUE;	\
-          reclaim_del_ret_list(th, SUBG_PTR);	\
+    if (  !subg_is_completed(SUBG_PTR)) {	\
+      complete_subg(SUBG_PTR);			\
+      reclaim_del_ret_list(th, SUBG_PTR);	\
     }						\
   }
 #endif
@@ -1150,7 +1212,7 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
     CPtr temp_pdlreg = pdlreg;				\
     while (!(temp_pdlreg == (CPtr)(pdl.high) - 1)) {			\
       print_cp_cell("pdl", temp_pdlreg, *(temp_pdlreg+1));		\
-      temp_pdlreg++;								\
+      temp_pdlreg++;							\
     }						  \
   }						 
 
@@ -1162,14 +1224,14 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 
 #ifdef CALL_ABSTRACTION
 #define get_var_and_attv_nums(var_num, attv_num, abstr_size, tmp_int)   \
-  var_num = (int)tmp_int & 0x7ff;					\
-  abstr_size = ((int)tmp_int & 0x3ff800) >>11;				\
-  attv_num = (int)tmp_int >> 22
+  var_num = (int)tmp_int & 0xffff;					\
+  abstr_size = ((int)tmp_int & 0x3f0000) >>16;				\
+  attv_num = (int)tmp_int >> 27
 
-#define get_template_size(var_num,tmp_int)   var_num = tmp_int & 0x7ff
+#define get_template_size(var_num,tmp_int)   var_num = tmp_int & 0xffff
 
 #define encode_ansTempl_ctrs(Attvars,AbstractSize,Ctr)   \
-  makeint((Attvars << 22) | (AbstractSize << 11) | Ctr)
+  makeint((Attvars << 27) | (AbstractSize << 16) | Ctr)
 #else
 #define get_var_and_attv_nums(var_num, attv_num, tmp_int)	\
   var_num = (int) (tmp_int & 0xffff);				\

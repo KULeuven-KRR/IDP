@@ -1,5 +1,5 @@
 /* File:      curr_sym.P
-** Author(s): Kostis F. Sagonas
+** Author(s): Sagonas/Swift/Warren/Moura
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -123,7 +123,6 @@ psc_scan_in_bucket(PSC_Pair, Next_PSC) :-
 %	psc_scan(PSC), psc_arity(PSC, N0), psc_name(PSC, Name),
 %	psc_insert(Name, 0, PSC0), term_new(PSC0, F0), F0 = F, N0 = N.
 
-
 /* ===== current_functor/2 ===================================== */
 
 %   current_functor(?Name, ?Term_Indicator)
@@ -214,7 +213,7 @@ decode_star_index(Ind,IndIn,IndOut):-
 	        (I < 0 -> IndOut = Ind ; IndOut = *(I))
 	      ; (I < 0 -> IndOut = IndIn + Ind ; IndOut = IndIn + *(I) ) ) ).
 decode_star_index(Ind,IndIn,IndOut):- 
-	PreInd1 is '/\'(Ind,255),
+	PreInd1 is /\(Ind,255),
 	decode_star_index(PreInd1,IndIn,IndMid),
 	IndRest is Ind >> 8,
 	decode_star_index(IndRest,IndMid,IndOut).
@@ -223,9 +222,13 @@ decode_star_index(Ind,IndIn,IndOut):-
 % TLS: changed on 8/04 for new streams.
 
 current_input(Stream) :- 
-	((var(Stream) ; integer(Stream)) -> 
+	(	var(Stream) ->
+		true
+	;	integer(Stream),
+		is_valid_stream(Stream,_) -> 
 	    true
-	 ;  domain_error(stream_or_variable,Stream,current_input/1,1) ),
+	;	domain_error(stream,Stream,current_input/1,1)
+	),
 	stat_flag(CURRENT_INPUT, S),
 	S = Stream.
 
@@ -251,9 +254,14 @@ check_precedence(Prec):-
 	  ; domain_error(operator_priority,Prec,current_op/3,1) ).
 
 check_operator_type(Type):-
-	((var(Type) ; is_operator_type(Type)) -> 
-	    true 
-	  ; domain_error(operator_specifier,Type,current_op/3,2) ).
+	(	var(Type) ->
+		true
+	;	is_operator_type(Type) -> 
+	    true
+	;	atom(Type) ->
+		domain_error(operator_specifier,Type,current_op/3,2)
+	;	type_error(atom,Type,current_op/3,2)
+	).
 
 is_operator_type(fx).
 is_operator_type(fy).
@@ -266,18 +274,25 @@ is_operator_type(xfy).
 is_operator_type(yfx).
 
 check_operator_name(Name):-
-	((var(Name) ; atom(Name)) -> 
+	(	var(Name) ->
+		true
+	;	atom(Name) -> 
 	    true 
-	  ; domain_error(atom_or_variable,Name,current_op/3,3) ).
+	;	type_error(atom,Name,current_op/3,3)
+	).
 
 
 /* ===== current_output/1 ===================================== */
 % TLS: changed on 8/04 for new streams.
 
 current_output(Stream) :- 
-	((var(Stream) ; integer(Stream)) -> 
-	    true
-	 ;  domain_error(variable_or_stream,Stream,current_output/1,1) ),
+	(	var(Stream) ->
+		true
+	;	integer(Stream),
+		is_valid_stream(Stream,_) ->
+		true
+	;	domain_error(stream,Stream,current_output/1,1)	
+	),
 	stat_flag(CURRENT_OUTPUT, S),
 	S = Stream.
 
@@ -300,11 +315,36 @@ current_output_port(FileDes) :- stat_flag(CURRENT_OUTPUT, FileDes).
 % of predicate indicators.  09/04
 
 current_predicate(Specifier) :-		% This takes care of global modules.
-	(Specifier = Module:Functor/N -> 
-	   current_predicate_module(Module,Functor,N)
-	;  (Specifier = Functor/N -> 
-	      current_predicate_global(Functor,N)
-	      ; type_error(term_indicator,Specifier,current_predicate/1,1) ) ).
+	check_current_predicate_argument(Specifier),
+	(	Specifier = Module:Functor/N ->
+		current_predicate_module(Module,Functor,N)
+	;	Specifier = Functor/N,
+		current_predicate_global(Functor,N)
+	).
+
+% PM: ISO oddly specifies only a type error for current_predicate/1,
+% which is not consistent with other standard predicates
+check_current_predicate_argument(Term) :-
+	(	var(Term) ->
+		true
+	;	Term = Module:Functor/Arity ->
+		(	nonvar(Module), \+ atom(Module) ->
+			type_error(predicate_indicator,Term,current_predicate/1,1)
+		;	nonvar(Functor), \+ atom(Functor) ->
+			type_error(predicate_indicator,Term,current_predicate/1,1)
+		;	nonvar(Arity), (\+ integer(Arity); Arity < 0) ->
+			type_error(predicate_indicator,Term,current_predicate/1,1)
+		;	true
+		)
+	;	Term = Functor/Arity ->
+		(	nonvar(Functor), \+ atom(Functor) ->
+			type_error(predicate_indicator,Term,current_predicate/1,1)
+		;	nonvar(Arity), (\+ integer(Arity); Arity < 0) ->
+			type_error(predicate_indicator,Term,current_predicate/1,1)
+		;	true
+		)
+	;	type_error(predicate_indicator,Term,current_predicate/1,1)
+	).
 
 /*
 current_predicate(Specifier) :-		% This takes care of global modules.
@@ -312,7 +352,7 @@ current_predicate(Specifier) :-		% This takes care of global modules.
 	    current_predicate_global(Functor,N)
 	  ; (Specifier = Module:Functor/N -> 
 	        current_predicate_module(Module,Functor,N)
-	      ; type_error(term_indicator,Specifier,current_predicate/1,1) ) ).
+	      ; type_error(predicate_indicator,Specifier,current_predicate/1,1) ) ).
 */
 current_predicate_global(Functor,N):- 
 	!,				% i.e. "usermod" and "global".
@@ -485,6 +525,7 @@ module_file(ModuleName, File) :-
 predicate_property(Term_Indicator, Property) :-
 	nonvar(Term_Indicator),
 	Term_Indicator = :(Module, Term),
+	nonvar(Term),		% send ':'(_,_) predicate to next clause
 	!,
 	get_first_psc_pair(PSC_Pair),
 	module_scan(PSC_Pair, ModuleName, ModulePSC),
@@ -527,6 +568,8 @@ psc_properties(PSC, Property) :-
 	; Type =:= T_UDEF -> Property = unloaded
 	; Type =:= T_FORN -> Property = foreign
 	; Type =:= 14 -> Property = function ).
+psc_properties(PSC, static) :-
+	\+ (psc_type(PSC, Type), Type =:= T_DYNA).
 psc_properties(PSC, Property) :-
 	psc_env(PSC, Env),
 	( Env =:= T_EXPORTED -> Property = exported
@@ -612,47 +655,78 @@ module_properties(PSC, Property) :-
 
 
 /* ===== current_prolog_flag/2 ================================== */
+:- import tripwire/1 from usermod.
 
-current_prolog_flag(Flag,Value):- 
-	((var(Flag) ; atom(Flag)) -> 
-	    true
-	  ; domain_error(atom_or_variable,Flag,current_prolog_flag/2,1) ),
-	  (  iso_flag(Flag,Value) 
-           ; xsb_flag(Flag,Value)
-           ; prolog_commons_flag(Flag,Value)).
+current_prolog_flag(Flag, Value) :- 
+	(	var(Flag) ->
+		true
+	;	\+ atom(Flag),\+ (Flag = tripwire(_)) ->
+		type_error(atom,Flag,current_prolog_flag/2,1)
+	;	\+ iso_flag(Flag),\+ (Flag = tripwire(_)),\+ xsb_flag(Flag),\+ prolog_commons_flag(Flag) ->
+		domain_error(prolog_flag,Flag,current_prolog_flag/2,1)
+	;	true
+	),
+	(	iso_flag(Flag,Value) 
+	;	Flag = tripwire(F),
+	        tripwire_1(F),
+    	        (  Value = action(A),
+   	           tripwire_action(F,FA),
+  	           xsb_flag(FA,A)
+  	         ; Value = limit(P),
+  	           xsb_flag(F,P) )
+         ;      atom(Flag),\+ compound(Value),xsb_flag(Flag,Value)
+  	 ;	prolog_commons_flag(Flag,Value)
+	).
 
 settable_flag(unknown).
+settable_flag(double_quotes).
+
 settable_flag_value(unknown,error).
 settable_flag_value(unknown,fail).
 settable_flag_value(unknown,warning).
+settable_flag_value(unknown,undefined).
+settable_flag_value(unknown,user_hook).
+% PM: avoid error when setting the double_quotes flag to codes
+settable_flag_value(double_quotes,codes).
 
 :- dynamic settable_prolog_flag/2.
 :- asserta(settable_prolog_flag(unknown,error)).
+:- asserta(settable_prolog_flag(double_quotes,codes)).
 
 set_prolog_flag(Flag,Value) :-
-	(atom(Flag)
-	 ->	true
-	 ;	instantiation_error(set_prolog_flag/2,1,bound)
-	),
-	(settable_flag(Flag)
-	 ->	(atomic(Value)
-		 ->	true
-		 ;	instantiation_error(set_prolog_flag/2,2,bound)
-		),
-		(settable_flag_value(Flag,Value)
-		 ->	retractall(settable_prolog_flag(Flag,_)),
+	(	var(Flag) ->
+		instantiation_error(set_prolog_flag/2,1,bound)
+	;	var(Value) ->
+		instantiation_error(set_prolog_flag/2,2,bound)
+	; true),
+% Don't check here -- want tripwires
+%	;	atom(Flag) ->
+%		true
+%	;	type_error(atom,Flag,set_prolog_flag/2,1)
+%	),
+	(	settable_flag(Flag) ->
+		(	settable_flag_value(Flag,Value) ->
+			retractall(settable_prolog_flag(Flag,_)),
 			asserta(settable_prolog_flag(Flag,Value))
-		 ;	findall(Val,settable_flag_value(Flag,Val),Vals),
-			make_set_tail(Vals,SetVals),
-			domain_error(['{'|SetVals],Value,set_prolog_flag/2,2)
+		;	domain_error(flag_value,Value,set_prolog_flag/2,2)
 		)
-           ; set_xsb_flag(Flag,Value)
-% error handled in xsb_flag
-%	 ;	domain_error(settable_flag,Flag,set_prolog_flag/2,1)
+	;	set_xsb_flag(Flag,Value)
 	).
 
-make_set_tail([Val],[Val,'}']) :- !.
-make_set_tail([Val|Vals],[Val,','|SetTail]) :- make_set_tail(Vals,SetTail).
+%make_set_tail([Val],[Val,'}']) :- !.
+%make_set_tail([Val|Vals],[Val,','|SetTail]) :- make_set_tail(Vals,SetTail).
+
+% PM: list of ISO specified flags for error checking
+iso_flag(bounded).
+iso_flag(max_integer). 
+iso_flag(min_integer).
+iso_flag(max_arity).
+iso_flag(integer_rounding_function).
+iso_flag(debug).
+iso_flag(unknown).
+iso_flag(double_quotes).
+iso_flag(char_conversion).
+
 
 %% fix for 64-bit compilation?
 iso_flag(bounded,true).
@@ -666,12 +740,14 @@ iso_flag(max_integer,Maxint):-
 	    Maxint is (2**62 - 1) + 2**62
 	;   Maxint is (2**30 - 1) + 2**30).
 %'
-iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint - 1.
+%%iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint - 1.
+iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint.
 iso_flag(max_arity,255).
 iso_flag(integer_rounding_function,toward_zero).
 iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
 iso_flag(unknown, State) :- settable_prolog_flag(unknown, State).
-iso_flag(double_quotes,codes).
+iso_flag(double_quotes, Meaning) :- settable_prolog_flag(double_quotes, Meaning).
+iso_flag(char_conversion, off).
 
 % TLS: need to understand ISO char conversion
 %iso_flag(char_conversion,{on,off})
@@ -681,6 +757,10 @@ iso_flag(double_quotes,codes).
 %iso_flag(unknown,{error,warning,fail})
 
 /* ===== prolog_commons_flag/2 ========================================== */
+
+% PM: list of Prolog Commons specified flags for error checking
+prolog_commons_flag(dialect).
+prolog_commons_flag(version_data).
 
 prolog_commons_flag(dialect,xsb).
 prolog_commons_flag(version_data, xsb(Major, Minor, Patch, _)):-
@@ -692,20 +772,9 @@ prolog_commons_flag(version_data, xsb(Major, Minor, Patch, _)):-
           number_codes(Minor, MinorCodes),
           xsb_configuration(patch_version, PatchAtom),
           atom_codes(PatchAtom, PatchCodes),
-          number_codes(Patch, PatchCodes).
-/*										  prolog_commons_flag(version_data,xsb(Maj, Min, 0, _)):-
-        xsb_configuration(major_version,MajAtom),
-        atom_codes(MajAtom, MajCodes),
-        number_codes(Maj, MajCodes),
-        xsb_configuration(minor_version,MinAtom),
-        atom_codes(MinAtom, MinCodes),
-        number_codes(Min, MinCodes).
-*/
-/*
-prolog_commons_flag(version_data,xsb(Maj, Min, 0, _)):- 
-	xsb_configuration(major_version,Maj),
-	xsb_configuration(minor_version,Min).
-*/
+	  (PatchCodes = [] -> Patch = '' ; number_codes(Patch, PatchCodes)).
+
+xsb_flag(Flag):- xsb_flag(Flag,_),!.
 
 /* ===== xsb_flag/2 ========================================== */
 
@@ -716,6 +785,19 @@ prolog_commons_flag(version_data,xsb(Maj, Min, 0, _)):-
 %%   i.e., those that can change between sessions or within a session.
 %%   In contrast, xsb_configuration is to be used for settings that are the
 %%   same for different sessions and are fixed at XSB build time.
+tripwire_1(max_table_subgoal_size).
+tripwire_1(max_table_answer_size).
+tripwire_1(max_incomplete_subgoals).
+tripwire_1(max_scc_subgoals).
+tripwire_1(max_memory).
+tripwire_1(max_answers_for_subgoal). 
+
+tripwire_action(max_table_subgoal_size,max_table_subgoal_size_action).
+tripwire_action(max_table_answer_size,max_table_answer_size_action).
+tripwire_action(max_incomplete_subgoals,max_incomplete_subgoals_action).
+tripwire_action(max_scc_subgoals,max_scc_subgoals_action).
+tripwire_action(max_memory,max_memory_action).
+tripwire_action(max_answers_for_subgoal,max_answers_for_subgoal_action). 
 
 xsb_flag(write_attributes,Value):- 
 	stat_flag(WRITE_ATTRIBUTES, V), 
@@ -737,9 +819,9 @@ xsb_flag(tracing, Trace) :-
 xsb_flag(verboseness,Level) :-
 	var(Level),
 	stat_flag(VERBOSENESS_LEVEL,Level).
-xsb_flag(verboseness,Level) :-
-	number(Level),
-	stat_set_flag(VERBOSENESS_LEVEL,Level).
+%xsb_flag(verboseness,Level) :-
+%	number(Level),
+%	stat_set_flag(VERBOSENESS_LEVEL,Level).
 %% Goal passed on cmd line
 xsb_flag(goal, Goal) :-
 	stat_flag(CMD_LINE_GOAL, GoalUninterned),
@@ -846,28 +928,66 @@ xsb_flag(warning_action,Action):-
 	  ; (A == SILENT_WARNING -> 
 	      Action = silent_warning
 	     ; A == ERROR_WARNING,Action = error_warning) ).
-xsb_flag(max_table_subgoal_depth,Action):- 
-	stat_flag(MAX_TABLE_SUBGOAL_DEPTH,Action).
-xsb_flag(max_table_subgoal_action, Action) :-
+xsb_flag(max_table_subgoal_var_num,Size):- 
+	stat_flag(MAX_TABLE_SUBGOAL_VAR_NUM,Size).
+xsb_flag(max_table_answer_var_num,Size):- 
+	stat_flag(MAX_TABLE_ANSWER_VAR_NUM,Size).
+xsb_flag(cyclic_check_size,Size):- 
+	stat_flag(CYCLIC_CHECK_SIZE,Size).
+xsb_flag(max_table_subgoal_size,Max):- 
+	stat_flag(MAX_TABLE_SUBGOAL_SIZE,M),
+	iso_flag(max_integer,Maxint),
+	(M =:= Maxint -> Max = 0; M = Max).
+xsb_flag(max_table_subgoal_size_action, Action) :-
 	stat_flag(MAX_TABLE_SUBGOAL_ACTION, A),
 	(A == XSB_ERROR -> Action = error 
-          ; (A == XSB_ABSTRACT -> Action = abstract 
-            ; A == XSB_FAILURE, Action = failure) ).
-xsb_flag(max_table_answer_depth,Action):- 
-	stat_flag(MAX_TABLE_ANSWER_DEPTH,Action).
-xsb_flag(max_table_answer_action, Action) :-
+         ; A == XSB_ABSTRACT -> Action = abstract 
+         ; A == XSB_SUSPEND -> Action = suspend).
+%         ; A == XSB_FAILURE, Action = failure ).
+xsb_flag(max_table_answer_size,Max):- 
+	stat_flag(MAX_TABLE_ANSWER_METRIC,M),
+	iso_flag(max_integer,Maxint),
+	(M =:= Maxint -> Max = 0; M = Max).
+xsb_flag(max_table_answer_size_action, Action) :-
 	stat_flag(MAX_TABLE_ANSWER_ACTION, A),
 	(A == XSB_ERROR -> Action = error 
-         ; (A == XSB_BRAT -> Action = bounded_rationality 
-	   ; (A == XSB_FAILURE -> Action = failure 
-              ; A == XSB_WARNING, Action = warning)) ).
-xsb_flag(max_table_answer_list_depth,Action):- 
-	stat_flag(MAX_TABLE_ANSWER_LIST_DEPTH,Action).
-xsb_flag(max_table_answer_list_action, Action) :-
-	stat_flag(MAX_TABLE_ANSWER_LIST_ACTION, A),
+         ; (A == XSB_BRAT -> Action = abstract 
+         ; (A == XSB_SUSPEND -> Action = suspend) ) ).
+%	   ; (A == XSB_FAILURE -> Action = failure 
+%              ; A == XSB_WARNING, Action = warning) ).
+%xsb_flag(max_table_answer_list_depth,Depth):- 
+%	stat_flag(MAX_TABLE_ANSWER_LIST_DEPTH,Depth).
+%xsb_flag(max_table_answer_list_action, Action) :-
+%	stat_flag(MAX_TABLE_ANSWER_LIST_ACTION, A),
+%	(A == XSB_ERROR -> Action = error 
+%	; (A == XSB_FAILURE -> Action = failure 
+%            ; A == XSB_WARNING, Action = warning)).
+xsb_flag(max_incomplete_subgoals, Max) :-
+	stat_flag(MAX_INCOMPLETE_SUBGOALS,M),
+	iso_flag(max_integer,Maxint),
+	(M =:= Maxint -> Max = 0; M = Max).
+xsb_flag(max_incomplete_subgoals_action, Action) :-
+	stat_flag(MAX_INCOMPLETE_SUBGOALS_ACTION,A),
 	(A == XSB_ERROR -> Action = error 
-	; (A == XSB_FAILURE -> Action = failure 
+	; (A == XSB_SUSPEND -> Action = suspend 
             ; A == XSB_WARNING, Action = warning)).
+xsb_flag(max_scc_subgoals, Max) :-
+	stat_flag(MAX_SCC_SUBGOALS,M),
+	iso_flag(max_integer,Maxint),
+	(M =:= Maxint -> Max = 0; M = Max).
+xsb_flag(max_scc_subgoals_action, Action) :-
+	stat_flag(MAX_SCC_SUBGOALS_ACTION,A),
+	(A == XSB_ERROR -> Action = error 
+	; (A == XSB_SUSPEND -> Action = suspend 
+            ; A == XSB_WARNING, Action = warning)).
+xsb_flag(max_answers_for_subgoal, Max) :-
+	stat_flag(MAX_ANSWERS_FOR_SUBGOAL,M),
+	iso_flag(max_integer,Maxint),
+	(M =:= Maxint -> Max = 0; M = Max).
+xsb_flag(max_answers_for_subgoal_action, Action) :-
+	stat_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION,A),
+	(A == XSB_ERROR -> Action = error 
+	; (A == XSB_SUSPEND -> Action = suspend) ).
 xsb_flag(unify_with_occurs_check, Mode) :-
 	stat_flag(UNIFY_WITH_OCCURS_CHECK_FLAG, Flag),
 	( Flag =:= 0 -> Mode = off ; Mode = on ).
@@ -876,6 +996,10 @@ xsb_flag(max_tab_usage, Mode) :-
 	( Flag =:= 0 -> Mode = off ; Mode = on ).
 xsb_flag(max_memory, Max) :-
 	stat_flag(MAX_MEMORY, Max).
+xsb_flag(max_memory_action, Action) :-
+	stat_flag(MAX_MEMORY_ACTION,A),
+	(A == XSB_ERROR -> Action = error
+	; (A == XSB_SUSPEND -> Action = suspend) ).
 xsb_flag(exception_pre_action, Mode) :-
 	stat_flag(EXCEPTION_PRE_ACTION, Flag),
 	( Flag =:= PRINT_INCOMPLETE_ON_ABORT -> 
@@ -903,11 +1027,23 @@ xsb_flag(errors_with_position,Mode):-
 	stat_flag(ERRORS_WITH_POSITION, Flag),
 	( Flag =:= 0 -> Mode = off ; Mode = on ).
 
+%:- import writeln/1 from standard.
 set_xsb_flag(Type,Val):- 
-	check_nonvar(Type,set_xsb_flag/2,1),
-	check_nonvar(Val,set_xsb_flag/2,2),
+%	writeln(set_xsb_flag(Type,Val)),
+	check_ground(Type,set_xsb_flag/2,1),
+	check_ground(Val,set_xsb_flag/2,2),
 	set_xsb_flag_1(Type,Val).
 
+set_xsb_flag_1(tripwire(F),V):- 
+	tripwire_1(F),
+	(  V = action(A),
+	   tripwire_action(F,FA),
+  	   set_xsb_flag_1(FA,A)
+	 ; V = limit(P),
+	   set_xsb_flag_1(F,P) ),!.
+%set_xsb_flag(tripwire(F),V):- 
+%	tripwire_1(F),
+%	set_xsb_flag_1(F,V).
 set_xsb_flag_1(write_depth, Depth) :- !, 
 	(integer(Depth) -> 
 	    stat_set_flag(WRITE_DEPTH, Depth)
@@ -1030,42 +1166,110 @@ set_xsb_flag_1(warning_action,Action):- !,
 	        ; domain_error([print_warning,', ',silent_warning,', ',error_warning],
 	                        Action,set_xsb_flag/2,2,'warning_action clause') ) ) ),
 	 stat_set_flag(WARNING_ACTION,A).
-set_xsb_flag_1(max_table_subgoal_depth, Size) :-!,
-	stat_set_flag(MAX_TABLE_SUBGOAL_DEPTH, Size).
-set_xsb_flag_1(max_table_subgoal_action, Action) :-!,
+
+% These next 3 are basically internal and should rarely need to be reset.
+set_xsb_flag_1(cyclic_check_size, Size) :-!,
+	stat_set_flag(CYCLIC_CHECK_SIZE,Size).
+set_xsb_flag_1(max_table_subgoal_var_num, Size) :-!,
+	( (integer(Size),Size > 0, Size =< 16000) -> 
+	  stat_set_flag(MAX_TABLE_SUBGOAL_VAR_NUM, Size)
+	 ; misc_error('Value must be an integer between 1 and 16000 for the flag max_table_subgoal_var_num') ).
+set_xsb_flag_1(max_table_answer_var_num, Size) :-!,
+	( (integer(Size),Size > 0, Size =< 40000) -> 
+	  stat_set_flag(MAX_TABLE_ANSWER_VAR_NUM, Size)
+	 ; misc_error('Value must be an integer between 1 and 40000 for the flag max_table_answer_var_num') ).
+
+% The next set is for tripwires.
+set_xsb_flag_1(max_table_subgoal_size, Size) :-!,
+	(Size =:= 0 -> 
+	  iso_flag(max_integer,MaxInt),
+	  stat_set_flag(MAX_TABLE_SUBGOAL_SIZE, MaxInt)
+	; stat_set_flag(MAX_TABLE_SUBGOAL_SIZE, Size)).
+set_xsb_flag_1(max_table_subgoal_size_action, Action) :-!,
 	(Action == error -> 
 	    stat_set_flag(MAX_TABLE_SUBGOAL_ACTION, XSB_ERROR)
-          ; (Action == failure ->  
-	    stat_set_flag(MAX_TABLE_SUBGOAL_ACTION, XSB_FAILURE)
+          ; (Action == suspend ->  
+	    stat_set_flag(MAX_TABLE_SUBGOAL_ACTION, XSB_SUSPEND)
           ; (Action == abstract ->  
 	    stat_set_flag(MAX_TABLE_SUBGOAL_ACTION, XSB_ABSTRACT)
-            ; domain_error([error,', ',failure],
+            ; domain_error([error,', ',suspend,', ',abstract],
                         Action,set_xsb_flag/2,2,'max_table_subgoal_action clause') ) ) ).
-set_xsb_flag_1(max_table_answer_depth, Size) :-!,
-	stat_set_flag(MAX_TABLE_ANSWER_DEPTH, Size).
-set_xsb_flag_1(max_table_answer_action, Action) :-!,
+set_xsb_flag_1(max_table_answer_size, Size) :-!,
+	(Size =:= 0 -> 
+	  iso_flag(max_integer,MaxInt),
+	  stat_set_flag(MAX_TABLE_ANSWER_METRIC, MaxInt)
+	; stat_set_flag(MAX_TABLE_ANSWER_METRIC, Size) ).
+set_xsb_flag_1(max_table_answer_size_action, Action) :-!,
 	(Action == error -> 
 	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_ERROR)
-          ; (Action == warning ->  
-	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_WARNING)
-          ; (Action == bounded_rationality ->  
+%          ; (Action == warning ->  
+%	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_WARNING)
+          ; ((Action == bounded_rationality ; Action == abstract) ->  
 	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_BRAT),
 	    reinitialize_undefineds
-          ; (Action == failure ->  
-	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_FAILURE)
-            ; domain_error([error,', ',warning,', ',failure,', ',bounded_rationality],
-                        Action,set_xsb_flag/2,2,'max_table_answer_action clause') ) ) ) ).
-set_xsb_flag_1(max_table_answer_list_depth, Size) :-!,
-	stat_set_flag(MAX_TABLE_ANSWER_LIST_DEPTH, Size).
-set_xsb_flag_1(max_table_answer_list_action, Action) :-!,
+          ; (Action == suspend ->  
+	    stat_set_flag(MAX_TABLE_ANSWER_ACTION, XSB_SUSPEND)
+%            ; domain_error([error,', ',warning,', ',suspend,', ',abstract],
+            ; domain_error([error,', ',suspend,', ',abstract],
+                        Action,set_xsb_flag/2,2,'max_table_answer_action clause') ) ) ).
+set_xsb_flag_1(max_incomplete_subgoals, Max) :-!,
+	(Max =:= 0 -> 
+	  iso_flag(max_integer,MaxInt),
+	  stat_set_flag(MAX_INCOMPLETE_SUBGOALS, MaxInt)
+	; stat_set_flag(MAX_INCOMPLETE_SUBGOALS, Max) ).
+set_xsb_flag_1(max_incomplete_subgoals_action, Action) :-!,
 	(Action == error -> 
-	    stat_set_flag(MAX_TABLE_ANSWER_LIST_ACTION, XSB_ERROR)
+	    stat_set_flag(MAX_INCOMPLETE_SUBGOALS_ACTION, XSB_ERROR)
           ; (Action == warning ->  
-	    stat_set_flag(MAX_TABLE_ANSWER_LIST_ACTION, XSB_WARNING)
-          ; (Action == failure ->  
-	    stat_set_flag(MAX_TABLE_ANSWER_LIST_ACTION, XSB_FAILURE)
-            ; domain_error([error,', ',warning,', ',failure],
-                        Action,set_prolog_flag/2,2,'max_table_answer_list_action clause') ) ) ).
+	    stat_set_flag(MAX_INCOMPLETE_SUBGOALS_ACTION, XSB_WARNING)
+          ; (Action == suspend ->  
+	    stat_set_flag(MAX_INCOMPLETE_SUBGOALS_ACTION, XSB_SUSPEND)
+            ; domain_error([error,', ',warning,', ',suspend],
+                        Action,set_prolog_flag/2,2,'max_incomplete_subgoals_action clause') ) ) ).
+set_xsb_flag_1(max_scc_subgoals, Max) :-!,
+	(Max =:= 0 -> 
+	  iso_flag(max_integer,MaxInt),
+	  stat_set_flag(MAX_SCC_SUBGOALS, MaxInt)
+	; stat_set_flag(MAX_SCC_SUBGOALS, Max) ).
+set_xsb_flag_1(max_scc_subgoals_action, Action) :-!,
+	(Action == error -> 
+	    stat_set_flag(MAX_SCC_SUBGOALS_ACTION, XSB_ERROR)
+          ; (Action == warning ->  
+	    stat_set_flag(MAX_SCC_SUBGOALS_ACTION, XSB_WARNING)
+          ; (Action == suspend ->  
+	    stat_set_flag(MAX_SCC_SUBGOALS_ACTION, XSB_SUSPEND)
+            ; domain_error([error,', ',warning,', ',suspend],
+                        Action,set_prolog_flag/2,2,'max_scc_subgoals_action clause') ) ) ).
+set_xsb_flag_1(max_answers_for_subgoal, Max) :-!,
+	(Max =:= 0 -> 
+	  iso_flag(max_integer,MaxInt),
+	  stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL, MaxInt)
+	; stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL, Max) ).
+set_xsb_flag_1(max_answers_for_subgoal_action, Action) :-!,
+	(Action == error -> 
+	    stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_ERROR)
+          ; (Action == suspend ->  
+	    stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_SUSPEND)
+            ; domain_error([error,', ',suspend],
+                        Action,set_prolog_flag/2,2,'max_answers_for_subgoal_action clause') ) ).
+set_xsb_flag_1(max_memory,Max):-!,
+	(integer(Max),Max >= 0 -> 
+	     stat_set_flag(MAX_MEMORY,Max)
+	 ; real(Max),Max >= 0 -> 
+	     sys_main_memory(Mem),
+	     Ram1 is Max * Mem,
+	     Ram is floor(Ram1/1024),
+	     stat_set_flag(MAX_MEMORY,Ram)
+	 ;  domain_error(positive_number,Max,set_prolog_flag/2,2,max_memory_clause) ).
+% TES: Placeholder for now.
+set_xsb_flag_1(max_memory_action, Action) :-!,
+	(Action == error -> 
+	    stat_set_flag(MAX_MEMORY_ACTION, XSB_ERROR) ; 
+	 (Action == suspend -> 
+	    stat_set_flag(MAX_MEMORY_ACTION, XSB_SUSPEND)
+          ; domain_error([error,suspend],Action,set_prolog_flag/2,2,'max_memory_action clause') ) ).
+
+
 set_xsb_flag_1(ctrace, OnOff) :-!,
 	((OnOff == on ; OnOff == full) -> stat_set_flag(CTRACE_CALLS, 2)
      ; 	OnOff == partial -> stat_set_flag(CTRACE_CALLS, 1)
@@ -1074,10 +1278,6 @@ set_xsb_flag_1(unify_with_occurs_check, OnOff) :-!,
 	(OnOff == on -> 
 	    stat_set_flag(UNIFY_WITH_OCCURS_CHECK_FLAG, 1)
 	 ;  stat_set_flag(UNIFY_WITH_OCCURS_CHECK_FLAG, 0)).
-set_xsb_flag_1(max_memory,Max):-!,
-	(integer(Max),Max >= 0 -> 
-	    stat_set_flag(MAX_MEMORY,Max)
-	 ;  domain_error(positive_integer,Max,set_prolog_flag/2,2,max_memory_clause) ).
 set_xsb_flag_1(exception_pre_action, Mode) :- !,
          (Mode = print_incomplete_tables-> 
 	  stat_set_flag(EXCEPTION_PRE_ACTION, PRINT_INCOMPLETE_ON_ABORT)
@@ -1112,6 +1312,11 @@ set_xsb_flag_1(errors_with_position,Mode):- !,
 	( Mode = on -> 
 	    stat_set_flag(ERRORS_WITH_POSITION, 1)
 	 ;  (Mode = off, stat_set_flag(ERRORS_WITH_POSITION, 0))).
+set_xsb_flag_1(Type, _) :-
+	(	iso_flag(Type)
+	;	prolog_commons_flag(Type)
+	),
+	permission_error(modify,flag,Type,set_prolog_flag/2).
 set_xsb_flag_1(Type, _) :-  
 	domain_error(prolog_flag,Type,set_prolog_flag/2,1).
 

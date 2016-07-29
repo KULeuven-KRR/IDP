@@ -37,7 +37,7 @@ ALL = 	aggregs${OBJEXT} array${OBJEXT} assoc_xsb${OBJEXT} \
 	ugraphs${OBJEXT} wrapping${OBJEXT} write_term${OBJEXT} \
 	xsb_ciao${OBJEXT} xnmr${OBJEXT} justifyLP${OBJEXT} \
 	xsb_profiling${OBJEXT} xsb_lint_impexp${OBJEXT} \
-	dump_table${OBJEXT} term_abstract${OBJEXT} \
+	dump_table${OBJEXT} \
 	globalvar${OBJEXT} pairlist${OBJEXT} pretty_print${OBJEXT} \
 	prolog_db${OBJEXT}
 

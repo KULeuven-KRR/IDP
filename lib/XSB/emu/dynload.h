@@ -24,6 +24,6 @@
 
 
 
-extern byte *load_obj(char *, Psc, char *);
+extern byte *load_obj(CTXTdeclc char *, Psc, char *);
 
 /*----------------------------------------------------------------------*/

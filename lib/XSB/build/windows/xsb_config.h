@@ -1,7 +1,7 @@
 /* windows/xsb_config.h.  Generated from def_config.in by configure.  */
 /*  @configure_input@
 **
-**   This file contains definitions for Windows
+**   This file contains definitions for Windows 32 bit
 **
 **   Some variable may have to be changed manually.
 */
@@ -48,8 +48,8 @@
 
 
 #define WIN_NT 1
-#define RELEASE_DATE 2013-07-06
-#define XSB_VERSION "3.5.0 (Maotai)"
+#define RELEASE_DATE 2016-07-06
+#define XSB_VERSION "3.7. (Clan MacGregor)"
 
 /* this is used by many to check if config.h was included in proper order */
 #ifndef CONFIG_INCLUDED
@@ -60,7 +60,7 @@
 /* #undef FAST_FLOATS */
 
 /* Use local eval strategy. This is the default. */
-/* #undef LOCAL_EVAL */
+#define LOCAL_EVAL 1
 
 /* Define, if XSB is built with support for ORACLE DB */
 /* #undef ORACLE */
@@ -87,6 +87,12 @@
 
 /* Define if you have the mkdir function.  */
 #define HAVE_MKDIR 1
+
+/* VC++ defined snprintf and friends in VC 2015 (ver 1900) */
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+/* Define if you have the snprintf function.  */
+#define HAVE_SNPRINTF 1
+#endif
 
 /* Define if you have the strdup function.  */
 #define HAVE_STRDUP 1

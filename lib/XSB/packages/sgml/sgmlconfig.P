@@ -27,6 +27,7 @@
 #include "extensions_xsb.h"
 
 
+:- import xsb_running_under/1, force_rename_file/2 from packaging.
 :- import slash/1, str_cat/3 from machine.
 :- import search_module/6 from consult.
 :- import path_sysop/3, path_sysop/2, fmt_write_string/3 from file_io.
@@ -39,7 +40,7 @@
 '_$_make_sgmlH'(CC, CC_opts) :-
 	slash(Slash),
 	xsb_configuration(configuration, XSBconfiguration),
-	(('_$_sgml_running_under'(unix) ; '_$_sgml_running_under'(darwin)) ->
+	((xsb_running_under(unix) ; xsb_running_under(darwin)) ->
 	    xsb_configuration(loader_flags, LoaderFlagsBase),
 	    concat_atom([LoaderFlagsBase, ' -lcurl'], LoaderFlags),
 	    LD_flags = LoaderFlags
@@ -84,12 +85,10 @@
 				 f(SgmlDir, Slash, Slash, Slash, Slash)),
     fmt_write_string(CC_opts, ' %s -I %s -I %s %s', f(CCflags, ConfigDir, Curl, CurlObj)),
     str_cat(Module, XSB_OBJ_EXTENSION_ATOM, Objfile),
-    (('_$_sgml_running_under'(windows) ; '_$_sgml_running_under'(cygwin))
-    ->
+    ((xsb_running_under(windows) ; xsb_running_under(cygwin)) ->
 	fmt_write_string(ConfigSharedMod,
 			 '%s%s%s.dll', f(ConfigBinDir, Slash, Basename))
-    ; '_$_sgml_running_under'(darwin)
-    ->
+    ; xsb_running_under(darwin) ->
 	fmt_write_string(ConfigSharedMod,
 			 '%s%s%s.dylib', f(ConfigLibDir, Slash, Basename))
     ;
@@ -107,66 +106,43 @@
     %% If Module isn't compiled or is old --- recompile
     ;
 	'_$_make_sgmlH'(CC, CC_opts),
-	('_$_sgml_running_under'(windows) ->
+	(xsb_running_under(windows) ->
 	    [Basename],
-	    (path_sysop(exists,Objfile) -> '_$_sgml_force_rename'(Objfile, LibObjFile)
+	    (path_sysop(exists,Objfile) -> force_rename_file(Objfile, LibObjFile)
 	    ; true
 	    )
 
-	; '_$_sgml_running_under'(cygwin) ->
+	; xsb_running_under(cygwin) ->
 	    str_cat(Module, '.dll', SharedLib),
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	    '_$_sgml_force_rename'(SharedLib, ConfigSharedMod),
-	    '_$_sgml_force_rename'(Objfile, LibObjFile),
+	    force_rename_file(SharedLib, ConfigSharedMod),
+	    force_rename_file(Objfile, LibObjFile),
 	    str_cat(Module, '.o', ObjfileO),
 	    fmt_write_string(LibObjFileO,
 			     '%s%s%s.o', f(ConfigBinDir, Slash, Basename)),
-	    '_$_sgml_force_rename'(ObjfileO, LibObjFileO),
+	    force_rename_file(ObjfileO, LibObjFileO),
 	    str_cat(Module, '.a', ObjfileA),
 	    fmt_write_string(LibObjFileA,
 			     '%s%s%s.a', f(ConfigBinDir, Slash, Basename)),
-	    '_$_sgml_force_rename'(ObjfileA, LibObjFileA),
+	    force_rename_file(ObjfileA, LibObjFileA),
 	    str_cat(Module, '.def', ObjfileDef),
 	    fmt_write_string(LibObjFileDef,
 			     '%s%s%s.def', f(ConfigBinDir, Slash, Basename)),
-	    '_$_sgml_force_rename'(ObjfileDef, LibObjFileDef)
+	    force_rename_file(ObjfileDef, LibObjFileDef)
 
-	; '_$_sgml_running_under'(darwin) ->  %% MacOS
+	; xsb_running_under(darwin) ->  %% MacOS
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	    writeln(finished_consult),
-	    '_$_sgml_force_rename'(Objfile, LibObjFile),
+	    force_rename_file(Objfile, LibObjFile),
 	    writeln(renaming(Objfile,LibObjFile)),
 	    str_cat(Module, '.dylib', SharedLib),
-	    '_$_sgml_force_rename'(SharedLib,ConfigSharedMod),
+	    force_rename_file(SharedLib,ConfigSharedMod),
 	    writeln(rename(SharedLib,ConfigSharedMod))
 	; %% Other Unices
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	    '_$_sgml_force_rename'(Objfile, LibObjFile),
+	    force_rename_file(Objfile, LibObjFile),
 	    str_cat(Module, '.so', SharedLib),
-	    '_$_sgml_force_rename'(SharedLib,ConfigSharedMod)
+	    force_rename_file(SharedLib,ConfigSharedMod)
 	)
     ).
 
-%% Windows semantics for renaming is such that the op fails, 
-%% if the target exists
-'_$_sgml_force_rename'(Orig,Target) :-
-	(path_sysop(unlink,Target), !; true),
-	path_sysop(rename,Orig,Target).
-
-
-'_$_sgml_running_under'(cygwin) :-
-	xsb_configuration(architecture, A),
-	str_sub(cygwin, A),
-	!.
-'_$_sgml_running_under'(windows) :-
-	xsb_configuration(architecture, A),
-	str_sub(windows, A),
-	!.
-'_$_sgml_running_under'(darwin) :-
-	xsb_configuration(architecture, A),
-	str_sub(darwin, A),
-	!.
-'_$_sgml_running_under'(unix) :-
-	\+ '_$_sgml_running_under'(cygwin),
-	\+ '_$_sgml_running_under'(darwin),
-        \+ '_$_sgml_running_under'(windows).

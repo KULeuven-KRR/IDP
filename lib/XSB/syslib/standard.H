@@ -40,8 +40,9 @@
 	close/1,             close/2,	compare/3,	
 	compound/1,	cputime/1,	
 	directly_callable/1,
-	display/1, displayln/1, now/1, datime/1,
+   display/1, displayln/1, now/1, datime/1, local_datime/1,
 	get_date/6,
+	get_utcdate/6, get_localdate/6,
 	console_write/1, console_writeln/1,
 	error_write/1, error_writeln/1,
 	expand_term/2,	file_exists/1,	fail/0,	false/0,	fail_if/1,
@@ -86,8 +87,15 @@
         '@>='/2,	';'/2,		','/2,		'->'/2,         '?='/2,
 	':'/2,		'_$cutto'/1,	'_$savecp'/1.	
 :- export handle_interrupts/1.
-:- export timed_call/3.
-:- export timed_call/4.
+%:- export timed_call/3.
+%:- export timed_call/4.
+:- export get_timed_call_index/1.
+:- export timer_interrupt_trap/2.
+:- export timed_call/2,timed_call_modify/1.
+:- export current_timed_call/2.
+:- export remove_timed_call_state/1.
+:- export timed_call_cancel/0.
+
 :- export memory_bounded_call/3.
 
    :- export expand_atom/2.
@@ -104,15 +112,23 @@
    message/1,      messageln/1, message/2, messageln/2,
    warning/1,      warning/2,
    warningln/1,  % obsolete
-   abort/1,	abort/0,
+   abort/1,	abort/0, abort_all/1, abort_level/1,
 	set_timer/1,
    (import)/1,	(multifile)/1, '_$multifile'/1.
 :- export cleanup_handler/2.
+:- export statistics/2.
+:- export use_module/3.
+:- export  '_$timed_call_rep_handler'/3.
+:- export  '_$timed_call_max_handler'/5.
+:- export  '_$timed_call_rep_max_handler'/7.
+:- export bounded_call/4.
+:- export bounded_call/3.
+:- export get_interpreter_index/1.
 
-:- import (dynamic)/1, asserta/1, assert0/4 from assert.
-:- import member/2,append/3,comma_member/2 from basics.
+:- import (dynamic)/1, asserta/1, assert0/4, retract/1 from assert.
+:- import member/2,append/3,comma_member/2,memberchk/2 from basics.
 :- import consult/1, reconsult/1 from consult.
-:- import predicate_property/2 from curr_sym.
+:- import predicate_property/2, current_op/3 from curr_sym.
 :- import dcg/2 from dcg.
 %%:- import eval/2 from eval.
 :- import file_open/3, file_open/4, file_close/2, 
@@ -121,19 +137,20 @@
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_aliases/4, remove_alias/3,
   fd2iostream/3      from file_io.
 :- import fmt_write/2 from file_io.
+:- import file_function/3, xsb_stream_lock/1,xsb_stream_unlock/1 from file_io.
 
-:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3, '_$index'/3,
+:- import add_ops/3, add_index/3, '_$index'/3,
    add_trie_index/1  from file_op.
 
 :- import add_table/1, add_incr_table/2 from tables.
 
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import clause/2, retractall/1 from assert.
-:- import domain_error/4, domain_error/5, check_atom/3, check_nonvar/3,check_var/3, 
-	  check_ground/3,resource_error/2,
+   :- import domain_error/4, domain_error/5, check_atom/3, check_nonvar/3,check_var/3, check_callable/3,
+	  check_ground/3,resource_error/2, representation_error/3,
    type_error/4, permission_error/4, 
-   instantiation_error/3, instantiation_error/2, check_nonneg_integer/3, 
-	  misc_error/1, table_error/1
+   instantiation_error/3, instantiation_error/2, check_nonneg_integer/3, check_pos_integer/3,
+	  misc_error/1,misc_error/2, table_error/1
      from error_handler.
 :- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
@@ -145,11 +162,14 @@
 	  psc_name/2, psc_type/2, psc_set_shared/2,
 	  stat_set_flag/2, stat_flag/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, stat_walltime/1,
-%str_len/2,
+          %%str_len/2,
           term_psc/2, term_new/2, term_new_mod/3, term_type/2,
-	  verify_attribute_handler/4
+          cancel_sleeper_thread/0,
+          verify_attribute_handler/4, conget/2
 	  from machine.
+:- import cancel_sleeper_thread/0 from machine.
 :- import calln/3,calln/4,calln/5,calln/6,calln/7,calln/8,calln/9,calln/10,calln/11,calln/12 from machine.
+:- import sys_syscall/5,sys_syscall/9 from machine.
 
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
 	  '$$clean_up_block'/1, xwam_state/2
@@ -160,7 +180,7 @@
 :- import calculate_singleton/3 from singlton.
 :- import concat_atom/2  from string.
 :- import file_read/2, file_read/3 from xsb_read.
-:- import file_write0/2, file_write/2, file_write_prolog/2, 
+:- import file_write0/2, file_write/2, file_write_prolog/2, l_write/3,
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
 :- import xsb_thread_self/1 from thread.

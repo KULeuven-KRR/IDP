@@ -2,6 +2,7 @@
 
 :- document_export initial_cdf_flag/2,cdf_index/3,cdf_flag/1,
 	                 component_table_ext/3, component_table_int/3,
+			 assert_mti/1, retractall_mti/1,
 			 default_user_error_handler/1.
 
 :- comment(module,"This module contains all facts, tables etc. that
@@ -130,11 +131,11 @@ indices can be changed, if necessary to give better performance.  ").
 %cdf_index(_,_,_,_):- !,fail.
 %cdf_index(_,_,_):- !,fail.
 
-cdf_index(isa_ext,2,[*(1),*(2)]).  % mti (delete if mti)
+%cdf_index(isa_ext,2,[*(1),*(2)]).  % mti (delete if mti)
 
 %cdf_index(isa_ext,2,[*(1),*(2)],65537).
 %%cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
-cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(3)]).
+cdf_index(allAttr_ext,3,[*(1) + *(2),*(1),*(3),*(2)]).
 %%cdf_index(hasAttr_ext,3,[*(1) + *(2),*(1),*(2) + *(3)]).
 %%cdf_index(hasAttr_ext,3,[*(1) + *(2) + *(3),*(1) + *(2),*(2) + *(3)]).
 
@@ -159,23 +160,23 @@ cdf_index(dlTable,11,trie).
 
 
 % mti (include for mti)
-%:- dynamic hasAttr_ext_123/3, hasAttr_ext_231/3.
-%:- index(hasAttr_ext_123/3,trie).
-%:- index(hasAttr_ext_231/3,trie).
-%:- dynamic isa_ext_12/2, isa_ext_21/2.
-%:- index(isa_ext_12/2,trie).
-%:- index(isa_ext_21/2,trie).
+:- dynamic hasAttr_ext_123/3, hasAttr_ext_231/3.
+:- index(hasAttr_ext_123/3,trie).
+:- index(hasAttr_ext_231/3,trie).
+:- dynamic isa_ext_12/2, isa_ext_21/2.
+:- index(isa_ext_12/2,trie).
+:- index(isa_ext_21/2,trie).
 
-%assert_mti(hasAttr_ext(A,B,C)) :- !,
-%	assert(hasAttr_ext_123(A,B,C)),
-%	assert(hasAttr_ext_231(B,C,A)).
-%assert_mti(isa_ext(A,B)) :- !,
-%	assert(isa_ext_12(A,B)). 
-%	assert(isa_ext_21(B,A)).
+assert_mti(hasAttr_ext(A,B,C)) :- !,
+	assert(hasAttr_ext_123(A,B,C)),
+	assert(hasAttr_ext_231(B,C,A)).
+assert_mti(isa_ext(A,B)) :- !,
+	assert(isa_ext_12(A,B)),
+	assert(isa_ext_21(B,A)).
 assert_mti(G) :- asserta(G).
 
-%retract_mti(hasAttr_ext(A,B,C)) :- !, retract(hasAttr_ext_123(A,B,C)), retract(hasAttr_ext_231(B,C,A)).
-%retract_mti(isa_ext(A,B)) :- !, retract(isa_ext_12(A,B)) /*, retract(isa_ext_21(B,A))*/ .
+retract_mti(hasAttr_ext(A,B,C)) :- !, retract(hasAttr_ext_123(A,B,C)), retract(hasAttr_ext_231(B,C,A)).
+retract_mti(isa_ext(A,B)) :- !, retract(isa_ext_12(A,B)), retract(isa_ext_21(B,A)).
 retract_mti(G) :- retract(G).
 
 retractall_mti(G) :-
@@ -188,10 +189,21 @@ retractall_mti(G) :-
 		)
 	).
 
-%retractall_mti_mg(isa_ext(_,_)) :- !, retractall(isa_ext_12(_,_)) /*,retractall(isa_ext_21(_,_)) */ . 
+retractall_mti_mg(isa_ext(_,_)) :- !, retractall(isa_ext_12(_,_)),retractall(isa_ext_21(_,_)). 
 retractall_mti_mg(G) :- retractall(G).
 
-%hasAttr_ext(A,B,C) :- (ground(C) -> hasAttr_ext_231(B,C,A) ; hasAttr_ext_123(A,B,C)).
+hasAttr_ext(A,B,C) :- (ground(A) -> hasAttr_ext_123(A,B,C) ; hasAttr_ext_231(B,C,A)).
 
-%isa_ext(A,B) :- (ground(B) -> isa_ext_21(B,A) ; isa_ext_12(A,B)).
+isa_ext(A,B) :- (ground(B) -> isa_ext_21(B,A) ; isa_ext_12(A,B)).
 
+/******** end _mti indexing code **************/
+
+/******** start regular indexing code *****
+
+assert_mti(G) :- asserta(G).
+
+retract_mti(G) :- retract(G).
+
+retractall_mti(G) :- retractall(G).
+
+********* end regular indexing code ***********/

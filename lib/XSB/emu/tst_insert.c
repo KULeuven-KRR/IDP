@@ -45,7 +45,7 @@
 #include "thread_xsb.h"
 #include "memory_xsb.h"
 #include "struct_intern.h"
-
+#include "tries.h"
 
 
 /*===========================================================================
@@ -115,23 +115,108 @@ inline static  TSINptr tsiHeadInsert(CTXTdeclc TSTHTptr ht, TSTNptr tstn) {
  *  sibling list is moved to a hashing format, Entries are created for
  *  the nodes one at a time, but this node-processing order is not
  *  guaranteed to coincide with time stamp order.
+ *
+ *  (DSW) This became a problem for me (May 2015), so I added one
+ *  level of "skip" nodes, which allows faster access to later nodes.
+ *  I had intended to make it recursive, to guarantee log insertion
+ *  time, but my 200K example, which took minutes, required just 4
+ *  skip nodes and was reduced to milliseconds, so I lazily decided to
+ *  leave it at just one level.  A message is printed if another level
+ *  of skip nodes shold be generated.  If it shows up, and I'm still
+ *  conscious, let me know and I'll extend the algorithm.
  */
+
+/* structures for skip lists: */
+/* max to run before adding a skip node; must be greater than
+   MAX_SIBLING_LEN (currently 8); otw must init it for those calls,
+   too */
+#define SN_MAX_DISTANCE 10
+
+#ifndef MULTI_THREAD
+SL_node_ptr SL_header = NULL; // currently use just 1 (turn into array if nec)
+#endif
+
+#define new_SL_node(SN_new)  \
+     SN_new = mem_alloc(sizeof(SL_node),OTHER_SPACE);
+
+#define free_SL_nodes						\
+  do {								\
+    SL_node_ptr SN_node = SL_header;				\
+    SL_node_ptr SN_next;					\
+    while (SN_node != NULL) {					\
+      SN_next = SN_node->SL_next;				\
+      mem_dealloc(SN_node,sizeof(SL_node),OTHER_SPACE);		\
+      SN_node = SN_next;					\
+    }								\
+    SL_header = NULL;						\
+  } while(0)
 
 inline static  TSINptr tsiOrderedInsert(CTXTdeclc TSTHTptr ht, TSTNptr tstn) {
 
   TSINptr nextTSIN;     /* Steps thru each TSIN inspecting time stamp */
   TSINptr newTSIN;      /* To be inserted after nextTSIN */
-
+  TSINptr midTSIN;	/* To find middle for new skip node */
+  SL_node_ptr SN_prev;	/* previous when running skip node list */
+  SL_node_ptr SN_next;	/* next when running skip node list */
+  SL_node_ptr SN_new;	/* to old new skip node addr */
+  int SN_cnt;		/* count to see if need a new skip node */
 
   New_TSIN(newTSIN, tstn);
 
   /* Determine proper position for insertion
      --------------------------------------- */
-  nextTSIN = TSTHT_IndexHead(ht);
-  while ( IsNonNULL(nextTSIN) &&
-	 (TSIN_TimeStamp(newTSIN) < TSIN_TimeStamp(nextTSIN)) )
-    nextTSIN = TSIN_Next(nextTSIN);
+  /* DSW (6/7/2015): Added 1 level of "skip" nodes.  Fixes my problem
+     of 200K inserts.  Message given if should recurse levels.  Turn
+     SN_header into arrow SN_headers[10] */
 
+  if (SL_header != NULL) { 
+    // there is a skip-node list, so run it
+    SN_cnt = 0;
+    SN_prev = NULL;
+    SN_next = SL_header;
+    while ((SN_next != NULL) && 
+	   (TSIN_TimeStamp(newTSIN) < SN_next->SL_ts)) {
+      SN_cnt++;
+      SN_prev = SN_next;
+      SN_next = SN_next->SL_next;
+    }
+    if (SN_cnt > SN_MAX_DISTANCE)  // if happens, then add recursive levels
+      // oops, should have another (i.e. all) levels, punt until needed
+      printf("Potential performance problem in tsiOrderedInsert in tst_insert.c\n");
+    if (SN_prev == NULL) nextTSIN = TSTHT_IndexHead(ht); 
+    else nextTSIN = SN_prev->SL_down;
+  } else { // start at beginning of ordered list
+    SN_prev = NULL;
+    nextTSIN = TSTHT_IndexHead(ht);
+  }
+
+  /* scan base ordered list */
+  SN_cnt = 0;
+  while ( IsNonNULL(nextTSIN) &&
+	  (TSIN_TimeStamp(newTSIN) < TSIN_TimeStamp(nextTSIN)) ) {
+    SN_cnt++;
+    nextTSIN = TSIN_Next(nextTSIN);
+  }
+
+  if (SN_cnt > SN_MAX_DISTANCE) { // create a new skip node
+    // printf("max skiplist distance exceeded: %d\n",SN_cnt);
+    if (SN_prev == NULL) midTSIN = TSTHT_IndexHead(ht);
+    else midTSIN = SN_prev->SL_down;
+    while (SN_cnt > 0) {
+      SN_cnt -= 2;
+      midTSIN = TSIN_Next(midTSIN);
+    }
+    new_SL_node(SN_new);
+    SN_new->SL_down = midTSIN;
+    SN_new->SL_ts = TSIN_TimeStamp(midTSIN);
+    if (SN_prev == NULL) {
+      SN_new->SL_next = SL_header;
+      SL_header = SN_new;
+    } else {
+      SN_new->SL_next = SN_prev->SL_next;
+      SN_prev->SL_next = SN_new;
+    }
+  }
 
   /* Splice newTSIN between nextTSIN and its predecessor
      --------------------------------------------------- */
@@ -239,17 +324,21 @@ void tstCreateTSIs(CTXTdeclc TSTNptr pTST) {
   /*** For each hash table ... ***/
   for ( ht = TSTRoot_GetHTList(pTST);  IsNonNULL(ht);
         ht = TSTHT_InternalLink(ht) ) {
-
+    SL_header = NULL;     // init skip list here (same list for same ht)
     /*** For each bucket in this hash table ... ***/
     for ( pBucket = TSTHT_BucketArray(ht), bucketNum = 0;
 	  (unsigned int)bucketNum < TSTHT_NumBuckets(ht);
-	  pBucket++, bucketNum++ )
+	  pBucket++, bucketNum++ ) {
 
       /*** For each TSTN in a bucket... ***/
-      for ( tstn = *pBucket;  IsNonNULL(tstn);  tstn = TSTN_Sibling(tstn) )
+      for ( tstn = *pBucket;  IsNonNULL(tstn);  tstn = TSTN_Sibling(tstn) ) {
 
 	/*** Create a TSIN for each symbol (TSTN) ***/
 	TSTN_SetTSIN(tstn,tsiOrderedInsert(CTXTc ht,tstn));
+      }
+    }
+    free_SL_nodes;  // clean up any created skip nodes
+    // cleanup skip list here (since moving to new ht)
   }
 }
 

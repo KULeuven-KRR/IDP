@@ -119,8 +119,9 @@ SRCS =	auxlry.c biassert.c builtin.c call_xsb.c cinterf.c conc_compl.c \
 	tst_insert.c tst_retrv.c tst_unify.c tst_utils.c varstring.c \
 	ubi_BinTree.c ubi_SplayTree.c \
 	hashtable.c hashtable_itr.c \
-	url_encode.c \
-	incr_xsb.c call_graph_xsb.c
+	sha1.c md5.c \
+	url_encode.c getMemorySize.c \
+	incr_xsb.c call_graph_xsb.c 
 
 
 ORASRCS = $(SRCS) orastuff.c
@@ -142,9 +143,12 @@ OBJS =	auxlry.o biassert.o builtin.o call_xsb.o cinterf.o conc_compl.o \
 	tst_insert.o tst_retrv.o tst_unify.o tst_utils.o varstring.o \
 	ubi_BinTree.o ubi_SplayTree.o \
 	hashtable.o hashtable_itr.o \
-	url_encode.o \
+	sha1.o md5.o \
+	url_encode.o getMemorySize.o \
 	incr_xsb.o call_graph_xsb.o 
 
+# if emuMakefile.h exists, include it. Assume that it contains the var OTHEROBJS
+-include $(arch_config_prefix)/emuMakefile.h
 
 allOBJS = main_xsb.o ${OBJS} ${ODBCOBJ} ${INTERPROLOGOBJ}
 
@@ -157,40 +161,40 @@ init::
 
 xsb:: init $(allOBJS)
 	@echo ""; echo "Making XSB executable $(EXECUTABLE) "; echo ""
-	@echo -e "\t[$(CC)] -o $(EXECUTABLE)"
+	@echo -e "\t[$(CC)] -o $(EXECUTABLE) $(LDFLAGS) "
 	@cd $(emudir); \
-		$(CC) -o $(EXECUTABLE) $(allOBJS) $(LDFLAGS)
+		$(CC) -o $(EXECUTABLE) $(allOBJS) ${OTHEROBJS} $(LDFLAGS)
 
 xsbora:: init $(allORAOBJS)
 	@echo ""; \
 	  echo "Making XSB executable $(EXECUTABLE) with support for Oracle"; \
 	  echo ""
-	@echo -e "\t[$(CC)] -o $(EXECUTABLE)"
+	@echo -e "\t[$(CC)] -o $(EXECUTABLE) $(LDFLAGS) "
 	@cd $(emudir); \
-		$(CC) -o $(EXECUTABLE) $(allORAOBJS) $(LDFLAGS)
+		$(CC) -o $(EXECUTABLE) $(allORAOBJS) ${OTHEROBJS} $(LDFLAGS)
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
 xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@echo ""; \
 	   echo "Making a C-callable XSB module"; \
-	   echo "@LD@ @MEMFLAG@ -o xsb.o $(XSBMOD_LDFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}" ; \
+	   echo "@LD@ @MEMFLAG@ -o $(LIB_OBJECTS) $(XSBMOD_LDFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} ${OTHEROBJS}" ; \
 	   echo ""
-	@@LD@ @MEMFLAG@ -o xsb.o $(XSBMOD_LDFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
-	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+	@@LD@ @MEMFLAG@ -o $(LIB_OBJECTS) $(XSBMOD_LDFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} ${OTHEROBJS}
+	@cp $(LIB_OBJECTS) $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 xsbdynmod::
 	@echo "Making XSB Shared Library $(bindir)/libxsb.$(SHAREDLIB_EXTENSION)"
-	@@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LDFLAGS)  -faltivec -fPIC $(XSBMOD_LDFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} -lm
+	@@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LDFLAGS)  -fPIC $(XSBMOD_LDFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} -lm
 	@cp libxsb.$(SHAREDLIB_EXTENSION) $(bindir) 2>/dev/null || echo ""
 
 # same as xsbmod, but with oracle support
 xsboramod:: $(ORAOBJS)
 	@echo ""; \
-	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o with support for Oracle"; \
+	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/$(LIB_OBJECTS) with support for Oracle"; \
 	   echo ""
-	@@LD@ -o xsb.o $(XSBMOD_LDFLAGS) -r $(ORAOBJS)
-	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
+	@@LD@ -o $(LIB_OBJECTS) $(XSBMOD_LDFLAGS) -r $(ORAOBJS) ${OTHEROBJS}
+	@cp $(LIB_OBJECTS) $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 
 depend::
@@ -200,7 +204,7 @@ depend::
 #
 # create a new DLL library in cygwin (compiled with -mno-cygwin) environment
 #
-# LIB_OBJECTS: xsb.o, initdll_xsb.o files
+# LIB_OBJECTS: xsb.o 
 # DLLNAME: name of the new dll
 # DEFFILE is the name of the definitions file.
 # BASEFILE temporary

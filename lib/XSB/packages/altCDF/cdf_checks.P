@@ -194,7 +194,7 @@ to and loading them from a component.
 
 :- import cdf_flags/2 from usermod.
 
-:- document_import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
+:- import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
 	   maxAttr_ext/4, minAttr_ext/4 from usermod.
 
 :- import allAttr/3, classHasAttr/3, hasAttr/3,
@@ -531,7 +531,7 @@ get_component_fact(Name,Fact):-
 	\+ system_component(Name).
 
 %:- [cdftp_chkCon].
-classify_if_necessary_term(necessCond_ext(First,Vid),Upd1,Upd):-!,
+classify_if_necessary_term(necessCond_ext(_First,_Vid),_Upd1,_Upd):-!,
 	writeln(userout,'ceMember/2 is not defined.  This is stopgap until someone figures out what it should be....'),
 	fail.   % when figure out what ceMember is supposed to be/do, fix this.
 %%	findall(Id,ceMember(Vid,Id),Ids),
@@ -897,12 +897,14 @@ check_type_dl_head(Head,Context) :-
 		    [Head, ' does not have proper sorts and cannot be added.']),
 	fail.
 	
-dl_type_table(exists(R,C),check_ind_types(_,exists(R,C),[[rid],[cid]])).
-dl_type_table(exists_immed(R,C),check_ind_types(_,exists_immed(R,C),[[rid],[cid]])).
+%%dl_type_table(exists(R,C),check_ind_types(_,exists(R,C),[[rid],[cid]])).
+dl_type_table(exists(R,_C),check_ind_types(_,exists(R,_),[[rid],[cid]])).  %hack for now till figure out how to handle nested exists...
+dl_type_table(exists_immed(R,C),check_ind_types(_,exists_immed(R,_C),[[rid],[cid]])).
 dl_type_table(all(R,C),check_ind_types(_,all(R,C),[[rid],[cid]])).
 dl_type_table(atLeast(N,R,C),check_ind_types(_,atLeast(N,R,C),[posint,[rid],[cid]])).
 dl_type_table(atMost(N,R,C),check_ind_types(_,atMost(N,R,C),[posint,[rid],[cid]])).
 dl_type_table(atMost(N,R,C),check_ind_types(_,atMost(N,R,C),[posint,[rid],[cid]])).
+dl_type_table(component(_),=(_,_)). % no checking
 dl_type_table(call(_),=(_,_)). % no checking
 dl_type_table(is(_,_),=(_,_)). % no checking for now
 dl_type_table(dlEval(_,_),=(_,_)). % no checking??

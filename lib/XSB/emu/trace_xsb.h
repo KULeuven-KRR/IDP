@@ -26,16 +26,7 @@
 #include "basicdefs.h"
 #include "basictypes.h"
 
-struct trace_str {		/* for tracing purpose below */
-    double time_count;
-};
-
-extern struct trace_str tds;
-
-extern void total_stat(CTXTdeclc double);
-extern void stat_inusememory(CTXTdeclc double,int);
-extern void perproc_reset_stat(void), reset_stat_total(void); 
-
-extern void perproc_stat(void); 
+extern void init_statistics(void);
+extern void print_statistics(CTXTdeclc int);
 
 #endif /* __TRACE_XSB_H__ */

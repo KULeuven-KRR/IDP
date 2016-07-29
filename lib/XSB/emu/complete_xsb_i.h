@@ -42,6 +42,19 @@
     cs_ptr = prev_compl_frame(cs_ptr);					\
       }
 
+#define setup_to_return_completed_answers(SGF,tsize)			\
+  do {									\
+    if (!subg_is_answer_completed(SGF) && flags[ANSWER_COMPLETION]) {	\
+      flags[ANSWER_COMPLETION] = 0;					\
+      reg[1] = makeint(SGF);						\
+      reg[2] = build_ret_term_reverse(CTXTc tsize, trieinstr_unif_stk);	\
+      /*      lpcreg = (byte *) subg_ans_root_ptr(SGF);	*/		\
+      lpcreg = (pb)get_ep(answer_completion_psc);			\
+    } else {								\
+      lpcreg = (byte *) subg_ans_root_ptr(SGF);				\
+    }									\
+  } while(0)
+
 /*----------------------------------------------------------------------*/
 
 XSB_Start_Instr(check_complete,_check_complete)
@@ -180,10 +193,12 @@ XSB_Start_Instr(check_complete,_check_complete)
        and has_answer_code be false? */
       /* leader has non-returned answers? */
       if (has_answer_code(subgoal) && (subg_answers(subgoal) > COND_ANSWERS)) {
+	int tsize;
 	reclaim_incomplete_table_structs(subgoal);
 	/* schedule return of answers from trie code */
 	SetupReturnFromLeader(CTXTc orig_breg, cs_ptr, subgoal);
-	lpcreg = (byte *) subg_ans_root_ptr(subgoal);
+	get_template_size(tsize,int_val(*tcp_template(orig_breg)));
+	setup_to_return_completed_answers(subgoal,tsize);
 	//	printf("finished completion");
 	XSB_Next_Instr();
       } else {  /* There are no answers to return */

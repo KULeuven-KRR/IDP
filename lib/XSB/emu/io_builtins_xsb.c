@@ -122,19 +122,19 @@ char *p_charlist_to_c_string(CTXTdeclc prolog_term, VarString*, char*, char*);
         switch (current_fmt_spec->size) {	\
 	/* the 1st snprintf in each case finds the #bytes to be formatted */ \
         case 1: bytes_formatted=snprintf(NULL,0,current_fmt_spec->fmt,arg); \
-		XSB_StrEnsureSize(&OutString,OutString.length+bytes_formatted+1);\
+	  XSB_StrEnsureSize(&OutString,OutString.length+(int)bytes_formatted+1); \
 	        bytes_formatted=snprintf(OutString.string+OutString.length, \
 					 bytes_formatted+1, \
 					 current_fmt_spec->fmt, arg); \
 	        break; \
 	case 2: bytes_formatted=snprintf(NULL,0,current_fmt_spec->fmt,width,arg); \
-		XSB_StrEnsureSize(&OutString,OutString.length+bytes_formatted+1);\
+	  XSB_StrEnsureSize(&OutString,OutString.length+(int)bytes_formatted+1); \
 	        bytes_formatted=snprintf(OutString.string+OutString.length,\
 					 bytes_formatted+1, \
 					 current_fmt_spec->fmt, width, arg); \
 	        break; \
 	case 3: bytes_formatted=snprintf(NULL,0,current_fmt_spec->fmt,width,precision,arg); \
-		XSB_StrEnsureSize(&OutString,OutString.length+bytes_formatted+1);\
+	  XSB_StrEnsureSize(&OutString,OutString.length+(int)bytes_formatted+1); \
                 bytes_formatted=snprintf(OutString.string+OutString.length, \
 					 bytes_formatted+1, \
 					 current_fmt_spec->fmt, \
@@ -301,7 +301,7 @@ xsbBool fmt_write(CTXTdecl)
     if (current_fmt_spec->type == '.') {
       PRINT_ARG("");
       if (i < Arity)
-	xsb_warn("[FMT_WRITE] More arguments than format specifiers");
+	xsb_warn(CTXTc "[FMT_WRITE] More arguments than format specifiers");
       goto EXIT_WRITE;
     }
 
@@ -461,7 +461,7 @@ xsbBool fmt_write_string(CTXTdecl)
     if (current_fmt_spec->type == '.') {
       SPRINT_ARG("");
       if (i < Arity)
-	xsb_warn("[FMT_WRITE_STRING] More arguments than format specifiers");
+	xsb_warn(CTXTc "[FMT_WRITE_STRING] More arguments than format specifiers");
       goto EXIT_WRITE_STRING;
     }
 
@@ -631,7 +631,7 @@ xsbBool fmt_read(CTXTdecl)
     case '.': /* last format substring (and has no conversion spec) */
       curr_assignment = fscanf(fptr,  current_fmt_spec->fmt, "");
       if (isref(Arg))
-	xsb_warn("[FMT_READ] More arguments than format specifiers");
+	xsb_warn(CTXTc "[FMT_READ] More arguments than format specifiers");
       goto EXIT_READ;
     case 's':
       XSB_StrEnsureSize(&StrArgBuf, MAX_IO_BUFSIZE);
@@ -891,6 +891,16 @@ static   bld_float(addr,value);
 }
 #endif
 
+static inline void bld_boxedint_here(CTXTdeclc CPtr *h, CPtr addr, Integer value) {
+  Integer temp_value = value;
+  new_heap_functor((*h),box_psc);
+  bld_int(*h,((ID_BOXED_INT << BOX_ID_OFFSET ) | 0 ));
+  bld_int((*h)+1,INT_LOW_24_BITS(temp_value));
+  bld_int((*h)+2,((temp_value) & LOW_24_BITS_MASK)); 
+  *(h) = (*h)+3;
+  cell(addr) = makecs((*h)-4);
+}
+
 /* read canonical term, and return prev psc pointer, if valid */
 Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 {
@@ -904,6 +914,7 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
   Integer retpscptr;
   Pair sym;
   Float float_temp;
+  Integer integer_temp;
   Psc headpsc, termpsc;
   char *cvar;
   int postopreq = FALSE, varfound = FALSE;
@@ -928,7 +939,8 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 
   prevchar = 10;
   while (1) {
-    token = GetToken(CTXTc stream,prevchar); // dswdebug
+    token = GetToken(CTXTc stream,prevchar);
+    //print_token(token->type,token->value);
 	prevchar = token->nextch;
 	if (postopreq) {  /* must be an operand follower: , or ) or | or ] */
 	    if (token->type == TK_PUNC) {
@@ -1004,7 +1016,7 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 		  CPtr this_term, prev_tail;
 		  funtop--;
 		  if (funstk[funtop].funtyp == FUNFUN || funstk[funtop].funtyp == FUNCOMMALIST)
-			return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
+		    return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
 		  ensure_term_space(h,2);
 		  this_term = h;
 		  op1 = funstk[funtop].funop;
@@ -1052,16 +1064,24 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 		  postopreq = FALSE;
 		} else if (*token->value == '|') {
 		  postopreq = FALSE;
-		  if (funstk[funtop-1].funtyp != FUNLIST) 
-			return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
+		  if (funstk[funtop-1].funtyp != FUNLIST)
+		    return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
 		  funstk[funtop-1].funtyp = FUNDTLIST;
 		} else return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
-      } else {  /* check for neg numbers and backpatch if so */
-		if (opstk[optop-1].typ == TK_ATOM && 
+	    } else {  /* check for neg numbers and backpatch if so */
+	        if (opstk[optop-1].typ == TK_ATOM && 
 				!strcmp("-",string_val(opstk[optop-1].op))) {
 		  if (token->type == TK_INT) {
-			opstk[optop-1].typ = TK_INT;
-			opstk[optop-1].op = makeint(-(*(int *)token->value));
+		    integer_temp = -(*(Integer *)(token->value));
+		    if (int_overflow(integer_temp)) {
+		      ensure_term_space(h,4);
+		      size +=4; 
+		      opstk[optop-1].typ = TK_FUNC;
+		      bld_boxedint_here(CTXTc &h, &opstk[optop-1].op, integer_temp);
+		    } else {
+		      opstk[optop-1].typ = TK_INT;
+		      opstk[optop-1].op = makeint(integer_temp);
+		    }
 		  } else if (token->type == TK_REAL) {
 			float_temp = (Float) *(double *)(token->value);
 #ifdef FAST_FLOATS
@@ -1075,15 +1095,15 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 #endif
 		  } else return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
 		} else return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
-      }
-    } else {  /* must be an operand */
+	    }
+	} else {  /* must be an operand */
       switch (token->type) {
       case TK_PUNC:
 		if (*token->value == '[') {
 		  if(token->nextch == ']') {
 		        if (optop >= opstk_size) expand_opstk;
 			token = GetToken(CTXTc stream,prevchar);
-			/* print_token(token->type,token->value); */
+			//print_token(token->type,token->value);
 			prevchar = token->nextch;
 			opstk[optop].typ = TK_ATOM;
 			opstk[optop].op = makenil;
@@ -1103,7 +1123,7 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 		  funtop++;
 		  break;
 		}
-	  /* let a punctuation mark be a functor symbol */
+	  /* fall through to let a punctuation mark be a functor symbol */
       case TK_FUNC:
 	        if (funtop >= funstk_size) expand_funstk;
 		funstk[funtop].fun = (char *)string_find(token->value,1);
@@ -1112,9 +1132,10 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 		funtop++;
 
 		if (token->nextch != '(')
-			return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
-		token = GetToken(CTXTc stream,prevchar);
-		/* print_token(token->type,token->value); */
+		  return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
+		token = GetToken(CTXTc stream,prevchar); /* eat open par */
+		if (token->nextch == ')') postopreq = TRUE; /* handle f() form */
+		//print_token(token->type,token->value);
 		prevchar = token->nextch;
 		break;
       case TK_VVAR:
@@ -1171,8 +1192,15 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 		break;
       case TK_INT:
 	        if (optop >= opstk_size) expand_opstk;
-		opstk[optop].typ = TK_INT;
-		opstk[optop].op = makeint(*(Integer *)token->value);
+		integer_temp = *(Integer *)(token->value);
+		if (int_overflow(integer_temp)) {
+		  ensure_term_space(h,4);
+		  opstk[optop].typ = TK_FUNC;
+		  bld_boxedint_here(CTXTc &h, &opstk[optop].op, integer_temp);
+		} else {
+		  opstk[optop].typ = TK_INT;
+		  opstk[optop].op = makeint(integer_temp);
+		}
 		optop++;
 		postopreq = TRUE;
 		break;
@@ -1230,14 +1258,15 @@ Integer read_canonical_term(CTXTdeclc int stream, int return_location_code)
 	return 0;
       default: return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
       }
-    }
-    if (funtop == 0) {  /* term is finished */
+	}
+    if (token->type == TK_ATOM && !strcmp(token->value,"-")) {
+    } else if (funtop == 0) {  /* term is finished */
       token = GetToken(CTXTc stream,prevchar);
-      /* print_token(token->type,token->value); */
+      //print_token(token->type,token->value);
       prevchar = token->nextch; /* accept EOF as end_of_clause */
-      if (token->type != TK_EOF && token->type != TK_EOC) 
+      if (token->type != TK_EOF && token->type != TK_EOC) {
 	return read_can_error(CTXTc stream,prevchar,prologvar,findall_chunk_index);
-
+      }
       if (opstk[0].typ != TK_VAR) {  /* if a variable, then a noop */
 	if (isnonvar(prologvar)) 
 	  xsb_abort("[READ_CANONICAL] Argument must be a variable");
@@ -1501,7 +1530,7 @@ void next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state
    whether a file pointer is present or not, rather than a file and
    I/O mode, as below. */
 
-int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode, int charset)
+int xsb_intern_fileptr(CTXTdeclc FILE *fptr, char *context,char* name,char *strmode, int charset)
 {
   int i;
   char mode = '\0';
@@ -1525,7 +1554,7 @@ int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode, int c
 
   for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES && open_files[i].file_ptr != NULL; i++);
   if (i == MAX_OPEN_FILES) {
-    xsb_warn("[%s] Too many open files", context);
+    xsb_warn(CTXTc "[%s] Too many open files", context);
     return -1;
   } else {
     open_files[i].file_ptr = fptr;
@@ -1543,7 +1572,7 @@ int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode, int c
    is to handle possible Posix I/O modes, of which there is
    redundancy. */
 
-int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode,int opennew)
+int xsb_intern_file(CTXTdeclc char *context,char *addr, int *ioport,char *strmode,int opennew)
 {
   FILE *fptr;			/* working variable */
   int i, first_null, stream_found; 
@@ -1587,7 +1616,7 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode,int open
        i < MAX_OPEN_FILES ;
        i++) printf("File Ptr %p Name %s\n",open_files[i].file_ptr, open_files[i].file_name);
 
-    xsb_warn("[%s] Too many open files", context);
+    xsb_warn(CTXTc "[%s] Too many open files", context);
     *ioport = 0;
     return -1;
   }
@@ -1617,7 +1646,7 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode,int open
       *ioport = first_null;
       return 0;
     }  else {
-	xsb_warn("FILE_OPEN: File %s is a directory, cannot open!", addr);
+	xsb_warn(CTXTc "FILE_OPEN: File %s is a directory, cannot open!", addr);
 	fclose(fptr);
 	return -1;
     }
@@ -1662,7 +1691,7 @@ xsbBool quotes_are_needed(char *string)
   }
 
   if (string[1] == '\0') {
-    if ((int) string[0] == 33 /*--- || (int) string[0] == 59 ---*/)
+    if ((int) string[0] == 33)
       return FALSE;
     if ((int) string[0] == 46) return TRUE;
   }
@@ -1765,14 +1794,13 @@ void write_quotedname(FILE *file, int charset, char *string)
 }
 
 /********************** write_canonical ****************/
-static Psc dollar_var_psc = NULL;
+//static Psc dollar_var_psc = NULL;
 #define wcan_string tsgLBuff1
 #define wcan_atombuff tsgLBuff2
 #define wcan_buff tsgSBuff1
 
 char *cvt_float_to_str(CTXTdeclc Float floatval) {
-  //  sprintf(wcan_buff->string,"%1.18g",floatval);
-  sprintf(wcan_buff->string,"%g",floatval);
+  sprintf(wcan_buff->string,"%1.17g",floatval);
   wcan_buff->length = (int)strlen(wcan_buff->string);
   if (!strchr(wcan_buff->string,'.')) {
     char *eloc = strchr(wcan_buff->string,'e');
@@ -1788,6 +1816,7 @@ char *cvt_float_to_str(CTXTdeclc Float floatval) {
       XSB_StrAppend(wcan_buff,exp);
     }
   } 
+  //printf("cvt-flt %s\n",wcan_buff->string);
   return wcan_buff->string;
 }
 
@@ -1855,7 +1884,7 @@ int call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fla
      }
      else if (isboxedfloat(prologterm))
      {
-       sprintf(wcan_buff->string,"%1.18g",boxedfloat_val(prologterm));
+       sprintf(wcan_buff->string,"%1.17g",boxedfloat_val(prologterm));
        wcan_buff->length = (int)strlen(wcan_buff->string);
        if (!strchr(wcan_buff->string,'.')) {
 	 char *eloc = strchr(wcan_buff->string,'e');
@@ -1873,10 +1902,6 @@ int call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fla
        XSB_StrAppend(wcan_string,wcan_buff->string);
        break;         
      }        
-      if (!dollar_var_psc) {
-	int new_indicator;
-	dollar_var_psc = pair_psc(insert("$VAR", 1, global_mod, &new_indicator));
-      }
       if (letter_flag && (get_str_psc(prologterm) == dollar_var_psc)) {
 	int ival, letter;
 	Cell tempi = get_str_arg(prologterm,1);
@@ -1890,7 +1915,7 @@ int call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fla
 	  sprintf(wcan_buff->string,"%d",ival);
 	  XSB_StrAppend(wcan_string,wcan_buff->string);
 	}
-      } else {
+      } else { /* regular ole structured term */
 	int i; 
 	char *fnname = get_name(get_str_psc(prologterm));
 	if (quotes_are_needed(fnname)) {
@@ -1902,16 +1927,18 @@ int call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fla
 	  XSB_StrAppendC(wcan_string,'\'');
 	} else XSB_StrAppend(wcan_string,fnname);
 	XSB_StrAppendC(wcan_string,'(');
-	for (i = 1; i < get_arity(get_str_psc(prologterm)); i++) {
-	  if (!write_canonical_term_rec(CTXTc get_str_arg(prologterm,i),letter_flag)) {
-	    XSB_StrAppend(wcan_string,"?ERROR?");
-	    return FALSE;
+	if (get_arity(get_str_psc(prologterm))) {
+	  for (i = 1; i < get_arity(get_str_psc(prologterm)); i++) {
+	    if (!write_canonical_term_rec(CTXTc get_str_arg(prologterm,i),letter_flag)) {
+	      XSB_StrAppend(wcan_string,"?ERROR?");
+	      return FALSE;
+	    }
+	    XSB_StrAppendC(wcan_string,',');
 	  }
-	  XSB_StrAppendC(wcan_string,',');
-	}
-	close_paren_count++; /* count parens so can do tail recursion */
-	prologterm = get_str_arg(prologterm,i);
-	goto write_canonical_term_rec_begin;
+	  close_paren_count++; /* count parens so can do tail recursion */
+	  prologterm = get_str_arg(prologterm,i);
+	  goto write_canonical_term_rec_begin;
+	} else XSB_StrAppendC(wcan_string,')');
       }
       break;
     case XSB_LIST:

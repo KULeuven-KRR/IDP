@@ -431,6 +431,7 @@ remake_dot_O_files_force:
 # clean for this architecture only
 configclean::
 	@rm -rf $(src_config_prefix)/*
+	@rm -rf ./config.status
 
 # clean out all architectures
 distclean: clean

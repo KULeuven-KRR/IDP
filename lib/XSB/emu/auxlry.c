@@ -48,6 +48,9 @@ extern int syscall();
 #endif
 
 #ifdef WIN_NT
+#include <windows.h>
+#include <winbase.h>
+// vanished: #include <versionhelpers.h>
 #include "windows.h"
 #endif
 
@@ -64,16 +67,17 @@ double cpu_time(void)
 #define ULONGLONG __int64
 #endif
 
-  static int win_version = -1;
+  /**  static int win_version = -1;
 
   if (win_version == -1) {
     OSVERSIONINFO winv;
     winv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
     GetVersionEx(&winv);
     win_version = winv.dwPlatformId;
-  }
+    } ***/
 
-  if (win_version == VER_PLATFORM_WIN32_NT) {
+  //  if (win_version == VER_PLATFORM_WIN32_NT) {
+  if (1 /* IsWindowsXPOrGreater() seems obsolete */) {
     HANDLE thisproc;
     FILETIME creation, exit, kernel, user;
     ULONGLONG lkernel, luser;
@@ -109,12 +113,16 @@ double cpu_time(void)
 
 /*----------------------------------------------------------------------*/
 
-void get_date(int *year, int *month, int *day,
+/* local = TRUE, if local time is requested */
+void get_date(int local, int *year, int *month, int *day,
 	     int *hour, int *minute, int *second)
 {
 #ifdef WIN_NT
     SYSTEMTIME SystemTime;
-    GetSystemTime(&SystemTime);
+    if (local)
+      GetLocalTime(&SystemTime);
+    else
+      GetSystemTime(&SystemTime);
     *year = SystemTime.wYear;
     *month = SystemTime.wMonth;
     *day = SystemTime.wDay;
@@ -127,7 +135,10 @@ void get_date(int *year, int *month, int *day,
     struct tm *tm;
 
     gettimeofday(&tv,NULL);
-    tm = gmtime(&tv.tv_sec);
+    if (local)
+      tm = localtime(&tv.tv_sec);
+    else
+      tm = gmtime(&tv.tv_sec);
     *year = tm->tm_year;
     if (*year < 1900)
       *year += 1900;

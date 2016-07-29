@@ -402,7 +402,12 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
  *  chain are maintained.  Head and Tail are relative to the ordering
  *  imposed by this first-word linkage.  Otherwise, each structure in
  *  the chain must be deallocated individually.
- *  Set the second word to -1 to indicate that the block is free.
+ * 
+ *  For regular-size structures, set the second word to -1 to indicate
+ *  that the block is free.  This is used to handle deleted trie
+ *  nodes.  Note that this requires a structure that is at least 2
+ *  words long.  If you require a structure that is only 1 word long
+ *  (and is at least 1 word long), use SM_DeallocateSmallStructure.
  */
 
 #ifdef MULTI_THREAD
@@ -428,6 +433,14 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
    }							\
    *(((prolog_int *)pStruct)+1) = FREE_TRIE_NODE_MARK;		\
    SMFL_NextFreeStruct(pTail) = SM_FreeList(SM);	\
+   SM_FreeList(SM) = pHead;				\
+ }
+
+/* Don't set FREE_TRIE_NODE_MARK -- use for structures that are 1 word long.*/
+#define SM_DeallocateSmallStruct(SM,pHead) {	\
+    /*   void *pStruct = pHead;			*/		\
+   /*   *(((prolog_int *)pStruct)+1) = FREE_TRIE_NODE_MARK;*/	\
+   SMFL_NextFreeStruct(pHead) = SM_FreeList(SM);	\
    SM_FreeList(SM) = pHead;				\
  }
 

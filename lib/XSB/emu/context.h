@@ -282,10 +282,14 @@ DynamicStack  _tstTrail;
   CPtr _gAnsTmplt;
   int _gSizeTmplt;
 
+  /* for skiplist (1-level) to speed up tsiOrderedInsert */
+  SL_node_ptr _SL_header;
+
   /* delay, simplification, etc. */
   Cell _cell_array[MAXTERMBUFSIZE];
-  CPtr *_copy_of_var_addr;
-  int _copy_of_num_heap_term_vars;
+  CPtr *_var_addr_accum;
+  int _var_addr_accum_num;
+  int _var_addr_accum_arraysz;
 
 #define MAX_SIMPLIFY_NEG_FAILS_STACK 10
   VariantSF _simplify_neg_fails_stack[MAX_SIMPLIFY_NEG_FAILS_STACK];
@@ -293,15 +297,18 @@ DynamicStack  _tstTrail;
   int _in_simplify_neg_fails;
 
   /* Variables for table traversal for abolishing tables */
-  int _answer_stack_top;
-  BTNptr * _answer_stack;
-  int _answer_stack_size;
-  //  int _answer_stack_current_pos;
+  int _trans_abol_answer_stack_top;
+  BTNptr * _trans_abol_answer_stack;
+  int _trans_abol_answer_stack_size;
 
-  int _done_subgoal_stack_top;
-  VariantSF * _done_subgoal_stack;
-  int _done_subgoal_stack_size;
-  //  int _done_subgoal_stack_current_pos;
+int      _trans_abol_answer_array_top;
+BTNptr * _trans_abol_answer_array;
+int      _trans_abol_answer_array_size;
+
+  int _ta_done_subgoal_stack_top;
+  VariantSF * _ta_done_subgoal_stack;
+  int _ta_done_subgoal_stack_size;
+  //  int _ta_done_subgoal_stack_current_pos;
 
   int _done_tif_stack_top;
   TIFptr * _done_tif_stack;
@@ -576,6 +583,7 @@ typedef struct th_context th_context ;
 #define num_heap_term_vars	(th->_num_heap_term_vars)
 #define var_addr		(th->_var_addr)
 #define var_addr_arraysz	(th->_var_addr_arraysz)
+#define var_addr_accum_arraysz	(th->_var_addr_accum_arraysz)
 
 #define VarEnumerator		(th->_VarEnumerator)
 #define TrieVarBindings		(th->_TrieVarBindings)
@@ -751,22 +759,27 @@ typedef struct th_context th_context ;
 #define  gAnsLeaf               (th->_gAnsLeaf)
 #define  gAnsTmplt              (th->_gAnsTmplt)
 #define  gSizeTmplt             (th->_gSizeTmplt)
+#define  SL_header		(th->_SL_header)
 
 #define  cell_array                         (th->_cell_array)
-#define  copy_of_var_addr                   (th->_copy_of_var_addr)
-#define  copy_of_num_heap_term_vars         (th->_copy_of_num_heap_term_vars)
+#define  var_addr_accum                     (th->_var_addr_accum)
+#define  var_addr_accum_num                 (th->_var_addr_accum_num)
 
 #define  simplify_neg_fails_stack           (th->_simplify_neg_fails_stack)
 #define  simplify_neg_fails_stack_top       (th->_simplify_neg_fails_stack_top)
 #define  in_simplify_neg_fails              (th->_in_simplify_neg_fails)
 
-#define  answer_stack_top                  (th->_answer_stack_top)
-#define  answer_stack                      (th->_answer_stack)
-#define  answer_stack_size                 (th->_answer_stack_size)
+#define  trans_abol_answer_stack_top                  (th->_trans_abol_answer_stack_top)
+#define  trans_abol_answer_stack                      (th->_trans_abol_answer_stack)
+#define  trans_abol_answer_stack_size                 (th->_trans_abol_answer_stack_size)
 
-#define  done_subgoal_stack_top           (th->_done_subgoal_stack_top)
-#define  done_subgoal_stack               (th->_done_subgoal_stack)
-#define  done_subgoal_stack_size          (th->_done_subgoal_stack_size)
+#define  trans_abol_answer_array_top                  (th->_trans_abol_answer_array_top)
+#define  trans_abol_answer_array                      (th->_trans_abol_answer_array)
+#define  trans_abol_answer_array_size                 (th->_trans_abol_answer_array_size)
+
+#define  ta_done_subgoal_stack_top           (th->_ta_done_subgoal_stack_top)
+#define  ta_done_subgoal_stack               (th->_ta_done_subgoal_stack)
+#define  ta_done_subgoal_stack_size          (th->_ta_done_subgoal_stack_size)
 
 #define  done_tif_stack_top           (th->_done_tif_stack_top)
 #define  done_tif_stack               (th->_done_tif_stack)

@@ -334,6 +334,7 @@ copy_again : /* for tail recursion optimisation */
 
       {
 	Cell tr1;
+        UNUSED(tr1);
 
 	tr1 = *to = makelist(*h) ;
 	to = (*h) ;
@@ -570,6 +571,7 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 
 	  {
 	    Cell tr1;
+            UNUSED(tr1);
 
 	    tr1 = *to = makelist(*h) ;
 	    to = (*h) ;
@@ -960,6 +962,7 @@ copy_again : /* for tail recursion optimisation */
 
 	{
 	  Cell tr1;
+          UNUSED(tr1);
 
 	  tr1 = *to = makelist(*h) ;
 	  to = (*h) ;
@@ -1117,7 +1120,294 @@ copy_again : /* for tail recursion optimisation */
 
 
 
-/* creates a new variant of a term in the heap
+static void do_copy_term_3(CTXTdeclc Cell from, CPtr to, CPtr *h)
+{
+copy_again_3 : /* for tail recursion optimisation */
+
+  switch ( cell_tag( from ) )
+    {
+    case XSB_INT :
+    case XSB_FLOAT :
+    case XSB_STRING :
+      *to = from ;
+      return ;
+    
+    case XSB_REF :
+    case XSB_REF1 :
+#ifndef MULTI_THREAD
+      if ((CPtr)from < hreg)  /* meaning: a not yet copied undef */
+#else
+      if ( ((CPtr)from < hreg) || ((CPtr)from >= (CPtr)glstack.high) )
+#endif
+	{
+	  findall_trail(CTXTc (CPtr)from,from) ;
+	  *(CPtr)from = (Cell)to ;
+	  *to = (Cell)to ;
+	}
+      else *to = from ;
+      return ;
+
+    case XSB_LIST :
+      {
+	/*
+	 *  before copying:
+	 *  
+	 *  +----+        +----+----+
+	 *  | x L|    (x) | a  | b  |    empty trail
+	 *  +----+        +----+----+
+	 *  
+	 *  
+	 *  after copying:
+	 *  
+	 *  
+	 *  +----+        +----+----+
+	 *  | x L|    (x) | x'L| b  |
+	 *  +----+        +----+----+
+	 *  
+	 *  
+	 *  trail:
+	 *  
+	 *  +----+----+
+	 *  | a  | x  |
+	 *  +----+----+
+	 *  
+	 *  
+	 *  the copy is:
+	 *  
+	 *  +----+         +----+----+
+	 *  | x'L|    (x') | a' | b' |
+	 *  +----+         +----+----+
+	 *  
+	 *  careful if a is undef !
+	 */
+
+	CPtr pfirstel;
+	Cell q ;
+
+	/* first test whether from - which is an L - is actually the left over
+	   of a previously copied first list element
+	*/
+	if (isinternstr(from)) {*to = from; return;} // DSWDSW
+	pfirstel = clref_val(from) ;
+#ifndef MULTI_THREAD
+	if (pfirstel >= hreg)
+#else
+	if ( ((CPtr)pfirstel >= hreg) && ((CPtr)pfirstel < (CPtr)glstack.high) )
+#endif
+	  {
+	    /* pick up the old value and copy it */
+	    *to = *pfirstel;
+	    return;
+	  }
+
+	q = *pfirstel;
+	if (islist(q))
+	  {
+	    CPtr p;
+
+	    p = clref_val(q);
+#ifndef MULTI_THREAD
+	    if (p >= hreg)  /* meaning it is a shared list */
+#else
+            if ( (p >= hreg) && (p < (CPtr)glstack.high) )
+#endif
+	      {
+		*to = q;
+		return;
+	      }
+	  }
+
+	/* this list cell has not been copied before */
+	/* now be careful: if the first element of the list to be copied
+	   is an undef (a ref to an undef is not special !)
+	   we have to copy this undef now, before we do the general
+	   thing for lists
+	*/
+
+	{
+	  *to = makelist(*h) ;
+	  to = (*h) ;
+	  (*h) += 2 ;
+	  if (q == (Cell)pfirstel) /* it is an UNDEF - special care needed */
+	    {
+	      /* it is an undef in the part we are copying from */
+	      findall_trail(CTXTc pfirstel,(Cell)pfirstel);
+	      *to = (Cell)to ;
+	      *pfirstel = makelist((CPtr)to);
+	    }
+	  else
+	    {
+	      findall_trail(CTXTc pfirstel,q);
+	      *pfirstel = makelist((CPtr)to);
+	      XSB_Deref(q);
+	      do_copy_term_3(CTXTc q,to,h);
+	    }
+
+	  from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
+	  goto copy_again_3 ;
+	}
+      }
+
+    case XSB_STRUCT : {
+      /*
+       before copying:
+       
+           +--------+     +-----------------------------------+      +--------+
+       (b) |a STRUCT| (a) | Functor | arg1 | arg2 | ... | argn|  (f) |a STRUCT|
+           +--------+     +-----------------------------------+      +--------+
+       
+       trail stack empty
+       
+       after copying the first (at b)
+       
+       
+           +--------+     +------------------------------------+     +--------+
+       (b) |a STRUCT| (a) | d STRUCT | arg1 | arg2 | ... | argn| (f) |a STRUCT|
+           +--------+     +------------------------------------+     +--------+
+        	       
+           +--------+      +-----------------------------------+ 
+       (c) |d STRUCT|  (d) | Functor | arg1 | arg2 | ... | argn| 
+           +--------+      +-----------------------------------+ 
+       
+              +-------------+
+       trail: | Functor | a |
+              +-------------+
+        
+       c and d are addresses of the copied things
+       
+       so when we come at the STRUCT pointer at f, we hit the |d STRUCT| cell
+       at a, which means that it was copied before
+        
+       this relies on a Functor cell not having a STRUCT tag
+        
+       the situation for lists is more complicated
+      */
+      
+	CPtr pfirstel ;
+	Cell newpsc;
+	int ar ;
+
+	if (isinternstr(from)) {*to = from; return;} // DSWDSW
+
+	pfirstel = (CPtr)cs_val(from) ;
+	if ( cell_tag((*pfirstel)) == XSB_STRUCT )
+	  {
+	    /* this struct was copied before - it must be shared */
+	    *to = *pfirstel;
+	    return;
+	  }
+
+	/* first time we visit this struct */
+
+	findall_trail(CTXTc pfirstel,*pfirstel);
+
+	ar = get_arity((Psc)(*pfirstel)) ;
+	
+	newpsc = *to = makecs((Cell)(*h)) ;
+	to = *h ;
+	*to = *pfirstel ; /* the functor */
+	*pfirstel = newpsc; /* was trailed already */
+	
+	*h += ar + 1 ;
+	if (ar > 0) {
+	  while ( --ar )
+	    {
+	      //	      printf("copying arg %d\n",ar+1);
+	      from = *(++pfirstel) ; 
+	      //	      printf("pfirstel %p @%p @@%p\n",pfirstel,from,cell((CPtr) dec_addr(from)));
+	      XSB_Deref(from) ; to++ ;
+	      do_copy_term_3(CTXTc from,to,h) ;
+	    }
+	  from = *(++pfirstel) ; 
+	  //	      printf("pfirstel %p @%p @@%p\n",pfirstel,from,cell((CPtr) dec_addr(from)));
+	  XSB_Deref(from) ; to++ ;
+	  goto copy_again_3 ;
+	} else return;
+      }
+
+    case XSB_ATTV: {
+	CPtr var;
+    
+	var = clref_val(from);	/* the VAR part of the attv  */
+#ifndef MULTI_THREAD
+      if ((CPtr)var < hreg)  /* meaning: a not yet copied undef */
+#else
+      if ( ((CPtr)var < hreg) || ((CPtr)var >= (CPtr)glstack.high) )
+#endif
+	{
+	  //	  printf("before trail %p @%p @@%p\n",var,cell(var),cell((CPtr) dec_addr(cell(var))));
+	  findall_trail(CTXTc var,cell(var)) ;
+	  //	  printf("after trail %p @%p @@%p\n",var,cell(var),cell((CPtr) dec_addr(cell(var))));
+	  *(CPtr)clref_val(from) = (Cell)var ;
+	  *to = (Cell)var ;
+	}
+      else *to = from ;
+      return ;
+    }
+    }
+}
+
+
+      //      {
+      //	/*
+      //	 *  before copying: (A means XSB_ATTV tag)
+      //	 *  
+      //	 *  +----+        +----+----+
+      //	 *  | x A|    (x) | a  | b  |    empty trail
+      //	 *  +----+        +----+----+
+      //	 *  
+	      // *  because of deref, a is always an undef, meaning that actually
+      //	 *  a == x
+      //	 *  
+      //	 *  
+      //	 *  after copying:
+      //	 *  
+      //	 *  
+      //	 *  +----+        +----+----+
+      //	 *  | x A|    (x) | x'A| b  |
+      //	 *  +----+        +----+----+
+      //	 *  
+      //      //	 *  
+	      // *  trail:
+      //	 *  
+      //      //	 *  +----+----+
+      //	 *  | x  | x  |
+      //	 *  +----+----+
+      //	 *  
+      //	 *  the copy is:
+      //	 *  
+      //	 *  +----+         +----+----+
+      //	 *  | x'A|    (x') | a' | b' |
+      //	 *  +----+         +----+----+
+      //	 */
+      //
+      //	CPtr var;
+      //    
+      //	var = clref_val(from);	/* the VAR part of the attv  */
+      //	if (var < hreg) {	/* has not been copied before */
+      //	  from = cell(var + 1);	/* from -> the ATTR part of the attv */
+      //	  XSB_Deref(from);
+      //	  *to = makeattv(*h);
+      //	  to = (*h);
+      //      //	  (*h) += 2;		/* skip two cells */
+      //	  /*
+      //	   * Trail and bind the VAR part of the attv to the new attv just
+      //	   * created in the `to area', so that attributed variables are
+      //	   * shared in the `to area'.
+      //	   */
+      //	  findall_trail(CTXTc var,(Cell)var);
+      //      //	  bld_attv(var, to);
+      //	  cell(to) = (Cell) to;
+      //	  to++;
+      //      //	  goto copy_again_3;
+      //	} else			/* is a new attv in the `to area' */
+      //	  bld_attv(to, var);
+      //      } /* case XSB_ATTV */
+      //    } /* switch */
+      //} /* do_copy_term_3 */
+
+
+/* Creates a new variant of a term in the heap
    arg1 - old term
    arg2 - new term; copy of old term unifies with new term
 */
@@ -1160,6 +1450,45 @@ int copy_term(CTXTdecl)
 
   return(unify(CTXTc arg2, to));
 } /* copy_term */
+
+int copy_term_3(CTXTdecl)
+{
+  size_t size ;
+  Cell arg1, arg2, to ;
+  CPtr hptr ;
+
+  arg1 = ptoc_tag(CTXTc 1);
+  
+  if( isref(arg1) ) return 1;
+
+  init_findall_trail(CTXT) ;
+  size = term_size(CTXTc arg1) ;
+  findall_untrail(CTXT) ;
+
+  check_glstack_overflow( 2, pcreg, size*sizeof(Cell)) ;
+  
+  /* again because stack might have been reallocated */
+  arg1 = ptoc_tag(CTXTc 1);
+  arg2 = ptoc_tag(CTXTc 2);
+  
+  hptr = hreg ;
+  
+  gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
+  init_findall_trail(CTXT) ;
+  do_copy_term_3( CTXTc arg1, &to, &hptr ) ;
+  findall_untrail(CTXT) ;
+  
+  {
+    size_t size2 = hptr - hreg;
+    /* fprintf(stderr,"copied size = %d\n",size2); */
+    if (size2 > size)
+      fprintf(stderr,"panic after copy_term\n");
+  }
+
+  hreg = hptr;
+
+  return(unify(CTXTc arg2, to));
+} /* copy_term_3 */
 
 void mark_findall_strings(CTXTdecl) {
   int i;

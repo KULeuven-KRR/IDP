@@ -22,6 +22,7 @@
 // The next two are for printing out memory errors
 #define TCP_SPACE		20
 #define COMPL_SPACE		21
+#define GL_SPACE                22
 // VARSTRING_SPACE??  some other to thread?
 
 #define NUM_CATS_SPACE		20

@@ -25,12 +25,13 @@
 
 
 :- export force_preprocess_loaded/0. 
-:- export preprocess/3, gensym_pred/2, have_hardcut/2.
+:- export preprocess/3, cmp_gensym/2, gensym_pred/2, have_hardcut/2.
 
 :- import option/1 from auxlry.
 :- import compl_cond/5 from pre_cond.
 :- import sym_prop/2, sym_insert/5, sym_name/3 from symtab.
 :- import str_cat/3 from machine.
-:- import conget/2, gensym/2 from gensym.
+:- import conget/2, coninc/2 from gensym.
 :- import append/3 from basics.
 :- import inline_jumpcof_cond/3 from builtin.
+:- import number_codes/2, atom_codes/2 from standard.

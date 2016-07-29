@@ -64,8 +64,8 @@ xsb_configuration(perl_cc_compiler, '').
 xsb_configuration(perl_ccflags, '').
 xsb_configuration(perl_libs, '').
 
-xsb_configuration(site_dir, 'C:\xsb_site').
-xsb_configuration(srcdir, 'C:\xsb').
+xsb_configuration(site_dir, 'C:\\xsb_site').
+xsb_configuration(srcdir, 'C:\\xsb').
 
 /* Java compiler */
 xsb_configuration(javac, '').
@@ -78,7 +78,7 @@ xsb_configuration(host_cpu,  'x86').
 
 %% Set the right compile mode and XSB scheduling strategy
 xsb_configuration(compile_mode, 'optimal').
-xsb_configuration(scheduling_strategy, '(batched)').
+xsb_configuration(scheduling_strategy, '(local)').
 xsb_configuration(engine_mode, 'slg-wam').
 xsb_configuration(word_size, '32').
 
@@ -86,14 +86,14 @@ xsb_configuration(word_size, '32').
 %%
 
 xsb_configuration(major_version, '3').
-xsb_configuration(minor_version, '5').
-xsb_configuration(patch_version, '0').
+xsb_configuration(minor_version, '7').
+xsb_configuration(patch_version, '').
 xsb_configuration(beta_version, '').
-xsb_configuration(version, '3.5.0').
+xsb_configuration(version, '3.7.').
 
-xsb_configuration(codename, 'Maotai').
+xsb_configuration(codename, 'Clan MacGregor').
 xsb_configuration(release_date,
-		  date(2013, 7, 6)).
+		  date(2016, 7, 6)).
 
 %% Configuration looks as follows: machine-vendor-os-tag
 xsb_configuration(configuration, 'x86-pc-windows').

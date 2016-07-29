@@ -84,21 +84,17 @@
 #include "struct_intern.h"
 #include "cell_xsb_i.h"
 
+extern void debug_call(CTXTdeclc Psc);
+
 /*======================================================================*/
 extern xsbBool quotes_are_needed(char *string);
 
 /*======================================================================*/
 
-double realtime_count_gl;
-
 #ifndef MULTI_THREAD
 extern int asynint_val;	/* 0 - no interrupt (or being processed) */
 extern int asynint_code;	/* 0 means keyboard interrupt */
 #endif
-
-extern void print_mutex_use(void);
-
-extern void dis(xsbBool), debug_call(CTXTdeclc Psc);
 
 #ifdef LINUX
 static struct sigaction int_act, int_oact;
@@ -413,89 +409,6 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
 }
 
 /*======================================================================*/
-/*  Print statistics and measurements.					*/
-/*======================================================================*/
-
-/*
- * Called through builtins statistics/1 and statistics/0.
- * ( statistics :- statistics(1). )
- */
-void print_statistics(CTXTdeclc int amount) {
-
-  switch (amount) {
-
-  case STAT_RESET:		    /* Reset Statistical Parameters */
-#ifndef MULTI_THREAD
-    realtime_count_gl = real_time();
-    perproc_reset_stat();	/* reset op-counts, starting time, and 'tds'
-				   struct variable (all 0's) */
-    reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
-    xsb_mesg("Statistics is reset.");
-    break;
-#else
-    realtime_count_gl = real_time();
-    break;
-#endif
-
-  case STAT_DEFAULT:		    /* Default use: Print Stack Usage and CPUtime: */
-    perproc_stat();		/* move max usage into 'ttt' struct variable */
-    total_stat(CTXTc real_time()-realtime_count_gl);   /* print */
-    reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
-    break;
-
-  case STAT_TABLE:		    /* Print Detailed Table Usage */
-    print_detailed_tablespace_stats(CTXT);
-    break;
-
-  case 3:		    /* Print Detailed Table, Stack, and CPUtime */
-#ifndef MULTI_THREAD
-    perproc_stat();
-    total_stat(CTXTc real_time()-realtime_count_gl);
-    reset_stat_total();
-    print_detailed_tablespace_stats(CTXT);
-    print_detailed_subsumption_stats();
-    break;
-#else
-    fprintf(stdwarn,"statistics(3) not yet implemented for MT engine\n");
-    break;
-#endif
-  case STAT_MUTEX:                  /* mutex use (if PROFILE_MUTEXES is defined) */
-    print_mutex_use();
-    print_mem_allocs();
-    break;
-  case 5:
-    dis(0); 
-    break;		/* output memory image - data only; for debugging */
-  case 6:
-    dis(1); 
-    break;		/* output memory image - data + text; for debugging */
-#ifdef CP_DEBUG
-  case 7:
-    print_cp_backtrace();
-    break;
-#endif
-  case STAT_ATOM:              /* print symbol/string statistics */
-    symbol_table_stats();
-    string_table_stats();
-    break;
-  }
-}
-
-
-
-/*======================================================================*/
-/*  Memory statistics.					*/
-/*======================================================================*/
-/*
- * Called through builtin statistics/2.
- */
-void statistics_inusememory(CTXTdeclc int type) {
-  perproc_stat();		/* move max usage into 'ttt' struct variable */
-    stat_inusememory(CTXTc real_time()-realtime_count_gl,type);   /* collect */
-  reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
-}
-
-/*======================================================================*/
 /*======================================================================*/
 
 static void default_inthandler(CTXTdeclc int intcode)
@@ -697,7 +610,7 @@ void intercept(CTXTdeclc Psc psc) {
 #define FLOAT_MASK 0xfffffff8
 #endif
 
-inline int sign(Float num)
+int sign(Float num)
 {
   if (num==0.0) return 0;
   else if (num>0.0) return 1;
@@ -932,22 +845,17 @@ void print_dqatom(FILE *file, int charset, char *string) {
 
 void print_op(FILE *file, int charset, char *string, int pos)
 {
-  char *s;
-  int need_blank = 0;
 
-  s = string;
-  while (*s) { 
-    if (intype(*s) != SIGN) { need_blank = 1; break;} 
-    s++;
-  }
-  if (need_blank) {
+  if (*(string+1) == '\0' && (*string == ',' || *string == ';')) {
+    write_string_code(file,CURRENT_CHARSET,(byte *)string);
+  } else {
     switch (pos) {
     case 1: print_qatom(file, charset, string); putc(' ', file); break;
     case 2: putc(' ', file);
       print_qatom(file, charset, string); putc(' ', file); break;
     case 3: putc(' ', file); print_qatom(file, charset, string); break;
     }
-  } else write_string_code(file,CURRENT_CHARSET,(byte *)string);
+  }
 }
 
 /* ----- The following is also called from the Prolog level ----------- */
@@ -999,7 +907,7 @@ void checkJavaInterrupt(void *info)
   xsb_dbgmsg((LOG_DEBUG, "Thread started on socket %ld",(int)intSocket));
   while(1){
     if (1!=recv(intSocket,&ch,1,0)) {
-      xsb_warn("Problem handling interrupt from Java");
+      warn_xsb("Problem handling interrupt from Java");
     }
     else 
       xsb_mesg("--- Java interrupt detected");
@@ -1081,7 +989,7 @@ int sleep_interval;
 #ifdef WIN_NT
 HANDLE executing_sleeper_thread = NULL;
 #else
-pthread_t executing_sleeper_thread = NULL;
+pthread_t executing_sleeper_thread = (pthread_t) NULL;
 #endif
 
 // TLS: For some embarassing reason, I don't seem to be able to pass a
@@ -1103,25 +1011,46 @@ executeSleeperThread(void * interval) {
 #else
   usleep(1000*i);  // want milliseconds
 #endif
-  //  printf("slept for %p %d usecs\n",i,*i);
-  //  printf("slept for %d usecs (%d)\n",i,TIMER_INTERRUPT);
   asynint_val |= TIMER_MARK;
   if (executing_sleeper_thread) {
 #ifdef WIN_NT
     CloseHandle(executing_sleeper_thread);
+    executing_sleeper_thread = (HANDLE) NULL;
+#else
+    executing_sleeper_thread = (pthread_t) NULL;
 #endif
-    executing_sleeper_thread = NULL;
   }
+}
+
+xsbBool cancelSleeperThread(void) {
+#ifdef WIN_NT
+  /*
+  */
+  if (executing_sleeper_thread){
+    if (!TerminateThread(executing_sleeper_thread,0)) {
+      xsb_warn(CTXTc "could not kill sleeper thread\n");
+    }
+    CloseHandle(executing_sleeper_thread);
+    executing_sleeper_thread = (HANDLE) NULL;
+  }
+  //return FALSE;  // should be defined??
+#else
+  if (executing_sleeper_thread) { // previous sleeper
+    int killrc;
+    if ((killrc = pthread_cancel(executing_sleeper_thread))) {
+	xsb_warn(CTXTc "could not kill sleeper thread: error %d\n",killrc);
+    }
+    executing_sleeper_thread = (pthread_t) NULL;
+  }
+#endif
+  asynint_val = asynint_val & ~TIMER_MARK;	
+  return TRUE;
 }
 
 // TLS, copied thread start for windows from startProfileThread()
 xsbBool startSleeperThread(int interval) {
   //  struct sched_param param;
 
-  //  printf("interval %d\n",interval);
-  //  int i = interval;
-  //  printf("interval %d\n",i);
-  //  printf("i %p %d\n",&i,*&i);
 #ifdef WIN_NT
   int killrc;
   HANDLE sleeper_thread;
@@ -1144,8 +1073,10 @@ xsbBool startSleeperThread(int interval) {
   int killrc;
 
   if (executing_sleeper_thread) { // previous sleeper, now obsolete
-    killrc = pthread_cancel(executing_sleeper_thread);
-    executing_sleeper_thread = NULL;
+    if ((killrc = pthread_cancel(executing_sleeper_thread))) {
+	xsb_warn(CTXTc "could not kill sleeper thread: error %d\n",killrc);
+    }
+    executing_sleeper_thread = (pthread_t) NULL;
   }
   pthread_create(&sleeper_thread, NULL, (void*)&executeSleeperThread,(void *) &sleep_interval);
   param.sched_priority = sched_get_priority_max(SCHED_OTHER);

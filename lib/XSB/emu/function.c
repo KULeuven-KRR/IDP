@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <errno.h>
 #include <string.h>
 
 #include "auxlry.h"
@@ -69,6 +70,10 @@
 #define FUN_lgamma  28
 #define FUN_erf  29
 //#define FUN_atan2  30
+
+char * function_names[30] = {"","+","-","*","/","/\\","\\/","","","sin",
+                             "cos","tan","","float","floor","exp","log","log10","sqrt","asin",
+                             "acos","atan","abs","truncate","round","ceiling","sign","min","lgamma","erf"};
 
 /* --- returns 1 when succeeds, and returns 0 when there is an error --	*/
 
@@ -133,28 +138,45 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       break;
   case FUN_log:
       set_fvalue_from_value;
-      fvalue = (Float)log(fvalue);
-      bld_boxedfloat(CTXTc regaddr, fvalue);
+      if (fvalue > 0) {               /* tls -- shd be able to use errno, but I cant seem to get it to work(?) */
+	fvalue = (Float)log(fvalue);
+	bld_boxedfloat(CTXTc regaddr, fvalue);
+      }
+      else /* NaN */
+	xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,"in log/1");
   break;
   case FUN_log10:
-      set_fvalue_from_value;
+    set_fvalue_from_value;
+    if (fvalue > 0) {
       fvalue = (Float)log10(fvalue);
       bld_boxedfloat(CTXTc regaddr, fvalue);
+    }
+    else /* NaN */
+      xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,"in log10/1");
   break;
   case FUN_sqrt:
       set_fvalue_from_value;
       fvalue = (Float)sqrt(fvalue);
-      bld_boxedfloat(CTXTc regaddr, fvalue);
-  break;
+      if (fvalue == fvalue) 
+	bld_boxedfloat(CTXTc regaddr, fvalue);
+      else /* NaN */
+	xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,"sqrt/1 returned NaN");
+      break;
   case FUN_asin:
       set_fvalue_from_value;
       fvalue = (Float)asin(fvalue);
-      bld_boxedfloat(CTXTc regaddr, fvalue);
+      if (fvalue == fvalue) 
+	bld_boxedfloat(CTXTc regaddr, fvalue);
+      else /* NaN */
+	xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,"asin/1 returned NaN");
   break;
   case FUN_acos:
     set_fvalue_from_value;
     fvalue = (Float)acos(fvalue);
-    bld_boxedfloat(CTXTc regaddr, fvalue);
+    if (fvalue == fvalue) 
+      bld_boxedfloat(CTXTc regaddr, fvalue);
+    else /* NaN */
+      xsb_evaluation_error(CTXTc EVALUATION_DOMAIN_ERROR,"acos/1 returned NaN");
     break;
   case FUN_atan:
     set_fvalue_from_value;
@@ -296,7 +318,7 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
   case FUN_lgamma:
     set_fvalue_from_value;
 #if defined(WIN_NT)
-    xsb_warn("lgamma function NOT defined");
+    xsb_warn(CTXTc "lgamma function NOT defined");
     fvalue = 0.0;
 #else
     fvalue = (Float)lgamma(fvalue);
@@ -306,7 +328,7 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
   case FUN_erf:
     set_fvalue_from_value;
 #if defined(WIN_NT)
-    xsb_warn("lgamma function NOT defined");
+    xsb_warn(CTXTc "lgamma function NOT defined");
     fvalue = 0.0;
 #else
     fvalue = (Float)erf(fvalue);
@@ -659,7 +681,7 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
 	    break;
 	  } else if (strcmp(get_name(op_psc),"erf")==0) {
 #ifdef WIN_NT
-	    xsb_warn("erf function NOT defined");
+	    xsb_warn(CTXTc "erf function NOT defined");
 	    set_flt_val(value,0.0);
 #else
 	    if (isfiint(fiop1)) set_flt_val(value,(Float)erf((Float)fiint_val(fiop1)));
@@ -679,7 +701,7 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
 	    break;
 	  } else if (strcmp(get_name(op_psc),"lgamma")==0) {
 #ifdef WIN_NT
-	    xsb_warn("lgamma function NOT defined");
+	    xsb_warn(CTXTc "lgamma function NOT defined");
 	    set_flt_val(value,0.0);
 #else
 	    if (isfiint(fiop1)) set_flt_val(value,(Float)lgamma((Float)fiint_val(fiop1)));
@@ -711,7 +733,7 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
 	    break;
 	  } else if (strcmp(get_name(op_psc),"asinh")==0) {
 #ifdef WIN_NT
-	    xsb_warn("asinh function NOT defined");
+	    xsb_warn(CTXTc "asinh function NOT defined");
 	    set_flt_val(value,0.0);
 #else
 	    if (isfiint(fiop1)) set_flt_val(value,(Float)asinh((Float)fiint_val(fiop1)));

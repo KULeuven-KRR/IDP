@@ -422,6 +422,8 @@ sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), approximation(Spec)) :-
 	member2(approximation(Spec), Other).
 sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), subsumption_modes(Modes)) :-
 	member2(subsumption_modes(Modes), Other). % Modes is an open-tailed list
+sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), table_index(Index)) :-
+	member2(table_index(Index), Other). 
 
 
 /*======================================================================*/

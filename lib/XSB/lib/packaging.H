@@ -27,6 +27,7 @@
 	  ensure_package_bootstrapped/2,
 	  bootstrap_sitepackage/2, bootstrap_userpackage/3,
 	  unload_package/1.
+:- export xsb_running_under/1, force_rename_file/2.
 
 :- import (dynamic)/1, assert/1, retract/1
    from assert.
@@ -38,5 +39,11 @@
 :- import xsb_configuration/2 from xsb_configuration.
 
 :- import fmt_write_string/3 from file_io.
+
+:- import str_sub/2 from string.
+:- import
+        path_sysop/2,
+        path_sysop/3
+   from file_io.
 
 

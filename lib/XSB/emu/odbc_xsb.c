@@ -121,13 +121,13 @@ char *term_string[MAX_BIND_VALS] = {0};
 
 /* for debugging: just dumps memory... */
 void print_hdbc(char *msg, HDBC hdbc) {
-  int *ptr;
+  Integer *ptr;
   int wds = 48;
 
   printf("\n%s\nhdbc: %p",msg,hdbc);
-  for(ptr = (int *)(((int)hdbc / 32) * 32); ptr < (int *)hdbc+wds ; ptr++) {
-    if (((int)ptr % 32) == 0) printf("\n%p: ",ptr);
-    printf(" %08x",*ptr);
+  for(ptr = (Integer *)(((Integer)hdbc / 32) * 32); ptr < (Integer *)hdbc+wds ; ptr++) {
+    if (((Integer)ptr % 32) == 0) printf("\n%p: ",ptr);
+    printf(" %"Intxfmt,*ptr);
   }
   printf("\n\n");
 }
@@ -398,8 +398,8 @@ Cell PrintErrorMsg(CTXTdeclc struct ODBC_Cursor *cur)
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) {
     term = makecs(hreg);
     bld_functor(hreg, pair_psc(insert("odbc_error",2,(Psc)flags[CURRENT_MODULE],&isnew)));
-    bld_string(hreg+1,string_find(szsqlstate,1)); 
-    bld_string(hreg+2,string_find(szerrormsg,1)); 
+    bld_string(hreg+1,string_find((char *)szsqlstate,1)); 
+    bld_string(hreg+2,string_find((char *)szerrormsg,1)); 
     hreg += 3;
   } else {
     term = makestring(string_find("Unknown ODBC Error",1));
@@ -465,7 +465,7 @@ void SetCursorClose(struct ODBC_Cursor *cur)
 
   /* free memory for the sql statement associated w/ this cursor*/
   if (cur->Sql) {
-    mem_dealloc(cur->Sql,strlen(cur->Sql)+1,ODBC_SPACE);
+    mem_dealloc(cur->Sql,strlen((char *)cur->Sql)+1,ODBC_SPACE);
   }
   /* initialize the variables.  set them to the right value*/
   cur->Sql = 0;
@@ -494,7 +494,7 @@ char *detailed_error(char *msg1, char *msg2, SQLHANDLE handle, SQLSMALLINT type)
       ret = SQLGetDiagRec(type, handle, ++i, state, &native, text,
 			  sizeof(text), &len );
       if (SQL_SUCCEEDED(ret)) {
-	snprintf(msg_segment,2510,"::%s:%d:%ld:%s", state, i, native, text);
+	snprintf(msg_segment,250,"::%s:%d:%ld:%s", state, i, (long)native, text);
         XSB_StrAppend(&odbc_err_msg,msg_segment);
       }
     } while( ret == SQL_SUCCESS );
@@ -566,14 +566,14 @@ void ODBCConnect(CTXTdecl)
   if (!ptoc_int(CTXTc 2)) {
     /* get server name, user id and password*/
     server = (UCHAR *)ptoc_string(CTXTc 3);
-    strcpy(uid, (UCHAR *)ptoc_string(CTXTc 4));
+    strcpy((char *)uid, ptoc_string(CTXTc 4));
     pwd = (UCHAR *)ptoc_string(CTXTc 5);
     
     /* connect to database*/
     rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       char *temp_msg;
-      temp_msg = detailed_error("Connection to server failed: ",server,hdbc,SQL_HANDLE_DBC);
+      temp_msg = detailed_error("Connection to server failed: ",(char *)server,hdbc,SQL_HANDLE_DBC);
       SQLFreeConnect(hdbc);
       ctop_int(CTXTc 6, 0);
       unify(CTXTc reg_term(CTXTc 7), makestring(string_find(temp_msg,1)));
@@ -585,7 +585,7 @@ void ODBCConnect(CTXTdecl)
     rc = SQLDriverConnect(hdbc, NULL, connectIn, SQL_NTS, NULL, 0, NULL,SQL_DRIVER_NOPROMPT);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       char *temp_msg;
-      temp_msg = detailed_error("Connection to driver failed: ",connectIn,hdbc,SQL_HANDLE_DBC);
+      temp_msg = detailed_error("Connection to driver failed: ",(char *)connectIn,hdbc,SQL_HANDLE_DBC);
       SQLFreeConnect(hdbc);
       ctop_int(CTXTc 6, 0);
       unify(CTXTc reg_term(CTXTc 7), makestring(string_find(temp_msg,1)));
@@ -716,7 +716,7 @@ void FindFreeCursor(CTXTdecl)
       else {
 	if (curi->Status == 1) {    /* a closed cursor*/
 	  /* same statement as this one, so grab and return it*/
-	  if (!strcmp(curi->Sql,Sql_stmt)) {
+	  if (!strcmp((char *)curi->Sql,Sql_stmt)) {
 	    if (curi != FCursor) {
 	      (curi->PCursor)->NCursor = curi->NCursor;
 	      if (curi == LCursor) LCursor = curi->PCursor;
@@ -816,7 +816,7 @@ void FindFreeCursor(CTXTdecl)
     unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Not enough memory for SQL stmt in FindFreeCursor!"));
     return;
   }
-  strcpy(curi->Sql,Sql_stmt);
+  strcpy((char *)curi->Sql,Sql_stmt);
   curi->Status = 3;
   ctop_int(CTXTc 4, (UInteger)curi);
   ctop_int(CTXTc 5, 0);
@@ -966,7 +966,7 @@ void SetBindVal(CTXTdecl)
 	cur->BindTypes[j] = 2;
 	/* SQLBindParameter will be done later in parse for char variables*/
       }
-      cur->BindList[j] = string_val(BindVal);  // wont be freed since type=2
+      cur->BindList[j] = (UCHAR *)string_val(BindVal);  // wont be freed since type=2
     } else if (isconstr(BindVal) && get_str_psc(BindVal) == nullFctPsc) {
       if (cur->BindTypes[j] < 2) free_cur_bindlist(cur,j);
       cur->BindTypes[j] = 3;
@@ -976,7 +976,7 @@ void SetBindVal(CTXTdecl)
 	if (cur->BindTypes[j] < 2) free_cur_bindlist(cur,j);
 	string_to_char(p2p_arg(BindVal,1),&(term_string[j]));
 	cur->BindTypes[j] = 2;
-	cur->BindList[j] = term_string[j];
+	cur->BindList[j] = (UCHAR *)term_string[j];
       } else {
 	if (cur->BindTypes[j] < 2) free_cur_bindlist(cur,j);
 	write_canonical_term(CTXTc p2p_arg(BindVal,1),1);
@@ -984,7 +984,7 @@ void SetBindVal(CTXTdecl)
 	term_string[j] = mem_alloc(wcan_string->length+1,ODBC_SPACE);
 	strcpy(term_string[j],wcan_string->string);
 	cur->BindTypes[j] = 2;
-	cur->BindList[j] = term_string[j];
+	cur->BindList[j] = (UCHAR *)term_string[j];
       }
     } else {
       if (!cur->BindTypes[j]) unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Bind variable cannot be free"));
@@ -1017,7 +1017,7 @@ void SetBindVal(CTXTdecl)
     *((Float *)cur->BindList[j]) = (Float)ofloat_val(BindVal);
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
-    cur->BindList[j] = string_val(BindVal);
+    cur->BindList[j] = (UCHAR *)string_val(BindVal);
     } else if (isconstr(BindVal) && get_str_psc(BindVal) == nullFctPsc) {
     cur->BindTypes[j] = 3;
     cur->BindList[j] = NULL;
@@ -1025,14 +1025,14 @@ void SetBindVal(CTXTdecl)
     if (!strcmp(get_name(get_str_psc(BindVal)),"string")) {
 	string_to_char(p2p_arg(BindVal,1),&(term_string[j]));
 	cur->BindTypes[j] = 2;
-	cur->BindList[j] = term_string[j];
+	cur->BindList[j] = (UCHAR *)term_string[j];
     } else {
       write_canonical_term(CTXTc p2p_arg(BindVal,1),1);
       if (term_string[j]) mem_dealloc(term_string[j],strlen(term_string[j])+1,ODBC_SPACE);
       term_string[j] = mem_alloc(wcan_string->length+1,ODBC_SPACE);
       strcpy(term_string[j],wcan_string->string);
       cur->BindTypes[j] = 2;
-      cur->BindList[j] = term_string[j];
+      cur->BindList[j] = (UCHAR *)term_string[j];
     }
   } else {
     if (!cur->BindTypes[j]) unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Bind variable cannot be free"));
@@ -1062,6 +1062,7 @@ void SetBindVal(CTXTdecl)
 /*-----------------------------------------------------------------------------*/
 void Parse(CTXTdecl)
 {
+int xret;
 int j;
 struct ODBC_Cursor *cur = (struct ODBC_Cursor *)ptoc_int(CTXTc 2);
 RETCODE rc;
@@ -1130,7 +1131,8 @@ RETCODE rc;
     }
   }
   /* submit it for execution*/
-  if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
+  xret = SQLExecute(cur->hstmt);
+  if (xret != SQL_SUCCESS && xret != SQL_SUCCESS_WITH_INFO) {
     unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc cur));
     SetCursorClose(cur);
     return;
@@ -1221,9 +1223,9 @@ void ODBCColumns(CTXTdecl)
   }
   /*printf("str1 %s, str2 %s, str3 %s\n",str1,str2,str3);*/
   if (((rc=SQLColumns(cur->hstmt,
-		      str1, SQL_NTS,
-		      str2, SQL_NTS,
-		      str3, SQL_NTS,
+		      (UCHAR *)str1, SQL_NTS,
+		      (UCHAR *)str2, SQL_NTS,
+		      (UCHAR *)str3, SQL_NTS,
 		      NULL,0)) == SQL_SUCCESS) ||
       (rc == SQL_SUCCESS_WITH_INFO)) {
     ctop_int(CTXTc 4,0);
@@ -1409,7 +1411,7 @@ void ODBCDataSources(CTXTdecl)
   XSB_Deref(op2);
   if (isref(op2))
   {
-	  char * tempDSNstring= string_find(DSN,1);
+    char * tempDSNstring= string_find((char *)DSN,1);
 	  Cell cellStr = makestring(tempDSNstring);
     unify(CTXTc op2, cellStr);
   }
@@ -1420,7 +1422,7 @@ void ODBCDataSources(CTXTdecl)
   XSB_Deref(op3);
   if (isref(op3))
   {
-    unify(CTXTc op3, makestring(string_find(Description,1)));
+    unify(CTXTc op3, makestring(string_find((char *)Description,1)));
   }
   else {
     unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("[ODBCDataSources] Param 3 should be a free variable."));
@@ -1498,7 +1500,7 @@ void ODBCDrivers(CTXTdecl)
   }
   XSB_Deref(op2);
   if (isref(op2)) {
-    Cell cellStr = makestring(string_find(Description,1));
+    Cell cellStr = makestring(string_find((char *)Description,1));
     unify(CTXTc op2, cellStr);
   } else {
     unify(CTXTc reg_term(CTXTc 5),
@@ -1507,7 +1509,7 @@ void ODBCDrivers(CTXTdecl)
   }
   XSB_Deref(op3);
   if (isref(op3)) {
-    char *current_attr = Attributes;
+    char *current_attr = (char *)Attributes;
     int num_attrs = 0, isnew;
     CPtr prev_cons;
     Cell attr_list = makenil;  // to quiet compiler
@@ -1527,7 +1529,7 @@ void ODBCDrivers(CTXTdecl)
     }
     
     /* Now split the pairs to create the list */
-    current_attr = Attributes;
+    current_attr = (char *)Attributes;
     prev_cons = NULL;
     eq_psc = pair_psc(insert("=",2,(Psc)flags[CURRENT_MODULE],&isnew));
     while (current_attr[0] != '\0') {
@@ -1649,7 +1651,7 @@ void ODBCDescribeSelect(CTXTdecl)
 	(UCHAR *) mem_alloc(sizeof(UCHAR)*((unsigned) cur->ColLen[j]+1),ODBC_SPACE);
       if (!cur->Data[j]) {
 	char errmsg[200];
-	sprintf(errmsg,"Not enough memory for Data[%d]!",j);
+	snprintf(errmsg,200,"Not enough memory for Data[%d]!",j);
 	unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall(errmsg));
 	return;
       }
@@ -1740,7 +1742,7 @@ void ODBCConnectOption(CTXTdecl)
 //extern xsbBool glstack_realloc(CTXTc int,int);
 
 Cell build_codes_list(CTXTdeclc byte *charptr) {
-  size_t len = strlen(charptr);
+  size_t len = strlen((char *)charptr);
 
   if (len == 0) {
     return makenil;
@@ -1748,15 +1750,12 @@ Cell build_codes_list(CTXTdeclc byte *charptr) {
     CPtr this_term;
     check_glstack_overflow(4,pcreg,2*sizeof(Cell)*len);
     this_term = hreg;
-    //    cell(hreg) = makeint((int)*charptr); charptr++;
+    /* char_to_codepoint increments charptr */
     cell(hreg) = makeint(char_to_codepoint(CURRENT_CHARSET,&charptr));
-    charptr++;
     hreg += 2;
     while (*charptr != 0) {
       cell(hreg-1) = makelist(hreg);
-      //      cell(hreg) = makeint((int)*charptr); charptr++;
       cell(hreg) = makeint(char_to_codepoint(CURRENT_CHARSET,&charptr));
-      charptr++;
       hreg += 2;
     }
     cell(hreg-1) = makenil;
@@ -1812,7 +1811,7 @@ int GetColumn(CTXTdecl)
     /* compare strings here, so don't intern strings unnecessarily*/
     XSB_Deref(op);
     if (isref(op)) {
-      return unify(CTXTc op, makestring(string_find(cur->Data[ColCurNum],1)));
+      return unify(CTXTc op, makestring(string_find((char *)cur->Data[ColCurNum],1)));
     }
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
@@ -1821,9 +1820,9 @@ int GetColumn(CTXTdecl)
       } else if (!strcmp(get_name(get_str_psc(op)),"term")) {
 	STRFILE strfile;
 	
-	strfile.strcnt = strlen(cur->Data[ColCurNum]);
+	strfile.strcnt = strlen((char *)cur->Data[ColCurNum]);
 	if (strfile.strcnt >= MAXVARSTRLEN-1)
-	  xsb_warn("[ODBC] Likely overflow of data in column of PROLOG_TERM type\n");
+	  xsb_warn(CTXTc "[ODBC] Likely overflow of data in column of PROLOG_TERM type\n");
 	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
 	iostrs[0] = &strfile;
 	read_canonical_term(CTXTc iostrdecode(0),2); /* terminating '.'? */
@@ -1831,12 +1830,12 @@ int GetColumn(CTXTdecl)
       } else if (!strcmp(get_name(get_str_psc(op)),"NULL")) {
 	return FALSE;
       } else {
-	xsb_warn("unrecognized return argument type; return failed");
+	xsb_warn(CTXTc "unrecognized return argument type; return failed");
 	return FALSE;
       }
     }
     if (!isstring(op)) return FALSE;
-    if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
+    if (strcmp(string_val(op),(char *)cur->Data[ColCurNum])) return FALSE;
     return TRUE;
   case SQL_C_BINARY:
     /* convert the column string to a C string */
@@ -1847,7 +1846,7 @@ int GetColumn(CTXTdecl)
     /* compare strings here, so don't intern strings unnecessarily*/
     XSB_Deref(op);
     if (isref(op))
-      return unify(CTXTc op, makestring(string_find(cur->Data[ColCurNum],1)));
+      return unify(CTXTc op, makestring(string_find((char *)cur->Data[ColCurNum],1)));
     if (isconstr(op) && get_arity(get_str_psc(op)) == 1) {
       if (!strcmp(get_name(get_str_psc(op)),"string")) {
 	return unify(CTXTc get_str_arg(ptoc_tag(CTXTc 4),1),  /* op might have moved! */
@@ -1855,7 +1854,7 @@ int GetColumn(CTXTdecl)
       } else {
 	STRFILE strfile;
 	
-	strfile.strcnt = strlen(cur->Data[ColCurNum]);
+	strfile.strcnt = strlen((char *)cur->Data[ColCurNum]);
 	strfile.strptr = strfile.strbase = cur->Data[ColCurNum];
 	iostrs[0] = &strfile;
 	read_canonical_term(CTXTc iostrdecode(0),2); /* terminating '.'? */
@@ -1863,7 +1862,7 @@ int GetColumn(CTXTdecl)
       }
     }
     if (!isstring(op)) return FALSE;
-    if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
+    if (strcmp(string_val(op),(char *)cur->Data[ColCurNum])) return FALSE;
     return TRUE;
   case SQL_C_SLONG:
     {
@@ -1906,7 +1905,7 @@ int GetColumn(CTXTdecl)
 void ODBCGetInfo(CTXTdecl)
 {
   HDBC hdbc 	  = (HDBC) ptoc_int(CTXTc 2);
-  SQLRETURN sqlrc = SQL_SUCCESS;
+  //  SQLRETURN sqlrc = SQL_SUCCESS;
 
   SQLCHAR strValue[50];
   SQLUSMALLINT  supported;
@@ -1918,7 +1917,7 @@ void ODBCGetInfo(CTXTdecl)
   short int InfoTypeType = GetInfoTypeType(InfoType);
 
   /* check to see if SQLGetInfo() is supported */
-  sqlrc = SQLGetFunctions(hdbc, SQL_API_SQLGETINFO, &supported);
+  /*  sqlrc =*/ SQLGetFunctions(hdbc, SQL_API_SQLGETINFO, &supported);
 
   if (supported == SQL_TRUE)
   {
@@ -1928,7 +1927,7 @@ void ODBCGetInfo(CTXTdecl)
 		if(retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
   	    {
 			//printf("string type:%d:%s:%d\n",InfoType,strValue,pcbValue);
-			ctop_string(CTXTc 4,strValue);
+	      ctop_string(CTXTc 4,(char *)strValue);
 			ctop_int(CTXTc 5,0);
   		} else {
 		  ctop_int(CTXTc 5,1);

@@ -1,6 +1,6 @@
 		  XSB Prolog Distribution Directory
 
-** Last update: July 2, 2011 (3.3.X Pignoletto)
+** Last update: February 5, 2015 (3.5.1 Maotai)
 
 WEB-HOME
 ========
@@ -44,7 +44,7 @@ The XSB source tree consists of a number of directories including:
 	xpath	    xpath queries on XML documents
 	xsbdoc	    Documentation generator for XSB code
 
-The Interprolog package, used to communicate between XSB and Java must
+The InterProlog package, used to communicate between XSB and Java must
 be downloaded separately from www.declarativa.com
 
 Flora-2 may be downloaded from http://flora.sourceforge.net

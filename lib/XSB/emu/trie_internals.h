@@ -940,15 +940,43 @@ subsumptive tables, which are private in the MT engine.
   }
 #endif
 
+/* TLS: 2014/08.  It turns out that a variantSF uses a union for Deltf
+   ptrs and for subg_ans_list_ptrs.  This is ususally safe, as Deltf
+   ptrs are only used after completion, and ALN ptrs before.  However,
+   incremental tables retain their answer lists, which do need to be
+   freed on abolish.  The problem was that if a subgoal is abolished
+   and its space not immediately reclaimed, the Deltf ptr replaces the
+   subg_ans_list_tail, so SM_DeallocateStructList gets a core dump.
+   There might be better ways to fix this, but I special cased it.  By
+   the way, getting rid of the union, which isnt necessarily better,
+   caused other core dumps for subsumptive tables -- I dont know
+   why.  
+
+   A similar case will have to be put in to the MT engine when/if
+   incremental tabling is supported.*/
 #ifndef CONC_COMPL
 #ifndef MULTI_THREAD
 #define free_answer_list(SubgoalFrame) {			\
-    if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
-      SM_DeallocateStructList(smALN,				\
-			      subg_ans_list_ptr(SubgoalFrame),	\
-			      subg_ans_list_tail(SubgoalFrame))	\
-      else							\
-	SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame));	\
+    if ( subg_answers(SubgoalFrame) > COND_ANSWERS )	{	\
+      if (!IsIncrSF(SubgoalFrame)) {				\
+	SM_DeallocateStructList(smALN,				\
+				subg_ans_list_ptr(SubgoalFrame),	\
+				subg_ans_list_tail(SubgoalFrame))	\
+	  } 								\
+      else {								\
+	ALNptr aptr = subg_ans_list_ptr(SubgoalFrame);			\
+	ALNptr last;							\
+	/*	while (ALN_Next(aptr) != NULL) {		*/	\
+	while (aptr != NULL) {						\
+	  last = aptr;							\
+	  /*	  printf("abt_to_dealloc %p *%p\n",aptr,ALN_Next(aptr)); */ \
+	  aptr = ALN_Next(aptr);					\
+	  SM_DeallocateStruct(smALN,last);				\
+	}								\
+      }									\
+    }									\
+    else								\
+      SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame));	\
   }
 #else /* MT but not CONC_COMPL */
 #define free_answer_list(SubgoalFrame) {			\

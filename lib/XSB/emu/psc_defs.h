@@ -75,7 +75,8 @@ I've forgotten.  */
 #define T_TABLED_UNDETERMINED 12
 
 #define T_INCR       3
-#define T_INTERN     4  /* if clauses to be interned for dynamic pred */
+//#define T_INTERN     4  /* if clauses to be interned for dynamic pred */
+#define T_INTERN     1  /* if clauses to be interned for dynamic pred */
 
 /* Global module */
 

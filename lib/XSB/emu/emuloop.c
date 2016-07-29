@@ -362,6 +362,7 @@ extern int is_proper_list(Cell term);
 extern int is_most_general_term(Cell term);
 extern int is_number_atom(Cell term);
 extern int ground(Cell term);
+extern int is_ground_subgoal(VariantSF);
 
 extern void log_prog_ctr(byte *);
 
@@ -491,6 +492,7 @@ int emuloop(CTXTdeclc byte *startaddr)
   DefGlobOps
   byte flag = READFLAG;  	/* read/write mode flag */
   int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
+  //FILE *logfile = fopen("XSB_LOGFILE.txt","w");
 #ifdef MULTI_THREAD
     int (*fp)();
 #endif
@@ -542,7 +544,7 @@ contcase:     /* the main loop */
 	builtin_table[(int) *(lpcreg+3)][1] + 1;
   }
 #endif
-  //  printf("%x\n",*lpcreg);
+  //fprintf(logfile,"%x\n",*lpcreg);
   switch (*lpcreg) {
 #endif
     
@@ -1386,16 +1388,19 @@ contcase:     /* the main loop */
       {
 #endif
         if (gc_heap(CTXTc (int)op1,FALSE)) { /* garbage collection potentially modifies hreg */
-	  if (heap_local_overflow((Integer)op2)) {
+	  if (heap_local_overflow((Integer)op2)) {	
+	    glstack_realloc(CTXTc resize_stack(glstack.size,(op2*sizeof(Cell))),(int)op1);
+	    /*
 	    if (pflags[STACK_REALLOC]) {
 	      if (glstack_realloc(CTXTc resize_stack(glstack.size,(op2*sizeof(Cell))),(int)op1) != 0) {
 		xsb_memory_error("memory","Cannot Expand Local and Global Stacks");
 		xsb_basic_abort(local_global_exception);
 	      }
 	    } else {
-	      xsb_warn("Reallocation is turned OFF !");
+	      xsb_warn(CTXTc "Reallocation is turned OFF !");
 	      xsb_memory_error("memory","Cannot Expand Local and Global Stacks");
 	    }
+	    */
 	  }
 	}	/* are there any localy cached quantities that must be reinstalled ? */
       } else if (force_string_gc) {
@@ -1582,7 +1587,7 @@ argument positions.
 	      op1 = (Cell)string_val(op1);
 	      break;
             }
-	    j += j + ihash(op1, (int)op3);
+	    j += j + ihash(op1, (Integer)op3);
           }
       } else {
 	op1 = opa[i];
@@ -1611,12 +1616,12 @@ argument positions.
 	  xsb_error("Illegal operand in switchon3bound");
 	  break;
         }
-	j += j + (int)ihash(op1, (int)op3);
+	j += j + (int)ihash(op1, (Integer)op3);
 	}
       }
     }
     if (j < 0) j = -j;
-    lpcreg = *(byte **)((byte *)op2 + ((j % (int)op3) * sizeof(Cell)));
+    lpcreg = *(byte **)((byte *)op2 + ((j % (Integer)op3) * sizeof(Cell)));
   XSB_End_Instr()
 
   XSB_Start_Instr(switchonthread,_switchonthread) /* PPP-L */
@@ -1838,12 +1843,12 @@ argument positions.
   XSB_End_Instr() 
 
   XSB_Start_Instr(addintfastuni,_addintfastuni) /*RRA*/
-    /* takes 3 1-byte operands: 
+    /* takes 3 1-byte operands:
        byte 1 is register or local variable (reg if byte3&2 is 0),
-           indicates target where sum will be assigned.
+           indicates target where the result of the binop  will be assigned.
        byte 2 is register or local variable (reg if byte3&1 is 0)
-           indicates first argument of sum.
-       byte 3 >> 2 is signed integer that is second argument of sum.
+           indicates first argument of binop.
+       byte 3 >> 2 is signed integer that is second argument of binop
            (Lowest 2 bits indicate reg or local var of 1st 2 args.)
     */
     register Cell op1; register char op2int; register Cell op3;
@@ -1876,7 +1881,8 @@ argument positions.
 	  Float temp = fiflt_val(fiop1) + (Float)op2int;
 	  nunify_with_float_get(op3, temp);
 	}
-      } else { arithmetic_abort(CTXTc op1, "+", makeint(op2int)); }
+      } else { 
+	addintfastuni_abort(CTXTc op1, makeint(op2int)); }
     }
   XSB_End_Instr() 
 
@@ -2353,6 +2359,8 @@ argument positions.
    */
   XSB_Start_Instr(check_interrupt,_check_interrupt)  /* PPA-S */
     Def1op
+
+    UNUSED(op1);
     
     Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
@@ -2496,14 +2504,17 @@ argument positions.
       Op1((lpcreg[-1]));  // already advanced pc, so look back
       if (gc_heap(CTXTc (int)op1,FALSE)) { // no regs, garbage collection potentially modifies hreg 
 	if (heap_local_overflow(OVERFLOW_MARGIN)) {
+	  glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),(int)op1);
+	  /*
 	  if (pflags[STACK_REALLOC]) {
 	    if (glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),(int)op1) != 0) {
 	      xsb_memory_error("memory","Cannot Expand Local and Global Stacks");
 	    }
 	  } else {
-	    xsb_warn("Reallocation is turned OFF !");
+	    xsb_warn(CTXTc "Reallocation is turned OFF !");
 	    xsb_memory_error("memory","Cannot Expand Local and Global Stacks");
 	  }
+	  */
 	}
       }
     }
@@ -2522,14 +2533,17 @@ argument positions.
     if (heap_local_overflow(OVERFLOW_MARGIN)) { 
       if (gc_heap(CTXTc 0,FALSE)) { // no regs, garbage collection potentially modifies hreg 
 	if (heap_local_overflow(OVERFLOW_MARGIN)) {
+	  glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),0);
+	  /*
 	  if (pflags[STACK_REALLOC]) {
 	    if (glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),0) != 0) {
 	      xsb_memory_error("memory","Cannot Expand Local and Global Stacks");
 	    }
 	  } else {
-	    xsb_warn("Reallocation is turned OFF !");
+	    xsb_warn(CTXTc "Reallocation is turned OFF !");
 	    xsb_memory_error("memory","Cannot Expand Local and Global Stacks");
 	  }
+	  */
 	}
       }
     }
@@ -2701,8 +2715,9 @@ argument positions.
     current_inst = lpcreg;
 #ifdef MULTI_THREAD
     if (xsb_mode == C_CALLING_XSB && th != main_thread_gl) {
+      int pthread_cond_wait_err;
       xsb_ready = XSB_IN_C;
-      int pthread_cond_wait_err = xsb_cond_signal(&xsb_done_cond, "emuloop", __FILE__, __LINE__);
+      pthread_cond_wait_err = xsb_cond_signal(&xsb_done_cond, "emuloop", __FILE__, __LINE__);
       while ((XSB_IN_C == xsb_ready) && (!pthread_cond_wait_err))
       	pthread_cond_wait_err = xsb_cond_wait(&xsb_started_cond, &xsb_synch_mut, "emuloop", __FILE__, __LINE__);
     } else  
@@ -2744,7 +2759,7 @@ argument positions.
       jump_cond_fail(isatomic(op2) || isboxedinteger(op2) || isboxedfloat(op2));
       break;
     case COMPOUND_TEST:
-      jump_cond_fail(((isconstr(op2) && get_arity(get_str_psc(op2)) && (get_str_psc(op2) != box_psc)) ||
+      jump_cond_fail(((isconstr(op2) && (get_str_psc(op2) != box_psc)) ||
 		      (islist(op2))));
       break;
     case CALLABLE_TEST:
@@ -2789,8 +2804,9 @@ argument positions.
     Op2(get_xxr);
     ADVANCE_PC(size_xxx);
     if (unifunc_call(CTXTc (int)(op1), (CPtr)op2) == 0) {
-      xsb_error("Error in unary function call");
-      Fail1;
+      unifunc_abort(CTXTc (int)(op1), (CPtr)op2);
+      //      xsb_error("Error in unary function call");
+      //      Fail1;
     }
   XSB_End_Instr()
 
@@ -2981,7 +2997,7 @@ argument positions.
 #ifndef JUMPTABLE_EMULOOP
   default: {
     char message[80];
-    sprintf(message, "Illegal opcode hex %x (& %x)", *lpcreg,lpcreg); 
+    sprintf(message, "Illegal opcode hex %x (& %p)", *lpcreg,lpcreg); 
     xsb_exit(CTXTc message);
   }
 } /* end of switch */
@@ -3089,7 +3105,7 @@ extern pthread_mutexattr_t attr_rec_gl ;
 	}
 	magic_num = read_magic(fd);
 	fclose(fd);
-	if (magic_num == 0x11121307 || magic_num == 0x11121305) {
+	if (magic_num == 0x11121307  || magic_num == 0x11121305 || magic_num == 0x1112130a) {
 	  inst_begin_gl = loader(CTXTc startup_file,0);
 	}
 	else 
@@ -3099,6 +3115,9 @@ extern pthread_mutexattr_t attr_rec_gl ;
 	  xsb_initialization_exit("Error in loading startup file");
 
 	if (xsb_mode == DISASSEMBLE) {
+	  if (magic_num == 0x1112130a) {
+	    exit(0);
+	  }
 	  dis(1);
 	  exit(0);  /* This raw exit ok -- wont be called by C_CALLING_XSB */
 	}
@@ -3109,10 +3128,8 @@ extern pthread_mutexattr_t attr_rec_gl ;
 
 	current_inst = inst_begin_gl;   // current_inst is thread-specific.
 
-#ifdef MULTI_THREAD
 	init_message_queue(&mq_table[0], MQ_CHECK_FLAGS);
 	init_message_queue(&mq_table[max_threads_glc], MQ_CHECK_FLAGS);
-#endif
 
 	return(0);
 

@@ -51,7 +51,9 @@ typedef int Integer ;
 typedef unsigned int UInteger ;
 #define XSB_MAXINT ((int)0x7fffffff)	/* Modified by Kostis */
 #endif
-#define XSB_MININT (-XSB_MAXINT - 1)
+//#define XSB_MININT (-XSB_MAXINT - 1)
+// tokenizer cant read the smallest int.
+#define XSB_MININT (-XSB_MAXINT)
 typedef double prolog_float;
 
 #ifndef FAST_FLOATS

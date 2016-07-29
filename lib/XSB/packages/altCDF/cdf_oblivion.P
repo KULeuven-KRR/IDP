@@ -509,6 +509,18 @@ rename_if_nec(Id,NId) :- things_to_rename(Id,NId), !.
 rename_if_nec(Id,Id).
 
 
+/************************************************************************/
+/*									*/
+/*	clean_cdf Utility (to be implemented)				*/
+/*									*/
+/*  check_cdf/0 looks through the current cdf and reports		*/
+/*  inconsistencies.							*/
+/*									*/
+/*  clean_cdf/0 looks through a cdf, finds all disconnected entities 	*/
+/*  (those not in the isa hierarich) and obliterates them.  		*/
+/*									*/
+/************************************************************************/
+
 
 end_of_file.
 =======

@@ -164,7 +164,12 @@ infer_usage_of_symbol(Sym, InList, OutList, Module,Ps_or_real) :-
 	; sym_propin(used, Sym),
 	  ( sym_prop(pred, Sym) ->
 	    	( member(pred(Sym,Cls,_), ClList) ->
-			check_pred(Cls, SymTab, InList, OutList)
+		    (sym_type(Sym,aggregation(Spec)),
+		     extract_aggr_spec(Spec,_,_,AggSpec)
+		     ->	    add_aggspec_preds(AggSpec,SymTab,InList,MidList)
+		     ;	    MidList = InList
+		    ),
+		    check_pred(Cls, SymTab, MidList, OutList)
 		; ( sym_prop(im(Mod), Sym) ->
 			sym_insert(Mod, 0, [used], SymTab, _)
 		  ; sym_prop(docim(Mod), Sym) ->
@@ -196,6 +201,31 @@ infer_usage_of_symbol(Sym, InList, OutList, Module,Ps_or_real) :-
 		/* include the case of a module, a constant, a functor, ... */
 	  )
 	).
+
+add_aggspec_preds(po(OpSpec),SymTab,InList,OutList) :- !,
+	insert_pred_spec_if_nec(OpSpec,SymTab,InList,OutList).
+add_aggspec_preds(lattice(OpSpec),SymTab,InList,OutList) :- !,
+	insert_pred_spec_if_nec(OpSpec,SymTab,InList,OutList).
+add_aggspec_preds(fold(OpSpec,Id),SymTab,InList,OutList) :- !,
+	insert_pred_spec_if_nec(OpSpec,SymTab,InList,MidList),
+	(atomic(Id)
+	 ->	OutList = MidList
+	 ;	insert_pred_spec_if_nec(Id,SymTab,MidList,OutList)
+	).
+add_aggspec_preds(OpSpec-Id,SymTab,InList,OutList) :- !,
+	add_aggspec_preds(fold(OpSpec,Id),SymTab,InList,OutList).
+add_aggspec_preds(termset,_SymTab,List,List) :- !.
+add_aggspec_preds(OpSpec,SymTab,InList,OutList) :-
+	add_aggspec_preds(po(OpSpec),SymTab,InList,OutList).
+
+insert_pred_spec_if_nec(OpSpec,SymTab,InList,OutList) :-
+	(OpSpec = Name/Arity
+	 ->	true
+	 ;	functor(OpSpec,Name,Arity)
+	),
+	sym_insert(Name,Arity,[],SymTab,Sym),
+	add_if_necessary(Sym,InList,OutList).
+	
 
 check_pred([], _SymTab, InList, InList) :- !.
 check_pred([Cl|Cls], SymTab, InList, OutList) :-

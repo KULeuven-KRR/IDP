@@ -274,7 +274,7 @@ xsb_dcg_body_nonvar('->'(Term1,Term2), In, Out, '->'(Goal1,Goal2)) :-
 xsb_dcg_body_nonvar(not(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
 	!,
 	dcg_body(Term, In, _, Goal).
-xsb_dcg_body_nonvar('\+'(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
+xsb_dcg_body_nonvar(\+(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
 	!,
 	dcg_body(Term, In, _, Goal).
 xsb_dcg_body_nonvar(fail_if(Term), In, NewIn, (Goal -> fail ; NewIn=In)) :-
@@ -322,7 +322,7 @@ standard_dcg_body_nonvar(not(Term), In, Out, not(Goal)) :-
 	!,
 	warning('Use of not/1 in DCG rule may not be sound!'),
 	dcg_body(Term, In, Out, Goal).
-standard_dcg_body_nonvar('\+'(Term), In, Out, '\+'(Goal)) :-
+standard_dcg_body_nonvar(\+(Term), In, Out, \+(Goal)) :-
 	!,
 	warning('Use of (\+)/1 in DCG rule may not be sound!'),
 	dcg_body(Term, In, Out, Goal).

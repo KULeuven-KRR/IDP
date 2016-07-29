@@ -96,13 +96,13 @@ DllExport int call_conv openConnection(void)
   password = ptoc_string(CTXTc 6);
 
   if (isConnectionHandle(handle) != NULL) {
-    errorMesg = "XSB_DBI ERROR: Connection handle already exists";
+    errorMesg = "Connection handle already exists";
     errorNumber = "XSB_DBI_006";
     return FALSE;
   }
 
   if ( MAX_CONNECTIONS <= numCHandles ){
-    errorMesg = "XSB_DBI ERROR: Too many open connections";
+    errorMesg = "Too many open connections";
     errorNumber = "XSB_DBI_014";
     return FALSE;
   }
@@ -192,7 +192,7 @@ DllExport int call_conv closeConnection(void)
     }
   }
     
-  errorMesg = "XSB_DBI ERROR: Connection handle does not exist";
+  errorMesg = "Connection handle does not exist";
   errorNumber = "XSB_DBI_004";
   return FALSE;
 }
@@ -220,7 +220,7 @@ DllExport int call_conv queryConnection(void)
 
   if ((qHandle = isQueryHandle(qhandle)) != NULL) {
     if (strcmp(qHandle->connHandle->handle, chandle)) {
-      errorMesg = "XSB_DBI ERROR: Query handle already exists";
+      errorMesg = "Query handle already exists";
       errorNumber = "XSB_DBI_007";;
       return FALSE;
     }
@@ -257,7 +257,7 @@ DllExport int call_conv queryConnection(void)
   }
   else if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     if ( MAX_QUERIES <= numQHandles ){
-      errorMesg = "XSB_DBI ERROR: Too many active queries";
+      errorMesg = "Too many active queries";
       errorNumber = "XSB_DBI_016";
       return FALSE;
     }
@@ -278,7 +278,7 @@ DllExport int call_conv queryConnection(void)
     result = queryDriver(qHandle);
   }
   else {
-    errorMesg = "XSB_DBI ERROR: Connection handle does not exist";
+    errorMesg = "Connection handle does not exist";
     errorNumber = "XSB_DBI_004";
     return FALSE;		
   }
@@ -331,20 +331,20 @@ DllExport int call_conv prepareStatement(void)
   cHandle = NULL;
   
   if ((cHandle = isConnectionHandle(chandle)) == NULL) {
-    errorMesg = "XSB_DBI ERROR: Connection handle does not exist";
+    errorMesg = "Connection handle does not exist";
     errorNumber = "XSB_DBI_004";
     return FALSE;
   }
   
   if ((qHandle = isQueryHandle(qhandle)) != NULL) {
-    errorMesg = "XSB_DBI ERROR: Query handle already exists";
+    errorMesg = "Query handle already exists";
     errorNumber = "XSB_DBI_007";
     return FALSE;
   }
 
 
   if ( MAX_QUERIES <= numQHandles ){
-    errorMesg = "XSB_DBI ERROR: Too many active queries";
+    errorMesg = "Too many active queries";
     errorNumber = "XSB_DBI_016";
     return FALSE;
   }
@@ -403,7 +403,7 @@ DllExport int call_conv executePreparedStatement(void)
   result = NULL;
 
   if ((qHandle = isQueryHandle(queryHandle)) == NULL) {
-    errorMesg = "XSB_DBI ERROR: Query handle does not exist";
+    errorMesg = "Query handle does not exist";
     errorNumber = "XSB_DBI_005";
     return FALSE;
   }
@@ -416,7 +416,7 @@ DllExport int call_conv executePreparedStatement(void)
       bindValues[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
       bindValues[i]->val = NULL; 
       if (is_nil(bindList)) {
-	errorMesg = "XSB_DBI ERROR: Not all paremeters supplied";
+	errorMesg = "Not all parameters supplied";
 	errorNumber = "XSB_DBI_008";
         freeBindValues(bindValues,qHandle->numParams); 
 	return FALSE;
@@ -441,7 +441,7 @@ DllExport int call_conv executePreparedStatement(void)
       else if (is_functor(element)) {
       }
       else if (is_var(element)) {
-	errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
+	errorMesg = "Unbound variable in parameter list";
 	errorNumber = "XSB_DBI_009";
         freeBindValues(bindValues,qHandle->numParams); 
 	return FALSE;
@@ -567,9 +567,9 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
     element = p2p_car(sqlQueryList);
     sqlQueryList = p2p_cdr(sqlQueryList);
     if (is_string(element)) {
-      if (p2c_string(element)[0] == DB_INTERFACE_TERM_SYMBOL) {
+      if ((unsigned char) p2c_string(element)[0] == (unsigned char) DB_INTERFACE_TERM_SYMBOL) {
 	cnt = 0;
-	temp = (char *)malloc(ELEMENT_SIZE * sizeof(char)+1);
+	temp = (char *)malloc(2*strlen(p2c_string(element))*sizeof(char)+1);
 	temp[cnt++] = '\'';
 	/* protect inner quotes in Prolog terms */
 	for (i = 0 ; i < strlen(p2c_string(element)) ; i++) {
@@ -612,7 +612,7 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
       }
     }
     else if (is_var(element)) {
-      errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
+      errorMesg = "Unbound variable in parameter list";
     }
   }
   return sqlQuery;
@@ -623,7 +623,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 {
   prolog_term element;
   char* temp;
-  char c;
+  unsigned char c;
   int i, j;
   int rFlag;
   
@@ -632,7 +632,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
   }
 
   if (!is_nil(returnList) && result == NULL && qHandle->state == QUERY_BEGIN) {
-    errorMesg = "XSB_DBI_ERROR: Invalid return list in query";
+    errorMesg = "Invalid return list in query";
     errorNumber = "XSB_DBI_013";
     rFlag = INVALID_RETURN_LIST;
   }  
@@ -649,7 +649,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
   if (result != NULL) {
     while (!is_nil(returnList)) {
       if (qHandle->numResultCols <= i) {
-	errorMesg = "XSB_DBI ERROR: Number of requested columns exceeds the number of columns in the query";
+	errorMesg = "Number of requested columns exceeds the number of columns in the query";
 	errorNumber = "XSB_DBI_011";
 	rFlag = TOO_MANY_RETURN_COLS;
 	return rFlag;
@@ -663,7 +663,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 	  c2p_nil(CTXTc element);
 	else {
 	  c = result[i]->val->str_val[0];
-	  if (c == DB_INTERFACE_TERM_SYMBOL) {
+	  if (c == (unsigned char) DB_INTERFACE_TERM_SYMBOL) {
 	    temp = (char *)malloc(strlen(result[i]->val->str_val) * sizeof(char));
 	    for (j = 1 ; j < (int)strlen(result[i]->val->str_val) ; j++) {
 	      temp[j-1] = result[i]->val->str_val[j];
@@ -685,6 +685,9 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 	c2p_int(CTXTc result[i]->val->i_val, element);
       else if (is_var(element) && result[i]->type == FLOAT_TYPE)
 	c2p_float(CTXTc result[i]->val->f_val, element);
+      else if (is_var(element) && result[i]->type == NULL_VALUE_TYPE) {
+	c2p_functor(CTXTc "NULL", 0, element);
+      }
       returnList = p2p_cdr(returnList);
       i++;
     }
@@ -692,7 +695,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
   }
 
   if (result != NULL && qHandle->numResultCols > i) {
-    errorMesg = "XSB_DBI ERROR: Number of requested columns is less than the number of returned columns";
+    errorMesg = "Number of requested columns is less than the number of returned columns";
     errorNumber = "XSB_DBI_012";
     rFlag = TOO_FEW_RETURN_COLS;
     return rFlag;
@@ -805,14 +808,14 @@ DllExport int call_conv registerXSBDriver(char* drivername, int num)
 
   for (i = 0 ; i < numDrivers ; i++) {
     if (!strcmp(DBdrivers[i]->driver, drivername)) {
-      errorMesg = "XSB_DBI ERROR: driver already registered";
+      errorMesg = "Driver is already registered";
       errorNumber = "XSB_DBI_001";
       return -1;
     }
   }
 
   if ( MAX_DRIVERS <= numDrivers ){
-    errorMesg = "XSB_DBI ERROR: Too many registered drivers";
+    errorMesg = "Too many registered drivers";
     errorNumber = "XSB_DBI_015";
     return FALSE;
   }
@@ -863,12 +866,12 @@ static union functionPtrs* getDriverFunction(char* drivername, int type)
 	  return DBdrivers[i]->functions[j]->functionName;
 	}
       }
-      errorMesg = "XSB_DBI ERROR: Function does not exist in this driver";
+      errorMesg = "Function does not exist in this driver";
       errorNumber = "XSB_DBI_003";
       return NULL;
     }
   }
-  errorMesg = "XSB_DBI ERROR: Driver does not exist";
+  errorMesg = "Driver does not exist";
   errorNumber = "XSB_DBI_002";
   return NULL;
 }

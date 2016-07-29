@@ -205,7 +205,7 @@ void delete_call_index(CTXTdeclc BTNptr root) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
+void delete_subsumptive_predicate_table(CTXTdeclc TIFptr tif) {
 
   SubProdSF cur_prod, next_prod;
   SubConsSF cur_cons, next_cons;

@@ -113,7 +113,7 @@ typedef struct {
    ------------------- */
 NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *);
 NodeStats node_statistics(Structure_Manager *);
-HashStats hash_statistics(Structure_Manager *);
+HashStats hash_statistics(CTXTdeclc Structure_Manager *);
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -138,6 +138,16 @@ HashStats hash_statistics(Structure_Manager *);
     NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
     NodeStats_SizeUsedNodes(TSI)   +  NodeStats_SizeUsedNodes(ASI) )
 
+#define CurrentTotalIncrTableSpaceAlloc(CallNode,OutEdge,CallList,Call2List,Key) \
+  ( NodeStats_SizeAllocNodes(CallNode)  +     NodeStats_SizeAllocNodes(OutEdge) + \
+    NodeStats_SizeAllocNodes(CallList) +     NodeStats_SizeAllocNodes(Call2List)+   \
+    NodeStats_SizeAllocNodes(Key)   )
+
+#define CurrentTotalIncrTableSpaceUsed(CallNode,OutEdge,CallList,Call2List,Key) \
+  ( NodeStats_SizeUsedNodes(CallNode)  +     NodeStats_SizeUsedNodes(OutEdge) + \
+    NodeStats_SizeUsedNodes(CallList) +     NodeStats_SizeUsedNodes(Call2List)+   \
+    NodeStats_SizeUsedNodes(Key)   )
+
 #else
 
 #define CurrentSharedTableSpaceAlloc(BTN,BTHT,VARSF,ALN,ASI)		\
@@ -155,8 +165,8 @@ HashStats hash_statistics(Structure_Manager *);
 
 #define CurrentSharedTableSpaceUsed(BTN,BTHT,VARSF,ALN,ASI)		\
   ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	\
-    NodeStats_SizeUsedNodes(VARSF) + NodeStats_SizeUsedNodes(ALN)	\
-    + NodeStats_SizeUsedNodes(ASI) )
+    NodeStats_SizeUsedNodes(VARSF) + NodeStats_SizeUsedNodes(ALN)   +	\
+    NodeStats_SizeUsedNodes(ASI) )
 
 #define CurrentPrivateTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	\
 				     ALN,TSTN,TSTHT,TSI,ASI)		\

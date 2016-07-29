@@ -33,6 +33,7 @@
 #define EARLY_COMPLETE                           9
 #define START_FOREST_VIEW                        10
 #define STOP_FOREST_VIEW                         11
+//#define FLUSH_FOREST_VIEW                        34   -- placed below
 #define TNOT_SETUP                               12
 #define GET_CURRENT_SCC                          13
 #define PRINT_COMPLETION_STACK                   14
@@ -47,7 +48,24 @@
 #define IMMED_ANS_DEPENDS_PTRLIST                23
 #define GET_RESIDUAL_SCCS                        24
 #define TEMP_FUNCTION                            25
-#define TEMP_FUNCTION_2                            26
+#define TEMP_FUNCTION_2                          26
+#define ABOLISH_NONINCREMENTAL_TABLES            27
+#define SET_FOREST_LOGGING_FOR_PRED              28
+#define INCOMPLETE_SUBGOAL_INFO                  29
+#define GET_CALL_FROM_SF                         30
+#define GET_POS_AFFECTS                          31
+#define GET_NEG_AFFECTS                          32
+#define PSC_IMMUTABLE                            33
+#define FLUSH_FOREST_VIEW                        34
+
+/* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
+#define PRINT_LS                240
+#define PRINT_TR                241
+#define PRINT_HEAP              242
+#define PRINT_CP                243
+#define PRINT_REGS              244
+#define PRINT_ALL_STACKS        245
+
 
 // For delete return
 #define ANSWER_SUBSUMPTION   0
@@ -60,3 +78,13 @@
 
 #define IS_SUBGOAL_FRAME 0
 #define IS_ASI           1
+
+#define ERROR_ON_INCOMPLETE 0
+#define SKIP_ON_INCOMPLETE  1
+
+// Used in abolish_table_call_single
+#define DONT_INVALIDATE   0
+#define DO_INVALIDATE     1
+
+#define SHOULDNT_COND_WARN     0
+#define SHOULD_COND_WARN       1

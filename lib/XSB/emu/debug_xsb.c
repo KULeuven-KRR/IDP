@@ -1,26 +1,26 @@
 /* File:      debug_xsb.c
 ** Author(s): Xu, Swift, Sagonas, Johnson, Freire
 ** Contact:   xsb-contact@cs.sunysb.edu
-** 
+**
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
 ** Copyright (C) ECRC, Germany, 1990
-** 
+**
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id: debug_xsb.c,v 1.107 2013-05-06 21:10:24 dwarren Exp $
-** 
+**
 */
 
 
@@ -100,7 +100,7 @@ void print_term(FILE *fp, Cell term, byte car, long level)
       //  instead of [X]_val macro
     if (isboxedfloat(term)) {
         fprintf(fp, "%f", boxedfloat_val(term));
-        return;   
+        return;
     }
     else if (isboxedinteger(term)) {
         fprintf(fp, "%" Intfmt, (Integer)boxedint_val(term));
@@ -148,7 +148,7 @@ void print_term(FILE *fp, Cell term, byte car, long level)
     XSB_Deref(term);
     switch (cell_tag(term)) {
     case XSB_FREE:
-    case XSB_REF1: 
+    case XSB_REF1:
     case XSB_ATTV:
       goto vertbar;
     case XSB_LIST:
@@ -196,7 +196,7 @@ int sprint_quotedname(char *buffer, int size,char *string)
       }
       else {
 	//	printf(" quoted name too long!\n");
-	return size; 
+	return size;
       }
     }
   }
@@ -221,8 +221,8 @@ void print_cell_tag(Cell Term) {
 			  get_arity(get_str_psc(Term))); break;
   case XSB_INT: printf("integer (%d)\n",(int) int_val(Term));break;
   case XSB_LIST: printf("list (%p)\n",clref_val(Term));break;
-  case XSB_STRING: printf("atom (%p/%s)\n",string_val(Term),string_val(Term));break;    
-  case XSB_FLOAT: printf("atom (%f)\n",float_val(Term));break;    
+  case XSB_STRING: printf("atom (%p/%s)\n",string_val(Term),string_val(Term));break;
+  case XSB_FLOAT: printf("atom (%f)\n",float_val(Term));break;
   case XSB_ATTV: printf("attvar (%p)\n",clref_val(Term));break;
   default: printf("variable\n");
   }
@@ -304,7 +304,7 @@ CTptr_2 cycle_trail_2;
     *(CPtr)preTerm = makestring(cyclic_string);				\
   }
 
-void mark_cyclic(CTXTdeclc Cell Term) { 
+void mark_cyclic(CTXTdeclc Cell Term) {
   Cell preTerm, visited_string;
 
   cycle_trail_top = -1;
@@ -321,7 +321,7 @@ void mark_cyclic(CTXTdeclc Cell Term) {
   //  printf("cyclic_string %p\n",cyclic_string);
   visited_string = makestring(string_find("_$visited",1));
 
-  push_cycle_trail(Term);	
+  push_cycle_trail(Term);
   //  printf("Term starting %p\n",Term);print_cell_tag(Term);
   mark_as_visited(Term);
   //  printf("Term starting set to %p\n",Term);print_cell_tag(Term);
@@ -329,14 +329,14 @@ void mark_cyclic(CTXTdeclc Cell Term) {
   while (cycle_trail_top >= 0) {
     //    printf("--------\n");
     if (cycle_trail[cycle_trail_top].arg_num > cycle_trail[cycle_trail_top].arity) {
-      pop_cycle_trail_keep_mark(Term);	
+      pop_cycle_trail_keep_mark(Term);
       continue;
     }
     else {
       if (cycle_trail[cycle_trail_top].arg_num == 0) {
 	preTerm = (Cell) cycle_trail[cycle_trail_top].cell_addr;
 	Term = cycle_trail[cycle_trail_top].value;
-	//	printf("getting car %p @%p\n",cycle_trail[cycle_trail_top].cell_addr, 
+	//	printf("getting car %p @%p\n",cycle_trail[cycle_trail_top].cell_addr,
 	//	       cycle_trail[cycle_trail_top].value);
 	if (!(cell_tag(Term) == XSB_LIST || cell_tag(Term) == XSB_STRUCT)) {
 	  cycle_trail[cycle_trail_top].arg_num++;
@@ -347,7 +347,7 @@ void mark_cyclic(CTXTdeclc Cell Term) {
 	//	printf("examining list/struct %p %d\n",
 	//	       clref_val(cycle_trail[cycle_trail_top].parent),
 	//	       cycle_trail[cycle_trail_top].arg_num);
-	preTerm = Term = (Cell) (clref_val(cycle_trail[cycle_trail_top].parent) 
+	preTerm = Term = (Cell) (clref_val(cycle_trail[cycle_trail_top].parent)
 				 + cycle_trail[cycle_trail_top].arg_num);
       }
     }
@@ -358,7 +358,7 @@ void mark_cyclic(CTXTdeclc Cell Term) {
       //      printf("Term after %p\n",Term);print_cell_tag(Term);
       if (cell_tag(Term) == XSB_LIST || cell_tag(Term) == XSB_STRUCT) {
 	if (is_marked_cyclic_clref(Term) && !is_marked_cyclic(preTerm)) {
-	    push_pre_image_trail0((CPtr) preTerm, makestring(cyclic_string));	
+	    push_pre_image_trail0((CPtr) preTerm, makestring(cyclic_string));
 	    *clref_val(preTerm) = makestring(cyclic_string);
 	    //	    printf("marking %p @%p as cyclic %p\n",preTerm,*(CPtr)preTerm,
 	    //		   makestring(cyclic_string));
@@ -366,12 +366,12 @@ void mark_cyclic(CTXTdeclc Cell Term) {
 	else if (!is_marked_cyclic_clref(Term)) {
 	  if (!has_been_visited(Term)) {
 	    //	    printf("setting visited string for struct\n");
-	    push_cycle_trail(Term);	
+	    push_cycle_trail(Term);
 	    mark_as_visited(Term);
 	    //	    printf("marking %p as visited\n",clref_val(Term));
 	  }
 	  else {
-	    push_pre_image_trail0((CPtr) preTerm, makestring(cyclic_string));	
+	    push_pre_image_trail0((CPtr) preTerm, makestring(cyclic_string));
 	    mark_with_cyclic_string(preTerm);
 	    //	    printf("marking %p @%p as cyclic %p\n",preTerm,*(CPtr)preTerm,
 	    //   makestring(cyclic_string));
@@ -391,14 +391,14 @@ static int sprint_term(forestLogBuffer fl_buf, int insize, Cell term, byte car, 
   Psc psc;
   CPtr cptr;
   int size = insize;
-  
+
   //  if (size > MAXTERMBUFSIZE) return size;
   maybe_realloc_buffers(fl_buf,size);
   //  char * buffer = fl_buf->fl_buffer;
 
   level--;
   if (level < 0) {
-    if (car == CAR) 
+    if (car == CAR)
       return size + sprintf(virtual_buffer+size, "'...'");
     else       return size + sprintf(virtual_buffer+size, "'...']");
   }
@@ -423,7 +423,7 @@ static int sprint_term(forestLogBuffer fl_buf, int insize, Cell term, byte car, 
        in order to attain a predictable width for the sprintf I
        converted things to decimal.  Perhaps there's some way of
        printing out the integer part of float in a fixed width, but I
-       don't know how. 
+       don't know how.
     */
     if (isboxedfloat(term)) {
       Float val = boxedfloat_val(term);
@@ -474,7 +474,7 @@ static int sprint_term(forestLogBuffer fl_buf, int insize, Cell term, byte car, 
     XSB_Deref(term);
     switch (cell_tag(term)) {
     case XSB_FREE:
-    case XSB_REF1: 
+    case XSB_REF1:
     case XSB_ATTV:
       goto vertbar;
     case XSB_LIST:
@@ -523,7 +523,7 @@ static int sprint_termsize(Cell term, byte car, int level)
       //  the behavior is the same as XSB_INT or XSB_FLOAT, but with boxed[X]_val macro
       //  instead of [X]_val macro
     if (isboxedfloat(term)) {
-        return size+10;   
+        return size+10;
     }
     else if (isboxedinteger(term)) {
         return size+10;
@@ -553,7 +553,7 @@ static int sprint_termsize(Cell term, byte car, int level)
     XSB_Deref(term);
     switch (cell_tag(term)) {
     case XSB_FREE:
-    case XSB_REF1: 
+    case XSB_REF1:
     case XSB_ATTV:
       goto vertbar;
     case XSB_LIST:
@@ -577,12 +577,12 @@ static int sprint_termsize(Cell term, byte car, int level)
 void printterm(FILE *fp, Cell term, long depth) {
 
   print_term(fp, term, CAR, depth);
-  fflush(fp); 
+  fflush(fp);
 }
 
 void printCyclicTerm(CTXTdeclc Cell term) {
   mark_cyclic(CTXTc term);
-  printterm(stddbg, term, (long)flags[WRITE_DEPTH]);	       
+  printterm(stddbg, term, (long)flags[WRITE_DEPTH]);
 }
 
 void sprintCyclicTerm(CTXTdeclc forestLogBuffer fl_buf, Cell Term) {
@@ -596,8 +596,11 @@ int sprintTerm(forestLogBuffer fl_buf, Cell Term) {
 }
 
 static int sprint_cyclic_term_nonvoid(CTXTdeclc forestLogBuffer fl_buf, int size, Cell Term,long depth) {
+  int newsize;
   mark_cyclic(CTXTc Term);
-  return sprint_term(fl_buf, size, Term, CAR, depth);
+  newsize = sprint_term(fl_buf, size, Term, CAR, depth);
+  unwind_cycle_trail;
+  return newsize;
 }
 
 /*------------------------------------------------------------------*/
@@ -633,7 +636,7 @@ void sprint_answer_template(CTXTdeclc forestLogBuffer fl_buf, CPtr pAnsTmplt, in
     }
     size = sprint_term(fl_buf, size, *pAnsTmplt, CAR,depth);
   }
-  sprintf(buffer+size,"]"); 
+  sprintf(buffer+size,"]");
 }
 
 void sprintAnswerTemplate(CTXTdeclc forestLogBuffer fl_buf, CPtr pAnsTmplt, int template_size) {
@@ -663,7 +666,7 @@ static void sprint_registers(CTXTdeclc forestLogBuffer fl_buf,Psc psc,long depth
 
   arity = (int)get_arity(psc);
 
-  size = sprintf(buffer, "%s", get_name(psc));
+  size = sprint_quotedname(buffer, 0, get_name(psc));
   if (arity != 0) sprintf(buffer+size, "(");size++;
   for (i=1; i <= arity; i++) {
     size = sprint_term(fl_buf, size, cell(reg+i), CAR, depth-1);
@@ -684,8 +687,7 @@ static void sprint_cyclic_registers(CTXTdeclc forestLogBuffer fl_buf,Psc psc,lon
   char * buffer = fl_buf->fl_buffer;
   arity = (int)get_arity(psc);
 
-  sprintf(buffer, "%s", get_name(psc));
-  size = (int)strlen(get_name(psc));
+  size = sprint_quotedname(buffer, 0, get_name(psc));
   if (arity != 0) sprintf(buffer+size, "(");size++;
   for (i=1; i <= arity; i++) {
     size = sprint_cyclic_term_nonvoid(CTXTc fl_buf, size,  cell(reg+i), depth-1);
@@ -711,7 +713,7 @@ void print_registers(CTXTdeclc FILE *fp, Psc psc,long depth) {
     if (i < arity) fprintf(fp, ",");
   }
   //  if (arity != 0) fprintf(fp, ")\n"); else fprintf(fp, "\n");
-  if (arity != 0) fprintf(fp, ")"); 
+  if (arity != 0) fprintf(fp, ")");
   //  fflush(fp);
 }
 
@@ -725,7 +727,7 @@ void print_n_registers(CTXTdeclc FILE *fp, int arity , long depth) {
     if (i < arity) fprintf(fp, ",");
   }
   //  if (arity != 0) fprintf(fp, ")\n"); else fprintf(fp, "\n");
-  if (arity != 0) fprintf(fp, ")"); 
+  if (arity != 0) fprintf(fp, ")");
   //  fflush(fp);
 }
 
@@ -760,7 +762,7 @@ void debug_call(CTXTdeclc Psc psc)
 /*  Please ensure they stay defined whenever we compile with -dbg option.      */
 /*=============================================================================*/
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 /* This set of routines prints out the CP stack with stuff I happen to
    want.  It has different information than print_cp() in gc_print.h, so
    please keep it around. */
@@ -769,7 +771,7 @@ void debug_call(CTXTdeclc Psc psc)
 void print_cpf_pred(CPtr cpf)
 {
   Psc psc;
-  
+
   psc = cp_psc(cpf);
   if (psc) {
     switch(get_type(psc)) {
@@ -811,7 +813,7 @@ void print_cp_backtrace()
 void alt_print_cpf_pred(CPtr cpf,FILE* where)
 {
   Psc psc;
-  
+
   psc = * (Psc *)cpf;
   if (psc) {
     switch(get_type(psc)) {
@@ -841,33 +843,33 @@ void alt_print_cpf_pred(CPtr cpf,FILE* where)
 
 #endif /* CP_DEBUG */
 
-/*-------------------------------------------*/ 
+/*-------------------------------------------*/
 
 static void print_common_cpf_part(CPtr cpf_addr, FILE* where) {
 
   fprintf(where,"   CP stack %p:\tptr to next clause:\t%p\n",
 	     &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr));
-  fprintf(where,"   CP stack %p:\tprev top:\t%p\n", 
+  fprintf(where,"   CP stack %p:\tprev top:\t%p\n",
 	     &(cp_prevtop(cpf_addr)), cp_prevtop(cpf_addr));
 #ifdef CP_DEBUG
-  if ( (int) cp_psc(cpf_addr) != 0) 
+  if ( (int) cp_psc(cpf_addr) != 0)
     alt_print_cpf_pred((CPtr) &(cp_psc(cpf_addr)),where);
 #endif
   fprintf(where,"   CP stack %p:\tprev env cap (ebreg):\t%p\n",
 	     &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr));
-  fprintf(where,"   CP stack %p:\ttop of heap:\t\t%p\n", 
+  fprintf(where,"   CP stack %p:\ttop of heap:\t\t%p\n",
 	     &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr));
   fprintf(where,"   CP stack %p:\ttop of trail:\t\t%p\n",
 	     &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr));
-  fprintf(where,"   CP stack %p:\tcontinuation pointer:\t%p\n", 
+  fprintf(where,"   CP stack %p:\tcontinuation pointer:\t%p\n",
 	     &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr));
-  fprintf(where,"   CP stack %p:\tereg:\t%p\n", 
+  fprintf(where,"   CP stack %p:\tereg:\t%p\n",
 	     &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr));
-  fprintf(where,"   CP stack %p:\tparent subgoal dreg:\t%p\n", 
+  fprintf(where,"   CP stack %p:\tparent subgoal dreg:\t%p\n",
 	     &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr));
-  fprintf(where,"   CP stack %p:\troot subgoal:\t%p\n", 
+  fprintf(where,"   CP stack %p:\troot subgoal:\t%p\n",
 	     &(cp_ptcp(cpf_addr)), cp_ptcp(cpf_addr));
-  fprintf(where,"   CP stack %p:\tscheduling link:\t\t%p\n", 
+  fprintf(where,"   CP stack %p:\tscheduling link:\t\t%p\n",
 	     &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr));
  }
 
@@ -880,17 +882,17 @@ static void print_cpf(CTXTdeclc CPtr cpf_addr, FILE* where) {
   inst = * (byte *) * cpf_addr;
 
   /* tableretry, tabletrust, check_complete */
-  if (inst == 0xc3 || inst == 0xc4 || inst == 0xc4) 
+  if (inst == 0xc3 || inst == 0xc4 || inst == 0xc4)
     cp_type = GENERATOR_CP_FRAME;
   /* retryme, trustme, retry, trust, dynretry, dyntrust, retrymeor, trustmeor */
-  else if (inst == 0xa1 || inst == 0xa2 || inst == 0xa4 
+  else if (inst == 0xa1 || inst == 0xa2 || inst == 0xa4
 	   || inst == 0xa5 || inst == 0xba || inst == 0xbb || inst == 0xb8 || inst == 0xb9)
     cp_type = STANDARD_CP_FRAME;
   else if (inst >= 0x5c && inst <= 0x77)  // tries
     cp_type = STANDARD_CP_FRAME;
-  else if (inst == 0xc5) 
+  else if (inst == 0xc5)
     cp_type = CONSUMER_CP_FRAME;
-  else if (inst == 0xc6) 
+  else if (inst == 0xc6)
     cp_type = COMPL_SUSP_CP_FRAME;
 
   switch (cp_type) {
@@ -908,17 +910,17 @@ static void print_cpf(CTXTdeclc CPtr cpf_addr, FILE* where) {
     fprintf(where,"Generator Choice Point Frame: ");
     print_subgoal(CTXTc where, (VariantSF) tcp_subgoal_ptr(cpf_addr));fprintf(where,"\n");
     print_common_cpf_part(cpf_addr,where);
-    fprintf(where,"   CP stack %p:\ttemplate:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\ttemplate:\t0x%p\n",
 	       &(tcp_template(cpf_addr)), tcp_template(cpf_addr));
-    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n",
 	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
-    fprintf(where,"   CP stack %p:\tCh P  freeze register:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tCh P  freeze register:\t0x%p\n",
 	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
-    fprintf(where,"   CP stack %p:\tHeap  freeze register:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tHeap  freeze register:\t0x%p\n",
 	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr));
-    fprintf(where,"   CP stack %p:\tTrail freeze register:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tTrail freeze register:\t0x%p\n",
 	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr));
-    fprintf(where,"   CP stack %p:\tLo St freeze register:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tLo St freeze register:\t0x%p\n",
 	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
 #ifdef LOCAL_EVAL
     fprintf(where,"   CP stack %p:\tlocal eval trie_return:\t0x%p\n",
@@ -933,11 +935,11 @@ static void print_cpf(CTXTdeclc CPtr cpf_addr, FILE* where) {
     fprintf(where,"Consumer Choice Point Frame: ");
     print_subgoal(CTXTc where, (VariantSF) nlcp_subgoal_ptr(cpf_addr));fprintf(where,"\n");
     print_common_cpf_part(cpf_addr,where);
-    fprintf(where,"   CP stack %p:\ttemplate:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\ttemplate:\t0x%p\n",
 	       &(nlcp_template(cpf_addr)), nlcp_template(cpf_addr));
-    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n",
 	       &(nlcp_subgoal_ptr(cpf_addr)), nlcp_subgoal_ptr(cpf_addr));
-    fprintf(where,"   CP stack %p:\tPrevlookup:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tPrevlookup:\t0x%p\n",
 	       &(nlcp_prevlookup(cpf_addr)), nlcp_prevlookup(cpf_addr));
 #ifdef LOCAL_EVAL
     fprintf(where,"   CP stack %p:\tlocal eval trie_return:\t0x%p\n",
@@ -951,9 +953,9 @@ static void print_cpf(CTXTdeclc CPtr cpf_addr, FILE* where) {
     case COMPL_SUSP_CP_FRAME:
     fprintf(where,"Completion Choice Point Frame:\n");
     print_common_cpf_part(cpf_addr,where);
-    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n",
 	       &(csf_subgoal_ptr(cpf_addr)), csf_subgoal_ptr(cpf_addr));
-    fprintf(where,"   CP stack %p:\tPrevCSF:\t0x%p\n", 
+    fprintf(where,"   CP stack %p:\tPrevCSF:\t0x%p\n",
 	       &(csf_prevcsf(cpf_addr)), csf_prevcsf(cpf_addr));
     fprintf(where,"   CP stack %p:\tNeg Loop:\t%d\n",
 	    &(csf_neg_loop(cpf_addr)), (int) csf_neg_loop(cpf_addr));
@@ -986,8 +988,8 @@ void alt_print_cp(CTXTdeclc char * title)
     }
 
   start = 0 ;
-  startp = (CPtr)tcpstack.high - 1 ; 
-  endp = top_of_cpstack ; 
+  startp = (CPtr)tcpstack.high - 1 ;
+  endp = top_of_cpstack ;
 
   fprintf(where,"%s breg: %p bfreg %p\n",title,breg,bfreg);
   while ( startp > endp )
@@ -1052,7 +1054,7 @@ static Cell cell_array[MAXTERMBUFSIZE];
 
 #define trie_boxedint_val(i) \
   ((Integer) ((UInteger)int_val(cell_array[(*i)-2])<<24 | int_val(cell_array[(*i)-3])))
-       
+
 static void print_term_of_subgoal(CTXTdeclc FILE *fp, byte car, int *i)
 {
   Cell term;
@@ -1094,7 +1096,7 @@ static void print_term_of_subgoal(CTXTdeclc FILE *fp, byte car, int *i)
     term = cell_array[*i];
   switch (cell_tag(term)) {
     case XSB_FREE:
-    case XSB_REF1: 
+    case XSB_REF1:
     case XSB_ATTV:
       goto vertbar;
     case XSB_LIST:
@@ -1156,7 +1158,7 @@ static int sprint_term_of_subgoal(CTXTdeclc forestLogBuffer fl_buf, int size,byt
       int width = get_int_print_width((Integer)floor(val));
       sprintf(virtual_buffer+size, "%*d.%4d", width,(int)floor(val),(int)((val-floor(val))*10000));
       *i = (*i) -3;
-      return size+width+5;   
+      return size+width+5;
     }
     else if (isboxedTrieSym(term) && ((int_val(cell_array[(*i)-1]) >> 16) == ID_BOXED_INT)) {
       Integer val = boxedint_val(term);
@@ -1183,7 +1185,7 @@ static int sprint_term_of_subgoal(CTXTdeclc forestLogBuffer fl_buf, int size,byt
     term = cell_array[*i];
   switch (cell_tag(term)) {
     case XSB_FREE:
-    case XSB_REF1: 
+    case XSB_REF1:
     case XSB_ATTV:
       goto vertbar;
     case XSB_LIST:
@@ -1234,7 +1236,14 @@ void print_subgoal_callnode_leaf(CTXTdeclc FILE *fp, callnodeptr cn)
 {
   BTNptr leaf;
   int  i = 0;
-  Psc  psc = TIF_PSC((TIFptr) callnode_tif_ptr(cn));
+  Psc  psc;
+
+  fprintf(fp,"Incr dyn: ");
+  if (!callnode_tif_ptr(cn)) {
+    fprintf(fp,"NULL TIF");
+    return;
+  }
+  psc = TIF_PSC((TIFptr) callnode_tif_ptr(cn));
 
   for (leaf = callnode_leaf_ptr(cn); leaf != NULL; leaf = Parent(leaf)) {
     cell_array[i++] = BTN_Symbol(leaf);
@@ -1252,8 +1261,9 @@ void print_subgoal_callnode_leaf(CTXTdeclc FILE *fp, callnodeptr cn)
 }
 
 void print_callnode(CTXTdeclc FILE *fp, callnodeptr cn) {
-  if (cn -> goal)  print_subgoal(CTXTc stddbg,cn->goal);
-  else print_subgoal_callnode_leaf(CTXTc stddbg, cn); 
+  if (cn -> goal)  print_subgoal(CTXTc fp,cn->goal);
+  else if (!cn->is_incremental_trie) print_subgoal_callnode_leaf(CTXTc fp, cn);
+  else fprintf(stdout,"incremental trie");
 }
 
 void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
@@ -1281,13 +1291,13 @@ void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
 int sprint_subgoal(CTXTdeclc forestLogBuffer fl_buf,  int ctr, VariantSF subg)
 {
   BTNptr leaf;
-  int  i = 0; 
+  int  i = 0;
   int size = ctr;
 
   Psc  psc = TIF_PSC(subg_tif_ptr(subg));
 
-  for (leaf = subg_leaf_ptr(subg); 
-       leaf != NULL && (int) i < MAXTERMBUFSIZE; 
+  for (leaf = subg_leaf_ptr(subg);
+       leaf != NULL && (int) i < MAXTERMBUFSIZE;
        leaf = Parent(leaf) ) {
     cell_array[i++] = BTN_Symbol(leaf);
   }
@@ -1319,7 +1329,7 @@ void print_completion_stack(CTXTdeclc FILE *fptr)
   int SCCnum = 1; int lastSCCnum;
   VariantSF subg;
   CPtr temp = COMPLSTACKBOTTOM-COMPLFRAMESIZE;
-
+  printf("----------- scc -----------\n");
   lastSCCnum = compl_level(temp);
 
  while (temp >= openreg) {
@@ -1328,7 +1338,7 @@ void print_completion_stack(CTXTdeclc FILE *fptr)
    }
    subg = (VariantSF) *temp;
    print_subgoal(CTXTc fptr,subg);
-   fprintf(fptr," - scc(%d).\n",SCCnum);
+   fprintf(fptr," - scc(%d,%d).\n",SCCnum,compl_level(temp));
    temp = next_compl_frame(temp);
   }
 }
@@ -1344,7 +1354,7 @@ void print_delay_element(CTXTdeclc FILE *fp, Cell del_elem)
   char *name;
 
   if ((psc = get_str_psc(del_elem)) == delay_psc) {
-    
+
     fprintf(fp, "%s(", get_name(psc));
     cptr = (CPtr)cs_val(del_elem);
     tmp_cell = cell(cptr + 1);
@@ -1395,21 +1405,21 @@ int sprint_delay_element(CTXTdeclc forestLogBuffer fl_buf, int ctr ,Cell del_ele
     if (cell(cptr + 3) == makeaddr(0)) {
       ctr = ctr + sprintf(virtual_buffer+ctr,"tnot(");
       tmp_cell = cell(cptr + 1);
-      ctr = sprint_subgoal(CTXTc fl_buf,ctr, (VariantSF) addr_val(tmp_cell)); 
+      ctr = sprint_subgoal(CTXTc fl_buf,ctr, (VariantSF) addr_val(tmp_cell));
       ctr = ctr + sprintf(virtual_buffer+ctr,")");
       //      printf("2 %s | %s\n",buffer,fl_buf->fl_buffer);
     }
     else {     /* If PDE */
       ctr =  ctr + sprintf(virtual_buffer+ctr,"de(");
       tmp_cell = cell(cptr + 1);
-      ctr = sprint_subgoal(CTXTc fl_buf,ctr, (VariantSF) addr_val(tmp_cell)); 
+      ctr = sprint_subgoal(CTXTc fl_buf,ctr, (VariantSF) addr_val(tmp_cell));
       tmp_cell = cell(cptr + 2);
       ctr = ctr + sprintf(virtual_buffer+ctr, ",");
-      ctr = ctr + sprintTriePath(CTXTc virtual_buffer+ctr, (BTNptr) addr_val(tmp_cell)); 
-      //      ctr = sprintTriePath(CTXTc virtual_buffer+ctr, (BTNptr) addr_val(tmp_cell)); 
+      ctr = ctr + sprintTriePath(CTXTc virtual_buffer+ctr, (BTNptr) addr_val(tmp_cell));
+      //      ctr = sprintTriePath(CTXTc virtual_buffer+ctr, (BTNptr) addr_val(tmp_cell));
       ctr = ctr + sprintf(virtual_buffer+ctr, ")");
 
-      //      ctr = ctr + sprintf(virtual_buffer+ctr, "%p", (BTNptr) addr_val(tmp_cell)); 
+      //      ctr = ctr + sprintf(virtual_buffer+ctr, "%p", (BTNptr) addr_val(tmp_cell));
       //      ctr = ctr + sprintf(virtual_buffer+ctr, ",");
       //      tmp_cell = cell(cptr + 3);
       //      printf("tmp_cell %x\n",tmp_cell);
@@ -1425,7 +1435,7 @@ int sprint_delay_element(CTXTdeclc forestLogBuffer fl_buf, int ctr ,Cell del_ele
       //  psc = get_str_psc(cell(cptr + 3));
       //  arity = get_arity(psc);
       //  name = get_name(psc);
-      //} 
+      //}
       //ctr = ctr + sprintf(virtual_buffer+ctr, "%s", name);
       //if (arity > 0) {
       //  ctr = ctr + sprintf(virtual_buffer+ctr, "(");
@@ -1448,7 +1458,7 @@ int sprint_delay_element(CTXTdeclc forestLogBuffer fl_buf, int ctr ,Cell del_ele
 void print_delay_list(CTXTdeclc FILE *fp, CPtr dlist)
 {
   CPtr cptr;
-  
+
   if (dlist == NULL) {
     fprintf(fp, "[]"); fflush(fp);
   } else {
@@ -1477,21 +1487,21 @@ int sprint_delay_list(CTXTdeclc forestLogBuffer fl_buf, CPtr dlist)
   int ctr = 0;
 
   if (dlist == NULL) {
-    return sprintf(virtual_buffer, "[]"); 
+    return sprintf(virtual_buffer, "[]");
   } else {
     if (islist(dlist) || isnil(dlist)) {
-      ctr = ctr + sprintf(virtual_buffer, "["); 
+      ctr = ctr + sprintf(virtual_buffer, "[");
       cptr = dlist;
       while (islist(cptr)) {
 	cptr = clref_val(cptr);
 	ctr = sprint_delay_element(CTXTc fl_buf, ctr, cell(cptr));
 	cptr = (CPtr)cell(cptr+1);
 	if (islist(cptr)) {
-	  ctr = ctr + sprintf(virtual_buffer+ctr, ", "); 
+	  ctr = ctr + sprintf(virtual_buffer+ctr, ", ");
 	}
       }
       if (isnil(cptr)) {
-	return ctr + sprintf(virtual_buffer+ctr, "]"); 
+	return ctr + sprintf(virtual_buffer+ctr, "]");
       } else {
 	xsb_abort("Delay list with unknown tail type in print_delay_list()");
       }
@@ -1575,8 +1585,8 @@ void printDelTF(DelTFptr dtf) {
 
 #ifdef MULTI_THREAD
 void print_private_deltfs(CTXTdecl) {
-  printf("========================== private deltf chain\n");
   DelTFptr dtf =   private_deltf_chain_begin;
+  printf("========================== private deltf chain\n");
   while (dtf != NULL) {
     printDelTF(dtf);
     printf("\n");
@@ -1599,28 +1609,28 @@ void print_deltf_chain(CTXTdecl) {
   printf("==========================\n");
 }
 
-/*----- For table debugging --------------------------------------------*/ 
+/*----- For table debugging --------------------------------------------*/
 
+/** not used, but in commented-out code..
 static char *compl_stk_frame_field[] = {
-  "subgoal_ptr", "level_num",
-  "del_ret_list", "visited", 
+  "subgoal_ptr",   "del_ret_list", "level_num","visited",
 #ifndef LOCAL_EVAL
 "DG_edges", "DGT_edges"
 #endif
 };
+***/
 
-void print_subg_header(CTXTdeclc FILE * where,VariantSF SUBG) {			    
-    fprintf(where, "=== Frame for "); print_subgoal(CTXTc where, SUBG); 
-    if (is_completed(SUBG)) fprintf(where, " (completed) ===\n"); 
+void print_subg_header(CTXTdeclc FILE * where,VariantSF SUBG) {
+    fprintf(where, "=== Frame for "); print_subgoal(CTXTc where, SUBG);
+    if (is_completed(SUBG)) fprintf(where, " (completed) ===\n");
     else fprintf(where, " (incomplete) ===\n"); }
 
+/* Not using array of field names because int fields are bit-mapped in a single 64-bit word */
 void debug_print_completion_stack(CTXTdecl)
 {
   int i = 0;
-  EPtr eptr;
   VariantSF subg;
   CPtr temp = openreg;
-
   fprintf(stddbg,"openreg -> ");
   while (temp < COMPLSTACKBOTTOM) {
     if ((i % COMPLFRAMESIZE) == 0) {
@@ -1628,17 +1638,21 @@ void debug_print_completion_stack(CTXTdecl)
       subg = (VariantSF) *temp;
       print_subg_header(CTXTc stddbg, subg);
     }
-    fprintf(stddbg,"Completion Stack %p: %lx\t(%s)",
-	    temp, *temp, compl_stk_frame_field[(i % COMPLFRAMESIZE)]);
+    if ((i % COMPLFRAMESIZE) == 0) { fprintf(stddbg,"Completion Stack %p: %lx\t(subgoal_ptr)",temp, (unsigned long) *temp);}
+    if ((i % COMPLFRAMESIZE) == 1) { fprintf(stddbg,"Completion Stack %p: %lx\t(del_ret_list)",temp, (unsigned long) *temp);}
+    if ((i % COMPLFRAMESIZE) == 2) { fprintf(stddbg,"Completion Stack %p: %lu/%lu\t(level_num/visited)",temp, (unsigned long) (*temp)&0xffffffff,(unsigned long) (*temp)>>16);}
+#ifndef LOCAL_EVAL
+    EPtr eptr;
     if ((i % COMPLFRAMESIZE) >= COMPLFRAMESIZE-2) {
       for (eptr = (EPtr)*temp; eptr != NULL; eptr = next_edge(eptr)) {
 	fprintf(stddbg," --> %p", edge_to_node(eptr));
       }
     }
+#endif
     fprintf(stddbg,"\n");
     temp++; i++;
   }
-  fprintf(stddbg, EOS);
+  fprintf(stddbg,"--------------------BOTTOM_OF_STACK (%p) --------------------\n",COMPLSTACKBOTTOM);
 }
 
 
@@ -1659,7 +1673,7 @@ static int count_producer_subgoals(CTXTdecl)
   return(i);
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 /*
  *			Subgoal Frame Printing
@@ -1731,7 +1745,7 @@ void print_tables(CTXTdecl)
 		 subg_tif_ptr(subg), subg_leaf_ptr(subg),
 		 subg_ans_root_ptr(subg),
 		 subg_ans_list_ptr(subg), subg_ans_list_tail(subg),
-		 subg_next_subgoal(subg), subg_prev_subgoal(subg), 
+		 subg_next_subgoal(subg), subg_prev_subgoal(subg),
 		 subg_cp_ptr(subg));
       fprintf(stddbg,"  pos_cons = %p,", subg_pos_cons(subg));
       fprintf(stddbg,"  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
@@ -1810,7 +1824,7 @@ void file_print_tables(CTXTdeclc char * message,int number)
 		 subg_tif_ptr(subg), subg_leaf_ptr(subg),
 		 subg_ans_root_ptr(subg),
 		 subg_ans_list_ptr(subg), subg_ans_list_tail(subg),
-		 subg_next_subgoal(subg), subg_prev_subgoal(subg), 
+		 subg_next_subgoal(subg), subg_prev_subgoal(subg),
 		 subg_cp_ptr(subg));
       fprintf(where,"  pos_cons = %p,", subg_pos_cons(subg));
       fprintf(where,"  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
@@ -1849,7 +1863,7 @@ void file_print_tables(CTXTdeclc char * message,int number)
   fclose(where) ;
 } /* file_print_tables() */
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 extern DelCFptr delcf_chain_begin;
 
 void print_deleted_clause_frame(DelCFptr delcf) {
@@ -1860,12 +1874,12 @@ void print_deleted_clause_frame(DelCFptr delcf) {
 }
 
 void print_delcf_chain() {
-  
+
   DelCFptr delcf = delcf_chain_begin;
   printf("--------------------------------------------------------\n");
   while(delcf) {
     print_deleted_clause_frame(delcf);
-    delcf = delcf->next_delCF;    
+    delcf = delcf->next_delCF;
   }
   printf("--------------------------------------------------------\n");
 }
@@ -1882,13 +1896,13 @@ static void print_cell(char *addrtype, CPtr addr, Cell term, char *more_info)
 	    addrtype, (CPtr)dec_addr(cell(addr)),
 	    cell_tag(term), ref_val(term));
     break;
-  case XSB_STRUCT: 
+  case XSB_STRUCT:
     if (addr == (CPtr)dec_addr(term) || (CPtr)dec_addr(term) == NULL) {
       printf( "Possible source of core dump\n");
-      printf( "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p", 
+      printf( "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p",
 	      addrtype, addr, cs_val(term), ref_val(term));
     }	else {
-      printf( "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p (%s/%d)", 
+      printf( "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p (%s/%d)",
 	      addrtype, addr, cs_val(term), ref_val(term),
 	      get_name((struct psc_rec *) follow(cs_val(term))),
 	      get_arity((struct psc_rec *) follow(cs_val(term))));
@@ -1899,27 +1913,27 @@ static void print_cell(char *addrtype, CPtr addr, Cell term, char *more_info)
 	    addrtype, addr, int_val(term), ref_val(term));
     break;
   case XSB_STRING:
-    if (isnil(term)) 
-      printf( "%s %p: XSB_STRING, hexval=0x%p\t ([])", 
+    if (isnil(term))
+      printf( "%s %p: XSB_STRING, hexval=0x%p\t ([])",
 	      addrtype, addr, ref_val(term));
     else
-      printf( "%s %p: XSB_STRING, hexval=0x%p\t (%s)", 
+      printf( "%s %p: XSB_STRING, hexval=0x%p\t (%s)",
 	      addrtype, addr, ref_val(term), string_val(term));
     break;
   case XSB_FLOAT:
-    printf( "%s %p: XSB_FLOAT, value=%f, hexval=0x%lx", 
-	    addrtype, addr, float_val(term), dec_addr(term));
+    printf( "%s %p: XSB_FLOAT, value=%f, hexval=0x%lx",
+	    addrtype, addr, float_val(term), (unsigned long) dec_addr(term));
     break;
   case XSB_LIST:
     printf( "%s %p: XSB_LIST, clref=%p, hex=%p",
 	    addrtype, addr, clref_val(term), ref_val(term));
     break;
   default:
-    printf( "%s %p: tag=%" Intfmt ", hex=0x%p, cval=%" Intfmt, 
+    printf( "%s %p: tag=%" Intfmt ", hex=0x%p, cval=%" Intfmt,
 	    addrtype, addr, cell_tag(term), ref_val(term), int_val(term));
     break;
   }
-  
+
   if (more_info != NULL)
     printf( ",\t(%s)\n", more_info);
   else printf( "\n");
@@ -1948,7 +1962,7 @@ void check_backtrack_regs(CTXTdecl) {
   }
 }
 
-void check_stack_invariants(CTXTdecl) 
+void check_stack_invariants(CTXTdecl)
 {
   check_backtrack_regs(CTXT);
   check_trail_ok(CTXT);
@@ -1978,47 +1992,46 @@ void quick_print_trail(CTXTdecl)	/* trail grows up */
 static void fprint_cp_cell(FILE * output,char *addrtype, CPtr addr, Cell term)
 {
   if ((ref_val(term) != NULL) && (cell_tag(term) == term)) {
-    fprintf(output, "NULL cell in %s %p: tag=%ld, value=0x%p\n",
-	    addrtype, addr, cell_tag(term), ref_val(term));
-  } else {  
+    fprintf(output, "NULL cell in %s %p: tag=%"UIntfmt", value=0x%p\n",
+	    addrtype, addr, (UInteger) cell_tag(term), ref_val(term));
+  } else {
     switch (cell_tag(term)) {
-    case XSB_REF: 
+    case XSB_REF:
     case XSB_REF1:
-      fprintf(output, "%s %p: XSB_REF (tag=%ld), value=0x%p\n",
+      fprintf(output, "%s %p: XSB_REF (tag=%"UIntfmt", value=0x%p\n",
 	      addrtype, addr, cell_tag(term), ref_val(term));
       break;
     case XSB_ATTV:
-      fprintf(output, "%s %p: XSB_ATTV (tag=%ld), value=0x%p\n",
-	      addrtype, (CPtr)dec_addr(cell(addr)),
-	      cell_tag(term), ref_val(term));
+      fprintf(output, "%s %p: XSB_ATTV (tag=%"UIntfmt", value=0x%p\n",
+	      addrtype, (CPtr)dec_addr(cell(addr)),cell_tag(term), ref_val(term));
       break;
     case XSB_STRUCT:
-            fprintf(output, "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p (%s/%d)\n", 
+            fprintf(output, "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p (%s/%d)\n",
 	      addrtype, addr, cs_val(term), ref_val(term),
 	      get_name((struct psc_rec *) follow(cs_val(term))),
 	      get_arity((struct psc_rec *) follow(cs_val(term))));
-      
-	    /*      fprintf(output, "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p \n", 
+
+	    /*      fprintf(output, "%s %p: XSB_STRUCT, value=0x%p, hexval=0x%p \n",
 		    addrtype, addr, cs_val(term), ref_val(term));*/
       break;
     case XSB_INT:
-      fprintf(output, "%s %p: XSB_INT, value=%ld, hexval=0x%p\n",
+      fprintf(output, "%s %p: XSB_INT, value=%" Intfmt ", hexval=0x%p\n",
 	      addrtype, addr, int_val(term), ref_val(term));
       break;
     case XSB_STRING:
-      fprintf(output, "%s %p: XSB_STRING, hexval=0x%p (%s)\n", 
+      fprintf(output, "%s %p: XSB_STRING, hexval=0x%p (%s)\n",
 	      addrtype, addr, ref_val(term), string_val(term));
       break;
     case XSB_FLOAT:
-      fprintf(output, "%s %p: XSB_FLOAT, value=%f, hexval=0x%lx\n", 
-	      addrtype, addr, float_val(term), dec_addr(term));
+      fprintf(output, "%s %p: XSB_FLOAT, value=%f, hexval=0x%lx\n",
+	      addrtype, addr, float_val(term), (unsigned long) dec_addr(term));
       break;
     case XSB_LIST:
       fprintf(output, "%s %p: XSB_LIST, value=%p\n",
 	      addrtype, addr, ref_val(term));
       break;
     default:
-      fprintf(output, "%s %p: tag=%ld, value=0x%p\n", 
+      fprintf(output, "%s %p: tag=%"UIntfmt", value=0x%p\n",
 	      addrtype, addr, cell_tag(term), ref_val(term));
       break;
     }
@@ -2071,13 +2084,13 @@ void print_local_stack_nonintr(CTXTdeclc char * string)
     fclose(where) ;
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 void terry_print_heap(CTXTdeclc char * string)	/* Heap grows up */
 {
   CPtr topofheap;
   CPtr cell_ptr;
-  CPtr heap_bottom = (CPtr)(glstack.low); 
+  CPtr heap_bottom = (CPtr)(glstack.low);
   char buf[100] ;
   FILE * where;
 
@@ -2178,12 +2191,12 @@ void print_help(void)
 
 /*--------------------------------------------------------------------------*/
 
-/*----- For table debugging --------------------------------------------*/ 
+/*----- For table debugging --------------------------------------------*/
 
 /*** already defined above ???
 static char *compl_stk_frame_field[] = {
   "subgoal_ptr", "level_num",
-  "del_ret_list", "visited", 
+  "del_ret_list", "visited",
 #ifndef LOCAL_EVAL
 "DG_edges", "DGT_edges"
 #endif
@@ -2228,7 +2241,7 @@ static void print_pdlstack(CTXTdecl)
   }
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 extern void dis(xsbBool);
 extern byte *print_inst(FILE *, byte *);
@@ -2249,44 +2262,44 @@ static void set_register_watch(int num1, CPtr num2)
 {
   register_watch_flag = 1;
   switch (num1) {
-  case 1: 
+  case 1:
     reg_watch.heap_flag = 1;
     reg_watch.heap_val = num2;
     break;
-  case 2: 
+  case 2:
     reg_watch.stack_flag = 1;
     reg_watch.stack_val = num2;
     break;
-  case 3: 
+  case 3:
     reg_watch.choice_flag = 1;
     reg_watch.choice_val = num2;
     break;
-  case 4: 
+  case 4:
     reg_watch.trail_flag = 1;
     reg_watch.trail_val = num2;
     break;
   }
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 static void set_memory_watch(Integer num1, int num2)
 {
   memory_watch_flag = 1;
   switch (num1) {
-  case 1: 
+  case 1:
     mem_watch.heap_flag = num2;
     mem_watch.heap_val = *(CPtr *) num2;
     break;
-  case 2: 
+  case 2:
     mem_watch.stack_flag = num2;
     mem_watch.stack_val = *(CPtr *) num2;
     break;
-  case 3: 
+  case 3:
     mem_watch.choice_flag = num2;
     mem_watch.choice_val = *(CPtr *) num2;
     break;
-  case 4: 
+  case 4:
     mem_watch.trail_flag = num2;
     mem_watch.trail_val = *(CPtr *) num2;
     break;
@@ -2297,16 +2310,16 @@ static void set_memory_watch(Integer num1, int num2)
 
 static void monitor_register_watch(CTXTdecl)
 {
-  if (reg_watch.heap_flag) 
+  if (reg_watch.heap_flag)
     if (reg_watch.heap_val == hreg)
       xsb_dbgmsg((LOG_DEBUG,"!!! hreg == %p, %d", hreg, xctr));
-  if (reg_watch.stack_flag) 
+  if (reg_watch.stack_flag)
     if (reg_watch.stack_val == ereg)
       xsb_dbgmsg((LOG_DEBUG,"!!! ereg == %p, %d", ereg, xctr));
-  if (reg_watch.choice_flag) 
+  if (reg_watch.choice_flag)
     if (reg_watch.choice_val == breg)
       xsb_dbgmsg((LOG_DEBUG,"!!! breg == %p, %d", breg, xctr));
-  if (reg_watch.trail_flag) 
+  if (reg_watch.trail_flag)
     if ((CPtr *) reg_watch.trail_val == trreg)
       xsb_dbgmsg((LOG_DEBUG,"!!! trreg == %p, %d", trreg, xctr));
 }
@@ -2361,9 +2374,9 @@ void debug_inst(CTXTdeclc byte *lpcreg, CPtr le_reg)
     print_hide = 0;
     pcreg = lpcreg; ereg = le_reg;
     debug_interact(CTXT);
-  } else { 
+  } else {
     if (debug_ctr > 0) debug_ctr--;
-    else 
+    else
       if (call_step_gl == 1 && *lpcreg == call) {
 	pil_step = 1; debug_interact(CTXT);
       }
@@ -2373,9 +2386,9 @@ void debug_inst(CTXTdeclc byte *lpcreg, CPtr le_reg)
   }
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 static void print_trail(CTXTdeclc int overlap)	/* trail grows up */
 {
@@ -2390,7 +2403,7 @@ static void print_trail(CTXTdeclc int overlap)	/* trail grows up */
       if ( (temp + i) == trfreg ) xsb_dbgmsg((LOG_DEBUG,"trfreg"));
       print_cell("Trail", (CPtr)(temp+i), cell((CPtr)(temp+i)), NULL);
     }
-  while (ans == 'y' && temp-offset >= (CPtr *) tcpstack.low) { 
+  while (ans == 'y' && temp-offset >= (CPtr *) tcpstack.low) {
     for (i = 0
 	   ; (i <= STRIDESIZE && temp-(offset+i) >= (CPtr *)tcpstack.low)
 	   ; i++ )      {
@@ -2398,7 +2411,7 @@ static void print_trail(CTXTdeclc int overlap)	/* trail grows up */
       if ( (temp - (offset+i)) == trfreg ) xsb_dbgmsg((LOG_DEBUG,"trfreg"));
       print_cell("Trail", (CPtr)(temp-(offset+i)),
 		 cell((CPtr)(temp-(offset+i))), NULL);
-      if ( (temp-(offset+i)) == (CPtr *) tcpstack.low ) 
+      if ( (temp-(offset+i)) == (CPtr *) tcpstack.low )
 	xsb_dbgmsg((LOG_DEBUG,"bottom"));
     }
     offset += STRIDESIZE;
@@ -2414,7 +2427,7 @@ static void print_freeze_choice_points(CTXTdeclc int overlap)	/* CPs grow down *
 {
   int i,last = 0;
   char ans = 'y';
- 
+
   for (i = -overlap; i < 0 ; i++) {
     print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
     if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG,"breg"));
@@ -2428,10 +2441,10 @@ static void print_freeze_choice_points(CTXTdeclc int overlap)	/* CPs grow down *
   fprintf(stddbg, "more (y/n)?  ");
   scanf("%c", &ans);
   skip_to_nl();
-  while (ans == 'y' && bfreg+last < (CPtr) tcpstack.high ) { 
+  while (ans == 'y' && bfreg+last < (CPtr) tcpstack.high ) {
     last = last+STRIDESIZE;
     for ( i = last
-	    ; (i <= last+STRIDESIZE && bfreg+i <= (CPtr) tcpstack.high) 
+	    ; (i <= last+STRIDESIZE && bfreg+i <= (CPtr) tcpstack.high)
 	    ; i++ ) {
       if ( (bfreg + i) == breg ) xsb_dbgmsg((LOG_DEBUG, "breg"));
       print_cp_cell("CP stack", bfreg+i, cell(bfreg+i));
@@ -2443,7 +2456,7 @@ static void print_freeze_choice_points(CTXTdeclc int overlap)	/* CPs grow down *
   }
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 /*
  * Choice point stack grows from high to low memory.
@@ -2485,14 +2498,14 @@ static void print_cpfs(CTXTdeclc int overlap)
   } while (ans == 'y');
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 static void print_choice_points(CTXTdeclc int overlap)
 {
   int i, last = 0;
   char ans = 'y';
   CPtr cp_stack_bottom = (CPtr)tcpstack.high;
- 
+
   for (i = -overlap ; (i < 0) ; i++) {
     if ((breg+i) == bfreg) xsb_dbgmsg((LOG_DEBUG,"bfreg"));
     print_cp_cell("CP stack", breg+i, cell(breg+i));
@@ -2517,7 +2530,7 @@ static void print_choice_points(CTXTdeclc int overlap)
   } while (ans == 'y');
 }
 
-/*----------------------------------------------------------------------*/ 
+/*----------------------------------------------------------------------*/
 
 /* Needs to change when new xwam stacks are introduced.  */
 static void print_heap(int overlap)	/* Heap grows up */
@@ -2531,12 +2544,12 @@ static void print_heap(int overlap)	/* Heap grows up */
   xsb_dbgmsg((LOG_DEBUG,"hreg"));
   while (ans == 'y' && hreg-i > (CPtr) glstack.low) {
     for (i = 0
-	   ;(i <= STRIDESIZE && hreg-(offset+i) >= (CPtr) glstack.low) 
+	   ;(i <= STRIDESIZE && hreg-(offset+i) >= (CPtr) glstack.low)
 	   ; i++) {
       if ( (hreg - (offset+i)) == hfreg ) xsb_dbgmsg((LOG_DEBUG,"hfreg"));
       if ( (hreg - (offset+i)) == hbreg ) xsb_dbgmsg((LOG_DEBUG,"hbreg"));
       print_cell("Heap", hreg-(offset+i), cell(hreg-(offset+i)), NULL);
-      if ( (hreg-(offset+i)) == (CPtr) glstack.low ) 
+      if ( (hreg-(offset+i)) == (CPtr) glstack.low )
 	xsb_dbgmsg((LOG_DEBUG,"bottom"));
     }
     if ( (hreg-(offset+i)) != (CPtr) glstack.low ) {
@@ -2601,7 +2614,7 @@ static void debug_interact(CTXTdecl)
   Pair sym;
 
  again:
-  fprintf(stddbg, "\n > ");  
+  fprintf(stddbg, "\n > ");
   fflush(stddbg);
   scanf("%c", &command);
   switch (command) {
@@ -2704,7 +2717,7 @@ static void debug_interact(CTXTdecl)
     break;
   case 'L':
     skip_to_nl();
-    pil_step = flags[PIL_TRACE] = call_step_gl = 0; 
+    pil_step = flags[PIL_TRACE] = call_step_gl = 0;
     print_hide = hitrace_suspend_gl = 1;
     break;
   case 'M':
@@ -2738,12 +2751,12 @@ static void debug_interact(CTXTdecl)
     skip_to_nl();
     fprintf(stddbg, "Reg[%d] = ", num);
     printterm(stddbg, cell(reg+num), 8);
-    fprintf(stddbg, "\n"); 
+    fprintf(stddbg, "\n");
     fprintf(stddbg, "%lx\n",*(reg+num));
     goto again;
   case 'R':
     scanf("%d", &num);
-    skip_to_nl(); 
+    skip_to_nl();
     fprintf(stddbg, "Reg[%d] = %lx\n",num,*(reg+num));
     goto again;
   case 's':
@@ -2753,10 +2766,10 @@ static void debug_interact(CTXTdecl)
     hitrace_suspend_gl = 0;
     break;
   case 'S':
-    skip_to_nl(); 
+    skip_to_nl();
     print_status(CTXT);
     goto again;
-  case 'T': 
+  case 'T':
     scanf("%d", &num);
     skip_to_nl();
     print_trail(CTXTc num);
@@ -2779,12 +2792,12 @@ static void debug_interact(CTXTdecl)
     scanf("%d %x", &num1, &num);
     skip_to_nl();
     set_register_watch(num1, (CPtr)num);
-    goto again;      
+    goto again;
   case 'W':
     scanf("%x %x", &num1, &num);
     skip_to_nl();
     set_memory_watch(num1, num);
-    goto again;      
+    goto again;
   case '1':
     skip_to_nl();
     print_tables();

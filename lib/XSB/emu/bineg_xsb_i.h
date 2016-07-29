@@ -54,7 +54,7 @@ case SLG_NOT: {
   if ( varsf_has_unconditional_answers(sf) )
     return FALSE;
   else {
-    if (flags[CTRACE_CALLS])  {				
+    if (flags[CTRACE_CALLS] && !subg_forest_log_off(sf))  {				
       sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF) sf);	      
       sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)ptcpreg);	 
       fprintf(fview_ptr,"dly(%s,%s,%d).\n",
@@ -222,78 +222,89 @@ case IS_INCOMPLETE: {
       DL dl;
       DE de;
       BTNptr as_leaf;
-      Cell delay_lists;
-      CPtr dls_head, dls_tail = NULL;
-
-#ifdef DEBUG_DELAYVAR
-      xsb_mesg(">>>> (at the beginning of GET_DELAY_LISTS");
-      xsb_mesg(">>>> global_trieinstr_vars_num = %d)",global_trieinstr_vars_num);
+      CPtr delay_lists;
+      Cell dls_head;
 	
-      {
-	int i;
+#ifdef DEBUG_DELAYVAR
+      {	int i;
 	for (i = 0; i <= global_trieinstr_vars_num; i++) {
 	  Cell x;
 	  fprintf(stddbg, ">>>> trieinstr_vars[%d] =", i);
 	  x = (Cell)trieinstr_vars[i];
 	  XSB_Deref(x);
-	  printterm(stddbg, x, 25);
-	  fprintf(stddbg, "\n");
+	  printterm(stddbg, x, 25);	  fprintf(stddbg, "\n");
 	}
       }
 #endif /* DEBUG_DELAYVAR */
-
       as_leaf = (NODEptr) ptoc_int(CTXTc 1);
-      delay_lists = ptoc_tag(CTXTc 2);
+      delay_lists = (CPtr)ptoc_tag(CTXTc 2); // should test if var
       if (is_conditional_answer(as_leaf)) {
-	int copy_of_var_addr_arraysz;
-	bind_list((CPtr)delay_lists, hreg);
+	int i;	//	int var_addr_accum_arraysz;
+	int num_vars_in_anshead = global_trieinstr_vars_num+1;
 	{ /*
-	   * Make copy of trieinstr_vars & global_trieinstr_vars_num (after get_returns,
+	   * Initialize var_addr_accum with trieinstr_vars & global_trieinstr_vars_num (after get_returns,
 	   * which calls trie_get_return).  (global_trieinstr_vars_num +
 	   * 1) is the number of variables left in the answer
 	   * (substitution factor of the answer)
 	   *
-	   * So, copy_of_var_addr[] is the substitution factor of the
-	   * answer for the head predicate.
+	   * So, var_addr_accum[] starts as the substitution factor of the
+	   * answer for the head predicate.  It will accumulate the variables in 
+	   * body of the residual rule.
 	   */
-	  int i;
-	  if (var_addr_arraysz < global_trieinstr_vars_num+1) 
-	    trie_expand_array(CPtr,var_addr,var_addr_arraysz,global_trieinstr_vars_num+1,"var_addr");
-	  copy_of_var_addr_arraysz = var_addr_arraysz;
-	  copy_of_var_addr = (CPtr *)mem_calloc(copy_of_var_addr_arraysz, sizeof(CPtr),OTHER_SPACE);
-	  for( i = 0; i <= global_trieinstr_vars_num; i++)
-	    copy_of_var_addr[i] = trieinstr_vars[i];
+	  if (var_addr_arraysz < num_vars_in_anshead) 
+	    trie_expand_array(CPtr,var_addr,var_addr_arraysz,num_vars_in_anshead,"var_addr");
+	  if (var_addr_accum_arraysz < num_vars_in_anshead) 
+	    trie_expand_array(CPtr,var_addr_accum,var_addr_accum_arraysz,num_vars_in_anshead,"var_addr_accum");
+	  for( i = 0; i < num_vars_in_anshead; i++)
+	    var_addr_accum[i] = trieinstr_vars[i];
+	  //	  printf("GET_DELAY_LISTS end of setup cova_sz %d num_vars_in_anshead %d\n",
+	  //	 var_addr_accum_arraysz,num_vars_in_anshead);
+	  //	  var_addr_accum_arraysz = var_addr_arraysz;
+	  //	  var_addr_accum = (CPtr *)mem_calloc(var_addr_accum_arraysz, sizeof(CPtr),OTHER_SPACE);
 	  
-	  copy_of_num_heap_term_vars = global_trieinstr_vars_num + 1;
+	  /* var_addr_accum[] will accumulate the variables across
+	     the delay-elements (i.e., body subgoals in the residual
+	     rule.)  var_addr_accum_num will accumulate the
+	     max number of vars in var_addr_accum so we can reset
+	     them to 0.  The entries in var_addr_accum[], other than
+	     for the answer variables, must be 0, since the 1st
+	     occurrence mark for variables in the delay list cant be
+	     depended on, due to possible deletion of
+	     delay-elements. (TES, not sure I understand this last part*/
+	  var_addr_accum_num = num_vars_in_anshead;
 	}
 
 	for (dl = asi_dl_list((ASI) Delay(as_leaf)); dl != NULL; ) {
-	  dls_head = hreg;
-	  dls_tail = hreg+1;
-	  new_heap_free(hreg);
-	  new_heap_free(hreg);
 	  de = dl_de_list(dl);
 
 	  xsb_dbgmsg((LOG_DELAY, "orig_delayed_term("));
-	  dbg_print_subgoal(LOG_DELAY, stddbg, de_subgoal(de)); 
-	  xsb_dbgmsg((LOG_DELAY, ").\n"));
-	  /*
-	   * This answer may have more than one delay list.  We have to
-	   * restore copy_of_num_heap_term_vars for each of them.  But,
-	   * among delay elements of each delay list, it is not necessary
-	   * to restore this value.
-	   *
-	   * Note that global_trieinstr_vars_num is always set back to
-	   * copy_of_num_heap_term_vars at the end of build_delay_list().
-	   */
-	  copy_of_num_heap_term_vars = global_trieinstr_vars_num + 1;
-	  build_delay_list(CTXTc dls_head, de);  /* BUG may move heap, and so saved dls_tail destroyed */
-	  if ((dl = dl_next(dl)) != NULL) {
-	    bind_list(dls_tail, hreg);
+	  dbg_print_subgoal(LOG_DELAY, stddbg, de_subgoal(de)); xsb_dbgmsg((LOG_DELAY, ").\n"));
+
+	  //	  printf("2) accum_nhtv %d num_vars_in_anshead %d va_size %d cova_size %d\n",
+	  //	 var_addr_accum_num,num_vars_in_anshead,var_addr_arraysz,var_addr_accum_arraysz);
+	  dls_head = build_delay_list(CTXTc de);
+	  //	  printf("3) accum_nhtv %d cva_size %d num_vars_in_anshead %d size %d\n",
+	  //	 var_addr_accum_num,var_addr_accum_arraysz,num_vars_in_anshead,var_addr_arraysz);
+
+	  /* Answer may have more than one delay list, so must re-init
+	     rest of vars used in var_addr_accum back to 0; head vars are unchanged. */
+
+	  if (var_addr_accum) {
+	    while (var_addr_accum_num > num_vars_in_anshead 
+		   && var_addr_accum_num <= var_addr_accum_arraysz) {
+	      //	    printf("cnhtv %d nvia %d\n",var_addr_accum_num,num_vars_in_anshead);
+	      var_addr_accum[--var_addr_accum_num] = 0;
+	    }
 	  }
+
+	  bind_list(delay_lists,hreg);
+	  follow(hreg) = dls_head;
+	  delay_lists = hreg + 1;
+	  hreg += 2;
+	  dl = dl_next(dl);
 	}
-	bind_nil(dls_tail);
-	mem_dealloc(copy_of_var_addr,copy_of_var_addr_arraysz*sizeof(CPtr),OTHER_SPACE);
+	bind_nil(delay_lists);
+	//	mem_dealloc(var_addr_accum,var_addr_accum_arraysz*sizeof(CPtr),OTHER_SPACE);
       } else {
 	bind_nil((CPtr)delay_lists);
       }

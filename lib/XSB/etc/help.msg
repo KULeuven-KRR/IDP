@@ -25,7 +25,7 @@ Usage:	xsb [flags] [-l]
                     -D : Sets top-level command loop driver to replace the default
                     -t : trace execution at the SLG-WAM instruction level
                          (for this to work, build XSB with the --debug option)
-                    -d : disassemble the module and exit
+                    -d : disassemble the module specified by the -B flag to stdout and exit
          -v, --version : print the version and configuration information about XSB
             -h, --help : print this help message
 
@@ -42,8 +42,8 @@ Flags:
            --quietload : don't show the `module loaded' messages
             --noprompt : don't show prompt (for non-interactive use)
                     -S : set default tabling method to call-subsumption
- --max_subgoal_depth N : set maximum tabled subgoal depth to N (default is maximum integer)
---max_subgoal_action A : set action on maximum subgoal depth: e(rror)/a(bstract)/w(arn)
+ --max_subgoal_size  N : set maximum tabled subgoal size to N (default is maximum integer)
+--max_subgoal_action A : set action on maximum subgoal size: e(rror)/a(bstract)/w(arn)
          --max_tries N : allow up to N tries for interning terms
        --max_threads N : maintain information for up to N threads (MT engine only)
        --max_mqueues N : allow up to N message queues (MT engine only)

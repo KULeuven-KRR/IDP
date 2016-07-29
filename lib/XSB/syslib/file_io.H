@@ -41,14 +41,14 @@
 %%%:- import gensym/2 from gensym.
 
 :- import is_plain_file/1, is_directory/1, rename/2, rm/1, rmdir_rec/1, cwd/1,
-	sys_filecopy/3,
+	sys_filecopy/3, sys_fileappend/3,
 	cd/1, sys_link/3, sys_mkdir/2, sys_rmdir/2, sys_access/3
       from shell.
 
 :- import file_write/2 from xsb_writ.
 
-:- import check_integer/3, domain_error/4,existence_error/4,instantiation_error/2,
-		  permission_error/4 from error_handler.
+:- import domain_error/4, existence_error/4, instantiation_error/2,
+		  permission_error/4, type_error/4 from error_handler.
 
 :- import concat_atom/2 from string.
 

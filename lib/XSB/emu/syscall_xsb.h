@@ -210,9 +210,12 @@
 #define SYS_vpixsys	178
 
 #define SYS_epoch_seconds 180
+#define SYS_epoch_msecs   181
 
 /* XSB-specific numbers */
 
 #define SYS_cwd         300  /* current working directory */
 #define SYS_filecopy    301
 #define SYS_create      302  /* for creating file as lock */
+#define SYS_fileappend  303
+#define SYS_main_memory_size 304

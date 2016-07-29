@@ -138,7 +138,7 @@ extern void *mem_calloc_nocheck(size_t, size_t, int);
 DllExport extern void* call_conv mem_realloc(void *, size_t, size_t, int);
 extern void *mem_realloc_nocheck(void *, size_t, size_t, int);
 extern void mem_dealloc(void *, size_t, int);
-extern void print_mem_allocs(void);
+extern void print_mem_allocs(char *);
 #ifndef MULTI_THREAD
 extern void tcpstack_realloc(size_t);
 extern void complstack_realloc(size_t);
@@ -159,11 +159,12 @@ extern byte *inst_begin_gl;       /* ptr to beginning of instruction array. */
 extern byte *current_inst;
 #endif
 
-extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
+extern Cell answer_return_inst, hash_handle_inst,
 	    resume_compl_suspension_inst, fail_inst, dynfail_inst, 
   halt_inst, proceed_inst, trie_fail_inst,
   resume_compl_suspension_inst2,completed_trie_member_inst,
             reset_inst, trie_fail_unlock_inst;
+extern CPtr check_complete_inst;
 extern byte *check_interrupts_restore_insts_addr;
 
 
@@ -201,6 +202,7 @@ extern byte *check_interrupts_restore_insts_addr;
 #define glstack_overflow(EXTRA)						\
   ((pb)top_of_localstk < (pb)top_of_heap + (OVERFLOW_MARGIN + EXTRA))	\
 
+/* Bytes, not calls */
 #define check_glstack_overflow(arity,PCREG,EXTRA)			      \
   if ((pb)top_of_localstk < (pb)top_of_heap + (OVERFLOW_MARGIN + EXTRA))      \
      glstack_ensure_space(CTXTc EXTRA,arity)
@@ -215,5 +217,7 @@ extern byte *check_interrupts_restore_insts_addr;
      }								\
    }
 
+#define STACK_USER_MEMORY_LIMIT_OVERFLOW(oldSize, newSize)			\
+  (flags[MAX_MEMORY] && (pspace_tot_gl/1024 - oldSize + newSize > flags[MAX_MEMORY]))
 
 #endif /* _MEMORY_XSB_H_ */

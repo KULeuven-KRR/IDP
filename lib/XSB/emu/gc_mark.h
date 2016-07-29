@@ -333,11 +333,13 @@ static int mark_cell(CTXTdeclc CPtr cell_ptr)
       cell_val = *cell_ptr;
       arity = get_arity((Psc)(cell_val)) ;
       p = ++cell_ptr ;
-      if (mark_overflow)
-	{ while (--arity)
-	    { m += mark_cell(CTXTc ++p) ; }
-	}
-      else while (--arity) push_to_mark(++p) ;
+      if (arity > 0) {
+	if (mark_overflow )
+	  { while (--arity)
+	      { m += mark_cell(CTXTc ++p) ; }
+	  }
+	else while (--arity) push_to_mark(++p) ;
+      }
       goto mark_more ;
     }
   }
@@ -430,7 +432,7 @@ static int mark_root(CTXTdeclc Cell cell_val)
 	case XSB_REF1 :
 	  if (whereto != TO_NOWHERE) return(0) ;
 	  break ;
-	default: xsb_warn("Encountered bad STR pointer in GC marking; ignored\n");
+	default: xsb_warn(CTXTc "Encountered bad STR pointer in GC marking; ignored\n");
 	  return(0);
 	}
 	TO_BUFFER(cell_ptr);
@@ -538,7 +540,7 @@ inline static size_t mark_trail_section(CTXTdeclc CPtr begintr, CPtr endtr)
 
       trailed_cell = (CPtr) *(a-2);
 #ifdef PRE_IMAGE_TRAIL
-      if ((long) trailed_cell & PRE_IMAGE_MARK) {
+      if (((UInteger)trailed_cell) & PRE_IMAGE_MARK) {
 	trailed_cell = (CPtr) ((Cell) trailed_cell & ~PRE_IMAGE_MARK);
 	pre_value = (CPtr) *(a-3);
 	tr_mark_pre((a-tr_bot)-2); /* mark somewhere else */
@@ -781,7 +783,10 @@ static int mark_hreg_from_choicepoints(CTXTdecl)
   /* actually there is no need to do this for a copying collector */
 
   b = (bfreg < breg ? bfreg : breg);
+
   bprev = 0;
+  UNUSED(bprev);
+
   m = 0;
     while(1)
      {

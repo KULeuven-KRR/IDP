@@ -43,7 +43,7 @@ put_in_trie(Fact,Handle,Leaf,Flag) :-
 delete_from_trie(Handle,Leaf) :-
 	intern:trie_unintern_nr(Handle,Leaf).
 incr_put_in_trie(Fact,Handle,Leaf,Flag) :- 
-	intern:incr_trie_intern(Fact,Handle,Leaf,Flag).
+	intern:incr_trie_intern(Handle,Fact,Leaf,Flag).
 incr_delete_from_trie(Handle,Leaf) :-
 	intern:incr_trie_unintern_nr(Handle,Leaf).
 incr_unmark_uninterned_from_trie(H, Leaf) :-
@@ -403,10 +403,30 @@ storage_find_fact(StorageName,Fact,StoredFact) :-
 	find_in_trie(Fact,H,Leaf),
 	intern:trie_interned(StoredFact,H,Leaf,_).
 
-
-
 storage_find_keypair(StorageName,Key,Value) :-
 	storage_handle(StorageName,NON_INCREMENTAL_TRIE,H,_),
+	find_in_trie(pair(Key,Value),H,_).
+
+%% Find fact in INCREMENTAL storage
+%% Since storage_handle creates tries, if they don't exist, there is a danger
+%% that storage_find_fact may create a non-incremental trie when an incremental
+%% trie is intended. To avoid this danger, use the three incr_* versions below
+incr_storage_find_fact(StorageName,Fact) :-
+	storage_handle(StorageName,INCREMENTAL_TRIE,H,_),
+	!,
+	find_in_trie(Fact,H,_).
+
+%% The StredFact is the fact as it is stored in the trie
+%% In contrast, Fact may unify with what is in the trie,
+%% so it may be different from StredFact
+incr_storage_find_fact(StorageName,Fact,StoredFact) :-
+	storage_handle(StorageName,INCREMENTAL_TRIE,H,_),
+	!,
+	find_in_trie(Fact,H,Leaf),
+	intern:trie_interned(StoredFact,H,Leaf,_).
+
+incr_storage_find_keypair(StorageName,Key,Value) :-
+	storage_handle(StorageName,INCREMENTAL_TRIE,H,_),
 	find_in_trie(pair(Key,Value),H,_).
 
 

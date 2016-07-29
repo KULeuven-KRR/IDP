@@ -59,6 +59,7 @@
       xsb_dbgmsg((LOG_DELAY, ">>>>     trieinstr_vars_num = %d\n",     \
                       trieinstr_vars_num));			        \
       if (trieinstr_vars_num == -1) {					\
+	fail_if_direct_recursion(subgoal);				\
 	delay_positively(subgoal, NodePtr,				\
 			 makestring(get_ret_string()));			\
       }									\

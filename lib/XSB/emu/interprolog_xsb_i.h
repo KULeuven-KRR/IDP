@@ -1,5 +1,5 @@
 /* File:      xsb_intrprolog_i.h
-** Author(s): Swift, to integrate Interprolog System of Calejo
+** Author(s): Swift, to integrate InterProlog System of Calejo
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998

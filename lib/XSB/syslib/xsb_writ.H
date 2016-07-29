@@ -24,7 +24,7 @@
 
 
 :- export file_write/2, file_write0/2, file_write_prolog/2, 
-	file_write_quoted/2, file_write_canonical/2,
+   file_write_quoted/2, file_write_canonical/2, file_write_canonical_lettervar/2,
 	file_nl/1.
 :- export write_int/1, write_float/1, write_int/2, write_float/2.
 :- export write_double/1, write_double/2.

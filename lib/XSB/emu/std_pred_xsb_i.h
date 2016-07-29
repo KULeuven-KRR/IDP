@@ -96,12 +96,13 @@ inline static xsbBool functor_builtin(CTXTdecl)
 		    int_unify(CTXTc makeint(0), arity));
 	  else {
 	    if (isnonvar(arity)) {
-	      if (isinteger(arity))
-		err_handle(CTXTc RANGE, 3, "functor", 3,
-		       "integer in the range 0..255", arity);
-	      else 
-		xsb_type_error(CTXTc "integer",arity,"functor/3",3); 
-
+	      if (isinteger(arity)) {
+			if (int_val(arity) >= 0)
+		  		xsb_representation_error(CTXTc "max_arity",
+		  					 makestring(string_find("Arity of term",1)),"functor/3",3);
+			else xsb_domain_error(CTXTc "not_less_than_zero",arity,"functor/3",3);
+	      }
+	      else xsb_type_error(CTXTc "integer",arity,"functor/3",3); 
 	    }
 	  else xsb_instantiation_error(CTXTc "functor/3", 3);
 	  }
@@ -109,7 +110,7 @@ inline static xsbBool functor_builtin(CTXTdecl)
     }
       else {
       if (isnonvar(functor))
-	xsb_type_error(CTXTc "atom",functor,"functor/3",2); 
+	xsb_type_error(CTXTc "atomic",functor,"functor/3",2); 
       else xsb_instantiation_error(CTXTc "functor/3",3);
       }
   }
@@ -156,6 +157,15 @@ inline static xsbBool arg_builtin(CTXTdecl)
   return TRUE;
 }
 
+/* determine whether to give type or instantiation error */
+int not_univ_list_type(Cell list) {
+  Cell lhead;
+  if (isref(list)) return FALSE;
+  lhead = get_list_head(list);
+  XSB_Deref(lhead);
+  if (isatomic(lhead)) return FALSE;
+  return TRUE;
+}
 
 inline static xsbBool univ_builtin(CTXTdecl)
 {
@@ -163,14 +173,17 @@ inline static xsbBool univ_builtin(CTXTdecl)
   int i, arity;
   int  new_indicator;
   char *name;
-  Cell list, new_list, term, chead, ctail, new_term;
+  Cell list, olist, new_list, term, chead, ctail, new_term;
   Pair sym;
 
   term = ptoc_tag(CTXTc 1);
-  list = ptoc_tag(CTXTc 2);
+  olist = list = ptoc_tag(CTXTc 2);
   if (isnonvar(term)) {	/* Usage is deconstruction of terms */
-    if (!isref(list) && !islist(list))
-      xsb_type_error(CTXTc "list",list,"=../2",2);  /* f(a) =.. 3. */
+    if (!isref(list) && !islist(list)) {
+      if (not_univ_list_type(list)){
+	xsb_type_error(CTXTc "list",list,"=../2",2);  /* f(a) =.. 3. */
+      } else xsb_instantiation_error(CTXTc "=../2",2);
+    }
     new_list = makelist(hreg);
     if (isstring(term) || isointeger(term)) { follow(hreg) = term; hreg += 2; }
     else if (isconstr(term)) {
@@ -240,34 +253,30 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	    } else {
 	      /* leave hreg unchanged */
 	      if (arity > MAX_ARITY)
-		xsb_representation_error(CTXTc "less than MAX_ARITY",
+		xsb_representation_error(CTXTc "max_arity",
 					 makestring(string_find("Length of list",1)),"=../2",2);
 	      else {
-		if (isnonvar(list)) 
-		  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. [foo|Y]. */
-		else xsb_instantiation_error(CTXTc "=../2",2);
-		return FALSE;
+		if (isref(list)) xsb_instantiation_error(CTXTc "=../2",2);
+		else xsb_type_error(CTXTc "list",olist,"=../2",2);  /* X =.. [foo|Y]. */
 	      }
 	    }
 	  }
 	} 
 	return unify(CTXTc term,new_term);
       }
-      if ((xsb_isnumber(chead) || isboxedinteger(chead)) && isnil(ctail)) { /* list=[num] */
-	bind_copy((CPtr)term, chead);	 /* term<-num  */
-	return TRUE;	/* succeed */
+      if (isnil(ctail) && (isofloat(chead) || isointeger(chead))) { /* list=[num] */
+	  bind_copy((CPtr)term, chead);	 /* term<-num  */
+	  return TRUE;	/* succeed */
+      } else { /* error, which one? */
+	if (isref(chead)) xsb_instantiation_error(CTXTc "=../2",2);
+	else if (!isnil(ctail) || (isofloat(chead) || isointeger(chead))) {
+	  xsb_type_error(CTXTc "atom",chead,"=../2",2);
+	} else xsb_type_error(CTXTc "atomic",chead,"=../2",2);
       }
-      else
-	{
-	  if (isnonvar(chead)) 
-	    xsb_type_error(CTXTc "atomic",chead,"=../2",2);  /* X =.. X =.. [2,a,b]. */
-	  else xsb_instantiation_error(CTXTc "=../2",2);
-	  return(FALSE);
-	}
     } /* List is a list */
-    if (isnonvar(list))
-	  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. a */
-    else xsb_instantiation_error(CTXTc "=../2",2);
+    if (isref(list)) xsb_instantiation_error(CTXTc "=../2",2);
+    if (isnil(list)) xsb_domain_error(CTXTc "non_empty_list",list,"=../2",2);
+    else xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. a */
   } /* usage is construction; term is known to be a variable */
   return TRUE;
 }
@@ -320,7 +329,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
   Cell list, new_list;
   CPtr top = 0;
   char *call_name = (call_type == ATOM_CODES ? "atom_codes/2" : "atom_chars/2");
-  char *elt_type = (call_type == ATOM_CODES ? "character code" : "character");
+  char *elt_type = (call_type == ATOM_CODES ? "character_code" : "character");
 
   term = ptoc_tag(CTXTc 1);
   XSB_Deref(term);
@@ -360,7 +369,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	//	if (c < 0) {   /*  || c > 255 nfz */
 	if (c < 0 || (c > 255 && CURRENT_CHARSET == LATIN_1)) {
 	  mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
-	  xsb_representation_error(CTXTc "character code",
+	  xsb_representation_error(CTXTc "character_code",
 				   makestring(string_find("(Non-LATIN_1 Character)",1)),
 				   call_name,2);
 	  return FALSE;	/* keep compiler happy */
@@ -467,7 +476,7 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
   XSB_Deref(term);
   list = ptoc_tag(CTXTc 2);
   XSB_Deref(list);
-  if (islist(list) || isnil(list)) { /* use is: CHARS/CODES --> NUMBER */
+  if ((islist(list) && ground(list)) || isnil(list)) { /* use is: CHARS/CODES --> NUMBER */
     term2 = list;
     do {
       XSB_Deref(term2);
@@ -499,8 +508,8 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
 	}
 
 	if (c < 0 || c > 255) {
-	  //	  xsb_representation_error(CTXTc "character code",heap_addr,call_name,2);
-	  xsb_representation_error(CTXTc "character code",
+	  //	  xsb_representation_error(CTXTc "character_code",heap_addr,call_name,2);
+	  xsb_representation_error(CTXTc "character_code",
 				   makestring(string_find("(Non-LATIN_1 Character)",1)),
 				   call_name,2);
 	}
@@ -542,7 +551,8 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
     }
   } else {	/* use is: NUMBER --> CHARS/CODES/DIGITS */
     if (isref(term)) {
-      xsb_instantiation_error(CTXTc call_name,1);
+      if (list_unifiable(CTXTc list)) xsb_instantiation_error(CTXTc call_name,1);
+      else xsb_type_error(CTXTc "list",list,"number_codes/2",2); //fix pred name
     } else if (isointeger(term)) {
       sprintf(str, "%" Intfmt, oint_val(term));
     } else if (isofloat(term)) {
@@ -572,7 +582,8 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
       follow(hreg-1) = makelist(hreg);
     } follow(hreg-1) = makenil;
     if (isref(list)) {bind_list((CPtr)list,new_list);}
-    else xsb_type_error(CTXTc "list",term,call_name,2);
+    else return unify(CTXTc makelist(new_list),list);
+    //else xsb_type_error(CTXTc "list",term,call_name,2);
   }
   return TRUE;
 }
@@ -1133,7 +1144,7 @@ int term_depth(CTXTdeclc Cell Term) {
 
   int maxsofar = 0;
   int cur_depth = 0;
-  int term_traversal_stack_top = -1;
+  int term_traversal_stack_top = 0;
   int term_traversal_stack_size = TERM_TRAVERSAL_STACK_INIT;
 
   TTFptr term_traversal_stack = (TTFptr) mem_alloc(term_traversal_stack_size*sizeof(Term_Traversal_Frame),OTHER_SPACE);
@@ -1147,7 +1158,7 @@ int term_depth(CTXTdeclc Cell Term) {
 	
   push_term(Term);   cur_depth++;		
 
-  while (term_traversal_stack_top >= 0) {
+  while (term_traversal_stack_top > 0) {
 
     if (term_traversal_stack[term_traversal_stack_top].arg_num > term_traversal_stack[term_traversal_stack_top].arity) {
       pop_term(Term);cur_depth--;
@@ -1174,7 +1185,7 @@ int term_depth(CTXTdeclc Cell Term) {
 int term_sizew(CTXTdeclc Cell Term) { 
 
   int cur_size= 0;
-  int term_traversal_stack_top = -1;
+  int term_traversal_stack_top = 0;
   int term_traversal_stack_size = TERM_TRAVERSAL_STACK_INIT;
 
   TTFptr term_traversal_stack = (TTFptr) mem_alloc(term_traversal_stack_size*sizeof(Term_Traversal_Frame),OTHER_SPACE);
@@ -1195,8 +1206,8 @@ int term_sizew(CTXTdeclc Cell Term) {
      };   
   cur_size++;  /* add the current functor or attributed variable to the count	*/	
 
-  while (term_traversal_stack_top >= 0) {
-
+  while (term_traversal_stack_top > 0) {
+    //    printf("term_traversal_stack_top %d\n");
     if (term_traversal_stack[term_traversal_stack_top].arg_num > term_traversal_stack[term_traversal_stack_top].arity) {
       pop_term(Term);
     }

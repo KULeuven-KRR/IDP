@@ -76,7 +76,7 @@ static char *create_bin_dll_path(char *xsb_config_file_location, char *dll_file_
   return xsb_bin_dir;
 }
 
-static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
+static byte *load_obj_dyn(CTXTdeclc char *pofilename, Psc cur_mod, char *ld_option)
 {
   char	*name;
 #ifndef WIN64
@@ -115,7 +115,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
       if(( handle = LoadLibrary(xsb_bin_dir)) == 0 ){
 	if (( handle = LoadLibrary(basename_ptr)) == 0 ) {
 	  mem_dealloc(xsb_bin_dir,dirlen,FOR_CODE_SPACE);
-	  xsb_warn("Cannot load library %s or %s; error #%d",basename_ptr,sofilename,GetLastError());
+	  xsb_warn(CTXTc "Cannot load library %s or %s; error #%d",basename_ptr,sofilename,GetLastError());
 	  return 0;
 	}
       }
@@ -150,7 +150,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 #endif
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int (*)) GetProcAddress(handle, name)) == NULL) {
-	xsb_warn("Cannot find foreign procedure %s (error #%d)", name,GetLastError());
+	xsb_warn(CTXTc "Cannot find foreign procedure %s (error #%d)", name,GetLastError());
 	set_forn(search_ptr->psc_ptr, (byte *)(dummy));
       } else { 
 	set_forn(search_ptr->psc_ptr, (byte *)(funcep));

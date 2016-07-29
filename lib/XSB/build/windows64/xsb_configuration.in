@@ -64,8 +64,8 @@ xsb_configuration(perl_cc_compiler, '').
 xsb_configuration(perl_ccflags, '').
 xsb_configuration(perl_libs, '').
 
-xsb_configuration(site_dir, 'C:\xsb_site').
-xsb_configuration(srcdir, 'C:\xsb').
+xsb_configuration(site_dir, 'C:\\xsb_site').
+xsb_configuration(srcdir, 'C:\\xsb').
 
 /* Java compiler */
 xsb_configuration(javac, '').

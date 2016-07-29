@@ -116,13 +116,13 @@ eval0(rem(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),
 		eval(Y, Res2,Expr), Res is Res1 rem Res2.  
 eval0(mod(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 mod Res2.  
-eval0('/\'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
+eval0(/\(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 /\ Res2.  
-eval0('\/'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
+eval0(\/(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 \/ Res2.  
-eval0('<<'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
+eval0(<<(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 << Res2.  
-eval0('>>'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
+eval0(>>(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 >> Res2.  
 eval0(min(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     (Res1 =< Res2 -> Res = Res1 ; Res = Res2).
@@ -130,17 +130,17 @@ eval0(max(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     (Res1 >= Res2 -> Res = Res1 ; Res = Res2).
 eval0(exp(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     pow(Res1,Res2,Res).
-eval0('**'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0(**(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     Res is Res1 ** Res2.
-eval0('^'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0(^(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     Res is Res1 ^ Res2.
-eval0('><'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0(><(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     Res is Res1 >< Res2.
 eval0(xor(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), eval(Y, Res2,Expr),
 			     Res is Res1 xor Res2.
 
-eval0('-'(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is -(Res1).
-eval0('\'(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is '\'(Res1).  
+eval0(-(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is -(Res1).
+eval0(\(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is \(Res1).  
 eval0(float(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is float(Res1).  
 eval0(floor(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is floor(Res1).  
 eval0(abs(X),Res,Expr) :- !,eval(X, Res1,Expr), Res is abs(Res1).  
@@ -153,6 +153,7 @@ eval0(tan(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is tan(Res1).
 eval0(asin(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is asin(Res1).
 eval0(acos(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is acos(Res1).
 eval0(atan(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is atan(Res1).
+eval0(atan2(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), eval(Y, Res2,Expr), Res is atan2(Res1,Res2).
 eval0(exp(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is exp(Res1).
 eval0(log(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is log(Res1).
 eval0(log10(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is log10(Res1).

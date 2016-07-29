@@ -114,6 +114,8 @@
 #define DO_ONCE                  72
 #define INTERN_TERM		 73
 
+#define CRYPTO_HASH		 74
+
 /* for efficiency, implemented these in C */
 #define CONGET_TERM	         75
 #define CONSET_TERM	         76
@@ -134,6 +136,7 @@
 #define PSC_SET_TABLED		103
 
 #define IS_INCOMPLETE           104
+#define ANSWER_COMPLETION_OPS	105
 
 #define GET_PTCP	        107
 #define GET_PRODUCER_CALL	108
@@ -201,7 +204,7 @@
 #define GET_ATTRIBUTES		173
 #define DELETE_ATTRIBUTES	174
 #define ATTV_UNIFY		175
-#define START_SLEEPER_THREAD    176
+#define SLEEPER_THREAD_OPERATION 176
 #define MARK_TERM_CYCLIC        177
 
 /* This is the builtin where people should put their private, experimental
@@ -281,13 +284,7 @@
 #define XSB_PROFILE             237
 #define XSB_BACKTRACE		238
 
-/* added by Bart Demoen & Kostis Sagonas for debugging and convenience */
-#define PRINT_LS                240
-#define PRINT_TR                241
-#define PRINT_HEAP              242
-#define PRINT_CP                243
-#define PRINT_REGS              244
-#define PRINT_ALL_STACKS        245
+#define COPY_TERM_3             240
 
 #define EXP_HEAP                246
 #define MARK_HEAP               247
@@ -299,7 +296,7 @@
 #define JAVA_INTERRUPT          253
 #define FORCE_TRUTH_VALUE	254
 
-/* This hook is for Interprolog */
+/* This hook is for InterProlog */
 #define INTERPROLOG_CALLBACK    255
 
 /* cons for jumpcof calls */
@@ -364,3 +361,9 @@
 
 #define CYCLIC_SUCCEED 1
 #define CYCLIC_FAIL    2
+
+#define START_SLEEPER_THREAD 1
+#define CANCEL_SLEEPER_THREAD 2
+
+#define MD5  1
+#define SHA1 2

@@ -121,8 +121,10 @@ consult(Path, Options) :- \+ (\+ (reconsult(Path, Options))).
 
 /*======================================================================*/
 /*======================================================================*/
+
 :- thread_shared consult_file_loaded(_).
 :- dynamic consult_file_loaded(_).
+:- export consult_file_loaded/1.
 
 reconsult(Path) :- reconsult(Path, []).
 
@@ -155,11 +157,11 @@ reconsult0(Path, Options, Ensure_loaded) :-
 			  i_want_compile(SExt, Base, Obj))
  		          ->    check_one_thread_w_override,
 			        compile_f(SExt,Base,Options,_ExList,Mod,Dir),
+				load_exec(Obj, Mod),
 				(consult_file_loaded(ExpObj)
 				 ->	true
 				 ;	assert(consult_file_loaded(ExpObj))
-				),
-				load_exec(Obj, Mod)
+				)
 			 ;     /* Compilation not required */
   			       (Ensure_loaded==true ->  
 			                (consult_file_loaded(ExpObj)
@@ -170,11 +172,11 @@ reconsult0(Path, Options, Ensure_loaded) :-
 					 )
 			         ;	/* Ensure_loaded == false */
 				       check_one_thread_w_override,
+				       load_exec(Obj, Mod),
 				       (consult_file_loaded(ExpObj)
 				        ->     true
 					;      assert(consult_file_loaded(ExpObj))
-				       ),
-				       load_exec(Obj, Mod)
+				       )
 				)
 			)
 		)
@@ -271,21 +273,25 @@ file_exists_here_or_configbin_or_configlib(C_Obj,CC_Obj) :-
 	    )
 	).
 
-/* As of 6/06, magic numbers have the form 17 18 19 N, where N is 
+/* As of 11/15, magic numbers have the form 17 18 19 N, where N is 
    6 if it is the start of a Prolog predicate block.
-   7 if the object file is Prolog code
-   8 if the object file is foreign code and was compiled by the seq engine
-   9 if the object file is foreign code and was compiled by the MT engine
+   7 if the object file is Prolog code (mutable)
+   8 if the object file is foreign code and was compiled by the seq engine (mutable)
+   9 if the object file is foreign code and was compiled by the MT engine (mutable)
+   a if the object file is Prolog code (immutable)
+   b if the object file is foreign code and was compiled by the seq engine (immutable)
+   c if the object file is foreign code and was compiled by the MT engine (immutable)
 */
 /* To be called only on .xwam files */
 object_file_magic_mismatch(Obj):- 
 	xsb_configuration(engine_mode,Emode),
-	engine_mode_magic_num(Emode,LastDigit),
 	get_magic_num(Obj,[_,_,_,Four]),
-	Four \== LastDigit.
+	\+ (engine_mode_magic_num(Emode,_,LastDigit),Four == LastDigit).
 
-engine_mode_magic_num('slg-wam',8).
-engine_mode_magic_num('multi-threading',9).
+engine_mode_magic_num('slg-wam',mutable,8).
+engine_mode_magic_num('multi-threading',mutable,9).
+engine_mode_magic_num('slg-wam',immutable,11).
+engine_mode_magic_num('multi-threading',immutable,12).
 
 get_magic_num(ObjFile,[One,Two,Three,Four]) :- 
 	file_open(ObjFile,r,Istr),
@@ -354,8 +360,9 @@ load_exec(File, ModName) :-
 	code_load(File, Init, 1),	% use the changed C loader.
 	% jf: for Windows a valid segment pointer might be negative
 	( Init =\= 0			% load succeeded
-	; Init =:= 0, 
-	        abort(['Error in loading file ',File])
+	; Init =:= 0,
+	  get_magic_num(File,[_One,_Two,_Three,Four]),\+ immutable(Four),
+          abort(['Error in loading file ',File])
 	),
 	!,
 	(   banner_control(quietload)
@@ -379,6 +386,11 @@ load_exec(File, ModName) :-
 		unload_seg(Init)		% free space for '_$main'
 	 ;	true			% Foreign obj code loaded
 	).
+load_exec(_,_).
+
+immutable(10).
+immutable(11).
+immutable(12).
 
 co_code_call(A,B,C) :- code_call(A,B,C).
 
@@ -1073,3 +1085,7 @@ if_file_loaded(FileName) :-
 	).
 
 is_loaded(FilePath) :- consult_file_loaded(FilePath); load_dyn_file_loaded(FilePath,_).
+
+% Add currently loading file's directory to library_directory
+% Useful to pull related files in a location independent manner
+add_this_lib_dir :- current_loaded_file(F), parse_filename(F,D,_,_), add_lib_dir(D).

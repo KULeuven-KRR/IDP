@@ -71,6 +71,7 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 	SubConsSF consumer_sf;
 	ALNptr answer_continuation;
 	BTNptr next_answer;
+        UNUSED(next_answer);
 
 	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
 
@@ -100,7 +101,7 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 	  if ( IsNonNULL(ALN_Next(nlcp_trie_return(consumer_cpf))) ) {
 	    VariantSF consumer_sf;
 	    consumer_sf = (VariantSF)nlcp_ptcp(consumer_cpf);
-	    if (subg_is_complete(consumer_sf)) {
+	    if (subg_is_completed(consumer_sf) || subg_is_ec_scheduled(consumer_sf)) {
 	      //	      printf(" Unchaining ");  print_subgoal(stdout,consumer_sf);   printf(" in ");
 	      //	      print_subgoal(stdout,producer_sf); printf("\n");
 	      //	      printf("  setting @%p to %p\n",last_perm_cpf,nlcp_prevlookup(consumer_cpf));

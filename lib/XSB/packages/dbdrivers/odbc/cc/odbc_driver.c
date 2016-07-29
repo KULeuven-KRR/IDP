@@ -36,6 +36,12 @@
 #define XSB_DLL
 #endif
 
+#ifdef BITS64
+#define OUR_C_INT SQL_C_SBIGINT
+#else
+#define OUR_C_INT SQL_C_SLONG
+#endif
+
 #include "odbc_driver_defs.h"
 
 static int driverODBC_getXSBType(SQLSMALLINT dataType);
@@ -247,7 +253,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->type = STRING_TYPE;
       result[i]->length = query->resultmeta->types[i]->length + 1;
       result[i]->val->str_val = (char *)malloc(result[i]->length * sizeof(char));
-      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
+      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i+1), SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
         freeResult(result,query->resultmeta->numCols);
@@ -257,7 +263,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
     }
     else if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == INT_TYPE) {
       result[i]->type = INT_TYPE;
-      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)&result[i]->val->i_val, 0, pcbValues[i]);
+      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i+1), OUR_C_INT, (SQLPOINTER *)&result[i]->val->i_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
         freeResult(result,query->resultmeta->numCols);
@@ -267,7 +273,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
     }
     else if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == FLOAT_TYPE) {
       result[i]->type = FLOAT_TYPE;
-      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)&result[i]->val->f_val, 0, pcbValues[i]);
+      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i+1), SQL_C_DOUBLE, (SQLPOINTER *)&result[i]->val->f_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
         freeResult(result,query->resultmeta->numCols);
@@ -281,8 +287,10 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 
   if (val == SQL_SUCCESS || val == SQL_SUCCESS_WITH_INFO) {
     for (i = 0 ; i < query->resultmeta->numCols ; i++) {
-      if (*(pcbValues[i]) == SQL_NULL_DATA)
+      if (*(pcbValues[i]) == SQL_NULL_DATA) {
 	result[i]->val = NULL;
+	result[i]->type = NULL_VALUE_TYPE;
+      }
     }
   }
 

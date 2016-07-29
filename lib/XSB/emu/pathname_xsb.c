@@ -66,7 +66,8 @@
 extern char *user_home_gl;  	  /* from main_xsb.c: the user $HOME dir or
 				     install dir, if $HOME is null */
 static char *rectify_pathname(char *, char *);
-extern void transform_cygwin_pathname(char *);
+void transform_cygwin_pathname(char *);
+void fix_cygwin_pathname(char *);
 
 /*=========================================================================*/
 
@@ -495,7 +496,7 @@ void transform_cygwin_pathname(char *filename)
 {
   char *pointer;
   char tmp[MAXPATHLEN];
-  int diff;
+  int diff = 0;
 
   if (filename[0] == '/') {
     /* MK: unclear what this was supposed to do in case of the files starting
@@ -510,7 +511,8 @@ void transform_cygwin_pathname(char *filename)
 	     filename[6] == 'i' &&
 	     filename[7] == 'v' &&
 	     filename[8] == 'e' &&
-	     filename[9] == '/') diff = 9;
+	     filename[9] == '/')
+      diff = 9;
     else {
       strcpy(tmp,filename);
       strcpy(filename,(char *)flags[USER_HOME]);
@@ -531,6 +533,27 @@ void transform_cygwin_pathname(char *filename)
     *(pointer-diff) = '\0';
     return;
   }
+}
+
+/*
+  CYGWIN's bash understands Letter:/dir/dir/ but CYGWIN does not seem to take
+  this internally. Transform this to /cygdrive/Letter/dir1/dir2/...
+*/
+void fix_cygwin_pathname(char *filename) 
+{
+  char tmp[MAXPATHLEN];
+
+  if (strlen(filename) < MAXPATHLEN - 9    // /cygdrive = 9 chars
+      && filename[1] == ':'
+      && filename[2] == '/'
+      && isalpha(((int)filename[0])))
+    {
+      strcpy(tmp,"/cygdrive/");
+      tmp[10] = filename[0];
+      strcpy(tmp+11,filename+2);
+      strcpy(filename,tmp);
+    }
+  else return;
 }
 
 /*=========================================================================*/

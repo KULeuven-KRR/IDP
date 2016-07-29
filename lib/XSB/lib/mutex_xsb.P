@@ -252,6 +252,17 @@ message_queue_create(Queue):-
 
 %------------------------------------------------------------
 
+:- export interrupt_with_goal/1.
+interrupt_with_goal(Goal):- 
+	      code_to_buff(call(_,_,Goal),0),
+	      thread_request(INTERRUPT_WITH_GOAL,_,_,_,_,_,_,_,_).
+
+:- export handle_goal_interrupt/1.
+handle_goal_interrupt(Message):- 
+	thread_request(HANDLE_GOAL_INTERRUPT,_M1,Message,_M3,_,_,_,_,_),
+%	writeln(thread_request(HANDLE_GOAL_INTERRUPT,_,Message,_,_,_,_,_,_)),
+	thread_request(INTERRUPT_DEALLOC,_M1,_,_M3,_,_,_,_,_).
+
 thread_send_message(Message):- 
 	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
 	thread_send_message(Tid, Message).

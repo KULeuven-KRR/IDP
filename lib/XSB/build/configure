@@ -1430,7 +1430,8 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-no-cygwin           compiled with option -mno-cygwin (default: enabled)
+  --enable-no-cygwin           Compile with the gss option -mno-cygwin (default: disabled)
+                                The latest Cygwins don't support this flag
   --enable-general-tagging     When this option is enabled XSB will determine
                                which bits in the address to tag during
                                runtime. This option is the last resort, if
@@ -2534,6 +2535,7 @@ if test -f buildxsb.lock ; then
    exit 1
 fi
 
+rm -f config.status
 
 SHELL=/bin/sh
 
@@ -2783,9 +2785,9 @@ fi
 
 # Check whether --enable-no-cygwin was given.
 if test "${enable_no_cygwin+set}" = set; then :
-  enableval=$enable_no_cygwin;
+  enableval=$enable_no_cygwin; enable_no_cygwin=yes
 else
-  enable_no_cygwin=yes
+  enable_no_cygwin=no
 fi
 
 # Check whether --enable-general-tagging was given.
@@ -2932,7 +2934,8 @@ do
 		--with-bits64 | --with-bits32 | --with-aout | \
 		--with-optimization* | --with-config-tag* | --with-site-prefix* | --with-includes* | \
 		--with-static-libraries* | --with-dynamic-libraries* | --with-xpath* | \
-		--with-dbdrivers | --with-oracle | --with-odbc | --with-iodbc | \
+		--with-curl* | --with-pcre* | --with-mysql* | \
+		--with-dbdrivers | --with-oracle | --with-odbc* | --with-iodbc* | \
 		--with-smodels* | --with-itkwish* | --with-pita* )
 		    ;;
 	    *)
@@ -5006,7 +5009,7 @@ if test -n "$with_gcc" ; then
         builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
         loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
-        CFLAGS="-Wall -pipe -ansi -pedantic"
+        CFLAGS="-Wall -pipe"
    fi
 else
     case $CC in
@@ -5015,7 +5018,7 @@ else
                 builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
                 loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
-                CFLAGS="-Wall -pipe -ansi -pedantic"
+                CFLAGS="-Wall -pipe"
         ;;
         cc) if test "$__sunpro_c" = "no"; then
                 emuloop_opt_level=-${with_optimization-"O4"}
@@ -5080,6 +5083,7 @@ if test -n "$with_pita" && test -d "$topdir/packages/pita"; then
     cd "$topdir/packages/pita"
     echo "***Configuring pita"
     echo `pwd`
+    chmod 700 ./configure
     ./configure  --with-pita="$with_pita"  > /dev/null
     cd $build_dir
 fi
@@ -5101,6 +5105,7 @@ fi
 if test -d "$topdir/packages/curl"; then
     cd "$topdir/packages/curl"
     echo "***Configuring Curl (WWW protocol library)"
+    chmod 700 ./configure
     ./configure --with-curl-libdir="$with_curl_libdir" --with-curl-incdir="$with_curl_incdir" > /dev/null
     cd "$build_dir"
 fi
@@ -5112,6 +5117,7 @@ if test -d "$topdir/packages/xpath"; then
    if test -n "$with_xpath_dir" ; then
       xpath_prefix_option="--prefix=$with_xpath_dir"
    fi
+   chmod 700 ./configure
     ./configure $xpath_prefix_option > /dev/null
     cd "$build_dir"
 fi
@@ -5121,6 +5127,7 @@ fi
 if test -d "$topdir/packages/pcre"; then
     cd "$topdir/packages/pcre"
     echo "***Configuring PCRE (Perl pattern matching library)"
+    chmod 700 ./configure
     ./configure --with-pcre-libdir="$with_pcre_libdir" --with-pcre-incdir="$with_pcre_incdir" > /dev/null
     cd "$build_dir"
 fi
@@ -6242,7 +6249,7 @@ case "$canonical" in
 
                 $as_echo "#define FOREIGN_ELF 1" >>confdefs.h
 
-        	DYNMOD_LDFLAGS="-dynamiclib -single_module -nostartfiles"
+        	DYNMOD_LDFLAGS="-dynamiclib -single_module -nostartfiles -faltivec"
         	DYNMOD_SHAREDLIB_EXTENSION=jnilib
         ;;
     *sgi* )     $as_echo "#define FOREIGN_ELF 1" >>confdefs.h

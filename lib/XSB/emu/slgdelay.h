@@ -199,7 +199,7 @@ to functions in slgdelay.c
 
 #define mark_conditional_answer(ANS, SUBG, NEW_DL,STRUCT_MGR)		\
   if (Child(ANS) == NULL || hasALNtag(ANS)) {				\
-    create_as_info(STRUCT_MGR,ANS, SUBG);				\
+    create_asi_info(STRUCT_MGR,ANS, SUBG);				\
   }									\
   else {								\
     asi = Delay(ANS);							\
@@ -288,6 +288,34 @@ extern char *current_dl_block_gl;
 extern PNDE released_pndes_gl;	/* the list of released PNDEs */
 extern DE released_des_gl;	/* the list of released DEs */
 extern DL released_dls_gl;	/* the list of released DLs */
+
+/*
+ * remove_pnde(PNDE_HEAD, PNDE_ITEM, PNDE_FREELIST) removes PNDE_ITEM
+ * from the corresponding doubly-linked PNDE list, and adds it to
+ * PNDE_FREELIST. If PNDE_ITEM is the first one in the list, resets
+ * PNDE_HEAD to point to the next one.
+ *
+ * One principle: Whenever we remove a DE, its PDE (or NDE) must be
+ * removed from the PNDE list *first* using remove_pnde().
+ */
+
+#define remove_pnde(PNDE_HEAD, PNDE_ITEM, PNDE_FREELIST) {	\
+    PNDE *pnde_head_ptr;					\
+    PNDE next;							\
+    pnde_head_ptr = &(PNDE_HEAD);				\
+    next = pnde_next(PNDE_ITEM);				\
+    if (*pnde_head_ptr == PNDE_ITEM) {				\
+      *pnde_head_ptr = next;					\
+    } else {							\
+      if (pnde_prev(PNDE_ITEM)) {				\
+	pnde_next(pnde_prev(PNDE_ITEM)) = next;			\
+      }								\
+      if (next) {						\
+	pnde_prev(next) = pnde_prev(PNDE_ITEM);			\
+      }								\
+    }								\
+    release_entry(PNDE_ITEM, PNDE_FREELIST, pnde_next);		\
+  }
 
 
 /*---------------------- end of file slgdelay.h ------------------------*/

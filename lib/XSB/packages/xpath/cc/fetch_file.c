@@ -10,6 +10,7 @@
 
 #include "xsb_config.h"
 #include "socketcall.h"
+#include "auxlry.h"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -41,6 +42,8 @@ int parse_url( const char * url, char * server, char *fname)
   char temp[MAXSTRLEN];
   
   int flag = 0, flag_file = 0;
+
+  SQUASH_LINUX_COMPILER_WARN(flag)
   
   for(i = 0; i<MAXSTRLEN; i++) {
     *(server+i) = 0;

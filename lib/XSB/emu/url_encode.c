@@ -46,7 +46,7 @@
 
 /* Converts a hex character to its integer value */
 char from_hex(char ch) {
-  return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+  return isdigit((int)ch) ? ch - '0' : tolower((int)ch) - 'a' + 10;
 }
 
 /* Converts an integer value to its hex character*/
@@ -62,7 +62,7 @@ char *url_encode(char *in_url) {
     *buf = mem_alloc(strlen(in_url)*3 + 1,OTHER_SPACE),
     *pbuf = buf;
   while (*pstr) {
-    if (isalnum(*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') 
+    if (isalnum((int)*pstr) || *pstr == '-' || *pstr == '_' || *pstr == '.' || *pstr == '~') 
       *pbuf++ = *pstr;
     else if (*pstr == ' ') 
       *pbuf++ = '+';

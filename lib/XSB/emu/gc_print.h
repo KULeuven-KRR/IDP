@@ -101,11 +101,11 @@ static void print_cell(CTXTdeclc FILE *where, CPtr cell_ptr, int fromwhere)
 			  {
 			    s = code_to_string((byte *)cell_val) ;
 			    if (s == NULL)
-			      fprintf(where,"dont_know,%ld).\n",cell_val) ;
-			    else fprintf(where,"code,'-'(%ld,%s)).\n",cell_val,s) ;
+			      fprintf(where,"dont_know,%ld).\n", (long int)cell_val) ;
+			    else fprintf(where,"code,'-'(%ld,%s)).\n", (long int)cell_val,s) ;
 			  }
 		      }
-		    else fprintf(where,"strange_ref,%ld).\n",cell_val) ;
+		    else fprintf(where,"strange_ref,%ld).\n", (long int)cell_val) ;
 	      break ;
 	    }
 	  }
@@ -139,7 +139,7 @@ static void print_cell(CTXTdeclc FILE *where, CPtr cell_ptr, int fromwhere)
       break ;
 
     default :
-      fprintf(where,"strange,%ld).\n",cell_val) ;
+      fprintf(where,"strange,%ld).\n", (long int)cell_val) ;
       break ;
     }
 } /* print_cell */

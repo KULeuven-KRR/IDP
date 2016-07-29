@@ -6,12 +6,15 @@ There are two ways to install XSB on Windows:
       - A native build.
 
 For CygWin, the installation process is the same as under Unix --- see the
-./INSTALL file.
+./INSTALL file --- with one caveat. XSB can be built using CygWin64 and
+CygWin32. However, the latter must then be installed on a 32 bit Windows
+machine. XSB will not build under CygWin32 on a 64 bit Windows: if you use
+Windows64 then also CygWin64 must be used.
 
 The native build depends on how you obtained XSB:
 
-    - checked out from the CVS repository at http://xsb.sourceforge.net
-    - downloaded a pre-configured version of XSB from http://xsb.sourceforge.net
+   - checked out from the CVS repository at http://xsb.sourceforge.net
+   - downloaded a pre-configured version of XSB from http://xsb.sourceforge.net
 
 You must have a copy of Visual C++ installed in order to build XSB
 natively. You can get a free (as in beer) version of VC Express from

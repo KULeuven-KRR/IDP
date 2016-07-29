@@ -71,11 +71,13 @@ typedef struct shared_interned_trie_t *ShrTrieTabPtr;
     ((TYPE) = ((TID) & TRIE_ID_TYPE_MASK) >> 20);				\
     ((IND) = ((TID) &TRIE_ID_ID_MASK)); }
 
+extern VariantSF get_subgoal_frame_for_answer_trie_cp(CTXTdeclc BTNptr,CPtr);
 extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern SubProdSF get_subsumer_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern BTNptr get_trie_root(BTNptr);
 extern VariantSF get_call(CTXTdeclc Cell, Cell *);
 extern Cell build_ret_term(CTXTdeclc int, Cell[]);
+extern Cell build_ret_term_reverse(CTXTdeclc int, Cell[]);
 extern void construct_answer_template(CTXTdeclc Cell, SubProdSF, Cell[]);
 extern void breg_retskel(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr,xsbBool);
@@ -109,7 +111,7 @@ extern int interned_trie_cps_check(CTXTdeclc BTNptr);
 // extern xsbBool check_table_cut;
 
 extern void abolish_table_predicate(CTXTdeclc Psc, int);
-extern void abolish_table_predicate_switch(CTXTdeclc TIFptr, Psc, int, int);
+extern void abolish_table_predicate_switch(CTXTdeclc TIFptr, Psc, int, int,int);
 extern void abolish_table_call(CTXTdeclc VariantSF, int);
 extern void abolish_private_tables(CTXTdecl);
 extern void abolish_shared_tables(CTXTdecl);
@@ -118,11 +120,12 @@ extern int abolish_usermod_tables(CTXTdecl);
 extern int abolish_module_tables(CTXTdeclc const char *module_name);
 extern int abolish_table_call_incr(CTXTdeclc VariantSF); /* incremental evaluation */
 extern int gc_tabled_preds(CTXTdecl);
-extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool warn);
 extern int abolish_table_call_cps_check(CTXTdeclc VariantSF);
 extern void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF,xsbBool);
 extern double total_table_gc_time;
 
+//TLS: should probably be static
+//extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool warn);
 
 extern void release_any_pndes(CTXTdeclc PNDE firstPNDE);
 extern void delete_delay_trie(CTXTdeclc BTNptr root);
@@ -139,6 +142,8 @@ extern void	remove_incomplete_tries(CTXTdeclc CPtr);
 
 extern counter abol_subg_ctr,abol_pred_ctr,abol_all_ctr; /* statistics */
 extern FILE * fview_ptr;
+
+extern int is_ancestor_sf(VariantSF consumer_sf, VariantSF producer_sf);
 
 #define MAX_INTERNED_TRIES 2003
 
@@ -164,10 +169,16 @@ typedef struct scc_node {
 
 extern int table_status(CTXTdeclc Cell, TableStatusFrame*);
 
+extern void alt_print_cp(CTXTdeclc char *);
+
 #define MAX_VAR_SIZE	200
 
-#define build_subgoal_args(SUBG)					\
+/* #define build_subgoal_args(SUBG)					\
 	load_solution_trie(CTXTc arity, 0, &cell_array1[arity-1], subg_leaf_ptr(SUBG))
+*/
+
+#define build_subgoal_args(ARITY,ARRAY,SUBG)				\
+	load_solution_trie(CTXTc ARITY, 0, &ARRAY[arity-1], subg_leaf_ptr(SUBG))
 
 
 #define is_trie_instruction(cp_inst) \

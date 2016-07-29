@@ -49,7 +49,7 @@ test_with_int(Op, Arg1, N, HoldR, Label, Pil, Pilr, Tin, Tout, EPN) :-
         release_if_done0(Arg1, R1, HoldR, Tmid, Tout).
 
 int_eq(Op, integer(N), N) :-
-	( Op == '=:=' -> true ; Op == '=\=' ).
+	( Op == =:= -> true ; Op == =\= ).
 
 /*======================================================================*/
 /* eval_exp(+Term, -R, -Inst, -InstTail, #HoldRegs, +Tin,-Tout,		*/
@@ -94,10 +94,10 @@ eval_exp(structure(Sym,Args),R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 		eval_uniop(Op, E,R,Pil,Pilr,HoldR,Tin,Tout,EPN)
 	; EPN = e(PredSym,NC),
 	  sym_name(PredSym, P, A),
-	  error(('Unknown function ', Op, '/', Arity,
+	  error(('Unknown function ', Op, /, Arity,
 		 ' in an arithmetic expression')),
 	  message(('         involving is/2 or =:=/2 in clause #', NC,
-		   ' of predicate ', P, '/', A))
+		   ' of predicate ', P, /, A))
 	).
 % TLS: added this clause for pi, e and other constants we might like.
 eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
@@ -108,12 +108,12 @@ eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A), sym_name(Sym, Const, _),
 	error(('non-numeric constant ', Const, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
+	message(('         in clause #', NC, ' of predicate ', P,/,A)),
 	Inst = fail, Tin = Tout, R = 0.
 eval_exp(string(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error(('non-numeric string ', Sym, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
+	message(('         in clause #', NC, ' of predicate ', P,/,A)),
 	Inst = fail, Tin = Tout, R = 0.
 
 eval_constant(pi,real(V)):- eval(pi,V). 
@@ -124,42 +124,42 @@ eval_binoptab(-,R1,R2,subreg(R2,R1)).
 eval_binoptab(*,R1,R2,mulreg(R2,R1)).
 eval_binoptab(/,R1,R2,divreg(R2,R1)).
 eval_binoptab(//,R1,R2,idivreg(R2,R1)).
-eval_binoptab('/\',R1,R2,and(R2,R1)).
-eval_binoptab('\/',R1,R2,or(R2,R1)).
-eval_binoptab('<<',R1,R2,logshiftl(R2,R1)).
-eval_binoptab('>>',R1,R2,logshiftr(R2,R1)).
+eval_binoptab(/\,R1,R2,and(R2,R1)).
+eval_binoptab(\/,R1,R2,or(R2,R1)).
+eval_binoptab(<<,R1,R2,logshiftl(R2,R1)).
+eval_binoptab(>>,R1,R2,logshiftr(R2,R1)).
 eval_binoptab(min,R1,R2,minreg(R2,R1)).
 eval_binoptab(max,R1,R2,maxreg(R2,R1)).
-eval_binoptab('**',R1,R2,powreg(R2,R1)).
-eval_binoptab('><',R1,R2,xorreg(R2,R1)).
+eval_binoptab(**,R1,R2,powreg(R2,R1)).
+eval_binoptab(><,R1,R2,xorreg(R2,R1)).
 eval_binoptab(xor,R1,R2,xorreg(R2,R1)).
 eval_binoptab(div,R1,R2,fdivreg(R2,R1)).
 
-plus_or_minus('+').
-plus_or_minus('-').
+plus_or_minus(+).
+plus_or_minus(-).
 
-eval_binop('+').
-eval_binop('-').
-eval_binop('*').
-eval_binop('/').
-eval_binop('//').
-eval_binop('/\').
-eval_binop('\/').
-eval_binop('<<').
-eval_binop('>>').
+eval_binop(+).
+eval_binop(-).
+eval_binop(*).
+eval_binop(/).
+eval_binop(//).
+eval_binop(/\).
+eval_binop(\/).
+eval_binop(<<).
+eval_binop(>>).
 eval_binop(min).
 eval_binop(max).
-eval_binop('**').
-eval_binop('><').
+eval_binop(**).
+eval_binop(><).
 eval_binop(xor).
 eval_binop(div).
 
-arithrelop('=:=').
-arithrelop('=\=').
-arithrelop('<').
-arithrelop('=<').
-arithrelop('>').
-arithrelop('>=').
+arithrelop(=:=).
+arithrelop(=\=).
+arithrelop(<).
+arithrelop(=<).
+arithrelop(>).
+arithrelop(>=).
 
 eval_arithreloptab(=:=, R, Label, jumpnz(R,Label)).
 eval_arithreloptab(=\=, R, Label, jumpz(R,Label)).
@@ -179,7 +179,7 @@ eval_var(Prag,R,Pil,Pilr,Tin,Tout,EPN) :-
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
 		error('Unbound variable in an arithmetic expression'),
-		message(('         (in clause #', NC, ' of predicate ', P, '/', A, ')')),
+		message(('         (in clause #', NC, ' of predicate ', P, /, A, ')')),
 		Pil = [fail|Pilr], R = 0, Tmid = Tout
 	).
 
@@ -216,11 +216,11 @@ geninline_isindeed(_LHS,constant(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,
 	sym_name(PredSym, P, A),
 	sym_name(Sym,Const,_),
 	error(('non-numeric string ', Const, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('         in clause #', NC, ' of predicate ', P,/,A)).
 geninline_isindeed(_LHS,string(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error(('non-numeric string ', Sym, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('         in clause #', NC, ' of predicate ', P,/,A)).
 
 /***isindeed_var(varocc(LVid,LPrag),RPrag,HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	eval_var(RPrag,R,Pil,Pilm,Tin,Tout1,EPN),
@@ -249,7 +249,7 @@ isindeed_var(_,_,_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC),_RVid) :-
 	sym_name(PredSym, P, A),
 	error('Incorrect type in second argument'),
 	message(('         involving is/2 or =:=/2 in clause #', NC,
-		 ' of predicate ', P, '/', A)).
+		 ' of predicate ', P, /, A)).
 
 isindeed_int(varocc(Vid,Prag),N,HoldR,Pil,Pilr,Tin,Tout,_EPN) :- !,
 	getreg(Tin,R), hold(R,Tin,Tmid),
@@ -278,9 +278,9 @@ isindeed_struct(Sym,Args,HoldR,Pil,Pilr,Tin,Tout,EPN,LHS) :-
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
 		Pil = [fail|Pilr], Tout = Tin,
-		error(('Unknown function ', Op, '/', Arity,' in an arithmetic expression')),
+		error(('Unknown function ', Op, /, Arity,' in an arithmetic expression')),
 		message(('         involving is/2 or =:=/2 in clause #', NC,
-			 ' of predicate ', P, '/', A))
+			 ' of predicate ', P, /, A))
 	).
 
 
@@ -303,7 +303,7 @@ isindeed_binary(varocc(_,LPrag),Op,varocc(RVid,RPrag),integer(Int),HoldR,Pil,Pil
 	eval_var_source(varocc(RVid,RPrag),RLoc,RType,HoldR,Tin,Tmid1,EPN),
 	eval_var_target(LPrag,LLoc,LType,UniAsgn,Tmid1,Tout,EPN),  % register dealloc?
 	!,			% can use optimized instruction.
-	(Op == '-'
+	(Op == -
 	 ->	RInt is ((-Int)<<2) + (LType<<1) + RType
 	 ;	RInt is (Int<<2) + (LType<<1) + RType
 	),
@@ -329,7 +329,7 @@ isindeed_binary(real(Real),Op,E1,E2,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 isindeed_binary(_LHS,_Op,_E1,_E2,_HoldR,[fail|Pilr],Pilr,Tout,Tout,e(PredSym,NC)) :- !,
 	sym_name(PredSym, P, A),
 	error('variable or numerical constant expected as 1st arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('          in clause #', NC, ' of predicate ', P,/,A)).
 
 /**isindeed_unary(LHS,Op,E,_HoldR,_Pil,_Pilr,_Tin,_Tout,_EPN) :-
 	get_basic_type(LHS,TypLHS),
@@ -353,7 +353,7 @@ isindeed_unary(real(Real),Op,E,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 isindeed_unary(_LHS,_Op,_E,_HoldR,[fail|Pilr],Pilr,Tout,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error('variable or numerical constant expected as 1st arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('          in clause #', NC, ' of predicate ', P,/,A)).
 
 eval_binop(Op,E1,E2,R1,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 	eval_binop(Op), !,
@@ -379,17 +379,17 @@ eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 eval_binop(Op,_,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error(('Unknown function ', Op, '/2 in an arithmetic expression')),
-	message(('         using is/2 in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
 
-eval_uniop('+',E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :- !, /* unary plus */
+eval_uniop(+,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :- !, /* unary plus */
 	eval_exp_vc(E,R,Pil,Pilr,HoldR,Tin,Tout,EPN).
-eval_uniop('-',E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* unary minus */
+eval_uniop(-,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* unary minus */
 	getreg(Tin,R), hold(R,Tin,Tmid1),
 	Pil = [putnumcon(R,0)|Pilm],
 	eval_exp_vc(E,R1,Pilm,[subreg(R1,R)|Pilr],HoldR,Tmid1,Tmid2,EPN),
 	release(R,Tmid2,Tmid3),
 	release_if_done0(E,R1,HoldR,Tmid3,Tout).
-eval_uniop('\',E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* negation */
+eval_uniop(\,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* negation */
 	eval_exp_vc(E,R,Pil,[negate(R)|Pilr],HoldR,Tin,Tout,EPN).
 eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-   /* others */
 	builtin_function(Op, 1, Num),
@@ -398,7 +398,7 @@ eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-   /* others */
 eval_uniop(Op,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error(('Unknown function ', Op, '/1 in an arithmetic expression')),
-	message(('         using is/2 in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
 
 eval_exp_vc(varocc(_,Prag),R,Pil,Pilr,_,Tin,Tout,EPN) :-
 	eval_var(Prag,R,Pil,Pilr,Tin,Tout,EPN).
@@ -418,7 +418,7 @@ eval_exp_vc(constant(C),R,Pil1,Pil2,HoldR,Tin,Tout,EPN) :-
 eval_exp_vc(_,0,[fail|Pilr],Pilr,_HoldR,Tout,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error('variable or numerical constant expected in 2nd arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,'/',A )).
+	message(('          in clause #', NC, ' of predicate ', P,/,A )).
 
 eval_var_source(Varocc,Loc,Type0,HoldR,Tin,Tout,EPN) :-
 	Varocc = varocc(Vid,Prag),
@@ -435,7 +435,7 @@ eval_var_source(Varocc,Loc,Type0,HoldR,Tin,Tout,EPN) :-
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
 		error('Unbound variable in an arithmetic expression'),
-		message(('         (in clause #', NC, ' of predicate ', P, '/', A, ')')),
+		message(('         (in clause #', NC, ' of predicate ', P, /, A, ')')),
 		Loc = 0, Tout = Tmid
 	).
 
@@ -478,17 +478,17 @@ eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 eval_binop(Op,_,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
     sym_name(PredSym, P, A),
     error(('Unknown function ', Op, '/2 in an arithmetic expression')),
-    message(('         using is/2 in clause #', NC, ' of predicate ', P,'/',A)).
+    message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
 
-eval_uniop('+',E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :- !, /* unary plus */
+eval_uniop(+,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :- !, /* unary plus */
     eval_exp(E,R,Pil,Pilr,HoldR,Tin,Tout,EPN).
-eval_uniop('-',E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* unary minus */
+eval_uniop(-,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* unary minus */
     getreg(Tin,R), hold(R,Tin,Tmid1),
     Pil = [putnumcon(R,0)|Pilm],
     eval_exp(E,R1,Pilm,[subreg(R1,R)|Pilr],HoldR,Tmid1,Tmid2,EPN),
     release(R,Tmid2,Tmid3),
     release_if_done0(E,R1,HoldR,Tmid3,Tout).
-eval_uniop('\',E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* negation */
+eval_uniop(\,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-  !, /* negation */
     eval_exp(E,R,Pil,[negate(R)|Pilr],HoldR,Tin,Tout,EPN).
 eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-   /* others */
     builtin_function(Op, 1, Num),
@@ -497,5 +497,5 @@ eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-   /* others */
 eval_uniop(Op,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
     sym_name(PredSym, P, A),
     error(('Unknown function ', Op, '/1 in an arithmetic expression')),
-    message(('         using is/2 in clause #', NC, ' of predicate ', P,'/',A)).
+    message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
 

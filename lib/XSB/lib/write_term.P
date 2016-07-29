@@ -32,7 +32,7 @@
 
 :- import current_infixop/4, current_postfixop/3, current_prefixop/3
 								from xsb_ciao. 
-:- import check_nonvar_list/3,check_nonvar/3,
+:- import check_nonvar/3, instantiation_error/3,
 	  type_error/4,domain_error/4 from error_handler.
 
 :- import write/1 from standard.
@@ -63,7 +63,7 @@ write_term(Stream, Term, OptList) :-
         current_output(Curr),
         set_output(Stream),
         Default = options(false,false,false,false,1000000),
-        compute_options(OptList, 3, Default, 1200, Options, Priority),
+        compute_options(OptList, 3, OptList, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
 	set_output(Curr),
 	xsb_stream_unlock( Stream ).
@@ -72,7 +72,7 @@ write_term(Term,OptList):-
         current_output(Curr),
 	xsb_sys_mutex_lock( Curr ),
         Default = options(false,false,false,false,1000000),
-        compute_options(OptList, 2, Default, 1200, Options, Priority),
+        compute_options(OptList, 2, OptList, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
 	xsb_sys_mutex_unlock( Curr ).
 
@@ -130,14 +130,15 @@ write_option(portrayed(Pr)) :- (Pr = true ; Pr = false),!.
 write_option(max_depth(MD)) :- integer(MD), MD >= 0.
 write_option(priority(Prio)) :- integer(Prio), Prio >= 1, Prio =< 1200.
 
-compute_options(V, N, _, _, _, _) :- var(V), !,
-       check_nonvar_list(V,write_term/N,N).
-compute_options([], _, Options, Prio, Options, Prio) :- !.
-compute_options([Opt|Opts], N, Options1, Prio1, Options, Prio) :- !,
+compute_options(V, N, OL,  _, _, _, _) :- var(V), !,
+	instantiation_error(OL,write_term/N,N).
+	%%check_nonvar_list(V,write_term/N,N).
+compute_options([], _, _OL, Options, Prio, Options, Prio) :- !.
+compute_options([Opt|Opts], N, OL, Options1, Prio1, Options, Prio) :- !,
         one_opt(Opt, N, Options1, Prio1, Options2, Prio2),
-        compute_options(Opts, N, Options2, Prio2, Options, Prio).
-compute_options(Opts, N, _, _, _, _) :-
-        type_error(list, Opts,write_term/N,N).
+        compute_options(Opts, N, OL, Options2, Prio2, Options, Prio).
+compute_options(_Opts, N, OL, _, _, _, _) :-
+        type_error(list, OL, write_term/N, N).
 
 one_opt(V, N, _, _, _, _) :- var(V), !,
 	check_nonvar(V,write_term/N,N).
@@ -200,14 +201,12 @@ something much simpler for now.
 In any case, I really should tie the spacing in with the tokenizing somehow.
 */
 
-maybe_space(_Ci,_Co):- put_code(0' ).
+%maybe_space(_Ci,_Co):- put_code(0' ).
 
-/*
 maybe_space(Ci, Co) :-
 	(   Ci\/Co<2'100, xor(Ci,Co,C),C < 2'010 -> put_code(0' )
         ;   true
         ).
-*/
 
 /*
 sticky_contexts(alpha, alpha).
@@ -498,12 +497,12 @@ write_string_tail(Other, Options, Depth, Co) :-
 	put_code(0'|),
 	write_out(Other, Options, 999, 0, Depth, '(', 2'100, Co).
 
-put_string_code(0'") :- !, display('""').
+put_string_code(0'") :- !, display('""').  %"
 put_string_code(0'\\) :- !, display('\\\\').
 put_string_code(C) :- put_code(C).
 
-%%xor(A,B,C):- 
-%%	C is ((A \/ B) - (A /\ B)).
+xor(A,B,C):- 
+	C is ((A \/ B) - (A /\ B)).
 
 displayq(Term):- writeq(Term).
 

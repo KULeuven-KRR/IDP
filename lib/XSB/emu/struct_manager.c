@@ -106,7 +106,7 @@ void smAllocateBlock(Structure_Manager *pSM) {
 void smFreeBlocks(Structure_Manager *pSM) {
 
   void *pCurBlock, *pNextBlock;
-
+  //  printf("smReleaseResources %s\n",(pSM->struct_desc).name);
   pCurBlock = SM_CurBlock(*pSM);
   while ( IsNonNULL(pCurBlock) ) {
     pNextBlock = SMBlk_NextBlock(pCurBlock);

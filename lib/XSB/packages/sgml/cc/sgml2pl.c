@@ -995,13 +995,13 @@ DllExport int call_conv pl_sgml_parse()
 
 	  if (ateof) {
 	      eof = TRUE;
-	      if ( c == LF )                  /* file ends in LF */ {
-		c = CR;
-	      } else if ( c != CR )  {        /* file ends in normal char */
+	      if ( c == LINEFEED )  {        /* file ends in LINEFEED */
+		c = CARRIAGERETURN;
+	      } else if ( c != CARRIAGERETURN )  {        /* file ends in normal char */
 		putchar_dtd_parser(p, c);
 		if ( pd->stopped )
 		  goto stopped;
-		c = CR;
+		c = CARRIAGERETURN;
 	      }
 	  }
 	  putchar_dtd_parser( p, c);
@@ -1175,7 +1175,7 @@ DllExport int call_conv pl_open_dtd()
     int i = 0;
     source_len = strlen(fname);
 
-    for( i=0; i<source_len ; i++){
+    for( i=0; (size_t)i<source_len ; i++){
       putchar_dtd_parser(pd->parser, fname[i]);
     }
   }
@@ -1185,7 +1185,7 @@ DllExport int call_conv pl_open_dtd()
       char c;
       int i = 0;
 
-      for( i=0;i<source_len;i++)
+      for( i=0;(size_t)i<source_len;i++)
 	{
 	  c = fgetc(in);
 	  putchar_dtd_parser(pd->parser, c);
@@ -1926,7 +1926,7 @@ do_quote(prolog_term in, prolog_term quoted, char **map)
 
       if ( map[c] ) {
 	size_t l = strlen(map[c]);
-	if ( o+l >= outlen ) {
+	if ( o+l >= (size_t) outlen ) {
 	  outlen *= 2;
 	  if ( out == outbuf ) {
 	    out = malloc(outlen);
@@ -1939,7 +1939,7 @@ do_quote(prolog_term in, prolog_term quoted, char **map)
 	o += l;
 	changes++;
       } else {
-	if ( o >= outlen-1 ) {
+	if ( o >= (size_t)(outlen-1) ) {
 	  outlen *= 2;
 	  if ( out == outbuf ) {
 	    out = malloc(outlen);

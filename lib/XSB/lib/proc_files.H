@@ -24,8 +24,10 @@
 
 :- compiler_options([ciao_directives]).
 
-:- export load_csv/2.
-:- export load_psv/2.
+:- export
+        load_csv/3,
+        load_csv/2,
+        load_psv/2.
 :- export load_dsv/3.
 :- export save_dsv/3.
 :- export copy_dsv/4.
@@ -39,7 +41,7 @@
 :- import warning/1, throw/1 from standard.
 :- import conset/2, coninc/2, conget/2, coninc/1 from gensym.
 :- import file_read_line_list/2, file_put/2 from file_io.
-:- import writeln/1, nl/0, atom_codes/2, repeat/0, '=..'/2,
+:- import writeln/1, atom_codes/2, repeat/0, '=..'/2,
 	functor/3, arg/3, number_codes/2, call/1, 
 	nl/1, writeq/2, write/2, writeln/2, cputime/1,
 	open/3, close/1

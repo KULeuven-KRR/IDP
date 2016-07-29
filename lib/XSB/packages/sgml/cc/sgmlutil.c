@@ -95,11 +95,12 @@ istreq(const ichar *s1, const ichar *s2)
 }
 */
 int
-istrncaseeq(const ichar *s1, const ichar *s2, size_t len)
-{ while(--len >= 0 && tolower(*s1) == tolower(*s2))
+istrncaseeq(const ichar *s1, const ichar *s2, size_t len) {
+  int templen = (int) len;
+  while(--templen >= 0 && tolower(*s1) == tolower(*s2))
     s1++, s2++;
   
-  if ( len < 0 )
+  if ( templen < 0 )
     return TRUE;
   
   return FALSE;
@@ -476,8 +477,8 @@ load_sgml_file_to_charp(const char *file, int normalise_rsre, size_t *length)
 	    for(s=r, t=r2; *s; s++) {
 	      if ( *s == '\n' ) {
 		if ( s>r && s[-1] != '\r' ) {
-		  *t++ = CR;
-		  *t++ = LF;
+		  *t++ = CARRIAGERETURN;
+		  *t++ = LINEFEED;
 		} else {
 		  *t++ = *s;
 		}
@@ -490,7 +491,7 @@ load_sgml_file_to_charp(const char *file, int normalise_rsre, size_t *length)
 	  }
 	  
 	  if ( last_is_lf )
-	    r[--len] = '\0';		/* delete last LF */
+	    r[--len] = '\0';		/* delete last LINEFEED */
 	}
 	
 	if ( length )

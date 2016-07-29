@@ -129,6 +129,8 @@ cd(Path) :-
 
 copy(Old, New) :- 
 	sys_filecopy(Old, New, Res), Res =:= 0.
+append(Old, New) :- 
+	sys_fileappend(Old, New, Res), Res =:= 0.
 
 rename(Old, New) :- 
 	sys_rename(Old, New, Res), Res =:= 0.
@@ -200,5 +202,7 @@ sys_cwd(Name, Res)   	    :-	sys_syscall(SYS_cwd, Res, Name, _).
 sys_mkdir(Name, Res)   	    :-	sys_syscall(SYS_mkdir, Res, Name, _).
 sys_rmdir(Name, Res)   	    :-	sys_syscall(SYS_rmdir, Res, Name, _).
 sys_filecopy(Source,Dest,Res)  :-  sys_syscall(SYS_filecopy, Res, Source, Dest).
+sys_fileappend(Source,Dest,Res)  :-  sys_syscall(SYS_fileappend, Res, Source, Dest).
 sys_create(Name,Res)      :-  sys_syscall(SYS_create, Res, Name, _).
 
+sys_main_memory(Memory_size):- sys_syscall(SYS_main_memory_size,_,Memory_size,_).

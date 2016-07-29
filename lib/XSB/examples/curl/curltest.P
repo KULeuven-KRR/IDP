@@ -25,11 +25,20 @@ test_all :-
 	write('Testing secure-crt...'),
 	test_secure_crt(OutPath, CertPath), 
 	writeln('Done'),
+	write('Testing secure...'),
+	catch(test_secure,_,write('test_secure/0: throws error, as expected...')),
+	writeln('Done'),
 	write('Testing insecure...'),
 	test_nonsecure(OutPath), 
 	writeln('Done'),
 	write('Testing auth...'),
 	test_auth(OutPath), 
+	writeln('Done'),
+	write('Testing wrong-url...'),
+	catch(test_wrong_url,_,write('test_wrong_url/0: throws error, as expected...')),
+	writeln('Done'),
+	write('Testing timeout-fail...'),
+	catch(test_timeout_fail,_,write('test_timeout_fail/0: throws error, as expected...')),
 	writeln('Done'),
 	write('Testing properties-no-opt...'),
 	test_properties_no_opt(OutPath), 
@@ -45,6 +54,9 @@ test_all :-
 	writeln('Done'),
 	write('Testing post...'),
 	test_post, 
+	writeln('Done'),
+	write('Testing post2...'),
+        test_post2,
 	writeln('Done'),
 	write('Testing read-and-close...'),
 	test_read_and_close, 
@@ -89,8 +101,8 @@ test_html_redir(OutPath) :-
 /*Always export the certificates with type set to "X.509 Certificate with chain (PEM)*/
 test_secure_crt(OutPath, CertPath) :- 
 	slash(Slash), 
-	fmt_write_string(CertFile, '%s%scs.stonybrook.edu.crt', f(CertPath, Slash)), 
-	open(url('https://mail.cs.stonybrook.edu'), read, X, [secure(CertFile)]),
+	fmt_write_string(CertFile, '%s%swww.cs.stonybrook.edu.crt', f(CertPath, Slash)), 
+	open(url('https://www.cs.stonybrook.edu'), read, X, [secure(CertFile)]),
 	fmt_write_string(OutFile, '%s%ssecure_crt.html', f(OutPath, Slash)),
 	tell(OutFile),
 	write_page(X),
@@ -98,7 +110,7 @@ test_secure_crt(OutPath, CertPath) :-
 	close(X).
 
 test_nonsecure(OutPath) :- 
-	open(url('https://mail.cs.stonybrook.edu'), read, X, [secure(false)]),
+	open(url('https://mail.google.com'), read, X, [secure(false)]),
 	slash(Slash), fmt_write_string(OutFile, '%s%snon_secure.html', f(OutPath, Slash)),
 	tell(OutFile), write_page(X), told,  
 	close(X).
@@ -116,10 +128,10 @@ test_timeout(OutPath) :-
 	close(X).
 
 test_properties_no_opt(OutPath) :-
-	url_properties(url('https://mail.cs.stonybrook.edu/cgi-bin/openwebmail/openwebmail.pl'), [DirEnc, FileBase, Suffix, Size, ModifyTime]), 
+	url_properties(url('https://mail.google.com'), [DirEnc, FileBase, Suffix, Size, ModifyTime]), 
 	slash(Slash), fmt_write_string(OutFile, '%s%sprop_no_opt.txt', f(OutPath, Slash)),
 	tell(OutFile), 
-	writeln('test_url_properties_no_opt on https://mail.cs.stonybrook.edu/cgi-bin/openwebmail/openwebmail.pl'), 
+	writeln('test_url_properties_no_opt on https://mail.google.com'), 
 	write('Directory = '), writeln(DirEnc), 
 	write('FileBase = '), writeln(FileBase), 
 	write('Suffix = '), writeln(Suffix), 
@@ -152,7 +164,7 @@ test_properties_auth(OutPath) :-
 	told.
 
 test_get_redir_url :-
-	get_redir_url(url('http://www.cs.sunysb.edu/~cse532/'), UrlNew1), 
+	get_redir_url(url('http://www.cs.stonybrook.edu/~cse532/'), UrlNew1), 
 	writeln(UrlNew1), 
 	get_redir_url(file('test.html'), UrlNew2), 
 	writeln(UrlNew2).
@@ -169,7 +181,7 @@ test_post :-
 	close(url('http://www.zend.com/en/')).
 
 test_read_and_close :- 
-	open(url('http://ringlord.com/latex-to-pdf-howto.html'),read, X), 
+	open(url('http://ringlord.com/latex-to-pdf-howto.html'),read, X,[secure(true)]), 
 	get_char(X, _), 
 	close(url('http://ringlord.com/latex-to-pdf-howto.html')).
 
@@ -183,11 +195,15 @@ test_tell :-
 	put_char(a), put_char(b), 
 	told.
 
-/*Not added to the test suite. This is supposed to throw an error*/
-test_post_fail :- 
-	open(url('http://www.ibm.com/us/en/'),write, X), 
-	put_char(X, 'a'), put_char(X, 'b'), 	
-	close(url('http://www.ibm.com/us/en/')).
+/* This is supposed to throw an error */
+%% Not sure that posting works
+test_post2 :- 
+        %%URL = 'http://www.ibm.com/us-en/',
+        URL = 'http://httpbin.org/get',
+        %%URL = 'http://httpbin.org/post',
+	open(url(URL),write, X), 
+	write(X, aaa123), writeln(X, bbb123), 	
+	close(url(URL)).
 
 test_encode_url(OutPath) :-
 	encode_url(url('http://www.cs.sunysb.edu/~cse532/first.html'), [Dir, File, Suffix]), 
@@ -204,7 +220,7 @@ test_secure :-
 	curldir(CurlDir), slash(Slash), 
 	fmt_write_string(OutPath, '%s%sactualoutput', f(CurlDir, Slash)), 
 	(path_sysop(isdir, OutPath); path_sysop(mkdir, OutPath)),
-	open(url('https://mail.cs.stonybrook.edu'), read, X),
+	open(url('https://mail.google.com/mail/u/1/#inbox'), read, X),
 	slash(Slash), fmt_write_string(OutFile, '%s%ssecure.html', f(OutPath, Slash)),
 	tell(OutFile), write_page(X), told,  
 	close(X).

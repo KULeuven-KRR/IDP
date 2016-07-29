@@ -62,7 +62,7 @@ xsb_wrap_xasppkg.c: xasppkg.H
 	"import wrap/2 from wrapping. wrap('xasppkg.H','xsb_wrap_xasppkg.c'). halt." 
 
 clean: 
-	/bin/rm -f *.o *.so *.xwam *.h
+	/bin/rm -f *.o *.so *.xwam 
 
 xsb_wrap_xasppkg.o: xsb_wrap_xasppkg.c
 	$(GCC) $(CFLAGS) -c xsb_wrap_xasppkg.c

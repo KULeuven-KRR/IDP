@@ -55,47 +55,25 @@
 #include "tr_utils.h"
 #include "loader_xsb.h"
 #include "call_graph_xsb.h"
+#include "hash_xsb.h"
+
+extern void print_mutex_use(void);
+extern void dis(xsbBool);
 
 /*======================================================================*/
 /* Process-level information: keep this global */
 
-double time_start;      /* time from which stats started being collected */
-static double last_cpu = 0;      /* time from which stats started being collected */
-static double last_wall = 0;      /* time from which stats started being collected */
+double time_start_gl;      /* time from which stats started being collected */
+double realtime_count_gl;
 
 #ifndef MULTI_THREAD
-struct trace_str tds;			/* trace datastructure */
-struct trace_str ttt;			/* trace total */
-struct trace_str trace_init = {		/* initial value for a trace str */
-0
-   };
+double cputime_count_gl;
 #else 
 double time_count = 0;
 #endif
 
-/*======================================================================*/
-/* perproc_stat()							*/
-/*======================================================================*/
-
-/*
- * Moves values from 'tds' into 'ttt' for reporting in total_stat().
- * (Since 'ttt' is always reset when the builtin statistics/1
- *  (statistics/0 calls statistics(1)) is called, 'ttt' always gets *
- *  what's in 'tds'.  
- */
-
-#ifndef MULTI_THREAD
-void perproc_stat(void)
-{
-  tds.time_count = cpu_time() - time_start;
-  ttt.time_count += tds.time_count;
-}
-#else
-void perproc_stat(void)
-{
-  time_count = cpu_time() - time_start;
-}
-#endif
+static double last_cpu = 0;      /* time from which stats started being collected */
+static double last_wall = 0;      /* time from which stats started being collected */
 
 #ifndef MULTI_THREAD
 void print_abolish_table_statistics() {
@@ -110,8 +88,9 @@ int count_sccs(CTXTdecl) {
   int last_scc = 0;
   CPtr csf = openreg;
 
-  //    printf("open %x COMPL %x\n",openreg,COMPLSTACKBOTTOM);
+  //  printf("open %x COMPL %x\n",openreg,COMPLSTACKBOTTOM);
   while (csf < COMPLSTACKBOTTOM) {
+    //    printf("comp level %d\n",compl_level(csf));
     if (compl_level(csf) != last_scc) {
       ctr++;
       last_scc = compl_level(csf);
@@ -123,12 +102,6 @@ int count_sccs(CTXTdecl) {
   return ctr;
 }
     
-/*
- * Prints current memory usage info, operational counts, and, if the
- * "-s" option was given to xsb at invocation, maximum usage from the
- * time of 'time_start'.
- */
-
 char *pspace_cat[NUM_CATS_SPACE] =
   {"atom        ","string      ","asserted    ","compiled    ",
    "foreign     ","table       ","findall     ","profile     ",
@@ -136,8 +109,19 @@ char *pspace_cat[NUM_CATS_SPACE] =
    "interprolog ","thread      ","read canon  ","leaking...  ",
    "special     ","other       ","incr table  ","odbc        "};
 
+extern void stat_inusememory(CTXTdeclc double,int);
+
+/*
+ * Called through builtin statistics/2.
+ */
+void statistics_inusememory(CTXTdeclc int type) {
+#ifndef MULTI_THREAD
+  cputime_count_gl = (cpu_time() - time_start_gl);
+#endif
+  stat_inusememory(CTXTc real_time()-realtime_count_gl,type);   /* collect */
+}
 /*======================================================================*/
-/* total_stat()								*/
+/*  Memory statistics.					*/
 /*======================================================================*/
 
 #ifndef MULTI_THREAD
@@ -161,79 +145,62 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
   
   size_t
     total_alloc, total_used,
-    tablespace_alloc, tablespace_used,
+    tablespace_sm_alloc, tablespace_sm_used,
     trieassert_alloc, trieassert_used,
     gl_avail, pnde_space_alloc, pnde_space_used, pspacetot;
 
-  UInteger dl_space_alloc, dl_space_used, dl_count, de_space_alloc, de_space_used, tc_avail;
+  UInteger dl_space_alloc, dl_space_used,  de_space_alloc, de_space_used, tc_avail;
 
   size_t
-    num_de_blocks, num_dl_blocks, num_pnde_blocks,
-    de_count, i;
+    num_de_blocks, num_dl_blocks, num_pnde_blocks,i;
 
-  tbtn = node_statistics(&smTableBTN);
-  tbtht = hash_statistics(&smTableBTHT);
-  varsf = subgoal_statistics(CTXTc &smVarSF);
-  prodsf = subgoal_statistics(CTXTc &smProdSF);
-  conssf = subgoal_statistics(CTXTc &smConsSF);
-  aln = node_statistics(&smALN);
-  tstn = node_statistics(&smTSTN);
-  tstht = hash_statistics(&smTSTHT);
-  tsi = node_statistics(&smTSIN);
-  asi = node_statistics(&smASI);
+  tbtn = node_statistics(&smTableBTN);             tbtht = hash_statistics(CTXTc &smTableBTHT);
+  varsf = subgoal_statistics(CTXTc &smVarSF);      prodsf = subgoal_statistics(CTXTc &smProdSF);
+  conssf = subgoal_statistics(CTXTc &smConsSF);    aln = node_statistics(&smALN);
+  tstn = node_statistics(&smTSTN);                 tstht = hash_statistics(CTXTc &smTSTHT);
+  tsi = node_statistics(&smTSIN);                  asi = node_statistics(&smASI);
 
-  tablespace_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,
-						 conssf,aln,tstn,tstht,tsi,asi);
-  tablespace_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf,
-					       conssf,aln,tstn,tstht,tsi,asi);
+  tablespace_sm_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,conssf,aln,tstn,tstht,tsi,asi);
+  tablespace_sm_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf,conssf,aln,tstn,tstht,tsi,asi);
 
   de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
   de_space_used = de_space_alloc - unused_de_space();
-  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
-	     sizeof(struct delay_element);
+  //  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /	     sizeof(struct delay_element);
 
   dl_space_alloc = allocated_dl_space(current_dl_block_gl,&num_dl_blocks);
   dl_space_used = dl_space_alloc - unused_dl_space();
-  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
-	     sizeof(struct delay_list);
+  //  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /	     sizeof(struct delay_list);
 
   pnde_space_alloc = allocated_pnde_space(current_pnde_block_gl,&num_pnde_blocks);
   pnde_space_used = pnde_space_alloc - unused_pnde_space();
 
-  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_sm_alloc = tablespace_sm_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_sm_used = tablespace_sm_used + de_space_used + dl_space_used + pnde_space_used;
 
-  tablespace_used = tablespace_used + de_space_used + dl_space_used + pnde_space_used;
-
-  abtn = node_statistics(&smAssertBTN);
-  abtht = hash_statistics(&smAssertBTHT);
-  trieassert_alloc =
-    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
-  trieassert_used =
-    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+  abtn = node_statistics(&smAssertBTN);  abtht = hash_statistics(CTXTc &smAssertBTHT);
+  trieassert_alloc =    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
+  trieassert_used  =    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
 
   gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
   tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
+
+    switch(type) {
+
+    case TOTALMEMORY: {
 
   pspacetot = 0;
   for (i=0; i<NUM_CATS_SPACE; i++) 
     if (i != TABLE_SPACE && i != INCR_TABLE_SPACE) pspacetot += pspacesize[i];
 
-  total_alloc =
-    pspacetot  +  pspacesize[TABLE_SPACE] +
-    pspacesize[INCR_TABLE_SPACE] +
-    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
-    de_space_alloc + dl_space_alloc  + pnde_space_alloc;
+  total_alloc =     pspacetot  +  pspacesize[TABLE_SPACE] +    pspacesize[INCR_TABLE_SPACE] +
+    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K + de_space_alloc + dl_space_alloc  + pnde_space_alloc;
 
-  total_used  =
-    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used)
-    - (trieassert_alloc - trieassert_used) +
-    pspacesize[INCR_TABLE_SPACE] +
+  total_used  =    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_sm_alloc-tablespace_sm_used)
+    - (trieassert_alloc - trieassert_used) +    pspacesize[INCR_TABLE_SPACE] +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
     de_space_used + dl_space_used;
 
-    switch(type) {
 
-    case TOTALMEMORY: {
       ctop_int(CTXTc 4, total_alloc);
       ctop_int(CTXTc 5, total_used);
       break;
@@ -249,8 +216,8 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
       break;
     }
     case TABLESPACE: {
-      ctop_int(CTXTc 4, tablespace_alloc);
-      ctop_int(CTXTc 5, tablespace_used);
+      ctop_int(CTXTc 4, tablespace_sm_alloc);
+      ctop_int(CTXTc 5, tablespace_sm_used);
       break;
     }
     case TRIEASSERTMEM: {
@@ -275,8 +242,8 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
       break;
     }
     case OPENTABLECOUNT: {
-      ctop_int(CTXTc 4, (COMPLSTACKBOTTOM - top_of_complstk) / 
-	       sizeof(struct completion_stack_frame));
+      ctop_int(CTXTc 4, ((size_t)COMPLSTACKBOTTOM - (size_t)top_of_complstk) /   sizeof(struct completion_stack_frame));
+      ctop_int(CTXTc 5, count_sccs(CTXT));
       break;
     }
     case ATOMMEM: {
@@ -286,6 +253,8 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
     }
 }
 
+
+//-----------------------------------------------------------------------------------------------
 void total_stat(CTXTdeclc double elapstime) {
 
   NodeStats
@@ -298,6 +267,8 @@ void total_stat(CTXTdeclc double elapstime) {
     prodsf,		/* Subsumptive Producer Subgoal Frames */
     conssf,		/* Subsumptive Consumer Subgoal Frames */
     asi;		/* Answer Subst Info for conditional answers */
+  //    tot_Key,            /* Keys used in incremental tabling */
+  //    tot_CallNode,     tot_OutEdge,    tot_CallList,    tot_Call2List;
 
   HashStats
     tbtht,		/* Table Basic Trie Hash Tables */
@@ -307,48 +278,43 @@ void total_stat(CTXTdeclc double elapstime) {
   size_t pnde_space_alloc, pnde_space_used, num_de_blocks, num_dl_blocks, num_pnde_blocks,    i;
 
   UInteger de_count, dl_count, de_space_alloc, de_space_used, total_alloc, total_used, 
-    dl_space_alloc, dl_space_used, tablespace_alloc, tablespace_used,  pspacetot,
+    dl_space_alloc, dl_space_used, tablespace_sm_alloc, tablespace_sm_used, tablespace_sm_free, pspacetot, 
+    //incr_tablespace_sm_alloc, incr_tablespace_sm_used,  
     trieassert_alloc, trieassert_used, tc_avail, gl_avail;
+  UInteger total_table_space;
 
-  tbtn = node_statistics(&smTableBTN);
-  tbtht = hash_statistics(&smTableBTHT);
-  varsf = subgoal_statistics(CTXTc &smVarSF);
-  prodsf = subgoal_statistics(CTXTc &smProdSF);
-  conssf = subgoal_statistics(CTXTc &smConsSF);
-  aln = node_statistics(&smALN);
-  tstn = node_statistics(&smTSTN);
-  tstht = hash_statistics(&smTSTHT);
-  tsi = node_statistics(&smTSIN);
-  asi = node_statistics(&smASI);
+  tbtn = node_statistics(&smTableBTN);            tbtht = hash_statistics(CTXTc &smTableBTHT);
+  varsf = subgoal_statistics(CTXTc &smVarSF);     prodsf = subgoal_statistics(CTXTc &smProdSF);
+  conssf = subgoal_statistics(CTXTc &smConsSF);   aln = node_statistics(&smALN);
+  tstn = node_statistics(&smTSTN);                tstht = hash_statistics(CTXTc &smTSTHT);
+  tsi = node_statistics(&smTSIN);                 asi = node_statistics(&smASI);
+  tablespace_sm_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,conssf,aln,tstn,tstht,tsi,asi);
+  tablespace_sm_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf, conssf,aln,tstn,tstht,tsi,asi);
 
-  tablespace_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,
-						 conssf,aln,tstn,tstht,tsi,asi);
-  tablespace_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf,
-					       conssf,aln,tstn,tstht,tsi,asi);
+  //  tot_CallNode  = node_statistics(&smCallNode);   tot_OutEdge   = node_statistics(&smOutEdge);
+  //  tot_CallList  = node_statistics(&smCallList);   tot_Call2List = node_statistics(&smCall2List);
+  //  tot_Key       = node_statistics(&smKey);
+  //  incr_tablespace_sm_alloc = CurrentTotalIncrTableSpaceAlloc(tot_CallNode,tot_OutEdge,tot_CallList,tot_Call2List,tot_Key);
+  //  incr_tablespace_sm_used = CurrentTotalIncrTableSpaceUsed(tot_CallNode,tot_OutEdge,tot_CallList,tot_Call2List,tot_Key);
 
-  abtn = node_statistics(&smAssertBTN);
-  abtht = hash_statistics(&smAssertBTHT);
-  trieassert_alloc =
-    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
-  trieassert_used =
-    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+  abtn = node_statistics(&smAssertBTN);           abtht = hash_statistics(CTXTc &smAssertBTHT);
+  trieassert_alloc =    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
+  trieassert_used =    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
 
   de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
   de_space_used = de_space_alloc - unused_de_space();
-  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
-	     sizeof(struct delay_element);
+  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /	     sizeof(struct delay_element);
 
   dl_space_alloc = allocated_dl_space(current_dl_block_gl,&num_dl_blocks);
   dl_space_used = dl_space_alloc - unused_dl_space();
-  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
-	     sizeof(struct delay_list);
+  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /	     sizeof(struct delay_list);
 
   pnde_space_alloc = allocated_pnde_space(current_pnde_block_gl,&num_pnde_blocks);
   pnde_space_used = pnde_space_alloc - unused_pnde_space();
 
-  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
-
-  tablespace_used = tablespace_used + de_space_used + dl_space_used + pnde_space_used;
+  tablespace_sm_alloc = tablespace_sm_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_sm_used = tablespace_sm_used + de_space_used + dl_space_used + pnde_space_used;
+  tablespace_sm_free = tablespace_sm_alloc - tablespace_sm_used;
 
   gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
   tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
@@ -357,26 +323,17 @@ void total_stat(CTXTdeclc double elapstime) {
   for (i=0; i<NUM_CATS_SPACE; i++) 
     if (i != TABLE_SPACE && i != INCR_TABLE_SPACE) pspacetot += pspacesize[i];
 
-  total_alloc =
-    pspacetot  +  pspacesize[TABLE_SPACE] +
-    pspacesize[INCR_TABLE_SPACE] +
-    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
-    de_space_alloc + dl_space_alloc  + pnde_space_alloc;
+  total_table_space = pspacesize[TABLE_SPACE]+(pspacesize[INCR_TABLE_SPACE]-trieassert_alloc)+de_space_alloc+dl_space_alloc+pnde_space_alloc;
 
-  total_used  =
-    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used)
-    - (trieassert_alloc - trieassert_used) +
-    pspacesize[INCR_TABLE_SPACE] +
-    (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
-    de_space_used + dl_space_used;
-
+  total_alloc = pspacetot + total_table_space + trieassert_alloc +  (pdl.size + glstack.size + tcpstack.size + complstack.size) * K ;
+  total_used = pspacetot + total_table_space + trieassert_used - tablespace_sm_free + 
+    ((UInteger) ((size_t)(pdlreg+1) - (size_t)pdl.high) + glstack.size*K - gl_avail) + (tcpstack.size * K - tc_avail + complstack.size) ;
 
   printf("\n");
   printf("Memory (total)    %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
 	 total_alloc, total_used, total_alloc - total_used);
   printf("  permanent space %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
-	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
-	 trieassert_alloc - trieassert_used);
+	 pspacetot + trieassert_alloc, pspacetot + trieassert_used, trieassert_alloc - trieassert_used);
   if (trieassert_alloc > 0)
     printf("    trie-asserted                        %15" Intfmt " in use, %15" Intfmt "\n",
 	   trieassert_used,trieassert_alloc-trieassert_used);
@@ -411,20 +368,18 @@ void total_stat(CTXTdeclc double elapstime) {
     printf(" in %d SCCs)",count_sccs(CTXT));
     printf("\n");
   }
+  printf("  SLG table space %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",	
+	 total_table_space, total_table_space - tablespace_sm_free, tablespace_sm_free);
+
   if (pspacesize[INCR_TABLE_SPACE]) 
     printf("  Incr table space                    %15" Intfmt " in use\n",
 	   pspacesize[INCR_TABLE_SPACE]);
-  printf("  SLG table space %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
-	 pspacesize[TABLE_SPACE]+pspacesize[INCR_TABLE_SPACE]-trieassert_alloc,  
-	 pspacesize[TABLE_SPACE]+pspacesize[INCR_TABLE_SPACE]-trieassert_alloc-
-	 	(tablespace_alloc-tablespace_used),
-	 tablespace_alloc - tablespace_used);
   printf("\n");
 
-  if (flags[MAX_USAGE]) {
-    /* Report Maximum Usages
-       --------------------- */
-    update_maximum_tablespace_stats(&tbtn,&tbtht,&varsf,&prodsf,&conssf,
+    if (flags[MAX_USAGE]) {
+      /* Report Maximum Usages
+         --------------------- */
+      update_maximum_tablespace_stats(&tbtn,&tbtht,&varsf,&prodsf,&conssf,
 				    &aln,&tstn,&tstht,&tsi,&asi);
     printf("  Maximum table space used:  %" Intfmt " bytes\n",
 	   maximum_total_tablespace_usage());
@@ -458,11 +413,11 @@ void total_stat(CTXTdeclc double elapstime) {
     printf("\n");
   }
 
-  if (call_count_gl) {
-    printf("Total number of incremental subgoals created: %d\n",call_count_gl);
-    if (call_node_count_gl) {
+  if (total_call_node_count_gl) {
+    printf("Total number of incremental subgoals created: %d\n",total_call_node_count_gl);
+    if (current_call_node_count_gl) {
       printf("Currently %d incremental subgoals, %d dependency edges\n",
-	     call_node_count_gl,call_edge_count_gl);
+	     current_call_node_count_gl,current_call_edge_count_gl);
 	}
   }
 
@@ -482,7 +437,8 @@ void total_stat(CTXTdeclc double elapstime) {
   printf("\n");  print_gc_statistics();
 
   printf("Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",
-	 ttt.time_count, elapstime);
+	 cputime_count_gl, elapstime);
+
 }
 
 /**********************************************************************/
@@ -516,9 +472,9 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
   
   size_t
     total_alloc, total_used,
-    tablespace_alloc, tablespace_used,
-    private_tablespace_alloc, private_tablespace_used,
-    shared_tablespace_alloc, shared_tablespace_used,
+    tablespace_sm_alloc, tablespace_sm_used,
+    private_tablespace_sm_alloc, private_tablespace_sm_used,
+    shared_tablespace_sm_alloc, shared_tablespace_sm_used,
     trieassert_alloc, trieassert_used,
     gl_avail, tc_avail,
     de_space_alloc, de_space_used,
@@ -535,34 +491,34 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
     i;
 
   tbtn = node_statistics(&smTableBTN);
-  tbtht = hash_statistics(&smTableBTHT);
+  tbtht = hash_statistics(CTXTc &smTableBTHT);
   varsf = subgoal_statistics(CTXTc &smVarSF);
   aln = node_statistics(&smALN);
   asi = node_statistics(&smASI);
 
   pri_tbtn = node_statistics(&smTableBTN);
-  pri_tbtht = hash_statistics(&smTableBTHT);
+  pri_tbtht = hash_statistics(CTXTc &smTableBTHT);
   pri_varsf = subgoal_statistics(CTXTc &smVarSF);
   pri_aln = node_statistics(&smALN);
   pri_asi = node_statistics(&smASI);
   pri_prodsf = subgoal_statistics(CTXTc &smProdSF);
   pri_conssf = subgoal_statistics(CTXTc &smConsSF);
   pri_tstn = node_statistics(&smTSTN);
-  pri_tstht = hash_statistics(&smTSTHT);
+  pri_tstht = hash_statistics(CTXTc &smTSTHT);
   pri_tsi = node_statistics(&smTSIN);
 
-  private_tablespace_alloc = CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,
+  private_tablespace_sm_alloc = CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,
 							   pri_prodsf,
   		  	  	    pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
-  private_tablespace_used = CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,
+  private_tablespace_sm_used = CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,
 							   pri_prodsf,
   		  	  	    pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
 
-  shared_tablespace_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln,asi);
-  shared_tablespace_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln,asi);
+  shared_tablespace_sm_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln,asi);
+  shared_tablespace_sm_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln,asi);
 
-  tablespace_alloc = shared_tablespace_alloc + private_tablespace_alloc;
-  tablespace_used =  shared_tablespace_used + private_tablespace_used;
+  tablespace_sm_alloc = shared_tablespace_sm_alloc + private_tablespace_sm_alloc;
+  tablespace_sm_used =  shared_tablespace_sm_used + private_tablespace_sm_used;
 
   de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
   de_space_used = de_space_alloc - unused_de_space();
@@ -588,22 +544,22 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
   private_pnde_space_alloc = allocated_pnde_space(private_current_pnde_block,&num_pnde_blocks);
   private_pnde_space_used = private_pnde_space_alloc - unused_pnde_space_private(CTXT);
 
-  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
-  tablespace_used =  tablespace_used + de_space_used + dl_space_used + pnde_space_alloc;  
+  tablespace_sm_alloc = tablespace_sm_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_sm_used =  tablespace_sm_used + de_space_used + dl_space_used + pnde_space_alloc;  
 
-  shared_tablespace_alloc = shared_tablespace_alloc + de_space_alloc + dl_space_alloc 
+  shared_tablespace_sm_alloc = shared_tablespace_sm_alloc + de_space_alloc + dl_space_alloc 
   			   + pnde_space_alloc;
-  shared_tablespace_used =  shared_tablespace_used + de_space_used + dl_space_used 
+  shared_tablespace_sm_used =  shared_tablespace_sm_used + de_space_used + dl_space_used 
   			    + pnde_space_used;
 
-  private_tablespace_alloc = private_tablespace_alloc + private_de_space_alloc + 
+  private_tablespace_sm_alloc = private_tablespace_sm_alloc + private_de_space_alloc + 
     private_dl_space_alloc + private_pnde_space_alloc;
 
-  private_tablespace_used = private_tablespace_used + private_de_space_used + 
+  private_tablespace_sm_used = private_tablespace_sm_used + private_de_space_used + 
     private_dl_space_used + private_pnde_space_used;
 
   abtn = node_statistics(&smAssertBTN);
-  abtht = hash_statistics(&smAssertBTHT);
+  abtht = hash_statistics(CTXTc &smAssertBTHT);
   trieassert_alloc =
     NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
   trieassert_used =
@@ -622,7 +578,7 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
     de_space_alloc + dl_space_alloc  + pnde_space_alloc;
 
   total_used  =
-    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used)
+    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_sm_alloc-tablespace_sm_used)
     - (trieassert_alloc - trieassert_used) +
     pspacesize[INCR_TABLE_SPACE] +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
@@ -646,8 +602,8 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
       break;
     }
     case TABLESPACE: {
-      ctop_int(CTXTc 4, private_tablespace_alloc);
-      ctop_int(CTXTc 5, private_tablespace_used);
+      ctop_int(CTXTc 4, private_tablespace_sm_alloc);
+      ctop_int(CTXTc 5, private_tablespace_sm_used);
       break;
     }
     case TRIEASSERTMEM: {
@@ -674,11 +630,12 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
     case OPENTABLECOUNT: {
       ctop_int(CTXTc 4, ((size_t)COMPLSTACKBOTTOM - (size_t)top_of_complstk) / 
 	       sizeof(struct completion_stack_frame));
+      ctop_int(CTXTc 5, count_sccs(CTXT));
       break;
     }
     case SHARED_TABLESPACE: {
-      ctop_int(CTXTc 4, shared_tablespace_alloc);
-      ctop_int(CTXTc 5, shared_tablespace_used);
+      ctop_int(CTXTc 4, shared_tablespace_sm_alloc);
+      ctop_int(CTXTc 5, shared_tablespace_sm_used);
       break;
     }
     case ATOMMEM: {
@@ -716,9 +673,9 @@ void total_stat(CTXTdeclc double elapstime) {
   
   size_t
     total_alloc, total_used,
-    tablespace_alloc, tablespace_used,
-    shared_tablespace_alloc, shared_tablespace_used,
-    private_tablespace_alloc, private_tablespace_used,
+    tablespace_sm_alloc, tablespace_sm_used,
+    shared_tablespace_sm_alloc, shared_tablespace_sm_used,
+    private_tablespace_sm_alloc, private_tablespace_sm_used,
     trieassert_alloc, trieassert_used,
     gl_avail, tc_avail,
     de_space_alloc, de_space_used,
@@ -736,37 +693,37 @@ void total_stat(CTXTdeclc double elapstime) {
     i;
 
   tbtn = node_statistics(&smTableBTN);
-  tbtht = hash_statistics(&smTableBTHT);
+  tbtht = hash_statistics(CTXTc &smTableBTHT);
   varsf = subgoal_statistics(CTXTc &smVarSF);
   aln = node_statistics(&smALN);
   asi = node_statistics(&smASI);
 
   pri_tbtn = node_statistics(private_smTableBTN);
-  pri_tbtht = hash_statistics(private_smTableBTHT);
+  pri_tbtht = hash_statistics(CTXTc private_smTableBTHT);
   pri_varsf = subgoal_statistics(CTXTc private_smVarSF);
   pri_aln = node_statistics(private_smALN);
   pri_asi = node_statistics(private_smASI);
   pri_prodsf = subgoal_statistics(CTXTc private_smProdSF);
   pri_conssf = subgoal_statistics(CTXTc private_smConsSF);
   pri_tstn = node_statistics(private_smTSTN);
-  pri_tstht = hash_statistics(private_smTSTHT);
+  pri_tstht = hash_statistics(CTXTc private_smTSTHT);
   pri_tsi = node_statistics(private_smTSIN);
 
-  private_tablespace_alloc = CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,
+  private_tablespace_sm_alloc = CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,
 							   pri_prodsf,
 				  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
-  private_tablespace_used = CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,
+  private_tablespace_sm_used = CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,
 							 pri_prodsf,
 				 pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
 
-  shared_tablespace_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln,asi);
-  shared_tablespace_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln,asi);
+  shared_tablespace_sm_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln,asi);
+  shared_tablespace_sm_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln,asi);
 
-  tablespace_alloc = shared_tablespace_alloc + private_tablespace_alloc;
-  tablespace_used =  shared_tablespace_used + private_tablespace_used;
+  tablespace_sm_alloc = shared_tablespace_sm_alloc + private_tablespace_sm_alloc;
+  tablespace_sm_used =  shared_tablespace_sm_used + private_tablespace_sm_used;
 
   abtn = node_statistics(&smAssertBTN);
-  abtht = hash_statistics(&smAssertBTHT);
+  abtht = hash_statistics(CTXTc &smAssertBTHT);
   trieassert_alloc =
     NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
   trieassert_used =
@@ -801,16 +758,16 @@ void total_stat(CTXTdeclc double elapstime) {
   private_pnde_space_alloc = allocated_pnde_space(private_current_pnde_block,&num_pnde_blocks);
   private_pnde_space_used = private_pnde_space_alloc - unused_pnde_space_private(CTXT);
 
-  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
-  tablespace_used =  tablespace_used + de_space_used + dl_space_used + pnde_space_alloc;
+  tablespace_sm_alloc = tablespace_sm_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_sm_used =  tablespace_sm_used + de_space_used + dl_space_used + pnde_space_alloc;
 
-  shared_tablespace_alloc = shared_tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
-  shared_tablespace_used =  shared_tablespace_used + de_space_used + dl_space_used + pnde_space_used;
+  shared_tablespace_sm_alloc = shared_tablespace_sm_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  shared_tablespace_sm_used =  shared_tablespace_sm_used + de_space_used + dl_space_used + pnde_space_used;
 
-  private_tablespace_alloc = private_tablespace_alloc + private_de_space_alloc + 
+  private_tablespace_sm_alloc = private_tablespace_sm_alloc + private_de_space_alloc + 
     private_dl_space_alloc + private_pnde_space_alloc;
 
-  private_tablespace_used = private_tablespace_used + private_de_space_used + 
+  private_tablespace_sm_used = private_tablespace_sm_used + private_de_space_used + 
     private_dl_space_used + private_pnde_space_used;
 
   pspacetot = 0;
@@ -823,7 +780,7 @@ void total_stat(CTXTdeclc double elapstime) {
 
   total_used  =
     pspacetot  +  trieassert_used  + 
-    pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
+    pspacesize[TABLE_SPACE]-(tablespace_sm_alloc-tablespace_sm_used) +
     de_space_used + dl_space_used;
 
 
@@ -840,11 +797,11 @@ void total_stat(CTXTdeclc double elapstime) {
       printf("    %s                      %15" Intfmt "\n",pspace_cat[i],pspacesize[i]);
   printf("  SLG table space %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
 	 pspacesize[TABLE_SPACE]-trieassert_alloc,  
-	 pspacesize[TABLE_SPACE]-trieassert_alloc-(tablespace_alloc-tablespace_used),
-	 tablespace_alloc - tablespace_used);
+	 pspacesize[TABLE_SPACE]-trieassert_alloc-(tablespace_sm_alloc-tablespace_sm_used),
+	 tablespace_sm_alloc - tablespace_sm_used);
   printf("  Shared SLG table space %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
-	 shared_tablespace_alloc,shared_tablespace_used,
-	 shared_tablespace_alloc - shared_tablespace_used);
+	 shared_tablespace_sm_alloc,shared_tablespace_sm_used,
+	 shared_tablespace_sm_alloc - shared_tablespace_sm_used);
   printf("Total             %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
 	 total_alloc, total_used, total_alloc - total_used);
   printf("\n");
@@ -877,8 +834,8 @@ void total_stat(CTXTdeclc double elapstime) {
   }
   printf("\n");
   printf("  Private SLG table space %15" Intfmt " bytes: %15" Intfmt " in use, %15" Intfmt " free\n",
-	 private_tablespace_alloc,private_tablespace_used,
-	 private_tablespace_alloc - private_tablespace_used);
+	 private_tablespace_sm_alloc,private_tablespace_sm_used,
+	 private_tablespace_sm_alloc - private_tablespace_sm_used);
   printf("\n");
 #ifdef GC
   print_gc_statistics(CTXT);
@@ -951,22 +908,21 @@ void total_stat(CTXTdeclc double elapstime) {
  */
 
 #ifndef MULTI_THREAD
-void perproc_reset_stat(void)
+void reset_stat_counters(void)
 {
-   tds = trace_init;
    reset_subsumption_stats();
-   reset_maximum_tablespace_stats();
+   //   reset_maximum_tablespace_stats();
    ans_chk_ins = ans_inserts = 0;
    subg_chk_ins = subg_inserts = 0;
    abol_subg_ctr = abol_pred_ctr = abol_all_ctr = 0;   
-   time_start = cpu_time();
+   time_start_gl = cpu_time();
 }
 #else
-void perproc_reset_stat(void)
+void reset_stat_counters(void)
 {
    ans_chk_ins = ans_inserts = 0;
    subg_chk_ins = subg_inserts = 0;
-   time_start = cpu_time();
+   time_start_gl = cpu_time();
 #ifdef SHARED_COMPL_TABLES
    num_suspends = 0;
    num_deadlocks = 0;
@@ -979,17 +935,86 @@ void perproc_reset_stat(void)
 /*======================================================================*/
 
 #ifndef MULTI_THREAD
-void reset_stat_total(void)
+void init_statistics(void)
 {
-   ttt = trace_init;
+  realtime_count_gl = real_time();
+  reset_stat_counters();   /* init statistics. structures */
+  cputime_count_gl = 0;
 }
 #else
-void reset_stat_total(void)
+void init_statistics(void)
 {
-  time_start = 0;
+  realtime_count_gl = real_time();
+  reset_stat_counters();   /* init statistics. structures */
+  time_start_gl = 0;
 }
 
 #endif
+
+/*======================================================================*/
+/*  Print statistics and measurements.					*/
+/*======================================================================*/
+/*
+ * Called through builtins statistics/1 and statistics/0.
+ * ( statistics :- statistics(1). )
+ */
+void print_statistics(CTXTdeclc int choice) {
+
+  switch (choice) {
+
+  case STAT_RESET:		   
+#ifndef MULTI_THREAD
+    realtime_count_gl = real_time();
+    reset_stat_counters();	/* reset op-counts */
+    break;
+#else
+    realtime_count_gl = real_time();
+    break;
+#endif
+
+  case STAT_DEFAULT:		    /* Default use: Print Stack Usage and CPUtime: */
+#ifndef MULTI_THREAD
+    cputime_count_gl = (cpu_time() - time_start_gl);
+#endif
+    total_stat(CTXTc real_time()-realtime_count_gl);   /* print */
+    break;
+
+  case STAT_TABLE:		    /* Print Detailed Table Usage */
+    print_detailed_tablespace_stats(CTXT);
+    break;
+
+  case 3:		    /* Print Detailed Table, Stack, and CPUtime */
+#ifndef MULTI_THREAD
+    cputime_count_gl += (cpu_time() - time_start_gl);
+    total_stat(CTXTc real_time()-realtime_count_gl);
+    print_detailed_tablespace_stats(CTXT);
+    print_detailed_subsumption_stats();
+    break;
+#else
+    fprintf(stdwarn,"statistics(3) not yet implemented for MT engine\n");
+    break;
+#endif
+  case STAT_MUTEX:                  /* mutex use (if PROFILE_MUTEXES is defined) */
+    print_mutex_use();
+    print_mem_allocs("stat_mutex");
+    break;
+  case 5:
+    dis(0); 
+    break;		/* output memory image - data only; for debugging */
+  case 6:
+    dis(1); 
+    break;		/* output memory image - data + text; for debugging */
+#ifdef CP_DEBUG
+  case 7:
+    print_cp_backtrace();
+    break;
+#endif
+  case STAT_ATOM:              /* print symbol/string statistics */
+    symbol_table_stats();
+    string_table_stats();
+    break;
+  }
+}
 
 /*======================================================================*/
 
@@ -1009,8 +1034,6 @@ void  get_statistics(CTXTdecl) {
     tot_cpu = cpu_time();
     incr_cpu = tot_cpu - last_cpu;
     last_cpu = tot_cpu;
-    //    tds.time_count = incr_cpu - time_start;
-    //    reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
 
     ctop_float(CTXTc 4, tot_cpu);
     ctop_float(CTXTc 5, incr_cpu);
@@ -1039,6 +1062,24 @@ void  get_statistics(CTXTdecl) {
 #endif 
 	break;
       }
+  case IDG_COUNTS: {
+    ctop_int(CTXTc 4,current_call_node_count_gl);
+    ctop_int(CTXTc 5,current_call_edge_count_gl);
+    break;
+  }
+
+  case TABLE_OPS: {
+    UInteger ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
+	 	 ttl_ins = ans_inserts + NumSubOps_AnswerInsert;
+    ctop_int(CTXTc 4,NumSubOps_CallCheckInsert);
+    ctop_int(CTXTc 5,NumSubOps_ProducerCall);
+    ctop_int(CTXTc 6,subg_chk_ins);
+    ctop_int(CTXTc 7,subg_inserts);
+    ctop_int(CTXTc 8,ttl_ops);
+    ctop_int(CTXTc 9,ttl_ins);
+
+
+  }
   default: {
       statistics_inusememory(CTXTc type);
       break;

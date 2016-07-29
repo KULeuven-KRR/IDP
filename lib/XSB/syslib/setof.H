@@ -28,15 +28,13 @@
 	  tsetof/3, tbagof/3,
 	  sort/2, keysort/2, '^'/2, pick/3,
 	  excess_vars/4.
-:- export old_excess_vars/4.  %% for awhile till we're sure we're happy with new on
 :- export find_n/4, n_times/2, find_n_m/5, n_m_times/3.
+:- export term_variables/2.
 
 :- import tfindall/3 from tables.
-:- import functor/3, (=..)/2, arg/3, 
-%      catch/3,throw/1, 
+:- import (=..)/2,
        call/1  from standard.
  :- import '$$findall_init'/2, '$$findall_add'/3, 
-%   '$$findall_free'/1,
     '$$findall_get_solutions'/4
      from machine.
 :- import variant/2 from subsumes.

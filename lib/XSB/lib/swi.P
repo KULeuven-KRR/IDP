@@ -3,7 +3,7 @@
 
 :- export atomic_concat/3, nb_delete/1, nb_getval/2, nb_setval/2, 
 	print_message/2, get_single_char/1,
-	  setarg/3, maplist/2, term_variables/2, ignore/1,
+	  setarg/3, maplist/2, maplist/3, term_variables/2, ignore/1,
 	  strip_module/3,
 	  unifiable/2, freeze/2.
 
@@ -35,6 +35,14 @@ nb_setval(Key,Val):- (trie_delete(swi_global,pair(Key,_)) ; true),
 
 :- import set_arg/3 from machine.
 setarg(N,T,A):-  set_arg(T, N, A).
+
+maplist(Goal, List1,List2) :-
+	maplist_3_2(List1, List2, Goal).
+
+maplist_3_2([],[], _).
+maplist_3_2([Elem1|T1], [Elem2|T2], Goal) :-
+	call(Goal, Elem1, Elem2), 
+	maplist_3_2(T1, T2, Goal).
 
 %	maplist(:Goal, +List)
 %

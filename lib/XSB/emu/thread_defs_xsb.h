@@ -27,7 +27,6 @@
 
  
 /* THREAD PRIMITIVES */
-
 #define XSB_THREAD_CREATE_FLAGS	 1
 #define XSB_THREAD_EXIT		 2
 #define XSB_THREAD_JOIN		 3
@@ -95,9 +94,9 @@
 #define XSB_FIRST_THREAD_PROPERTY       52
 #define XSB_NEXT_THREAD_PROPERTY        53
 #define XSB_SET_EXIT_STATUS             54
-
-#define MAX_THREADS		1024
-#define MAX_MQUEUES		1024
+#define INTERRUPT_WITH_GOAL             55
+#define HANDLE_GOAL_INTERRUPT           56
+#define INTERRUPT_DEALLOC               57
 
 /* MUTEX KINDS (under LINUX) */
 
@@ -183,5 +182,15 @@
 
 #define MQ_UNBOUNDED            0
 #define MQ_CHECK_FLAGS          -1
+
+#ifdef MULTI_THREAD
+#define MAX_THREADS		1024
+#define MAX_MQUEUES		1024
+#endif
+
+#ifndef MULTI_THREAD
+#define MAX_THREADS		1
+#define MAX_MQUEUES		1
+#endif
 
 #endif /* __THREAD_DEFS_XSB_H__ */

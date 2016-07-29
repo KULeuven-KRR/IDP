@@ -119,7 +119,7 @@ _CRTIMP uintptr_t __cdecl _beginthread (_In_ void (__cdecl * _StartAddress) (voi
 #elif defined(CYGWIN)
 unsigned long _beginthread (void (*)(void *), unsigned, void*);
 #else
-unsigned long _beginthread(void(_cdecl *start_address) (void *),
+unsigned int _beginthread(void(__cdecl *start_address) (void *),
 			   unsigned stack_size,
 			   void *arglist);
 #endif

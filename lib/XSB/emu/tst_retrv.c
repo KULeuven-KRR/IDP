@@ -923,7 +923,7 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
    */
 
   if ( ! IsLeafNode(parentTSTN) ) {
-    xsb_warn("During collection of relevant answers for subsumed subgoal\n"
+    xsb_warn(CTXTc "During collection of relevant answers for subsumed subgoal\n"
 	     "TermStack is empty but a leaf node was not reached");
     xsb_dbgmsg((LOG_DEBUG, "Root "));
     dbg_printTrieNode(LOG_DEBUG, stddbg, (BTNptr)tstRoot);
