@@ -1800,7 +1800,7 @@ int mxNext(lua_State* L) {
 	}
 	WrapModelIterator* iter = ia._value._modelIterator;
 	shared_ptr<ModelIterator> it = iter->get();
-	auto result = it->calculate();
+	auto result = it->calculateMonitor();
 	if(result.unsat) {
 		lua_pushnil(L);
 		return 1;

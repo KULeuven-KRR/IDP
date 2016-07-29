@@ -1,10 +1,3 @@
-/* 
- * File:   ModelIterator.cpp
- * Author: rupsbant
- * 
- * Created on October 3, 2014, 9:56 AM
- */
-
 #include "ModelIterator.hpp"
 #include "inferences/modelexpansion/DefinitionPostProcessing.hpp"
 #include "inferences/modelexpansion/ModelExpansion.hpp"
@@ -18,13 +11,14 @@
 #include "groundtheories/GroundTheory.hpp"
 #include "inferences/grounding/Grounding.hpp"
 #include "inferences/grounding/GroundTranslator.hpp"
-
 #include "inferences/SolverConnection.hpp"
 #include "utils/ResourceMonitor.hpp"
 #include "vocabulary/vocabulary.hpp"
 
+#include "../../../lib/minisatid/src/external/Lit.hpp"
 
-//Somehow max is included here %Ruben
+
+//Somehow max is included here %Ruben // Jo: huh? Why not simply include <algorithm> in header?
 #include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
 
 using namespace std;
@@ -162,30 +156,42 @@ void ModelIterator::prepareSolver() {
 	_mx->initialise();
 }
 
-
-#define cleanup \
-		getGlobal()->removeTerminationMonitor(terminator);\
-		delete (terminator);
+MXResult ModelIterator::calculateMonitor() {
+	auto terminator = std::make_shared<SolverTermination>(_mx);
+    getGlobal()->addTerminationMonitor(terminator.get());
+    auto t = basicResourceMonitor(
+				[]() { return getOption(MXTIMEOUT); }, 
+				[]() { return getOption(MXMEMORYOUT);}, 
+				[terminator]() {terminator->notifyTerminateRequested(); });
+	tthread::thread time(&resourceMonitorLoop, &t);
+	try{
+		auto result = calculate();
+		t.requestStop();
+		time.join();
+		getGlobal()->removeTerminationMonitor(terminator.get());
+		if (t.outOfResources()) {
+			result._optimumfound = false;
+			result._interrupted = true;
+			getGlobal()->reset();
+		}
+		return result;
+	} catch (...) {
+		t.requestStop();
+		time.join();
+		getGlobal()->removeTerminationMonitor(terminator.get());
+		throw;
+	}
+}
 
 MXResult ModelIterator::calculate() {
-    auto terminator = new SolverTermination(_mx);
-    getGlobal()->addTerminationMonitor(terminator);
-    auto t = basicResourceMonitor([]() {
-        return getOption(MXTIMEOUT);
-    }, []() {
-        return getOption(MXMEMORYOUT);
-    }, [terminator]() {
-        terminator->notifyTerminateRequested();
-    });
-    tthread::thread time(&resourceMonitorLoop, &t);
-	auto startTime = clock();
+    auto startTime = clock();
     if (getMXVerbosity() > 0) {
         logActionAndTime("Starting solving at ");
     }
     MXResult result;
-	std::shared_ptr<MinisatID::Model> model = nullptr;
+		std::shared_ptr<MinisatID::Model> model = nullptr;
     try {
-		model = _mx->findNext();
+				model = _mx->findNext();
         result.unsat = (model == nullptr);
         if (getGlobal()->terminateRequested()) {
             result._interrupted = true;
@@ -194,22 +200,10 @@ MXResult ModelIterator::calculate() {
     } catch (MinisatID::idpexception& error) {
         std::stringstream ss;
         ss << "Solver was aborted with message \"" << error.what() << "\"";
-        
-        t.requestStop();
-        time.join();
-        cleanup;
         throw IdpException(ss.str());
     } catch (UnsatException& ex) {
         result.unsat = true;
-    } catch (...) {
-        t.requestStop();
-        time.join();
-		cleanup;
-        throw;
-    }
-    t.requestStop();
-    time.join();
-	cleanup;
+		}
 
     if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
         logActionAndValue("effective-size", _grounding->getSize());
@@ -223,12 +217,7 @@ MXResult ModelIterator::calculate() {
         throw IdpException("Solver was terminated");
     }
     result._optimumfound = not result._interrupted;
-    if (t.outOfResources()) {
-        Warning::warning("Model expansion interrupted: will continue with the (single best) model(s) found to date (if any).");
-        result._optimumfound = false;
-        result._interrupted = true;
-        getGlobal()->reset();
-    } else if (result.unsat) {
+    if (result.unsat) {
         if (getOption(VERBOSE_GROUNDING_STATISTICS) > 0) {
             logActionAndValue("state", "unsat");
         }
@@ -236,6 +225,30 @@ MXResult ModelIterator::calculate() {
     }
     result = getStructure(result, startTime, model);
     return result;
+}
+
+std::pair<Atom,bool> getAtomSign(const Lit l){
+  Atom a = (l>= 0) ? l : (-1)*l;
+  return {a,(l<0)};
+}
+void ModelIterator::addAssumption(const Lit l) {
+    auto atomsign = getAtomSign(l);
+    _mx->addAssumption(atomsign.first,atomsign.second);
+}
+void ModelIterator::removeAssumption(const Lit l){
+    auto atomsign = getAtomSign(l);
+    _mx->removeAssumption(atomsign.first,atomsign.second);
+}
+void ModelIterator::addClause(const std::vector<Lit>& lits){
+    std::vector<std::pair<Atom,bool> > atomsigns;
+    for(auto l: lits){
+      atomsigns.push_back(getAtomSign(l));
+    }
+    _mx->addClause(atomsigns);
+}
+
+GroundTranslator* ModelIterator::translator() {
+    return _grounding->translator();
 }
 
 
@@ -254,10 +267,10 @@ MXResult ModelIterator::getStructure(MXResult result, clock_t startTime, std::sh
             logActionAndValue("nrmodels", 1);
             logActionAndTimeSince("total-solving-time", startTime);
         }
-		auto solution = handleSolution(_structure, *model, _grounding, 
-			_extender, _outputvoc, postprocessdefs);
-		solutions.push_back(solution);
-		result._models = solutions;
+			auto solution = handleSolution(_structure, *model, _grounding, 
+				_extender, _outputvoc, postprocessdefs);
+			solutions.push_back(solution);
+			result._models = solutions;
     }
     return result;
 }

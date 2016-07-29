@@ -166,6 +166,8 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<EqualInference<bool> >());
 	inferences.push_back(make_shared<EqualInference<double> >());
 	inferences.push_back(make_shared<EqualInference<int> >());
+	inferences.push_back(make_shared<FullPropagateInference>());
+	inferences.push_back(make_shared<BestPropagateInference>());
 
 	inferences.push_back(make_shared<ToMetaInference>());
 	inferences.push_back(make_shared<FromMetaInference>());
@@ -175,7 +177,6 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<ModelIterationWithOutputVocInference>());
 	inferences.push_back(make_shared<TwoValuedIterator>());
 	inferences.push_back(make_shared<NegateTerm>());
-
 
 	return inferences;
 }

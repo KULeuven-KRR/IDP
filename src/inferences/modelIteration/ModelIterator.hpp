@@ -1,12 +1,7 @@
-/* 
- * File:   ModelIterator.hpp
- * Author: rupsbant
- *
- * Created on October 3, 2014, 9:56 AM
- */
 #pragma once
 
 #include <memory>
+#include <inferences/grounding/GroundTranslator.hpp>
 #include "common.hpp"
 #include "../modelexpansion/ModelExpansion.hpp"
 #include "inferences/SolverInclude.hpp"
@@ -36,6 +31,12 @@ public:
 	~ModelIterator();
 	void init();
 	MXResult calculate();
+  MXResult calculateMonitor();
+	void addAssumption(const Lit);
+	void removeAssumption(const Lit);
+  void addClause(const std::vector<Lit>& lits);
+	GroundTranslator* translator();
+
 private:
 	std::vector<Definition*> preprocess(Theory*);
 	void ground(Theory*);
