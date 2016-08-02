@@ -30,8 +30,8 @@
 
 extern double cpu_time(void);
 extern double real_time(void);
-extern void get_date(int *year, int *month, int *day,
-		    int *hour, int *minute, int *second);
+extern void get_date(int local, int *year, int *month, int *day,
+		     int *hour, int *minute, int *second);
 
 #define ihash(val, size) ((UInteger)(val) % (size))
 
@@ -61,6 +61,8 @@ extern Exec_Mode xsb_mode;
 
 #define fileptr(xsb_filedes)  open_files[xsb_filedes].file_ptr
 #define charset(xsb_filedes)  open_files[xsb_filedes].charset
+#define open_file_name(xsb_filedes) \
+  makestring(string_find(open_files[xsb_filedes].file_name,1))
 
 /* This would yield a meaningful message in case of segfault */
 #define SET_FILEPTR(stream, xsb_filedes) \

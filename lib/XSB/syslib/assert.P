@@ -166,7 +166,9 @@ Does result in double breakdown of Clause, which could be optimized by
 changing assert0/4 to take already separated Head and Body. */
 
 assert(Clause,AZL,Index1,ErrPred) :-
-	(Clause = (Head:-Body)
+	(var(Clause) ->
+	 instantiation_error(ErrPred,Index1,nonvar)
+	 ; Clause = (Head:-Body)
 	 ->	true
 	 ;	Head = Clause, Body = true
 	),
@@ -259,8 +261,8 @@ code_to_buff(Clause0,AZ) :-
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */
 code_to_buff(Clause0,PSC,AZ) :-
-	psc_get_incr(PSC,Val),
-	(Val =:= 4		%=T_INTERN
+	psc_get_intern(PSC,Val),
+	(Val =:= T_INTERN
 	 ->	intern_term(Clause0,Clause)
 	 ;	Clause = Clause0
 	),
@@ -329,7 +331,7 @@ check_assert_fact(Head, Pred) :- 	% asserting a fact
 	    ( functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
 		\+ standard_dynamic_symbol(F, A) ->
-		permission_error(modify,builtin,F/A,Pred)
+		permission_error(modify,static_procedure,F/A,Pred)
 	    ;	true
 	    )
 	; type_error(callable,Head,Pred,1)
@@ -436,7 +438,17 @@ exec_pre_dynamic_option(private,PredList) :- !,
 exec_pre_dynamic_option(shared,PredList) :- !,
 	thread_shared(PredList).
 exec_pre_dynamic_option(intern,PredList) :- !,
-	set_predlist_incremental(PredList,T_INTERN).
+	set_predlist_intern(PredList).
+
+set_predlist_intern((Pred,Preds)):- !,
+	set_predlist_intern(Pred),
+	set_predlist_intern(Preds).
+set_predlist_intern(Pred):- 
+	mpa_to_skel(Pred,Call),
+	term_psc(Call,Psc),
+%	psc_type(Psc,Type),
+%	writeln(psc_type(Type)),
+	psc_set_intern(Psc,T_INTERN).
 
 set_predlist_incremental((Pred,Preds),Option):- !,
 	set_predlist_incremental(Pred,Option),
@@ -526,27 +538,37 @@ check_dynamic_option(Option,_,_PredCList) :- !,
 	'must be one of tabled,variant,incremental,opaque,private,shared').
 
 /*======================================================================*/
-/* get_dynamic_pred_ep(+PHead,+CallingRef,-PredEP,-PSC):    	        */
-/*	returns the PredEP for the predicate that is the main functor	*/
-/*      symbol of PHead.  CallingRef is used in the error message	*/
-/*      thrown if PHead is a compiled predicate.  The predicate fails	*/
-/*      if PHead is undefined, and succeeds returning the PredEP if	*/
-/*      PHead is a dynamic predicate.					*/
+/* get_dynamic_pred_ep(+PHead,+Operation,+CallingRef,-PredEP,-PSC):     */
+/*	returns the PredEP for the predicate that is the main functor   */
+/*      symbol of PHead.  CallingRef is used in the error message       */
+/*      thrown if PHead is a compiled predicate.  The predicate fails   */
+/*      if PHead is undefined, and succeeds returning the PredEP if     */
+/*      PHead is a dynamic predicate.                                   */
+/*      Operation is one of the atoms {access,modify}                   */
 /*                                                                      */
 /* TLS: changed to return PSC, also                                     */ 
-/*									*/
+/*                                                                      */
 /*======================================================================*/
 
-get_dynamic_pred_ep(Head,CallingPred,PredEP,PSC) :-
+get_dynamic_pred_ep(Head,Operation,CallingPred,PredEP,PSC) :-
 	conpsc(Head, PSC),
 	psc_type(PSC,Type),
-	(Type =:= T_PRED		/* is compiled */
-	 ->	functor(Head,F,A),
-		permission_error(modify,static,F/A,CallingPred)
-	 ;	Type =:= T_DYNA, % is DYNA 
-		psc_ep(PSC, PredEP) % get PredEP
+	(	Type =:= T_PRED ->
+		% static predicate
+	 	functor(Head,F,A),
+		(	Operation == access ->
+			permission_error(Operation,private_procedure,F/A,CallingPred)
+		;	% Operation == modify,
+			permission_error(Operation,static_procedure,F/A,CallingPred)
+		)
+	;	Type =:= T_DYNA,
+		% dynamic predicate; get PredEP 
+		psc_ep(PSC, PredEP)
 	).
-	
+
+:- export dynamic_pred_has_clauses/2.
+dynamic_pred_has_clauses(Head,Has_Clauses) :-
+    dynamic_code_function(DYNAMIC_PRED_HAS_CLAUSES,Head,Has_Clauses,dynamic_pred_has_clauses,1).
 
 /*======================================================================*/
 /* retract(+Fact)							*/
@@ -579,7 +601,7 @@ retract(Rule) :-	% changed for multifile predicates (9/2008)
      ;		%check_retract(Head, retract/1),
 	/* check_retract not needed -- checks performed in dynamic_code_function */
 	        dynamic_code_function(GET_DYNAMIC_PRED_EP,Head,PSC,PredEP,retract,1), 
-%           	get_dynamic_pred_ep(Head,'retract/1',PredEP,PSC),
+%           	get_dynamic_pred_ep(Head,modify,'retract/1',PredEP,PSC),
 		db_retract(Head, Body, PredEP,PSC)
 	).
 
@@ -600,7 +622,7 @@ retract_fact(Head) :-	% changed for multifile predicates (9/2008)
 do_multifile_retract(Head, Body) :-
 	clause(Head,New_Head),
 	check_retract(New_Head, multifile_retract/1),
-	(get_dynamic_pred_ep(New_Head,'retract/1',PredEP,PSC)
+	(get_dynamic_pred_ep(New_Head,modify,'retract/1',PredEP,PSC)
 	 ->	db_retract(New_Head, Body, PredEP, PSC)
 	 ;	fail
 	).
@@ -611,7 +633,7 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract/1),
-	get_dynamic_pred_ep(Head,'retract/1',PredEP,PSC),
+	get_dynamic_pred_ep(Head,modify,'retract/1',PredEP,PSC),
 	db_retract(Head, Body, PredEP,PSC).
 
 retractall(Fact0) :-
@@ -635,13 +657,13 @@ do_multifile_retractall(_).
 
 retractall0(Fact) :-
 	check_retract(Fact, retractall/1),
-	(get_dynamic_pred_ep(Fact,'retractall/1',PredEP,PSC)
+	(get_dynamic_pred_ep(Fact,modify,'retractall/1',PredEP,PSC)
 	 ->	db_retractall(Fact, PredEP,PSC)
 	 ;	true
 	).
 
 system_retractall(Fact):- 
-	get_dynamic_pred_ep(Fact,'retractall/1',PredEP,PSC),
+	get_dynamic_pred_ep(Fact,modify,'retractall/1',PredEP,PSC),
 	db_retractall(Fact, PredEP,PSC).
 
 retract_nr(Rule) :-
@@ -651,13 +673,13 @@ retract_nr(Rule) :-
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract_nr/1),
-	get_dynamic_pred_ep(Head,'retract_nr/1',PredEP,PSC),
+	get_dynamic_pred_ep(Head,modify,'retract_nr/1',PredEP,PSC),
 	db_retract_nr(Head, Body, PredEP,PSC).
 
 reclaim_space(Fact) :-
 	obsolete(reclaim_space/1, gc_dynamic/0),
 	check_retract(Fact, reclaim_space/1),
-	(get_dynamic_pred_ep(Fact,'reclaim_space/1',PredEP,_PSC)
+	(get_dynamic_pred_ep(Fact,modify,'reclaim_space/1',PredEP,_PSC)
 	 ->	db_reclaim_space(Fact, PredEP)
 	 ;	true
 	).
@@ -676,7 +698,7 @@ retract_last_fact(Skel) :-
 	 ->	true
 	 ;      instantiation_error(retract_last_fact/1,1,skeleton)
 	),
-	get_dynamic_pred_ep(Skel,'retract_last_fact/1',PredEP,PSC),
+	get_dynamic_pred_ep(Skel,modify,'retract_last_fact/1',PredEP,PSC),
 	db_get_last_clause(PredEP,Clref,_Type,EntryPoint),
 	do_dyn_code_call(EntryPoint,Skel),
 	db_retract0(Clref,0,PSC).
@@ -724,20 +746,21 @@ check_retract(Head, Pred) :-
 /*	abolish an undefined predicate.					*/
 /*======================================================================*/
 abolish(Spec) :-
-	(var(Spec)
-	 ->     instantiation_error(abolish/1,1,nonvar)
-	 ; Spec = (Pred/Arity)
-	 ->	(var(Pred)
-                 -> instantiation_error(abolish/1,1,
-		                        'nonvar predicate indicator')
-		 ; check_arity_integer(Arity,abolish/1,1),
-		   functor(Nspec,Pred,Arity)
+	(	var(Spec) ->
+		instantiation_error(abolish/1,1,nonvar)
+	;	Spec = (Pred/Arity) ->
+		(	var(Pred) ->
+			instantiation_error(abolish/1,1,'nonvar predicate indicator')
+		;	check_atom(Pred,abolish/1,1),
+			check_arity_integer(Arity,abolish/1,1),
+			functor(Nspec,Pred,Arity)
 		)
-	 ; Nspec = Spec, functor(Nspec,Pred,Arity)
+	;	Nspec = Spec,
+		functor(Nspec,Pred,Arity)
 	),
-	(standard_symbol(Pred,Arity,_Prop)
-	 ->	permission_error(modify,builtin,Pred/Arity,abolish/1)
-	 ;      call_xsb_hook(xsb_retract_hook(_),[Nspec,true],all),
+	(	standard_symbol(Pred,Arity,_Prop) ->
+		permission_error(modify,standard_predicate,Pred/Arity,abolish/1)
+	;	call_xsb_hook(xsb_retract_hook(_),[Nspec,true],all),
 		abolish1(Nspec)
 	).
 
@@ -753,12 +776,22 @@ abolish(Pred,Arity) :-
 	functor(Spec,Pred,Arity),
 	abolish1(Spec).
 
+:- import current_prolog_flag/2 from curr_sym.
+verbose_writeln(Term):- current_prolog_flag(verboseness,X),X > 0,!,writeln(Term).
+verbose_writeln(_Term).
+
+:- import writeln/1 from standard.
 abolish1(Term) :-
 	retract_index(Term),
 	retract_trie_index(Term),
 	retract_table(Term),
 	conpsc(Term,Psc),
 	psc_type(Psc, Type),
+	immutable_predicate_psc(Psc,Immutable),
+%	writeln(immutable_predicate_psc(Psc,Immutable)),
+	(Immutable == 1 -> 
+	    verbose_writeln('Debug immutable: can''t abolish immutable'(Term)) ,fail
+	  ; true),
 	(Type =:= T_DYNA	    % DYNA
 	 ->	db_abolish(Psc)
 	 ; Type =:= T_PRED	    % normal compiled predicate
@@ -766,14 +799,28 @@ abolish1(Term) :-
 		unload_seg(Ep),	    % free the space
 		psc_init_info(Psc)
 	 /**
-		psc_set_type(Psc, T_ORDI),
+                psc_set_type(Psc, T_ORDI),
 		NewEP is Psc+4*8, %WORDSIZE,
 		psc_set_ep(Psc, NewEP) **/
 		/*,psc_set_env(Psc, T_UNLOADED)*/
 	 ;	Type =:= T_ORDI	 /* need to check imported !!!! */
 	).
 
+immutable_predicate_psc(Psc,Immutable):- 
+     psc_data(Psc, ModulePsc),
+     (( atom(ModulePsc) ; ModulePsc == 0)-> 
+        Immutable = 0
+      ; psc_immutable(ModulePsc,Immutable)).
 
+/* for testing
+:- export immutable_predicate/2.
+immutable_predicate(Term,Immutable):- 
+     conpsc(Term,Psc),
+     psc_data(Psc, ModulePsc),
+     (ModulePsc == 0 -> 
+        Immutable = 0
+      ; psc_immutable(ModulePsc,Immutable)).
+*/
 /*======================================================================*/
 /* clause(+Head, ?Body)							*/
 /*	Predicate clause/2 searches the database for a clause whose	*/
@@ -792,7 +839,7 @@ clause(Head, Body) :-
 
 
 clause0(Head, Body) :-
-	get_dynamic_pred_ep(Head,'clause0/2',PredEP,_PSC),
+	get_dynamic_pred_ep(Head,access,'clause0/2',PredEP,_PSC),
 	db_clause(Head,Body,PredEP,_Clref).
 
 
@@ -820,7 +867,7 @@ check_clause(Head) :-
 	    (	functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
 		\+ standard_dynamic_symbol(F, A)
-	    ->	permission_error(access,builtin,F/A,clause/2)
+	    ->	permission_error(access,private_procedure,F/A,clause/2)
 	    ;	true
 	    )
 	  ; type_error(callable,Head,clause/2,1)
@@ -861,6 +908,24 @@ exchange_definitions(Skel1,Skel2) :-
 	psc_set_type(PSC1,Type2),
 	psc_set_type(PSC2,Type1).
 
+/*======================================================================*/
+/* predicate_defined(+Skel)						*/
+/*	Skel is a predicate term (perhaps modified by mod:).  This	*/
+/*	predicate succeeds if the predicate term is defined as having	*/
+/*	clauses, i.e., could be called.					*/
+/*======================================================================*/
+
+predicate_defined(Spec) :-
+	(Spec = Mod:GSkel, nonvar(GSkel)
+	 ->	term_new_mod(Mod,GSkel,Skel)
+	 ;	Skel = Spec
+	),
+	term_psc(Skel,Psc),
+	psc_type(Psc,Type),
+	Type =\= 0,		%  != T_ORDI
+	Type =\= 12.		%  != T_UDEF, not loaded
+
+
 trie_assert_builtin(_Clause,_PSC,_Arity,_Prref,_Flag) :-
 	'_$builtin'(TRIE_ASSERT).
 
@@ -868,7 +933,7 @@ trie_assert_builtin(_Clause,_PSC,_Arity,_Prref,_Flag) :-
 /* These predicates are intended to be used only experimentally, for get_unifiable_returns */
 
 system_retract_fact(Rule) :-	
-	get_dynamic_pred_ep(Rule,'retract/1',PredEP,PSC),
+	get_dynamic_pred_ep(Rule,modify,'retract/1',PredEP,PSC),
 	db_retract(Rule, true, PredEP,PSC).
 
 t_assert_2(Clause, Flag) :- 

@@ -37,6 +37,7 @@
 #include "psc_defs.h"
 #include "heap_defs_xsb.h"
 #include "incr_xsb_defs.h"
+#include "table_inspection_defs.h"
 
 /*======================================================================*/
 /* This file contains definitions for predicates implemented by the	*/
@@ -68,6 +69,11 @@ psc_ep(PSC, Term) :- psc_ep(PSC, Term).
 psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 psc_data(PSC, Data) :- psc_data(PSC, Data).
 psc_init_info(_PSC) :- '_$builtin'(PSC_INIT_INFO).
+
+:- export psc_immutable/2.
+psc_immutable(Psc,Immutable):- 
+	table_inspection_function(PSC_IMMUTABLE,Psc,Immutable,_Three,_Four).
+
 
 psc_set_shared(PSC, Bool) :-
 	psc_get_env(PSC, Det, T_SHARED_DET),
@@ -105,6 +111,12 @@ psc_set_incr(PSC, CODE):-
 
 psc_get_incr(PSC, CODE):-
 	incr_eval_builtin(PSC_GET_INCR, PSC, CODE).
+
+psc_set_intern(PSC, CODE):-
+	incr_eval_builtin(PSC_SET_INTERN, PSC, CODE).
+
+psc_get_intern(PSC, CODE):-
+	incr_eval_builtin(PSC_GET_INTERN, PSC, CODE).
 
 term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
 term_psc(Term, PSC) :- term_psc(Term, PSC).
@@ -188,6 +200,11 @@ load_obj(FileName, Mod, LdOption, InitAddr) :-
 getenv(EnvVar, Value) :- getenv(EnvVar, Value).
 putenv(_PutEnvString) :- '_$builtin'(PUTENV).
 
+crypto_hash(sha1,Input,Output):- !,crypto_hash(SHA1,Input,Output).
+crypto_hash(md5,Input,Output):- !,crypto_hash(MD5,Input,Output).
+crypto_hash(_Type,_Input,_Out) :- '_$builtin'(CRYPTO_HASH).
+
+sys_syscall(_CallNo, _Res, _A0,_A1, _A2,_A3,_A4,_A5,_A6) :- '_$builtin'(SYS_SYSCALL).
 sys_syscall(_CallNo, _Res, _A1, _A2,_A3) :- '_$builtin'(SYS_SYSCALL).
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(SYS_SYSCALL).
 sys_system(CallNo, Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :-
@@ -273,6 +290,10 @@ table_inspection_function(_Switch,_One,_Two,_Three,_Four):-
 
 table_inspection_function(_Switch,_One,_Two,_Three,_Four,_Five,_Six):- 
 	'_$builtin'(TABLE_INSPECTION_FUNCTION).
+table_inspection_function(_Switch,_One,_Two,_Three,_Four,_Five,_Six,_Seven):- 
+	'_$builtin'(TABLE_INSPECTION_FUNCTION).
+table_inspection_function(_Switch,_One,_Two,_Three,_Four,_Five,_Six,_Seven,_Eight):- 
+	'_$builtin'(TABLE_INSPECTION_FUNCTION).
 	
 formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
 	'_$builtin'(FORMATTED_IO).
@@ -323,12 +344,6 @@ intern_term(_Term,_InternedTerm) :- '_$builtin'(INTERN_TERM).
 
 float_op(_Op, _L1, _L2, _L3, _R1, _R2, _R3, _Res1, _Res2, _Res3):- '_$builtin'(FLOAT_OP).
 float_op(c, _L1, _L2, _L3, _R1):- '_$builtin'(FLOAT_OP).
-print_ls :- print_ls.
-print_tr :- print_tr.
-print_heap(X,Y) :- print_heap(X,Y).
-print_cp(_Title) :- '_$builtin'(PRINT_CP).
-print_regs :- print_regs.
-print_all_stacks :- print_all_stacks.
 expand_heap :- expand_heap.
 mark_heap(X) :- mark_heap(X).
 gc_stuff(_X,_Y) :- '_$builtin'(GC_STUFF).
@@ -373,9 +388,11 @@ conpsc(_Con, _Psc) :- '_$builtin'(CONPSC).
 machine_file_exists(File) :- 
 	sys_syscall(SYS_access, Res, File, 'r'), Res =:= 0.
 
-:- export epoch_seconds/1.
+:- export epoch_seconds/1, epoch_milliseconds/2.
 epoch_seconds(Secs):- 
 	sys_syscall(SYS_epoch_seconds, _Res, Secs,_).
+epoch_milliseconds(Secs,Milli):- 
+	sys_syscall(SYS_epoch_msecs, _Res, Secs, Milli).
 
 /*======================================================================*/
 /* Some other stuff for convenience here;                               */
@@ -419,10 +436,17 @@ set_prompt(Pstore,Prompt) :-
 
 get_breg(_):- '_$builtin'(GET_BREG).
 
+:- import writeln/1 from standard.
 :- export start_sleeper_thread/1.
-start_sleeper_thread(_Interval):- 
-	'_$builtin'(START_SLEEPER_THREAD).
+start_sleeper_thread(Interval):- 
+        sleeper_thread_operation(START_SLEEPER_THREAD,Interval).
 
+sleeper_thread_operation(_Type,_Interval):- 
+	'_$builtin'(SLEEPER_THREAD_OPERATION).
+
+:- export cancel_sleeper_thread/0.
+cancel_sleeper_thread:- 
+        sleeper_thread_operation(CANCEL_SLEEPER_THREAD,_).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % General Purpose Constraint Stuff
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

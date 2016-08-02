@@ -26,6 +26,7 @@
 %%% add printout of file loaded and time; like load_dyn
 %%% add option to ignore first line (as titles)
 
+:- import catch/3 from standard.
 
 :- comment(load_csv(FileName,PSpec), "loads a comma-separated (csv)
 file, where @var{FileName} is the file to load, @var{PSpec} is either
@@ -34,6 +35,8 @@ into.").
 
 load_csv(FileName,PSpec) :-
 	load_dsv(FileName,PSpec,",",0'"',[]).
+load_csv(FileName,PSpec,Options) :-
+	load_dsv(FileName,PSpec,",",0'"',Options).
 
 load_psv(FileName,PSpec) :-
 	load_dsv(FileName,PSpec,"|",0'"',[]).
@@ -44,8 +47,8 @@ Options as separator=""Sep"", and the delimiter is specified in the
 options as delimiter=""Del"".").
 
 load_dsv(FileName,PSpec,Options) :-
-	(member(separator=Sep,Options)
-	 ->	true
+	(member(separator=Sep0,Options)
+	 ->	std_separator(Sep0,Sep)
 	 ;	Sep = ","
 	),
 	(member(delimiter=[Delim],Options)
@@ -55,8 +58,8 @@ load_dsv(FileName,PSpec,Options) :-
 	load_dsv(FileName,PSpec,Sep,Delim,Options).
 
 read_dsv(FileName,Options,Term) :-
-	(member(separator=Sep,Options)
-	 ->	true
+	(member(separator=Sep0,Options)
+	 ->	std_separator(Sep0,Sep)
 	 ;	Sep = ","
 	),
 	(member(delimiter=Delimiter,Options)
@@ -71,7 +74,7 @@ read_dsv(FileName,Options,Term) :-
 	functor(Term,Pred,Arity),
 	length(Types,Arity),	% no constraints
 	Term =.. [Pred|Args],
-	load_dsv(FileName,Term,Sep,Delim,Options,Types,Args).
+	read_dsv(FileName,Term,Sep,Delim,Options,Types,Args).
 
 :- comment(load_dsv/5,
 "@pred{load_dsv(+FileName,+PSpec,+Sep,+Delim,+Options)} loads a
@@ -93,6 +96,14 @@ returns are converted to the indicated string.  This option can only
 be used with a non-atomic @var{PSpec}, i.e., where the target
 predicate has a fixed arity, greater than 1.  Also order=reverse is
 supported, to use asserta instead of assertz when asserting the facts.
+In addition, pad = N (positive or negative integer) can be specified.
+If N<0, it is assumed that the number of argument in the given template
+predicates is less than the length of the rows in csv by abs(N), so the
+remaning fields will be thrown out.
+If N>0, it is assumed that the number of arguments is greater than the
+number of fields by N. (If this option is not given, N is assumed to be 0.)
+If the number of arguments + N != the number of fields, warnings will
+be issued.
 ").
 
 load_dsv(FileName,PSpec,Sep,Delim,Options) :-
@@ -100,7 +111,8 @@ load_dsv(FileName,PSpec,Sep,Delim,Options) :-
 	process_predspec(PSpec,Spec,Types,Args),
 	dynamic(Spec),
 	retractall(Spec),
-	(load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args),
+        pad_args(Args,Options,ArgsPatched),
+	(read_dsv(FileName,PSpec,Sep,Delim,Options,Types,ArgsPatched),
 	 (Reverse =:= 0
 	  ->	 assertz(Spec),
 		 fail
@@ -111,7 +123,7 @@ load_dsv(FileName,PSpec,Sep,Delim,Options) :-
 	 true
 	).
 
-load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
+read_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
 	cputime(T0),
 	conset('__errcnt',0),
 	conset('__recsread',0),
@@ -132,10 +144,9 @@ load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
 	 ;	coninc('__recsread',RecsRead),
 		(RecsRead =:= 1,member(titles,Options)
 		 ->	fail
-		 ;	 atom_codes_list(Fields,CodeFields),
-			(atom(PSpec)
-			 ->	Args = Fields
-			 ;	cvt_types(Fields,Types,Args,Fields)
+		 ;	atom_codes_list(Fields,CodeFields),
+			(atom(PSpec) ->	Args = Fields
+                        ;	cvt_types(Fields,Types,Args,Fields)
 			)
 		)
 	).
@@ -163,25 +174,25 @@ cvt_types([],[],[],_) :- !.
 cvt_types([],_,_,Fields) :- !,
 	coninc('__errcnt',ECnt),
 	(ECnt < 10
-	 ->	write(userout,'ERROR: Wrong length line '),
+	 ->	write(user_error,'Warning: Wrong length line '),
 		conget('__linesread',LinesRead),
-		write(userout,''(LinesRead)),write(userout,': '),
-		writeq(userout,Fields),nl(userout),
-		writeln('Fields from line extended with variables'),nl
+		write(user_error,''(LinesRead)), write(user_error,': '),
+		writeq(user_error,Fields), nl(user_error),
+		writeln(user_error,'\tFields from line extended with variables'),nl(user_error)
 	 ;	ECnt =:= 10
-	 ->	writeln('ERROR: More wrong length lines...')
+	 ->	writeln(user_error,'Warning: More wrong length lines...')
 	 ;	true
 	).
 cvt_types(_,_,[],Fields) :- !,
 	coninc('__errcnt',ECnt),
 	(ECnt < 10
-	 ->	write(userout,'ERROR: Wrong length line '),
+	 ->	write(user_error,'Warning: Wrong length line '),
 		conget('__linesread',LinesRead),
-		write(userout,''(LinesRead)),write(userout,': '),
-		writeq(userout,Fields),nl(userout),
-		writeln('Extra fields in line truncated'),nl
+		write(user_error,''(LinesRead)),write(user_error,': '),
+		writeq(user_error,Fields),nl(user_error),
+		writeln(user_error,'\tExtra fields in line truncated')
 	 ;	ECnt =:= 10
-	 ->	writeln('ERROR: More wrong length lines...')
+	 ->	writeln(user_error,'Warning: More wrong length lines...')
 	 ;	true
 	).
 cvt_types([F|Fs],[T|Ts],[A|As],Fields) :-
@@ -193,21 +204,29 @@ cvt_types([F|Fs],[T|Ts],[A|As],Fields) :-
 	 ->	atom_codes(F,FC),
 		(FC == []
 		 ->	A = 0
-		 ; number_codes(AN,FC)
+		 ; catch(number_codes(AN,FC),_,fail)
 		 ->	A is floor(AN)
-		 ;	write(userout,'Cannot convert to integer: '),
-			writeq(userout,F),nl(userout),
-			A = F
+		 ;
+                    write(user_error,'Warning: Cannot convert to integer, line '),
+                    conget('__linesread',LinesRead),
+                    write(user_error,''(LinesRead)),write(user_error,': '),
+                    writeq(user_error,F), nl(user_error),
+                    writeln(user_error,'\tConverting to atom instead'),
+                    A = F
 		)
 	 ; T == float
 	 ->	atom_codes(F,FC),
 		(FC == []
 		 ->	A = 0.0
-		 ; number_codes(AN,FC)
+		 ; catch(number_codes(AN,FC),_,fail)
 		 ->	A is float(AN)
-		 ;	write(userout,'Cannot convert to float: '),
-			writeq(userout,F),nl(userout),
-			A = F
+		 ;
+                    write(user_error,'Warning: Cannot convert to float, line '),
+                    conget('__linesread',LinesRead),
+                    write(user_error,''(LinesRead)), write(user_error,': '),
+                    writeq(user_error,F), nl(user_error),
+                    writeln(user_error,'\tConverting to atom instead'),
+                    A = F
 		)
 	 ; T == term
 	 ->	atom_to_term(F,A)
@@ -260,7 +279,9 @@ delim_file_process_fixed(Stream,Sep,Delim,Returns,NumFields,PrevFields,Fields) :
 				delim_file_process_fixed(Stream,Sep,Delim,Returns,NNumFields,NewFields,Fields)
 			 ; Len =:= NumFields
 			 ->	append_fields(PrevFields,Returns,CodeFields,Fields)
-			 ;	writeln(error(CodeFields))
+			 ;
+                            %% MK: What is this? Should it be a throw?
+                            writeln(error(CodeFields))
 			)
 		 ;      Fields = CodeFields
 		)
@@ -298,6 +319,9 @@ next_code_field(Stream,Line,Sep,Delim,Field,Rest) :-
         )
     ).
 
+/* Maybe make nondeterministic and if final Delim not followed by Sep,
+then treat as not Delimited, and first internal Sep does the separating */
+
 delim_parse_quoted(Stream,[13,10],Sep,Delim,[13,10|TRest],Flg,Out):-!,
     (file_read_line_list(Stream,NextLine)
      ->	    coninc('__linesread'),
@@ -310,7 +334,7 @@ delim_parse_quoted(Stream,[10],Sep,Delim,[10|TRest],Flg,Out):-!,
     (file_read_line_list(Stream,NextLine)
      ->	    coninc('__linesread'),
 	    delim_parse_quoted(Stream,NextLine,Sep,Delim,TRest,Flg,Out)
-     ;	    warning(('Unexpected end-of-file')),
+     ;	    warning(('Unexpected end-of-file in delimted field')),
 	    TRest=[],
 	    Out=[]
     ).
@@ -320,28 +344,18 @@ delim_parse_quoted(_,[Delim|Sep],Sep,Delim,[],_,[13,10]):-!. % eol without marke
 delim_parse_quoted(Stream,[Delim,Delim|Rest],Sep,Delim,[Delim|Trest],Flg,Out):-!,
     delim_parse_quoted(Stream,Rest,Sep,Delim,Trest,Flg,Out).
 delim_parse_quoted(_,[Delim|Next],Sep,Delim,[],_,Rest):-
-    chk_delim(Sep, Rest, Next), !.
+    append(Sep, Rest, Next), !.
 delim_parse_quoted(Stream,[H|Rest],Sep,Delim,[H|Trest],Flg,Out):-
     (H =:= Delim
      ->	%% quietly assume it's NOT a quoted field, but
-        %% an initial quoted item in the field
+        %% an initial quoted item in the field?? Throw error??
         Flg = 1,
         delim_parse_unquoted(Rest,Sep,Trest,Out)
      ;	delim_parse_quoted(Stream,Rest,Sep,Delim,Trest,Flg,Out)
     ).
 
-chk_delim(Sep,Rest,Next) :-
-    (integer(Sep)
-     ->	Next = [Sep|Rest]
-     ;	append(Sep,Rest,Next)
-    ).
-
-delim_parse_unquoted(String,Sep,Field,Rest) :-
-	(integer(Sep)
-	 ->	delim_parse_unquoted_1(String,Sep,[],Field,Rest)
-	 ;	Sep = [FSep|RSep],
-		delim_parse_unquoted_1(String,FSep,RSep,Field,Rest)
-	).
+delim_parse_unquoted(String,[FSep|RSep],Field,Rest) :-
+	delim_parse_unquoted_1(String,FSep,RSep,Field,Rest).
 
 delim_parse_unquoted_1([],_,_,[],[]).
 delim_parse_unquoted_1([C|Cs],Sep,SepT,Field,Rest) :-
@@ -364,7 +378,7 @@ delim_parse_unquoted_1([C|Cs],Sep,SepT,Field,Rest) :-
 			 ;	Rest = Cs
 			),
 			Field = []
-		 ; chk_delim(SepT,R,Cs)
+		 ; append(SepT,R,Cs)
 		 ->	(R == []
 			 ->	Rest = [10]
 			 ;	Rest = R
@@ -375,9 +389,18 @@ delim_parse_unquoted_1([C|Cs],Sep,SepT,Field,Rest) :-
 		)
 	).
 
+% make separator a code-list
+std_separator(InpSep,Sep) :-
+	(atom(InpSep)
+	 ->	atom_codes(InpSep,Sep)
+	 ; integer(InpSep)
+	 ->	Sep = [InpSep]
+	 ;	Sep = InpSep
+	).
+
 save_dsv(FileName,PSpec,Options) :-
-	(member(separator=Sep,Options)
-	 ->	true
+	(member(separator=Sep0,Options)
+	 ->	std_separator(Sep0,Sep)
 	 ;	Sep = ","
 	),
 	(member(delimiter=Delimiter,Options)
@@ -471,16 +494,16 @@ put_list(Stream,Field,Delim) :-
 
 
 copy_dsv(InFileName,NumFields,OutFileName,Options) :-
-	(member(in_separator=InSep,Options)
-	 ->	true
+	(member(in_separator=InSep0,Options)
+	 ->	std_separator(InSep0,InSep)
 	 ;	InSep = ","
 	),
 	(member(in_delimiter=[InDelim],Options)
 	 ->	true
-	 ;	InDelim = 0'"'
+	 ;	InDelim = 0'"'  %"
 	),
-	(member(out_separator=OutSep,Options)
-	 ->	true
+	(member(out_separator=OutSep0,Options)
+	 ->	std_separator(OutSep0,OutSep)
 	 ;	OutSep = InSep
 	),
 	(member(out_delimiter=OutDelim,Options)
@@ -504,8 +527,8 @@ first line of the file, and the file name.  ").
 :- dynamic file_header/4.
 
 load_with_header(FileNameList,Options) :-
-	(member(separator=Sep,Options)
-	 ->	true
+	(member(separator=Sep0,Options)
+	 ->	std_separator(Sep0,Sep)
 	 ;	Sep = ","
 	),
 	(member(delimiter=[Delim],Options)
@@ -528,7 +551,7 @@ load_with_header(FileNameList,Options) :-
 	 (CodeFields == end_of_file
 	  ->	 close(InStream),
 		 conget('__rec_cnt',NumRecs),
-		 write(userout,NumRecs),writeln(' records'),
+		 write(userout,NumRecs), writeln(userout,' records'),
 		 fail
 	  ;	 atom_codes_list(Fields,CodeFields),
 		 Term =.. [PredName|Fields],
@@ -579,11 +602,10 @@ copy_dsv(InFileName,NumFields,InSep,InDelim,OutFileName,OutSep0,OutDelim0,Option
 	(member(returns=Returns,Options)
 	 ->	delim_file_process_fixed(InStream,InSep,InDelim,Returns,NumFields,CodeFields)
 	 ;	delim_file_process(InStream,InSep,InDelim,CodeFields),
-		(length(CodeFields,NumFields)
-		 ->	true
-		 ;	write(userout,'ERROR: Wrong length line: '),
+		(length(CodeFields,NumFields) ->	true
+                ;	write(user_error,'Warning: Wrong length line: '),
 			atom_codes_list(Fields,CodeFields),
-			writeq(userout,Fields),nl(userout)
+			writeq(user_error,Fields), nl(user_error)
 		)
 	),
 	(CodeFields == end_of_file
@@ -619,3 +641,17 @@ write_code_field(FieldCodes,Stream,Sep,Delim,DelimA) :-
 		write(Stream,DelimA)
 	 ;	put_list(Stream,FieldCodes)
 	).
+
+
+pad_args(ArgsIn,Options,ArgsOut) :-
+        (member(pad=N,Options), integer(N) ->
+            length(ArgsIn,LenIn),
+            Take is LenIn+N,
+            (N < 0 -> lists:take_upto(Take,ArgsIn,ArgsOut)
+            ; N > 0 ->
+                length(PatchArgs,N),
+                append(ArgsIn,PatchArgs,ArgsOut)
+            ; ArgsOut = ArgsIn
+            )
+        ; ArgsOut = ArgsIn
+        ).

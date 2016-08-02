@@ -62,6 +62,8 @@
 #endif
 #endif
 
+char *cvt_float_to_str(CTXTdeclc Float);
+
 /*
   This was the old test for being a kosher Prolog string
 #define PRINTABLE_OR_ESCAPED_CHAR(Ch) (Ch <= 255 || Ch >= 0)
@@ -193,7 +195,7 @@ DllExport xsbBool call_conv c2p_int(CTXTdeclc Integer val, prolog_term var)
       bind_oint(vptr(v), val);
       return TRUE;
     } else {
-      xsb_warn("[C2P_INT] Argument 2 must be a variable");
+      xsb_warn(CTXTc "[C2P_INT] Argument 2 must be a variable");
       return FALSE;
     }
 }
@@ -205,7 +207,7 @@ DllExport xsbBool call_conv c2p_float(CTXTdeclc double val, prolog_term var)
 	bind_boxedfloat(vptr(v), (Float)(val));
 	return TRUE;
     } else {
-	xsb_warn("[C2P_FLOAT] Argument 2 must be a variable");
+	xsb_warn(CTXTc "[C2P_FLOAT] Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -217,7 +219,7 @@ DllExport xsbBool call_conv c2p_string(CTXTdeclc char *val, prolog_term var)
 	bind_string(vptr(v), (char *)string_find(val, 1));
 	return TRUE;
     } else {
-	xsb_warn("[C2P_STRING] Argument 2 must be a variable");
+	xsb_warn(CTXTc "[C2P_STRING] Argument 2 must be a variable");
 	return FALSE;
     }
 }
@@ -232,7 +234,7 @@ DllExport xsbBool call_conv c2p_list(CTXTdeclc prolog_term var)
 	bind_list(vptr(v), sreg);
 	return TRUE;
     } else {
-	xsb_warn("[C2P_LIST] Argument must be a variable");
+	xsb_warn(CTXTc "[C2P_LIST] Argument must be a variable");
 	return FALSE;
     }
 }
@@ -244,7 +246,7 @@ DllExport xsbBool call_conv c2p_nil(CTXTdeclc prolog_term var)
        bind_nil(vptr(v));
        return TRUE;
     } else {
-	xsb_warn("[C2P_NIL] Argument must be a variable");
+	xsb_warn(CTXTc "[C2P_NIL] Argument must be a variable");
 	return FALSE;
     }
 }
@@ -267,7 +269,8 @@ DllExport xsbBool call_conv c2p_functor(CTXTdeclc char *functor, int arity,
     Pair sym;
     int i;
     if (is_var(v)) {
-	sym = (Pair)insert(functor, (byte)arity, (Psc)flags[CURRENT_MODULE], &i);
+      XSB_Deref(v);
+      sym = (Pair)insert(functor, (byte)arity, (Psc)flags[CURRENT_MODULE], &i);
 	sreg = hreg;
 	hreg += arity + 1;
 	bind_cs(vptr(v), sreg);
@@ -275,7 +278,7 @@ DllExport xsbBool call_conv c2p_functor(CTXTdeclc char *functor, int arity,
 	for (i=0; i<arity; sreg++,i++) { bld_free(sreg); }
 	return TRUE;
     } else {
-	xsb_warn("[C2P_FUNCTOR] Argument 3 must be a variable");
+	xsb_warn(CTXTc "[C2P_FUNCTOR] Argument 3 must be a variable");
 	return FALSE;
     }
 }
@@ -458,19 +461,21 @@ DllExport char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *bu
    WHERE is another string with additional info. These two are used to provide
    informative error messages to the user. */
 DllExport void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
+				      int regs_to_protect, char *in_func, char *where) {
+  c_bytes_to_p_charlist(CTXTc name, strlen(name), list, regs_to_protect, in_func, where);
+}
+
+/* uses explicit length, so can convert byte strings containing 0x00 bytes, if nec. */
+DllExport void c_bytes_to_p_charlist(CTXTdeclc char *name, size_t len, prolog_term list,
 				      int regs_to_protect, char *in_func, char *where)
 {
   Cell new_list;
   CPtr top = 0;
   size_t i;
-  size_t len=0;
 
   if (isnonvar(list)) {
     xsb_abort("[%s] A variable expected, %s", in_func, where);
   }
-
-  if (NULL != name)
-	len=strlen(name);
 
   if (0 == len) {
     bind_nil((CPtr)(list));
@@ -1123,7 +1128,7 @@ void printpstring(char *atom, int toplevel, VarString *straddr)
 }
 
 /* calculate approximate length of a printed term.  For space alloc. */
-size_t clenpterm(prolog_term term)
+size_t clenpterm(CTXTdeclc prolog_term term)
 {
   int i;
   size_t clen;
@@ -1135,26 +1140,26 @@ size_t clenpterm(prolog_term term)
   else if (is_string(term)) return strlen(p2c_string(term))+5;
   else if (is_list(term)) {
       clen = 1;
-      clen += clenpterm(p2p_car(term)) + 1;
+      clen += clenpterm(CTXTc p2p_car(term)) + 1;
       while (is_list(term)) {
-          clen += clenpterm(p2p_car(term)) + 1;
+          clen += clenpterm(CTXTc p2p_car(term)) + 1;
           term = p2p_cdr(term);
       }
       if (!is_nil(term)) {
-          clen += clenpterm(term) + 1;
+          clen += clenpterm(CTXTc term) + 1;
       }
       return clen+1;
   } else if (is_functor(term)) {
       clen = strlen(p2c_functor(term))+5;
       if (p2c_arity(term) > 0) {
-          clen += clenpterm(p2p_arg(term,1)) + 1;
+          clen += clenpterm(CTXTc p2p_arg(term,1)) + 1;
           for (i = 2; i <= p2c_arity(term); i++) {
-              clen += clenpterm(p2p_arg(term,i)) + 1;
+              clen += clenpterm(CTXTc p2p_arg(term,i)) + 1;
           }
           return clen + 1;
       } else return clen;
   } else {
-      xsb_warn("Unrecognized prolog term type");
+      xsb_warn(CTXTc "Unrecognized prolog term type");
       return 0;
   }
 }
@@ -1183,8 +1188,7 @@ DllExport void call_conv print_pterm(CTXTdeclc prolog_term term, int toplevel,
     sprintf(tempstring,"%d", (int) p2c_int(term));
     XSB_StrAppend(straddr,tempstring);
   } else if (is_float(term)) {
-    sprintf(tempstring,"%lg", (double) p2c_float(term));
-    XSB_StrAppend(straddr,tempstring);
+    XSB_StrAppend(straddr,cvt_float_to_str(CTXTc ofloat_val(term)));
   } else if (is_nil(term)) {
     XSB_StrAppend(straddr,"[]");
   } else if (is_string(term)) {
@@ -1216,7 +1220,7 @@ DllExport void call_conv print_pterm(CTXTdeclc prolog_term term, int toplevel,
       toplevel = FALSE;
       goto begin_print_pterm;
     }
-  } else xsb_warn("[PRINT_PTERM] Unrecognized prolog term type");
+  } else xsb_warn(CTXTc "[PRINT_PTERM] Unrecognized prolog term type");
   for (cpi=1; cpi<=close_paren_count; cpi++) {
       XSB_StrAppend(straddr, ")");
   }
@@ -1520,8 +1524,9 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 #else
 #define EXECUTE_XSB {						\
     if (th != main_thread_gl) {					\
+      int pthread_cond_wait_err;	\
       xsb_ready = XSB_IN_Prolog;										\
-      int pthread_cond_wait_err = xsb_cond_signal(&xsb_started_cond, "EXECUTE_XSB", __FILE__, __LINE__);	\
+      pthread_cond_wait_err = xsb_cond_signal(&xsb_started_cond, "EXECUTE_XSB", __FILE__, __LINE__);	\
       while ((XSB_IN_Prolog == xsb_ready) && (!pthread_cond_wait_err))										\
       	pthread_cond_wait_err = xsb_cond_wait(&xsb_done_cond, &xsb_synch_mut, "EXECUTE_XSB", __FILE__, __LINE__);	\
     }	\
@@ -1529,8 +1534,9 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
   }
 #define EXECUTE_XSB_SETUP_X(NR) {				\
     if (th != main_thread_gl) {					\
+      int pthread_cond_wait_err;					\
       xsb_ready = XSB_IN_Prolog;										\
-      int pthread_cond_wait_err = xsb_cond_signal(&xsb_started_cond, "EXECUTE_XSB_SETUP_X", __FILE__, __LINE__);	\
+      pthread_cond_wait_err = xsb_cond_signal(&xsb_started_cond, "EXECUTE_XSB_SETUP_X", __FILE__, __LINE__);	\
       while ((XSB_IN_Prolog == xsb_ready) && (!pthread_cond_wait_err))										\
       	pthread_cond_wait_err = xsb_cond_wait(&xsb_done_cond, &xsb_synch_mut, "EXECUTE_XSB_SETUP_X", __FILE__, __LINE__);	\
     }	\
@@ -2066,9 +2072,9 @@ typedef SSIZE_T	ssize_t;
 #endif
 static inline ssize_t pread(int fd, void *buf, size_t count, size_t offset)
 {
-  if (-1 == lseek(fd,(long)offset,SEEK_SET))
+  if (-1 == _lseek(fd,(long)offset,SEEK_SET))
     return(-1);
-  return(read(fd,buf,(unsigned int)count));
+  return(_read(fd,buf,(unsigned int)count));
 }
 #else
 //
@@ -2084,14 +2090,14 @@ static inline ssize_t pread(int fd, void *buf, size_t count, size_t offset)
 /*	xsb_get_last_error_string returns previous answer.             */
 /*                                                                      */
 /************************************************************************/
-DllExport int call_conv xsb_get_last_error_string(char *buff, int buflen, int *anslen)
+DllExport int call_conv xsb_get_last_error_string(CTXTdeclc char *buff, int buflen, int *anslen)
 {
 int rc = 2;
 ssize_t bytesRead = 1;
 ssize_t totalBytesRead = 0;
 
 if(!flags[STDERR_BUFFERED])
-	xsb_warn("[xsb_get_last_error_string] This feature must be activated with the -q option");
+	xsb_warn(CTXTc "[xsb_get_last_error_string] This feature must be activated with the -q option");
 else
 	{
 	rc = 1;				// Assume failure on the ftell or read

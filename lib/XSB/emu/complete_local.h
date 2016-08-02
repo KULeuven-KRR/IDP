@@ -284,6 +284,7 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
     } /* else if not early completed */
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while - for each subg in compl stack */
+
   return cc_tbreg;
 }
 
@@ -292,6 +293,7 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
   VariantSF compl_subg;
   SubConsSF pCons;
   CPtr ComplStkFrame = cs_ptr;
+  int simplification_required = 0;
 
   //printf("Child = %p\n",Child(ALN_Answer(subg_ans_list_ptr(compl_subgoal_ptr(ComplStkFrame)))));
 
@@ -299,9 +301,31 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
      space for all but the leader */
 
   while (ComplStkFrame >= openreg) {
+    if (neg_simplif_possible(compl_subgoal_ptr(ComplStkFrame))) {
+      flags[SIMPLIFICATION_DONE] = 1;
+      simplification_required = 1;
+      break;
+    }
+    ComplStkFrame = next_compl_frame(ComplStkFrame);
+  }
+  ComplStkFrame = cs_ptr;
+
+  if (simplification_required) { // set all (non-ec'ed) to needing ac
+    while (ComplStkFrame >= openreg) {
+      compl_subg = compl_subgoal_ptr(ComplStkFrame);
+      if (!subg_is_completed(compl_subg) && subg_ans_root_ptr(compl_subg)) { // not early completed, so
+	//	printf("set AC for (%d): ",(Integer)compl_subg); print_subgoal(stddbg,compl_subg); printf("\n");
+	subg_needs_answer_completion(compl_subg);
+      }
+      ComplStkFrame = next_compl_frame(ComplStkFrame);
+    }
+  ComplStkFrame = cs_ptr;
+  }
+
+  while (ComplStkFrame >= openreg) {
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
     mark_as_completed(compl_subg);
-    if (flags[CTRACE_CALLS])  { 
+    if (flags[CTRACE_CALLS] && !subg_forest_log_off(compl_subg))  { 
       sprint_subgoal(CTXTc forest_log_buffer_1,0,compl_subg);     
       fprintf(fview_ptr,"cmp(%s,%d,%d).\n",forest_log_buffer_1->fl_buffer,
 	      compl_level(ComplStkFrame),ctrace_ctr++);

@@ -35,6 +35,10 @@ FileName and asserts them into an empty database returning DB.
 union_db(+DB1,+DB2,-DB3) where DB3 contains the union of the sets of
 clauses in DB1 and DB2.
 
+intersect_fact_db(+DB1,+DB2,-DB3) where DB3 contains the intersection
+of the sets of facts in DB1 and DB2.  DB1 and DB2 must contain only
+ground facts.
+
 Notes:
 
 1. A DB is kept as a trie, which is a ground term.  Each level in the
@@ -119,6 +123,13 @@ union_db(DB1,DB2,DB) :-
 	findall((Head:-Body),clause_in_db(Head,Body,DB1),Clauses),
 	assert_in_db(Clauses,DB2,DB).
 
+/**
+intersect_fact_db(DB1,DB2,DB3) :-
+	valid_db(DB1,'intersect_fact_db/3'),
+	valid_db(DB2,'intersect_fact_db/3'),
+	true.
+**/
+
 dump_db(DB,Filename) :-
 	valid_db(DB,'dump_db/2'),
 	open(Filename,write,OStr),
@@ -169,11 +180,17 @@ pure_ctrl_call_in_db0(M:G,_DB) :- call(M:G).
 
 empty_db(ht(2,0,[])).
 
+:- comment(find_in_trie/3,"find_in_trie(?Term,?Value,+Trie) succeeds
+for terms Term in trie Trie with value Value.").
 find_in_trie(Term,Value,Trie) :-
 	find_in_trie_list([Term],Value0,Trie,Vars),
 %	trace,
 	my_unnumbervars(Value0,Vars,Value).
 
+:- comment(find_in_trie_list/4,
+"find_in_trie(?TermList,?Value,+Trie,?Vars) succeeds for the list of
+terms TermList (which must be a proper list) in trie Trie with value
+Value, where Vars is a loglist of variables.").
 find_in_trie_list([],Value,Values,_Vars) :-
 	basics:member(Value,Values).
 find_in_trie_list([Term|TermList],Value,Trie,Vars) :-
@@ -190,6 +207,8 @@ find_in_trie_list([Term|TermList],Value,Trie,Vars) :-
 	basics:log_ith(X,Vars,Term),
 	find_in_trie_list(TermList,Value,SubTrie,Vars).
 
+:- comment(add_to_trie/4, "add_to_trie(+Term,+Value,+Trie0,-Trie) add
+the term Term with value Value to trie Trie0, returning Trie.").
 add_to_trie(Term,Value,Trie0,Trie) :-
 	(ground(Term)
 	 ->	add_to_trie_ground_list([Term],Value,Trie0,Trie)
@@ -198,6 +217,10 @@ add_to_trie(Term,Value,Trie0,Trie) :-
 		add_to_trie_ground_list([Term1],Value1,Trie0,Trie)
 	).
 
+:- comment(add_to_trie_ground_list/4,
+"add_to_trie_ground_list(+TermList,+Value,+Trie0,-Trie) adds the list
+of terms, TermList, with value, Value, to trie, Trie0, returning trie,
+Trie.").
 add_to_trie_ground_list([],Value,List,MList) :-
 	add_to_ordered_list(List,Value,MList).
 add_to_trie_ground_list([Term|TermList],Value,Trie0,Trie) :-
@@ -218,9 +241,12 @@ add_to_trie_ground_list([Term|TermList],Value,Trie0,Trie) :-
 		rebuild_hash(HashTab,HashBits,NHashBits,NHashTab)
 	).
 
-find_in_hash(Term,Rec,ht(HashBits,_NumInTab,HashTable)) :-
+:- comment(find_in_hash/3, "find_in_hash(?Term,-Val,+HashTable)
+returns in Val the value associated with key, Term, in hashtable
+HashTable.").
+find_in_hash(Term,Val,ht(HashBits,_NumInTab,HashTable)) :-
 	(var(Term)
-	 ->	bind_from_hash(Term,Rec,HashBits,HashTable)
+	 ->	bind_from_hash(Term,Val,HashBits,HashTable)
 	 ;	Size is floor(2**HashBits),
 		machine:term_hash(Term,Size,HashCode),
 		(atomic(Term)
@@ -230,9 +256,13 @@ find_in_hash(Term,Rec,ht(HashBits,_NumInTab,HashTable)) :-
 		 ;	functor(Term,Fun,Ari),
 			Key = Fun/Ari
 		),
-		find_in_hash(Key,Rec,HashCode,HashBits,HashTable)
+		find_in_hash(Key,Val,HashCode,HashBits,HashTable)
 	).
 
+:- comment(find_in_hash/5,
+"find_in_hash(?Key,-Rec,+HashCode,+HashBits,+HashTable) returns in Rec
+the value associates with key, Key, which has hashcode, HashCode, in
+hashtable, HashTable, whose keys have HashBits bits.").
 find_in_hash(Key,Rec,HashCode,HashBits,HashTable) :-
 	(HashBits =< 0
 	 ->	my_member(p(Key,Rec),HashTable)
@@ -251,22 +281,26 @@ find_in_hash(Key,Rec,HashCode,HashBits,HashTable) :-
 		)
 	).
 
-bind_from_hash(Term,Rec,HashBits,HashTable) :-
+:- comment(bind_from_hash/4,
+"bind_from_hash(-Term,-Rec,+HashBits,+HashTable) binds Term and Rec to
+the key-value pairs in hashtable, HashTable, whose keys have HashBits
+bits.").
+bind_from_hash(Term,Val,HashBits,HashTable) :-
 	(HashBits =< 0
-	 ->	my_member(p(Key,Rec),HashTable),
+	 ->	my_member(p(Key,Val),HashTable),
 		(Key = Fun/Arity
 		 ->	functor(Term,Fun,Arity)
 		 ;	Term = Key
 		)
 	 ;	HashTable = n(HashTable0,HashTable1,HashTable2,HashTable3),
 		NHashBits is HashBits - 2,
-		(bind_from_hash(Term,Rec,NHashBits,HashTable0)
+		(bind_from_hash(Term,Val,NHashBits,HashTable0)
 		 ;
-		 bind_from_hash(Term,Rec,NHashBits,HashTable1)
+		 bind_from_hash(Term,Val,NHashBits,HashTable1)
 		 ;
-		 bind_from_hash(Term,Rec,NHashBits,HashTable2)
+		 bind_from_hash(Term,Val,NHashBits,HashTable2)
 		 ;
-		 bind_from_hash(Term,Rec,NHashBits,HashTable3)
+		 bind_from_hash(Term,Val,NHashBits,HashTable3)
 		)
 	).
 
@@ -281,7 +315,14 @@ my_member(X,[Y|L]) :-
 		)
 	).
 
-add_to_hash(Term,NewRec,OldRec,HT0,ht(HashBits,NNumInTab,NHashTable)) :-
+:- comment(add_to_hash/5,
+"add_to_hash(+Term,?NewVal,-OldVal,+HashTable0,-HashTable) adds a new
+key-value pair (or finds an existing pair), Term and NewVal, to the
+hash table HashTable0 producing the new hash table HashTable.  OldVal
+is bound to previous value for this key in the hash table; and [] if
+none.").
+
+add_to_hash(Term,NewVal,OldVal,HT0,ht(HashBits,NNumInTab,NHashTable)) :-
 	(HT0 == []
 	 ->	HashBits = 2,	% hashtable size starts at 2**2-1
 		NumInTab = 0,
@@ -297,12 +338,20 @@ add_to_hash(Term,NewRec,OldRec,HT0,ht(HashBits,NNumInTab,NHashTable)) :-
 	 ;	functor(Term,Fun,Ari),
 		Key = Fun/Ari
 	),
-	add_to_hash(Key,NewRec,OldRec,HashCode,HashBits,Added,HashTable,NHashTable),
+	add_to_hash(Key,NewVal,OldVal,HashCode,HashBits,Added,HashTable,NHashTable),
 	NNumInTab is NumInTab+Added.
 
-add_to_hash(Key,NewRec,OldRec,HashCode,HashBits,Added,HashTable,NHashTable) :-
+:- comment(add_to_hash/8,
+"add_to_hash(+Key,+NewVal,-OldVal,+HashCode,+HashBits,-Added,+HashTable,-NHashTable)
+adds a key-value pair, in Key and NewVal, to the hash table,
+HashTable, generating a new hash table, NHashTable.  OldVal is
+returned and is the value for this key in HashTable ([] if none.) 
+HashCode is the hash code for Key; HashBits is the number of bits in
+the HashCode (and in keys in HashTable), and Added is returned as 1 if
+a new key is added, and 0 if the key already existed.").
+add_to_hash(Key,NewVal,OldVal,HashCode,HashBits,Added,HashTable,NHashTable) :-
 	(HashBits =< 0
-	 ->	add_to_ordered_list(HashTable,Key,NewRec,OldRec,Added,NHashTable)
+	 ->	add_to_ordered_list(HashTable,Key,NewVal,OldVal,Added,NHashTable)
 	 ;	(HashTable == []
 		 ->	HashTable0 = [], HashTable1 = [], HashTable2 = [], HashTable3 = []
 		 ;	HashTable = n(HashTable0,HashTable1,HashTable2,HashTable3)
@@ -313,36 +362,48 @@ add_to_hash(Key,NewRec,OldRec,HashCode,HashBits,Added,HashTable,NHashTable) :-
 		(HashBit < 2
 		 ->	(HashBit < 1
 			 ->	NHashTable = n(NHashTable0,HashTable1,HashTable2,HashTable3),
-				add_to_hash(Key,NewRec,OldRec,NHashCode,NHashBits,Added,HashTable0,NHashTable0)
+				add_to_hash(Key,NewVal,OldVal,NHashCode,NHashBits,Added,HashTable0,NHashTable0)
 			 ;	NHashTable = n(HashTable0,NHashTable1,HashTable2,HashTable3),
-				add_to_hash(Key,NewRec,OldRec,NHashCode,NHashBits,Added,HashTable1,NHashTable1)
+				add_to_hash(Key,NewVal,OldVal,NHashCode,NHashBits,Added,HashTable1,NHashTable1)
 			)
 		 ; HashBit < 3
 		 ->	NHashTable = n(HashTable0,HashTable1,NHashTable2,HashTable3),
-			add_to_hash(Key,NewRec,OldRec,NHashCode,NHashBits,Added,HashTable2,NHashTable2)
+			add_to_hash(Key,NewVal,OldVal,NHashCode,NHashBits,Added,HashTable2,NHashTable2)
 		 ;	NHashTable = n(HashTable0,HashTable1,HashTable2,NHashTable3),
-			add_to_hash(Key,NewRec,OldRec,NHashCode,NHashBits,Added,HashTable3,NHashTable3)
+			add_to_hash(Key,NewVal,OldVal,NHashCode,NHashBits,Added,HashTable3,NHashTable3)
 		)
 	).
 
-add_to_ordered_list(OValues,Key,NewRec,OldRec,Added,NValues) :-
+:- comment(add_to_ordered_list/6,
+"add_to_ordered_list(+OValues,+Key,+NewVal,-OldVal,-Added,-NValues)
+adds (or replaces) a key-value pair in an ordered list of key-value
+pairs.  OValues is the old list of key-value pairs (represented as
+p(Key,Value).) The new key-value pair is p(Key,NewVal). NValues is the
+resulting list of key-value pairs.  OldVal is the old value for key
+Key in OValues (or [] if none), and is returned.  Added is 1 if the
+key Key is new, and 0 if it already exists in a pair in OValues.").
+add_to_ordered_list(OValues,Key,NewVal,OldVal,Added,NValues) :-
 	(OValues == []
-	 ->	OldRec = [], Added = 1, NValues = [p(Key,NewRec)]
+	 ->	OldVal = [], Added = 1, NValues = [p(Key,NewVal)]
 	 ;	OValues = [OValue|Values],
-		OValue = p(TKey,TRec),
+		OValue = p(TKey,TVal),
 		(TKey @< Key
 		 ->	NValues = [OValue|NValues1],
-			add_to_ordered_list(Values,Key,NewRec,OldRec,Added,NValues1)
+			add_to_ordered_list(Values,Key,NewVal,OldVal,Added,NValues1)
 		 ; TKey == Key
-		 ->	NValues = [p(Key,NewRec)|Values],
+		 ->	NValues = [p(Key,NewVal)|Values],
 			Added = 0,
-			OldRec = TRec
-		 ;	NValues = [p(Key,NewRec)|OValues],
+			OldVal = TVal
+		 ;	NValues = [p(Key,NewVal)|OValues],
 			Added = 1,
-			OldRec = []
+			OldVal = []
 		)
 	).
 
+:- comment(add_to_ordered_list/3,
+"add_to_ordered_list(+List,+Val,-NewList) adds Val to the ordered list
+List, returning a new ordered list containing Val in NewList.  If Val
+is already in List, List is returned.").
 add_to_ordered_list([],Val,[Val]).
 add_to_ordered_list([Val0|List],Val,MList) :-
 	(Val @< Val0
@@ -353,11 +414,16 @@ add_to_ordered_list([Val0|List],Val,MList) :-
 		add_to_ordered_list(List,Val,MList1)
 	).
 
-
+:- comment(remove_from_trie/4,
+"remove_from_trie(+Term,+Value,+Trie0,-Trie) removes the term, Term,
+with value, Value, from the trie Trie0 yielding Trie.").
 remove_from_trie(Term,Value,Trie0,Trie) :-
 	remove_from_trie_list([Term],Value,Trie0,Trie).
 
-%% remove TermList from Trie0 resulting Trie.
+:- comment(remove_trom_trie_list/4,
+"remove_from_trie_list(+TermList,?Value,+Trie0,-Trie) removes the term
+list, TermList, with value, Value, from the trie, Trie0, yielding
+trie, Trie. ").
 remove_from_trie_list([],Value,OValues,NValues) :-
 	remove_from_ordered_list(OValues,Value,NValues).
 remove_from_trie_list([Term|TermList],Value,Trie0,Trie) :-
@@ -369,19 +435,15 @@ remove_from_trie_list([Term|TermList],Value,Trie0,Trie) :-
 	add_to_hash(Term,NewSubTrie,OldSubTrie,Trie0,Trie1),
 	remove_from_trie_list(NTermList,Value,OldSubTrie,NewSubTrie),
 	((NewSubTrie == [] ; NewSubTrie = ht(_,_,[]))
-	 ->	remove_from_hash(Term,_OldRec,Trie0,Trie)
+	 ->	remove_from_hash(Term,_OldVal,Trie0,Trie)
 	 ;	Trie = Trie1
 	).
 
-/*% remove all termlists from Trie0 resulting in Trie
-%fix
-remove_all_from_trie([],Trie,Trie).
-remove_all_from_trie([TermList|TermLists],Trie0,Trie) :-
-	remove_from_trie_list(TermList,Trie0,Trie1),
-	remove_all_from_trie(TermLists,Trie1,Trie).
-**/
-
-remove_from_hash(Term,OldRec,ht(HashBits,NumInTab,HashTable),ht(NHashBits,NNumInTab,NHashTable)) :-
+:- comment(remove_trom_hash/4,
+"remove_from_hash(+Term,?OldVal,+HashTable0,-HashTable) removes the
+entry for the pair Term and OldVal from the hash table, HashTable0,
+yielding the hash table, HashTable.").
+remove_from_hash(Term,OldVal,ht(HashBits,NumInTab,HashTable),ht(NHashBits,NNumInTab,NHashTable)) :-
 	Size is floor(2**HashBits),
 	machine:term_hash(Term,Size,HashCode),
 	(atomic(Term)
@@ -390,7 +452,7 @@ remove_from_hash(Term,OldRec,ht(HashBits,NumInTab,HashTable),ht(NHashBits,NNumIn
 		Key = Fun/Ari
 	),
 	NNumInTab is NumInTab - 1,
-	remove_from_hash(Key,OldRec,HashCode,HashBits,HashTable,NHashTable0),
+	remove_from_hash(Key,OldVal,HashCode,HashBits,HashTable,NHashTable0),
 	MinSize is floor(2** (HashBits//2)),
 	((NNumInTab >= MinSize ; Size =< 4)
 	 ->	NHashTable = NHashTable0,
@@ -399,9 +461,15 @@ remove_from_hash(Term,OldRec,ht(HashBits,NumInTab,HashTable),ht(NHashBits,NNumIn
 		rebuild_hash(NHashTable0,HashBits,NHashBits,NHashTable)
 	).
 
-remove_from_hash(Key,OldRec,HashCode,HashBits,HashTable,NHashTable) :-
+:- comment(remove_trom_hash/6,
+"remove_from_hash(+Key,?OldVal,+HashCode,+HashBits,+HashTable,-NHashTable)
+removes the entry for the pair Term and OldVal from the hash table,
+HashTable, yielding the hash table, NHashTable. HashCode is the hash
+code for Key and HashBits is the number of bits in the hash code (and
+in all hash codes for entries in HashTable)").
+remove_from_hash(Key,OldVal,HashCode,HashBits,HashTable,NHashTable) :-
 	(HashBits =< 0
-	 ->	remove_from_ordered_list(HashTable,Key,OldRec,NHashTable)
+	 ->	remove_from_ordered_list(HashTable,Key,OldVal,NHashTable)
 	 ;	(HashTable == []
 		 ->	HashTable0 = [], HashTable1 = [], HashTable2 = [], HashTable3 = []
 		 ;	HashTable = n(HashTable0,HashTable1,HashTable2,HashTable3)
@@ -412,15 +480,15 @@ remove_from_hash(Key,OldRec,HashCode,HashBits,HashTable,NHashTable) :-
 		(HashBit < 2
 		 ->	(HashBit < 1
 			 ->	NNHashTable = n(NHashTable0,HashTable1,HashTable2,HashTable3),
-				remove_from_hash(Key,OldRec,NHashCode,NHashBits,HashTable0,NHashTable0)
+				remove_from_hash(Key,OldVal,NHashCode,NHashBits,HashTable0,NHashTable0)
 			 ;	NNHashTable = n(HashTable0,NHashTable1,HashTable2,HashTable3),
-				remove_from_hash(Key,OldRec,NHashCode,NHashBits,HashTable1,NHashTable1)
+				remove_from_hash(Key,OldVal,NHashCode,NHashBits,HashTable1,NHashTable1)
 			)
 		 ; HashBit < 3
 		 ->	NNHashTable = n(HashTable0,HashTable1,NHashTable2,HashTable3),
-			remove_from_hash(Key,OldRec,NHashCode,NHashBits,HashTable2,NHashTable2)
+			remove_from_hash(Key,OldVal,NHashCode,NHashBits,HashTable2,NHashTable2)
 		 ;	NNHashTable = n(HashTable0,HashTable1,HashTable2,NHashTable3),
-			remove_from_hash(Key,OldRec,NHashCode,NHashBits,HashTable3,NHashTable3)
+			remove_from_hash(Key,OldVal,NHashCode,NHashBits,HashTable3,NHashTable3)
 		),
 		(NNHashTable == n([],[],[],[])  % collapse to keep rep canonical
 		 ->	NHashTable = []
@@ -428,14 +496,21 @@ remove_from_hash(Key,OldRec,HashCode,HashBits,HashTable,NHashTable) :-
 		)
 	).
 
-remove_from_ordered_list([OValue|OValues],Key,OldRec,NValues) :-
-	(OValue = p(Key,OldRec)
+:- comment(remove_from_ordered_list/4,
+"remove_from_ordered_list(+OValues,+Key,?OldVal,-NValues) removes the
+pair, p(Key,OldVal), from the ordered list of p/2 pairs in OValues,
+returning the resulting ordered list in NValues.").
+remove_from_ordered_list([OValue|OValues],Key,OldVal,NValues) :-
+	(OValue = p(Key,OldVal)
 	 ->	NValues = OValues
 	 ;	NValues = [OValue|NValues1],
-		remove_from_ordered_list(OValues,Key,OldRec,NValues1)
+		remove_from_ordered_list(OValues,Key,OldVal,NValues1)
 	).
 
-%% fail if not there
+:- comment(remove_from_ordered_list/3,
+"remove_from_ordered_list(+OValues,+Value,-NValues) removes Value from
+the list of values in OValues returning the list NValues, failing if
+it is not there.").
 remove_from_ordered_list([OVal|Values],Value,NValues) :-
 	(OVal == Value
 	 ->	NValues = Values
@@ -452,11 +527,11 @@ remove_from_ordered_list([OVal|Values],Value,NValues) :-
 	). **/
 
 rebuild_hash(HashTab0,HashBits,NewBitSize,HashTab) :-
-	findall(p(Term,Rec),bind_from_hash(Term,Rec,HashBits,HashTab0),TermRecs),
-	add_all_terms(TermRecs,NewBitSize,[],HashTab).
+	findall(p(Term,Val),bind_from_hash(Term,Val,HashBits,HashTab0),TermVals),
+	add_all_terms(TermVals,NewBitSize,[],HashTab).
 
 add_all_terms([],_,HT,HT).
-add_all_terms([p(Term,Rec)|Terms],HashBits,HT0,HT) :-
+add_all_terms([p(Term,Val)|Terms],HashBits,HT0,HT) :-
 	Size is floor(2**HashBits),
 	machine:term_hash(Term,Size,HashCode),
 	(atomic(Term)
@@ -464,7 +539,7 @@ add_all_terms([p(Term,Rec)|Terms],HashBits,HT0,HT) :-
 	 ;	functor(Term,Fun,Arity),
 		Key = Fun/Arity
 	),	 
-	add_to_hash(Key,Rec,[],HashCode,HashBits,_,HT0,HT1),
+	add_to_hash(Key,Val,[],HashCode,HashBits,_,HT0,HT1),
 	add_all_terms(Terms,HashBits,HT1,HT).
 
 

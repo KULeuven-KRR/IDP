@@ -323,7 +323,7 @@ DllExport extern int call_conv xsb_next_string_b(CTXTdeclc char*,int,int*,char*)
 DllExport extern int call_conv xsb_get_last_answer_string(CTXTdeclc char*,int,int*);
 DllExport extern int call_conv xsb_close_query(CTXTdecl);
 DllExport extern int call_conv xsb_close(CTXTdecl);
-DllExport extern int call_conv xsb_get_last_error_string(char*,int,int*);
+  //DllExport extern int call_conv xsb_get_last_error_string(char*,int,int*);
 DllExport extern char * call_conv xsb_get_init_error_message();
 DllExport extern char * call_conv xsb_get_init_error_type();
 DllExport extern char * call_conv xsb_get_error_message(CTXTdecl);
@@ -341,6 +341,8 @@ DllExport extern void call_conv print_pterm(CTXTdeclc Cell, int, VarString*);
 DllExport extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 					      char *in_func, char *where);
 DllExport extern void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
+				      int regs_to_protect, char *in_func, char *where);
+DllExport extern void c_bytes_to_p_charlist(CTXTdeclc char *name, size_t len, prolog_term list,
 				      int regs_to_protect, char *in_func, char *where);
 
 /*******************************************************************************/

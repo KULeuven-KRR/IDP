@@ -71,6 +71,8 @@
 #define MAXINCL 18   /* max # of include dirs */
 #define MAXINCLUDE_DEPTH 200 /* max depth of #include statements */
 
+#define DEFAULT_BUFSIZE 80
+
 #define MAX_GPP_NUM_SIZE 18
 
 typedef struct MODE {
@@ -261,6 +263,7 @@ void write_include_marker(FILE *f, int lineno, char *filename, char *marker);
 void construct_include_directive_marker(char **include_directive_marker,
 					char *includemarker_input);
 void escape_backslashes(char *instr, char **outstr);
+void escape_single_quotes(char *instr, char **outstr);
 
 static int is_slash(char ch);
 
@@ -704,20 +707,21 @@ void outchar(char c)
     C->out->buf[C->out->len++]=c;
   }
   else {
-    if (dosmode&&(c==10)) {
-      fputc(13,C->out->f);
+    if (dosmode && c=='\n') {
+      fputc((int)'\r',C->out->f);
       if (file_and_stderr)
-        fputc(13,stderr);
+        fputc((int)'\r',stderr);
     }
-    if (c!=13) {
-      fputc(c,C->out->f);
+    if (c!='\r') {
+      fputc((int)c,C->out->f);
       if (file_and_stderr)
-        fputc(c,stderr);
+        fputc((int)c,stderr);
     }
   }
 }
 
-void sendout(char *s,int l,int proc) /* only process the quotechar, that's all */
+/* only process the quotechar, that's all */
+void sendout(char *s,int l,int proc)
 {
   int i;
   
@@ -754,7 +758,7 @@ char getChar(int pos)
   }
   extendBuf(pos);
   while (pos>=C->len) {
-    do { c=fgetc(C->in); } while (c==13);
+    do { c=fgetc(C->in); } while (c=='\r');
     if (c=='\n') C->lineno++;
     if (c==EOF) c=0;
     C->buf[C->len++]=(char)c;
@@ -782,6 +786,7 @@ int identifierEnd(int start)
     start+=2;
     c=getChar(start);
   }
+
   while (!isdelim(c)) c=getChar(++start);
   return start;
 }
@@ -1077,7 +1082,7 @@ void initthings(int argc, char **argv)
   C->lineno=0;
   isinput=isoutput=ismode=ishelp=hasmeta=usrmode=0;
   nincludedirs=0;
-  C->bufsize=80;
+  C->bufsize=DEFAULT_BUFSIZE;
   C->len=0;
   C->buf=C->malloced_buf=malloc(C->bufsize);
   C->eof=0;
@@ -1283,6 +1288,7 @@ void initthings(int argc, char **argv)
     }
 }
 
+static char *e;
 int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
 {
   int i;
@@ -1292,13 +1298,17 @@ int findCommentEnd(char *endseq,char quote,char warn,int pos,int flags)
     c=getChar(pos);
     i=pos;
     if (matchEndSequence(endseq,&i)) return pos;
-    if (c==0) bug("input ended while scanning a comment/string");
+    if (c==0) {
+      warning("input ended while scanning a comment/string: perhaps missing a quote character somewhere above the indicated line");
+      fprintf(C->out->f,endseq);
+      return pos;
+    }
     /*
     if (c=='\n' && (*endseq == '\'' || *endseq == '"'))
       warning("string spans multiple lines");
     */
     if (c==warn) {
-      warn=0;
+      warn=0; // to avoid issuing too many warnings
       if (WarningLevel > 2)
 	warning("possible comment/string termination problem");
     }
@@ -1479,9 +1489,9 @@ char *ProcessText(char *buf,int l,int ambience)
   C->argc=T->argc;
   C->argv=T->argv;
   C->filename=T->filename;
-  C->out->buf=malloc(80);
+  C->out->buf=malloc(DEFAULT_BUFSIZE);
   C->out->len=0;
-  C->out->bufsize=80;
+  C->out->bufsize=DEFAULT_BUFSIZE;
   C->out->f=NULL;
   C->lineno=T->lineno;
   C->bufsize=l+2;
@@ -1525,9 +1535,9 @@ char *ProcessFastDefinition(char *buf,int l,char **argnames)
   C->argc=8;
   C->argv=argval;
   C->filename=T->filename;
-  C->out->buf=malloc(80);
+  C->out->buf=malloc(DEFAULT_BUFSIZE);
   C->out->len=0;
-  C->out->bufsize=80;
+  C->out->bufsize=DEFAULT_BUFSIZE;
   C->out->f=NULL;
   C->lineno=T->lineno;
   C->bufsize=l+2;
@@ -2334,7 +2344,7 @@ int ParsePossibleMeta()
       C->filename=incfile_name;
       C->out=N->out;
       C->lineno=0;
-      C->bufsize=80;
+      C->bufsize=DEFAULT_BUFSIZE;
       C->len=0;
       C->buf=C->malloced_buf=malloc(C->bufsize);
       C->eof=0;
@@ -2822,7 +2832,9 @@ void replace_directive_with_blank_line(FILE *f)
 void write_include_marker(FILE *f, int lineno, char *filename, char *marker)
 {
   static char lineno_buf[MAX_GPP_NUM_SIZE];
-  static char *escapedfilename = NULL;
+  static char
+    *escapedfilename = NULL,
+    *safequoted_FN = NULL;
 
   if ((include_directive_marker != NULL) && (f != NULL)) {
 #ifdef WIN_NT
@@ -2830,8 +2842,9 @@ void write_include_marker(FILE *f, int lineno, char *filename, char *marker)
 #else
     escapedfilename = filename;
 #endif
+    escape_single_quotes(escapedfilename,&safequoted_FN);
     sprintf(lineno_buf,"%d", lineno);
-    fprintf(f, include_directive_marker, lineno_buf, escapedfilename, marker);
+    fprintf(f, include_directive_marker, lineno_buf, safequoted_FN, marker);
   }
 }
 
@@ -2849,6 +2862,33 @@ void escape_backslashes(char *instr, char **outstr)
   while (*instr != '\0') {
     if (*instr=='\\') {
       *(*outstr+out_idx) = '\\';
+      out_idx++;
+    }
+    *(*outstr+out_idx) = *instr;
+    out_idx++;
+    instr++;
+  }
+  *(*outstr+out_idx) = '\0';
+}
+
+/*
+  The include marker looks like 
+     something. something(1,'file',...).
+  If file has single quotes, they must be doubled or else it'll look
+  like 'foo'bar', which is invalid syntax.
+  We escape quotes by doubling them.
+  (Could have done it with a \, but don't want to mess up with windows.
+*/
+void escape_single_quotes(char *instr, char **outstr)
+{
+  int out_idx=0;
+
+  if (*outstr != NULL) free(*outstr);
+  *outstr = malloc(2*strlen(instr));
+
+  while (*instr != '\0') {
+    if (*instr=='\'') {
+      *(*outstr+out_idx) = '\'';
       out_idx++;
     }
     *(*outstr+out_idx) = *instr;

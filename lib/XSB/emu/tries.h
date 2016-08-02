@@ -358,10 +358,12 @@ extern CPtr *VarEnumerator_trail_top;
 extern BTNptr   newBasicTrie(Cell,int);
 extern byte *	trie_get_calls(void);
 extern Cell	get_lastnode_cs_retskel(Cell);
-extern byte *	trie_get_return(struct subgoal_frame *, Cell);
+extern byte *	trie_get_return(struct subgoal_frame *, Cell, int);
 extern void     init_trie_aux_areas(void);
 extern void     free_trie_aux_areas(void);
 extern void     load_solution_trie(int, int, CPtr, BTNptr);
+extern void     load_solution_trie_no_heapcheck(int, int, CPtr, BTNptr);
+extern void     load_solution_trie_notrail(int, int, CPtr, BTNptr);
 extern int      variant_call_search(TabledCallInfo *, CallLookupResults *);
 extern BTNptr   trie_assert_chk_ins(CPtr, BTNptr, int *);
 extern BTNptr   trie_intern_chk_ins(Cell, BTNptr *, int *, int, int);
@@ -373,7 +375,7 @@ extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
 extern BTHTptr  New_BTHT(Structure_Manager *, int);
-extern void     load_solution_trie_notrail(int, int, CPtr, BTNptr);
+extern int trie_path_heap_size(BTNptr pLeaf);
 #else
 struct th_context ;
 
@@ -385,10 +387,12 @@ extern BTHTptr  New_BTHT(struct th_context *, Structure_Manager *, int);
 extern BTNptr   newBasicTrie(struct th_context *, Cell,int);
 extern byte *	trie_get_calls(struct th_context *);
 extern Cell	get_lastnode_cs_retskel(struct th_context *, Cell);
-extern byte *	trie_get_return(struct th_context *, struct subgoal_frame *, Cell);
+extern byte *	trie_get_return(struct th_context *, struct subgoal_frame *, Cell, int);
 extern void     init_trie_aux_areas(struct th_context *);
 extern void     free_trie_aux_areas(struct th_context *);
 extern void     load_solution_trie(struct th_context *, int, int, CPtr, BTNptr);
+extern void     load_solution_trie_no_heapcheck(struct th_context *, int, int, CPtr, BTNptr);
+extern void     load_solution_trie_notrail(struct th_context *, int, int, CPtr, BTNptr);
 extern int      variant_call_search(struct th_context *, TabledCallInfo *, CallLookupResults *);
 extern BTNptr   trie_assert_chk_ins(struct th_context *, CPtr, BTNptr, int *);
 extern BTNptr   trie_intern_chk_ins(struct th_context *, Cell, BTNptr *, int *, int, int);
@@ -399,17 +403,17 @@ extern BTNptr   delay_chk_insert(struct th_context *, int, CPtr, CPtr *);
 //extern void     undo_answer_bindings(struct th_context *);
 extern void	load_delay_trie(struct th_context *, int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(struct th_context *);
-extern void     load_solution_trie_notrail(struct th_context *, int, int, CPtr, BTNptr);
+extern int trie_path_heap_size(struct th_context *, BTNptr pLeaf);
 #endif
 
 #ifndef MULTI_THREAD
 extern void    consume_subsumptive_answer(BTNptr, int, CPtr);
 extern ALNptr  tst_collect_relevant_answers(TSTNptr, TimeStamp, size_t, CPtr);
-extern void    delete_subsumptive_table(struct Table_Info_Frame *);
+extern void    delete_subsumptive_predicate_table(struct Table_Info_Frame *);
 #else
 extern void    consume_subsumptive_answer(struct th_context *, BTNptr, int, CPtr);
 extern ALNptr  tst_collect_relevant_answers(struct th_context *, TSTNptr, TimeStamp, size_t, CPtr);
-extern void    delete_subsumptive_table(struct th_context *, struct Table_Info_Frame *);
+extern void    delete_subsumptive_predicate_table(struct th_context *, struct Table_Info_Frame *);
 #endif
 
 #ifndef MULTI_THREAD
@@ -464,11 +468,19 @@ extern CPtr *trieinstr_vars;
 /* used for statistics */
 extern counter subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
-#define undo_answer_bindings		\
-    while (VarEnumerator_trail_top >= VarEnumerator_trail) {	\
-	untrail(*VarEnumerator_trail_top);		\
-	VarEnumerator_trail_top--;			\
-    }	
+#define undo_answer_bindings					\
+  while (VarEnumerator_trail_top >= VarEnumerator_trail) {		\
+    /*printf("reset %p=VarEnum[%d]\n",*VarEnumerator_trail_top,VarEnumerator_trail_top-VarEnumerator_trail);*/ \
+    untrail(*VarEnumerator_trail_top);					\
+    VarEnumerator_trail_top--;						\
+  }	
+
+typedef struct SL_node_t *SL_node_ptr;
+typedef struct SL_node_t {
+  SL_node_ptr SL_next;
+  void *SL_down;
+  TimeStamp SL_ts;
+} SL_node;
 
 #ifndef MULTI_THREAD
 /* trie routine variables */
@@ -521,8 +533,8 @@ extern CPtr *var_addr;
 extern int  var_addr_arraysz;
 
 /* similar .. used in get_residual */
-extern CPtr *copy_of_var_addr;
-extern int  copy_of_num_heap_term_vars;
+extern CPtr *var_addr_accum;
+extern int  var_addr_accum_num;
 
 /*----------------------------------------------------------------------*/
 
@@ -650,7 +662,7 @@ typedef struct callnodetag{
   calllistptr inedges; 
   void* goal;  
   unsigned int no_of_answers;
-  unsigned int deleted:1, changed:1,recomputable:1,falsecount:14,outcount:15;
+  unsigned int deleted:1, changed:1,recomputable:1,is_incremental_trie:1,falsecount:14,outcount:14;
   union{
     callnodeptr prev_call;  
     void* tif_ptr;	  /* Table of which this call is a part */
@@ -671,7 +683,7 @@ typedef struct callnodetag{
 #define is_fact_in_callgraph(Ptr)  (callnode_sf(Ptr) == 0)
 
 typedef struct key{
-	int goal;
+	prolog_int goal;
 } KEY;
 
 

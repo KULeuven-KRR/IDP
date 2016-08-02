@@ -36,7 +36,7 @@
 :- import message/1, warning/1, time_message/2 from auxlry.
 :- import memberchk/2 from basics.
 :- import current_compiled_module/1 from compile.
-:- import engine_mode_magic_num/2 from consult.
+:- import engine_mode_magic_num/3 from consult.
 :- import conset/2, conget/2 from gensym.
 :- import
 	file_close/1,

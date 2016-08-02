@@ -98,9 +98,9 @@ char *nil_string, *true_string, *cut_string, *cyclic_string;
 
 Pair list_pscPair;
 
-Psc list_psc, comma_psc, true_psc, if_psc, colon_psc, caret_psc, ccall_mod_psc, c_callloop_psc;
+Psc list_psc, comma_psc, true_psc, if_psc, colon_psc, caret_psc, ccall_mod_psc, c_callloop_psc, dollar_var_psc;
 Psc tnot_psc, delay_psc, cond_psc, cut_psc, load_undef_psc, setof_psc, bagof_psc;
-Psc box_psc, visited_psc;
+Psc box_psc, visited_psc, answer_completion_psc;
 /*
  * Ret PSC's are used to store substitution factors for subgoal calls
  * or answers.  A psc with a new arity will be created when needed,
@@ -273,13 +273,14 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
       bld_boxedfloat(CTXTc &ignore_addr, float_val(OP1));		\
     else if (isointeger(OP1)) 						\
       {bld_oint(&ignore_addr, oint_val(OP1));}				\
+    else Fail1;								\
     flag = READFLAG;							\
     sreg = hreg - 3;							\
   } else if (isattv(OP1)) {						\
-    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));	\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));    \
     /* add_interrupt(OP1, makecs(hreg)); */				\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg+INT_REC_SIZE));	\
-    bind_copy((CPtr)dec_addr(op1), makecs(hreg));                       \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(OP1) + 1)),makecs(hreg+INT_REC_SIZE));	\
+    bind_copy((CPtr)dec_addr(OP1), makecs(hreg));                       \
     new_heap_functor(hreg, (Psc)OP2);					\
     flag = WRITE;							\
   }									\

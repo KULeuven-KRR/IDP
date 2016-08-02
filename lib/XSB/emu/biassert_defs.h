@@ -39,6 +39,7 @@
 #define TRIE_DROP                              16
 #define CONVERT_TO_DYNA                        17
 #define GET_DYNAMIC_PRED_EP                    18
+#define DYNAMIC_PRED_HAS_CLAUSES               19
 
 #define DONT_EXPAND_HASHES                      1
 #define EXPAND_HASHES                           0

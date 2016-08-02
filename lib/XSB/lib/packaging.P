@@ -116,3 +116,32 @@ remove_pkg_dirs_from_libpath([]) :- !.
 remove_pkg_dirs_from_libpath([Dir|Dirs]) :-
     retract(library_directory(Dir)),
     remove_pkg_dirs_from_libpath(Dirs).
+
+%%% some common tools used in package configuration
+xsb_running_under(cygwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(cygwin, A),
+	!.
+xsb_running_under(windows) :-
+	xsb_configuration(architecture, A),
+	str_sub(windows, A),
+	!.
+xsb_running_under(windows64) :-
+	xsb_configuration(architecture, A),
+	str_sub(windows, A),
+	str_sub(x64, A),
+	!.
+xsb_running_under(darwin) :-
+	xsb_configuration(architecture, A),
+	str_sub(darwin, A),
+	!.
+xsb_running_under(unix) :-
+	\+ xsb_running_under(cygwin),
+	\+ xsb_running_under(darwin),
+        \+ xsb_running_under(windows).
+
+%% Windows semantics for renaming is such that the op fails, 
+%% if the target exists
+force_rename_file(Orig,Target) :-
+	(path_sysop(unlink,Target), !; true),
+	path_sysop(rename,Orig,Target).

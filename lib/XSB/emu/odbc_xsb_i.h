@@ -52,8 +52,7 @@ switch (ptoc_int(CTXTc 1)) {
    ODBCDisconnect(CTXT);
    break;
  case ODBC_SET_CURSOR_CLOSE: {
-   int i = (int)ptoc_int(CTXTc 2);
-   SetCursorClose(i);
+   SetCursorClose((struct ODBC_Cursor *)ptoc_int(CTXTc 2));
    break;
  }
  case ODBC_COMMIT:

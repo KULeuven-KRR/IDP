@@ -180,6 +180,7 @@ inline static void adapt_hfreg_from_choicepoints(CTXTdeclc CPtr h)
   CPtr b, bprev;
   b = (bfreg < breg ? bfreg : breg);
   bprev = 0;
+  UNUSED(bprev);
   while (1) {
     if (is_generator_choicepoint(b))
       tcp_hfreg(b) = h;

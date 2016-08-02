@@ -325,7 +325,7 @@ read_p_file_s(IStr,FSize,BFileName,Result) :-
 
 
 :- dynamic files_with_errors/1.
-/***do_read_error(error(syntax_error,String,_BT),_BFileName) :-
+/***do_read_error(error(syntax_error(_),String,_BT),_BFileName) :-
 	atom_codes(String,Codes),  % not preprocessing 
 	append(_,[35,32,32,60,45,45,45,32,72,69,82,69,63|_],Codes),   % hash --> here
 	!,

@@ -32,7 +32,12 @@
 :- import pl_load_page/1, 
 	curl_allocate_error_term/2, 
 	curl_finalize_warn/1, 
-	pl_encode_url/2 from curl2pl.
+	pl_encode_url/2
+   from curl2pl.
+:- import
+        domain_error/4,
+        type_error/4
+   from error_handler.
 
 :- export 
 	load_page/5,
@@ -54,21 +59,24 @@
 	[curlconfig].
 
 
-load_page(_Source, _Document, _Options, _, _Warn) :- 
+%% load_page(+Source,+Options,-Properties,-Document,-Warnings)
+load_page(_Source, _Options, _Props, _Document, _Warn) :- 
 	catch(\+ curl_info:curl_info(support,yes),
 	      _,
 	      throw(error(existence_error, 'Error: open(url(...), ..., ...) - the XSB package Curl has not been configured - see the XSB manual, volume 2'))),
 	!,
 	throw(error(existence_error, 'Error: open(url(...), ..., ...) - the package Curl has not been configured - see the XSB manual, volume 2')).
 
-load_page(Source, Document, Options, [DirEnc, FileBase, Suffix, Size, Time], Warn) :- 
-	load_page_warn(Source, Document, Options, [Size, Time], Warn),
+load_page(Source, Options, [DirEnc, FileBase, Suffix, Size, Time], Document, Warn) :- 
+	load_page_warn(Source, Options, [Size, Time], Document, Warn),
 	encode_url(Source, [DirEnc, FileBase, Suffix]), 
 	curl_finalize_warn(Warn).
 
-load_page_warn(Source, Document, Opt, _, _) :-
+load_page_warn(Source, Opt, _Props, Document, _Warn) :-
 	Opt == [post(true)],
 	!, 
+        %% here we are getting the temp file into which we posed and make it
+        %% into a string passed to pl_load_page as post(String)
 	encode_url(Source, [DirEnc, FileBase, Suffix]), 
 	www_cache_filename([redirect(false)], FileBase, Suffix, FileUnEnc), 
 	set_tmp_file(DirEnc, FileUnEnc, TmpFile), 
@@ -77,7 +85,7 @@ load_page_warn(Source, Document, Opt, _, _) :-
 	close(RStream), 
         pl_load_page([options([post(Str)]), source(Source), document(Document), properties(_, _, _, _, _)]).
 
-load_page_warn(Source, Doc, Options, [Size, Time], Warn) :-
+load_page_warn(Source, Options, [Size, Time], Doc, Warn) :-
 	curl_allocate_error_term(Error, Warn),
 	examine_open_options(open, Options, ValidOptions), 
         pl_load_page([options(ValidOptions), source(Source), document(DocTmp), properties(SizeTmp, TimeTmp)]), 
@@ -97,7 +105,7 @@ url_properties(url(Url), Options, Properties) :-
 	atom(Url), 
 	!, 
 	append(Options, [url_prop(true)], OptionsFinal), 
-	load_page(url(Url), _, OptionsFinal, Properties, _). 
+	load_page(url(Url), OptionsFinal, Properties, _Doc, _Warn). 
 
 encode_url(url(Url), [DirEnc, FileUnEnc, Suffix]) :- 
 	pl_encode_url(Url, [Dir, File, Suf]), 
@@ -110,21 +118,35 @@ examine_open_options(open, Options, ValidOptions):-
 	remove(url_prop(true), Options1, ValidOptions).
 
 examine_open_options([], []).
-examine_open_options([redirect(Bool)|T], [redirect(Bool)|Options]):- !,
+examine_open_options([redirect(Bool)|T], [redirect(Bool)|Options]):-
+        ((Bool == true ; Bool == false) -> true
+        ;	domain_error(redirect_option,redirect(Bool),open/load_page/5,2)
+        ),
+        !,
 	examine_open_options(T, Options).
-examine_open_options([secure(CrtName)|T], [secure(CrtName)|Options]):- !,
+examine_open_options([secure(CrtName)|T], [secure(CrtName)|Options]):-
+        (atom(CrtName) -> true
+        ; type_error(secure('<atom>'),secure(CrtName),open/load_page/4,2)
+        ),
+        !,
 	examine_open_options(T, Options).
 examine_open_options([auth(UserName, Password)|T], [auth(UserName, Password)|Options]):-
+        (atom(UserName), atom(Password) -> true
+        ; type_error(auth('<atom>','<atom>'),auth(UserName,Password),open/load_page/4,2)
+        ),
 	!,
 	examine_open_options(T, Options).
 examine_open_options([timeout(Seconds)|T], [timeout(Seconds)|Options]):-
-	integer(Seconds), 
+	(integer(Seconds) -> true
+        ; type_error(timeout('<integer>'),timeout(Seconds),open/load_page/4,2)
+        ),
 	!,
 	examine_open_options(T, Options).
 examine_open_options([url_prop(true)|T], [url_prop(true)|Options]):-
 	!,
 	examine_open_options(T, Options).
 examine_open_options([user_agent(Agent)|T], [user_agent(Agent)|Options]):-
+        atom(Agent),
 	!,
 	examine_open_options(T, Options).
 examine_open_options([_|T], Options):- 
@@ -135,14 +157,14 @@ handle_html_redir(ValidOptions, Doc, Size, Time, Doc, Size, Time) :-
 	!.
 handle_html_redir(ValidOptions, DocTmp, _, _, Doc, Size, Time) :-
 	get_redir_url(DocTmp, UrlNew), 
-	load_page_warn(url(UrlNew), Doc, ValidOptions, [Size, Time], _), 
+	load_page_warn(url(UrlNew), ValidOptions, [Size, Time], Doc, _Warn), 
 	!.
 handle_html_redir(_, Doc, Size, Time, Doc, Size, Time) :-
 	!.
 
 get_redir_url(url(Url), UrlNew) :-
 	!, 
-	load_page_warn(url(Url), Doc, [redirect(false)], _, _), 
+	load_page_warn(url(Url), [redirect(false)], _Props, Doc, _Warn), 
 	get_redir_url(Doc, UrlNew).
 
 get_redir_url(file(File), UrlNew) :-
@@ -259,10 +281,19 @@ set_tmp_file(DirEnc, FileUnEnc, TmpFile) :-
 	str_cat(TmpDir, Slash, TmpDirSlash),
 	str_cat(TmpDirSlash, FileUnEnc, TmpFile).
 
-/*Post data if output stream */
+/* Post data if output stream */
 post_data(Atom, write) :- 
-	load_page(url(Atom), X, [post(true)], _, _), 
-	X \= ''.
+        %% in case of POST we are not getting errors/warnings - needs fixing
+	load_page(url(Atom), [post(true)], _, Doc, Warn), 
+        %% uncomment to see what gets posted
+        %%writeln(debug=Doc),
+        %% load_page_warn/5 takes the temp file into which we wrote post data
+        %% and passes it to the POST action.
+        %% Here Doc will be whatever the server returns in response to POST.
+        (Warn \= [] -> writeln(Warn)
+        ; true
+        ),
+	Doc \= ''.
 
 post_data(_, read).
 

@@ -102,6 +102,13 @@ trace_this_noprint(bagof1, 3).
 
 %% Trace this standard predicate
 trace_standard_predicate(once,1).
+trace_standard_predicate((\+),1).
+
+trace_standard_predicate((tnot),1).
+hide_this_hide(table_inspection_function,7).
+hide_this_show(t_not_variant,4).
+hide_this_show(tcall,1).
+hide_this_hide(is_incomplete,2).
 
 trace_standard_predicate(catch,3).
 trace_this_noprint(catch,3).

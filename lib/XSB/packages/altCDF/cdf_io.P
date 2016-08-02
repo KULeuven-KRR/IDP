@@ -8,7 +8,11 @@
 
 :- export load_extensional_facts/1, 
 	dump_extensional_facts/1, 
+	dump_extensional_facts_with_backup/1, 
+	dump_extensional_isa_component/3,
+	dump_extensional_isa_component_with_backup/3,
 	load_intensional_rules/1,
+	merge_intensional_rules/1,
 	dump_intensional_rules/1, 
 	write_component_intensional/1,
 	write_intensional_dlTables/0,
@@ -34,9 +38,7 @@
 :- import pretty_print/1 from newpp.
 :- import newIntRule/3,newDLRule/3,newDLTableFact/2,
 	 newExtTermBatch/2,transform_intensional_rules/4,
-	 abolish_cdf_tables/0, cdf_id_fields/4 from cdf_init_cdf.
-
-:- import init_dynamic_code/0 from cdf_init_cdf.
+	 abolish_cdf_tables/0, cdf_id_fields/4, cdf_root/1 from cdf_init_cdf.
 
 :- import  get_intensional_mfile_expansion/2 from cdf_comps_share.
 
@@ -51,8 +53,12 @@
 :- import path_sysop/2 from file_io.
 :- import slash/1 from machine.
 :- import variant/2 from subsumes.
+:- import write_canonical_lettervar/1 from xsb_writ.
+:- import numbervars/1 from num_vars.
 
 :- import assert_mti/1 from usermod.  % cdf_config.P  mti
+
+:- import rm/1 from shell.
 
 :- comment(module, "These routines load CDF files from a disk file
 system into memory, save them from memory to disk, and merge
@@ -62,6 +68,20 @@ the components system.").
 
 %-----------------------------------------------------------------
 	
+dump_extensional_facts_with_backup(Dir) :-
+	throw_cdf_writable(Dir),
+	cdf_fix_dir(Dir,DirS),
+	concat_atom([DirS,'cdf_extensional.P.backup'],BackupFile),
+	(file_exists(BackupFile)
+	 ->	rm(BackupFile)
+	 ;	true
+	),
+	concat_atom([DirS,'cdf_extensional.P'],File),
+	rename(File,BackupFile),
+	tell(File),
+	dump_extensional_facts_2,
+	told.
+
 :- comment(dump_extensional_facts/1,"@tt{dump_extensional_facts(Dir)}
 writes extensional facts to the file @tt{cdf_extensional.P} in
 @tt{Directory}.  No intensional rules are dumped by this predicate.
@@ -93,25 +113,30 @@ throw_cdf_writable(Dir):-
 sort_and_write_terms(Terms) :-
 	sort(Terms,STerms),
 	member(Term,STerms),
-	write_canonical(Term),writeln('.'),
+	(ground(Term) -> true ; numbervars(Term)),
+	write_canonical_lettervar(Term),writeln('.'),
 	fail.
 sort_and_write_terms(_Terms).
 
 sort_and_write_cha_terms(Terms) :-
 	sort(Terms,STerms),
 	member(Term,STerms),
+	(ground(Term) -> true ; numbervars(Term)),
 	(Term = classHasAttr_ext(cid(compName(cid(N,N),_),N), crid(hasVersion,N),  Version)
-	 ->	write_canonical(classHasAttr_ext(cid(N,N),crid(hasVersion,N),Version)),writeln('.')
-	 ;	write_canonical(Term),writeln('.')
+	 ->	write_canonical_lettervar(classHasAttr_ext(cid(N,N),crid(hasVersion,N),Version)),writeln('.')
+	 ;	write_canonical_lettervar(Term),writeln('.')
 	),
 	fail.
 sort_and_write_cha_terms(_Terms).
 
-cdf_ext_inst(Term):-
-	(Term = isa_ext(_,_) ; Term = allAttr_ext(_,_,_) ; 
-	 Term = classHasAttr_ext(_,_,_) ; Term = hasAttr_ext(_,_,_) ; 
-             Term = necessCond_ext(_,_) ; Term = coversAttr_ext(_,_,_) ; 
-	 Term = minAttr_ext(_,_,_,_) ; Term = maxAttr_ext(_,_,_,_) ).
+cdf_ext_inst(isa_ext(_,_)).
+cdf_ext_inst(allAttr_ext(_,_,_)).
+cdf_ext_inst(hasAttr_ext(_,_,_)).
+cdf_ext_inst(classHasAttr_ext(_,_,_)).
+cdf_ext_inst(necessCond_ext(_,_)).	     
+cdf_ext_inst(coversAttr_ext(_,_,_)).
+cdf_ext_inst(minAttr_ext(_,_,_,_)).
+cdf_ext_inst(maxAttr_ext(_,_,_,_)).
 
 dump_extensional_facts_2:- 
 	cdf_ext_inst(Term),
@@ -161,7 +186,8 @@ write_component_intensional(Comp):-
 	fail.
 write_component_intensional(Comp):- 
 	compdlrule(Comp,DLHead,DLBody),
-	write_canonical('<='(DLHead,DLBody)), writeln('.'),
+	(ground((DLHead,DLBody)) -> true ; numbervars((DLHead,DLBody))),
+	write_canonical_lettervar('<='(DLHead,DLBody)), writeln('.'),
 	fail.
 write_component_intensional(_Comp).
 
@@ -180,7 +206,8 @@ write_intensional_dlTables :-
 	findall(DLTableWrite,DLTableCall,DLTableEntsU),
 	sort(DLTableEntsU,DLTableEnts),
 	member(DLTableEnt,DLTableEnts),
-	write_canonical(DLTableEnt),
+	(ground(DLTableEnt) -> true ; numbervars(DLTableEnt)),
+	write_canonical_lettervar(DLTableEnt),
 	writeln('.'),
 	fail.
 write_intensional_dlTables.
@@ -331,28 +358,36 @@ extract_file_name(File,Name):-
 	reverse(Rn2,Nl),
 	atom_chars(Name,Nl).
 
-strip_closing_slash_if_any(['\'|L],L) :- !.
-strip_closing_slash_if_any(['/'|L],L) :- !.
+strip_closing_slash_if_any([\|L],L) :- !.
+strip_closing_slash_if_any([/|L],L) :- !.
 strip_closing_slash_if_any(L,L).
 
 % Windows allows slashes in both directions
 read_till_slash(L,L1):- 
-	((member('\',L) ; member('/',L)) -> 	
+	((member(\,L) ; member(/,L)) -> 	
 	    read_till_slash_1(L,L1)
 	  ; L = L1).
 
-read_till_slash_1(['\'|_R],[]):- !.
-read_till_slash_1(['/'|_R],[]):- !.
+read_till_slash_1([\|_R],[]):- !.
+read_till_slash_1([/|_R],[]):- !.
 read_till_slash_1([H|R],[H|R1]):- 
 	read_till_slash_1(R,R1).
+
+merge_intensional_rules(Dir) :-
+	extract_file_name(Dir,Name),
+	writeln(userout,merging_intensional_rules(Dir,Name)),
+	merge_intensional_rules(Dir,Name).
 
 %TLS: dont know if permission error is right here.	   :	
 load_intensional_rules(Path,Name):- 
 	writeln(userout,loading_intensional_rules(Path,Name)),
-	seeing(OldF),
 	retract_intensional_rules(Name),
+	merge_intensional_rules(Path,Name).
+
+merge_intensional_rules(Path,Name) :-
 	abolish_cdf_tables,
 	concat_atom([Path,'/cdf_intensional.P'],File),
+	seeing(OldF),
 	(file_exists(File) -> 
    	    see(File),
 	    read_intensional_rules_1(Name),
@@ -414,6 +449,140 @@ read_intensional_rules_2(Head,Name):-
 cdf_exists(Dir):-
 	concat_atom([Dir,'/cdf_extensional.P'],SchemaFile),
 	file_exists(SchemaFile).
+
+
+:- comment(dump_extensional_isa_component/3,
+"dump_extensional_isa_component(+IDList,+OutCDFDir,+Opts) dumps a
+subset of the currently loaded CDF into the cdf_extensional.P file in
+the OutCDFDir directory.  IDList is a list of CDF Ids (Cids, Rids,
+etc.).  All classes that are ancestors or descendents of these classes
+are included in the isa_ext output.  Also all hasAttr and classHasAttr
+relations with any of these classes as sources are also dumped.  If
+Opts is a list containing the atom 'connect_targets', then all classes
+that are in relations position or target position in the dumped
+elations and their ancestors are included in the dumped isa_ext
+facts.").
+
+dump_extensional_isa_component_with_backup(IDList,CDFDir,Opts) :-
+	throw_cdf_writable(CDFDir),
+	cdf_fix_dir(CDFDir,DirS),
+	concat_atom([DirS,'cdf_extensional.P.backup'],BackupFile),
+	(file_exists(BackupFile)
+	 ->	rm(BackupFile)
+	 ;	true
+	),
+	concat_atom([DirS,'cdf_extensional.P'],File),
+	(file_exists(File)
+	 ->	rename(File,BackupFile)
+	 ;	true
+	),
+	dump_extensional_isa_component(IDList,CDFDir,Opts).
+
+dump_extensional_isa_component(IDList,CDFDir,Opts) :-
+	abolish_table_pred(ancestor(_,_,_)),
+	abolish_table_pred(descendent(_,_,_)),
+	concat_atom([CDFDir,'/cdf_extensional.P'],CDFFile),
+	open(CDFFile,write,OStr),
+	findall(isa_ext(Sub,Sup),isa_anc_desc(IDList,Sub,Sup),Isas0),
+	sort(Isas0,PrimaryIsas),
+	%%(member(PI,PrimaryIsas),writeln(userout,PI),fail ; true),
+	(member(connect_targets,Opts)
+	 ->	findall(isa_ext(Sub,Sup),target_ancestors_for(PrimaryIsas,Sub,Sup),SpecIsas0),
+		append(SpecIsas0,PrimaryIsas,AllIsas0),
+		sort(AllIsas0,AllIsas)
+	 ;	AllIsas = PrimaryIsas
+	),
+	writeln(userout,call_write_cdf_list_All),
+	write_cdf_list(OStr,AllIsas),
+	writeln(userout,call_dump_attrs),
+	dump_attrs(PrimaryIsas,OStr),
+	close(OStr).
+
+dump_attrs(Isas,OStr) :-
+	(classes_from_isas(Isas,Classes),
+	 cdf_attr_ext_inst(AttrTerm,Class,_,_),
+	 findall(AttrTerm,(member(Class,Classes),call_c(AttrTerm)),AttrTerms0),
+	 sort(AttrTerms0,AttrTerms),
+	 write_cdf_list(OStr,AttrTerms),
+	 fail
+	 ;
+	 true
+	).
+
+classes_from_isas(Isas,Classes) :-
+	findall(Class,
+		(cdf_root(Class)
+		 ;	
+		 member(isa_ext(Class,_),Isas)
+		),
+		Classes0),
+	sort(Classes0,Classes).
+
+isa_anc_desc(IDList,Sub,Sup) :-
+	member(ID,IDList),
+	(ancestor(ID,Sub,Sup)
+	 ;
+	 descendent(ID,Sub,Sup)
+	).
+
+target_ancestors_for(IsaList,Sub,Sup) :-
+	classes_from_isas(IsaList,IDList),
+	member(ID,IDList),
+	cdf_attr_ext_inst(AttrTerm,ID,Rid,Tid),
+	call_c(AttrTerm),
+	(ancestor(Rid,Sub,Sup)
+	 ;
+	 cids_in_partype(Cid,Tid),
+	 ancestor(Cid,Sub,Sup)   
+	).
+
+:- table ancestor/3.
+ancestor(ID,Sub,Sup) :-
+	isa_ext(ID,IDp),
+	(Sub = ID, Sup = IDp
+	 ;
+	 ancestor(IDp,Sub,Sup)
+	).
+
+:- table descendent/3.
+descendent(ID,Sub,Sup) :-
+	isa_ext(IDd,ID),
+	(Sub = IDd, Sup = ID
+	 ;
+	 descendent(IDd,Sub,Sup)
+	).
+
+cids_in_partype(Tid,Tid).
+cids_in_partype(Cid,cid(PType,_)) :-
+	structure(PType),
+	PType =.. [_|Args],
+	cids_in_partype_list(Cid,Args).
+
+:- import isa/2 from cdf_init_cdf.
+cids_in_partype_list(Cid,[Tid|_]) :-
+	\+ isa(Tid,cid('CDF Primitive Types',cdf)),
+	cids_in_partype(Cid,Tid).
+cids_in_partype_list(Cid,[_|Tids]) :-
+	cids_in_partype_list(Cid,Tids).
+
+write_cdf_list(OStr,Terms) :-
+	(member(Term,Terms),
+	 (ground(Term)
+	  ->	 true
+	  ;	 numbervars(Term)
+	 ),
+	 write_canonical(OStr,Term),
+	 writeln(OStr,'.'),
+	 fail
+	 ;
+	 true
+	).
+
+
+cdf_attr_ext_inst(allAttr_ext(A,B,C),A,B,C).
+cdf_attr_ext_inst(hasAttr_ext(A,B,C),A,B,C).
+cdf_attr_ext_inst(classHasAttr_ext(A,B,C),A,B,C).
+
 
 end_of_file.
 

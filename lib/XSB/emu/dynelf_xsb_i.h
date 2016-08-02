@@ -49,6 +49,8 @@
 
 #define BUFFEXTRA 1024
 
+//#define USE_LDOPTIONS
+
 #if (defined(SOLARIS) && defined(__GNUC__))
 /* Under which Solaris is this needed? Doesn't seem to be needed under
    2.6,2.7,2.8 */
@@ -65,7 +67,7 @@ static xsbBool dummy(void)
 
 /*----------------------------------------------------------------------*/
 
-static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
+static byte *load_obj_dyn(CTXTdeclc char *pofilename, Psc cur_mod, char *ld_option)
 {
   char	*name;
   Pair	search_ptr;
@@ -73,13 +75,13 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   void	*handle;
   void	*funcep;
   char  *file_extension_ptr;
-  /*
+#ifdef USE_LDOPTIONS
   char  ldtemp; 
   char  *ldp1,*ldp2;
   static XSB_StrDefine(ldstring_oldenv);
   static XSB_StrDefine(ldstring_newenv);
   char  *libpath;
-  */
+#endif
   
   /* (1) create filename.so */
   strcpy(sofilename, pofilename);
@@ -105,7 +107,10 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
      appropriate loader flag, if possible.
   */
 
-#if 0 /* skip setting LD_LIBRARY_PATH -- many systems ignore runtime changes */
+ /* if undef, skip setting LD_LIBRARY_PATH -- most systems
+    ignore runtime changes to LD_LIBRARY_PATH
+ */
+#ifdef USE_LDOPTIONS
   libpath = getenv("LD_LIBRARY_PATH");
   if (libpath == NULL)
     libpath = "";
@@ -139,10 +144,13 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   if (putenv(ldstring_newenv.string) != 0)
     xsb_error("LOAD_OBJ_DYN: can't adjust LD_LIBRARY_PATH");
-#endif /* skipping LD_LIBRARY_PATH */
+#endif /* USE_LDOPTIONS */
   
   /* (2) open the needed object */
   handle = dlopen(sofilename, RTLD_LAZY);
+
+  // show the params to dlopen
+  //fprintf(stderr,"dlopen_params=%d %s %s\n",handle,sofilename,ldstring_newenv.string);
 
   /*
   if (putenv(ldstring_oldenv.string) != 0)
@@ -164,7 +172,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int *) dlsym(handle, name)) == NULL) {
 	fprintf(stdwarn, "%s\n", dlerror());
-	xsb_warn("LOADER: Cannot find foreign procedure %s", name);
+	xsb_warn(CTXTc "LOADER: Cannot find foreign procedure %s", name);
 	set_forn(search_ptr->psc_ptr, (byte *)(dummy));
       } else { 
 	set_forn(search_ptr->psc_ptr, (byte *)(funcep));

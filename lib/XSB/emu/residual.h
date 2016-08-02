@@ -24,6 +24,10 @@
 */
 
 
-extern void build_delay_list(CTXTdeclc CPtr, DE);
+extern Cell build_delay_list(CTXTdeclc DE);
+
+#ifndef MULTI_THREAD
+extern int var_addr_accum_arraysz;
+#endif
 
 /*---------------------- end of file residual.h ------------------------*/

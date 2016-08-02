@@ -56,10 +56,10 @@
 #define QUERY_BEGIN 0
 #define QUERY_RETRIEVE 1
 
-#define QUERY_SIZE 18000
+#define QUERY_SIZE 56000
 #define ELEMENT_SIZE 1500
 
-#define DB_INTERFACE_TERM_SYMBOL '\377'
+#define DB_INTERFACE_TERM_SYMBOL '\177'
 
 // codes returned by bindReturnList
 #define RESULT_EMPTY_BUT_REQUESTED 0
@@ -69,6 +69,9 @@
 #define TOO_FEW_RETURN_COLS 4
 
 #define UNKNOWN_DB_ERROR "unknown error from the database"
+
+// type of return value when it is a NULL
+#define NULL_VALUE_TYPE  -999
 
 // **** the database value data structures ****
 

@@ -29,9 +29,13 @@
 	%%reset_undef_pred_handlers/0,
 	windows_os_loader/0.
 
+:- import assert/1 from assert.
+:- import not_exists/1 from tables.
 :- import catch/3,throw/1,warning/1 from standard.
 :- import default_error_handler/1,existence_error/4 from error_handler.
 %:- import conset/2 from gensym.
+:- import consult_file_loaded/1 from consult.
+:- import search_module/6 from consult.
 :- import reconsult/1 from consult.
 :- import compile/1 from consult.
 :- import standard_symbol/3 from std_xsb.

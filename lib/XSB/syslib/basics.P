@@ -27,7 +27,8 @@
 /* NOTE: This file needs compilation with the "sysmod" option.  	*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod]).
+:- compiler_options([sysmod,xpp_on]).
+#include "builtin.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -38,6 +39,14 @@ append([X|L1],L2,[X|L3]) :- append(L1,L2,L3).
 %---
 /* copy_term is an inlined builtin */
 copy_term(Term, Result) :- copy_term(Term, Result).
+
+%---
+:- export copy_term_nat/2.
+copy_term_nat(Term,Result):- copy_term(Term,Result,_).
+
+/* copy_term is an inlined builtin */
+copy_term(_Term, _Result,_) :- '_$builtin'(COPY_TERM_3).
+
 
 %---
 ground(X) :- ground(X).
@@ -340,14 +349,20 @@ fordown(I,H,L) :- H > L, H1 is H-1, fordown(I,H1,L).
 
 % Compatability w. SWI and others (also error checking)
 % add check on third argument, if bound as non-integer
-between(L,U,B):- 
+between(L,U,B) :-
+	check_nonvar(L,between/3,1),
+	check_nonvar(U,between/3,2),
 	check_integer(L,between/3,1),
 	check_integer(U,between/3,2),
+	(	nonvar(B) ->
+		check_integer(B,between/3,3)
+	;	true
+	),
 	L =< U,
 	between_1(L,U,B).
 
 between_1(L,_U,L).
-between_1(L,U,Res):- L < U,L1 is L + 1,between_1(L1,U,Res).
+between_1(L,U,Res) :- L < U, L1 is L + 1, between_1(L1,U,Res).
 
 /* --------------------- end of file basics.P ------------------------- */
 

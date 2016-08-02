@@ -75,7 +75,7 @@
 	 delete_first/3,
 	 drop/3,
 	 drop_upto/3,
-	 flatten/2,
+%	 flatten/2,   (better to use version in basics)
 	 insert/3,
 	 intersect/3,
 	 intersect_eq/3,
@@ -143,6 +143,7 @@ append_lists([X|Xs],L) :-
 	append(X,T,L),
 	append_lists(Xs,T).
 
+/*
 flatten([],[]).
 flatten([X|Xs],L) :-
 	'$flatten'(X,T,L),
@@ -157,6 +158,7 @@ flatten([X|Xs],L) :-
 	;
 		L = [X|T]
 	).
+*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  member(X, [H|T]) :-
 %%  	(   X = H

@@ -72,7 +72,9 @@ extern size_t last_assert_space_size;
 
 DllExport char* call_conv string_find(const char *str, int insert) {
 
-  char **ptr, *str0, **sptr;
+  char **ptr, *str0;
+  char **sptr;
+  UNUSED(sptr);
 
   //  printf("interning %s\n",str);
   SYS_MUTEX_LOCK_NOERROR( MUTEX_STRING ) ;
@@ -126,7 +128,8 @@ char *string_find_safe(char *str) {
 void init_psc_ep_info(Psc psc) {
   set_type(psc, 0);
   psc->env = 0;
-  psc->incr = 0;
+  set_incr(psc,0);
+  set_intern(psc,0);
   set_data(psc, 0);
   set_ep(psc,(byte *)&(psc->load_inst));
   cell_opcode(&(psc->load_inst)) = load_pred;
@@ -150,13 +153,13 @@ static Psc make_psc_rec(char *name, char arity) {
   return temp;
 }
 
-void set_psc_ep_to_psc(Psc psc_to_set, Psc target_psc) {
+void set_psc_ep_to_psc(CTXTdeclc Psc psc_to_set, Psc target_psc) {
   if (get_arity(psc_to_set) != get_arity(target_psc)) {
     xsb_abort("[IMPORT AS] Cannot import predicate as a predicate with a different arity: %s/%d\n",
 	     get_name(psc_to_set),get_arity(psc_to_set));
   } else if (get_ep(psc_to_set) != (byte *)&(psc_to_set->load_inst) &&
 	     get_ep(psc_to_set) != (byte *)&(target_psc->load_inst)) {
-    xsb_warn("[IMPORT AS] Redefining entry to import-as predicate: %s/%d\n",
+    xsb_warn(CTXTc "[IMPORT AS] Redefining entry to import-as predicate: %s/%d\n",
 	    get_name(psc_to_set),get_arity(psc_to_set));
     set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
   } else {
@@ -238,12 +241,13 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
 #ifndef MULTI_THREAD
   return tip?(*tip):NULL;
 #else
+  //  printf("get tip %s/%d tip %p\n",get_name(psc),get_arity(psc),tip);
   if (!tip) { /* get it out of dispatch table */
     CPtr temp1 = (CPtr) get_ep(psc);
     if ((get_type(psc) == T_DYNA) &&
 	(*(pb)(temp1) ==  switchonthread)) {
       temp1 = dynpredep_to_prortb(CTXTc temp1);
-      if (temp1 && (*(pb)temp1 == tabletrysingle) ) 
+      if (temp1 && ( (*(pb)temp1 == tabletrysingle) || (*(pb)temp1 == tabletrysinglenoanswers)))
 	return *(TIFptr *)(temp1+2);
       else return (TIFptr) NULL;
     } else {
@@ -365,10 +369,13 @@ Pair insert_module(int type, char *name)
     if (is_new) {
 	set_type(new_pair->psc_ptr, type);
 	new_pair->psc_ptr->env = 0;
-	new_pair->psc_ptr->incr = 0;
+	//	new_pair->psc_ptr->incr = 0;
+	set_incr(new_pair->psc_ptr,0);
+	set_intern(new_pair->psc_ptr,0);
 	set_data(new_pair->psc_ptr,0);
 	set_ep(new_pair->psc_ptr,0);
 	new_pair->psc_ptr->this_psc = 0;
+	set_immutable(new_pair->psc_ptr,0);
     } else {	/* set loading bit: T_MODU - loaded; 0 - unloaded */
       set_type(new_pair->psc_ptr, get_type(new_pair->psc_ptr) | type);
     }
@@ -389,7 +396,7 @@ Pair insert_module(int type, char *name)
  *           PSC-PAIR record.
  */
 
-Pair link_sym(Psc psc, Psc mod_psc)
+Pair link_sym(CTXTdeclc Psc psc, Psc mod_psc)
 {
     Pair *search_ptr, found_pair;
     char *name;
@@ -426,7 +433,7 @@ Pair link_sym(Psc psc, Psc mod_psc)
 	    snprintf(message,220,
 		    "%s/%d (type %d) had been defined in another module!",
 		    name, arity, type);
-	  xsb_warn(message);
+	  xsb_warn(CTXTc message);
 	}
 	pair_psc(found_pair) = psc;
       }
@@ -471,3 +478,14 @@ Psc get_intern_psc() {
   return (pair_psc(intern_handle));
 }
 
+
+/* Used for PRISM port */
+void insert_cpred(char * name,int arity,int (*pfunc)(void) ) {
+    int dummy_flag;
+    Psc psc;
+
+    psc = insert(name,arity, global_mod, &dummy_flag)->psc_ptr;
+    set_forn(psc,pfunc);
+    set_type(psc,T_FORN);
+
+}

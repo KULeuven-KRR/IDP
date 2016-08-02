@@ -283,7 +283,7 @@ file_time(FileName, Time) :-
 
 file_size(FileName, Size) :-
 	sys_system(STAT_FILE_SIZE,FileName,[H,L], _,_,_,_),
-	Size is L + (H << 16).
+	Size is L + (H << 24).
 
 
 /************************************************************************
@@ -296,6 +296,8 @@ path_sysop(isdir, Path) :- !, is_directory(Path).
 path_sysop(rename, OldPath, NewPath) :- !, rename(OldPath,NewPath).
 path_sysop(copy, FromPath, ToPath) :- !,
 	sys_filecopy(FromPath,ToPath,Res), Res=:=0.
+path_sysop(append, FromPath, ToPath) :- !,
+	sys_fileappend(FromPath,ToPath,Res), Res=:=0.
 	/*
 	file_open(FromPath, r, FromIOport),
 	FromIOport >= 0,
@@ -445,9 +447,10 @@ add_aliases([H|T],Type,Stream,Pred):-
 	add_aliases(T,Type,Stream,Pred).
 
 add_alias(Alias,Type,Stream,Predicate):- 
-	'_$alias_dynamic'(Alias,Type,_Stream) -> 
-  	   permission_error(create,alias,Alias,Predicate)
-	 ; asserta('_$alias_dynamic'(Alias,Type,Stream)).
+	(	'_$alias_dynamic'(Alias,Type,_Stream) -> 
+		permission_error(open,source_sink,alias(Alias),Predicate)
+	;	asserta('_$alias_dynamic'(Alias,Type,Stream))
+	).
 
 :- export '_$alias_dynamic'/3.
 get_alias(main,THREAD_ALIAS,0):- !.
@@ -458,11 +461,26 @@ remove_alias(Alias,Type,Stream):-
 	retractall('_$alias_dynamic'(Alias,Type,Stream)).
 
 %-----
+check_stream_position(Offset,Predicate,Arg) :-
+	(	integer(Offset) ->
+		true
+	;	var(Offset) ->
+		instantiation_error(Predicate,Arg)
+	;	domain_error(stream_position,Offset,Predicate,Arg)
+	).
+
+%-----
 check_open_stream_or_alias(S_or_A,Predicate,Arg,Mode,Stream) :- 
 	check_stream_or_alias(S_or_A,Predicate,Arg,Stream),
-            (is_valid_stream(Stream,Mode) -> 
-	        true
-	      ; existence_error(Mode-stream,Stream,Predicate,Arg) ).
+	(	is_valid_stream(Stream,ActualMode) -> 
+		(	var(Mode) ->
+			true
+		;	Mode == ActualMode ->
+			true
+		;	permission_error(Mode,stream,S_or_A,Predicate)
+		)
+	;	existence_error(stream,S_or_A,Predicate,Arg)
+	).
 
 %-----
 check_enumerate_stream_or_alias(S_or_A,Predicate,Arg,Stream):- 
@@ -503,7 +521,7 @@ current_stream_or_alias(S_or_A,Stream):-
 print_openfiles:- file_function(PRINT_OPENFILES,_,_,_,_,_,_).
 
 peek_code(S_or_A,Code):- 
-	check_open_stream_or_alias(S_or_A,peek_code/1,1,_Mode,Str),
+	check_open_stream_or_alias(S_or_A,peek_code/2,1,input,Str),
 	file_function(FILE_PEEK_CODE,Str,Ret,_Y,_Z, _,_),
 	Ret = Code.
 
@@ -512,19 +530,31 @@ peek_code(Code):-
 	file_function(FILE_PEEK_CODE,Str,Ret,_Y,_Z, _,_),
 	Ret = Code.
 
-peek_byte(S_or_A,Code):- 
-	check_open_stream_or_alias(S_or_A,peek_code/1,1,_Mode,Str),
+peek_byte(S_or_A,Byte):- 
+	check_open_stream_or_alias(S_or_A,peek_byte/2,1,input,Str),
+	(	var(Byte) ->
+		true
+	;	integer(Byte), Byte >= 0, Byte =< 255 ->
+		true
+	;	type_error(in_byte,Byte,peek_byte/2,2)
+	),
 	file_function(FILE_PEEK_BYTE,Str,Ret,_Y,_Z, _,_),
-	Ret = Code.
+	Ret = Byte.
 
-peek_byte(Code):- 
+peek_byte(Byte):- 
 	stat_flag(CURRENT_INPUT, Str),
+	(	var(Byte) ->
+		true
+	;	integer(Byte), Byte >= 0, Byte =< 255 ->
+		true
+	;	type_error(in_byte,Byte,peek_byte/1,1)
+	),
 	file_function(FILE_PEEK_BYTE,Str,Ret,_Y,_Z, _,_),
-	Ret = Code.
+	Ret = Byte.
 
 % TLS: need char_conversion table.
 peek_char(S_or_A,Char):- 
-	check_open_stream_or_alias(S_or_A,peek_char/1,1,_Mode,Str),
+	check_open_stream_or_alias(S_or_A,peek_char/2,1,input,Str),
 	file_function(FILE_PEEK_CHAR,Str,C,_Y,_Z, _,_),
 	Char = C.
 %	(Ret >= 0 -> 
@@ -555,12 +585,16 @@ at_end_of_stream(S_or_A):-
 % TLS: ISO interface to file_seek/3.  For now, handling only files,.
 set_stream_position(S_or_A,Offset):- 
 	check_open_stream_or_alias(S_or_A,set_stream_position/2,1,_Mde,Str),
-	stream_property(Str,reposition(true)),
-	check_integer(Offset,set_stream_position/2,1),
+	check_stream_position(Offset,set_stream_position/2,2),
+	(	stream_property(Str,reposition(true)) ->
+		true
+	;	permission_error(reposition,stream,S_or_A,set_stream_position/2)
+	),
 	file_seek(Str, Offset, 0, Ret),
-	(Ret =:= 0 -> 
-	    true
-	  ; permission_error(set_position,stream,Str,set_stream_position/2) ).
+	(	Ret =:= 0 -> 
+		true
+	;	permission_error(set_position,stream,S_or_A,set_stream_position/2)
+	).
 
 %-----------
 % TLS: ISO interface to file_flush/2

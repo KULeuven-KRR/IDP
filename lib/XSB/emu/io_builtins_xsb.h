@@ -77,8 +77,8 @@ extern stream_record open_files[];      /* Table of file pointers for open files
 
 extern void strclose( int ) ;
 
-extern int xsb_intern_fileptr(FILE *file,char *c,char *c2,char *c3, int charset);
-extern int xsb_intern_file(char *c1,char *c2,int *i,char *strmode,int opennew);
+extern int xsb_intern_fileptr(CTXTdeclc FILE *file,char *c,char *c2,char *c3, int charset);
+extern int xsb_intern_file(CTXTdeclc char *c1,char *c2,int *i,char *strmode,int opennew);
 
 extern void write_quotedname(FILE *fptr, int charset, char *string);
 extern int double_quotes(char *string, char *new_string);

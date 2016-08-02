@@ -27,13 +27,13 @@
    evaluation_error/3, existence_error/4,
    instantiation_error/2,  % obsolescent
    instantiation_error/3,
-   misc_error/1,permission_error/4, 
-   preprocessing_error/1,
+   misc_error/1, misc_error/2,
+   permission_error/4,    preprocessing_error/1,
    representation_error/3, resource_error/2,
    syntax_error/1, system_error/3,
    table_error/1,    table_error/4, type_error/4, 
    check_atom/3, check_atom_list/3, check_callable/3, check_cyclic/3,
-   check_ground/3, 
+   check_listable/3, check_ground/3, 
    check_integer/3, check_nonneg_integer/3, check_pos_integer/3,
    check_nonvar_list/3, check_nonvar_comma_list/3, check_nonvar/3, 
    check_number/3, check_one_thread/3,
@@ -51,14 +51,16 @@
 
 :- export psc_modname_filename/3.
 :- export flush_all_open_streams/1.
+:- export xsb_error_get_tag/2,xsb_error_get_message/2,xsb_error_get_backtrace/2,xsb_error_get_goal/2,xsb_error_get_tid/2,
+          xsb_error_get_goalatom/2.
 
 :- import (dynamic)/1,asserta/1 from assert.
 %%:- import reset_undef_pred_handlers/0 from loader.
 :- import close_open_tables/1, psc_data/2, psc_name/2, psc_arity/2, ccall_store_error/2,
-   stat_flag/2, xsb_backtrace/1, psc_ep/2 from machine.
+   stat_flag/2, xsb_backtrace/1, psc_ep/2,conget/2, conset/2 from machine.
 
-:- import ','/2 from standard.
-:- import atom/1, callable/1, messageln/2, number/1, warningln/1,
+:- import ','/2, (=..)/2 from standard.
+   :- import atom/1, callable/1, messageln/2, number/1, warningln/1, message/2,
           throw/1,integer/1 from standard.
 :- import concat_atom/2, term_to_atom/2 from string.
 :- import xsb_flag/2 from curr_sym.

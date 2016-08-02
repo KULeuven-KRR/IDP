@@ -44,14 +44,14 @@ extern char executable_path_gl[];         /* from orient_xsb.c */
 
 /*----------------------------------------------------------------------*/
 
-byte *load_obj(char *pofilename, Psc cur_mod, char *ld_option)
+byte *load_obj(CTXTdeclc char *pofilename, Psc cur_mod, char *ld_option)
 {
 /*
     if (static_foreign_libraries(get_name(cur_mod)))
         return load_obj_sta(cur_mod);
     else
  */
-        return load_obj_dyn(pofilename, cur_mod, ld_option);
+        return load_obj_dyn(CTXTc pofilename, cur_mod, ld_option);
 }
 
 /*----------------------------------------------------------------------*/

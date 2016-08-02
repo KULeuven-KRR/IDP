@@ -246,6 +246,8 @@ static int readmsg(SOCKET sock_handle, char **msg_buff, UInteger *msg_len)
   char lenbuf[XSB_MSG_HEADER_LENGTH];
   size_t msglen, net_encoded_len;
 
+  // TODO: consider adding protection against interrupts, EINTR, like
+  //       in socket_get0.
   actual_len =
     // the MSG_PEEK flag makes it only peek at the first XSB_MSG_HEADER_LENGTH
     // bytes. This is needed in order to talk to datagram sockets.
@@ -265,6 +267,8 @@ static int readmsg(SOCKET sock_handle, char **msg_buff, UInteger *msg_len)
      "SOCKET_RECV" case of xsb_socket_request */
   *msg_buff=(char *)mem_calloc(msglen,sizeof(char),OTHER_SPACE);
 
+  // TODO: consider adding protection against interrupts, EINTR, like
+  //       in socket_get0.
   actual_len = recvfrom(sock_handle,*msg_buff,(int)msglen,0,NULL,0);
   if (SOCKET_OP_FAILED(actual_len)) return SOCK_READMSG_FAILED;
 
@@ -412,7 +416,10 @@ static int socket_get0(CTXTdeclc int *rc, char* message_read, int timeout) {
   SOCKET sock_handle;
   sock_handle = (SOCKET) ptoc_int(CTXTc 2);
   if (read_select(sock_handle, timeout)) {
-    *rc = recvfrom(sock_handle, message_read, 1, 0, NULL, 0);
+    do {
+      XSB_SOCKET_ERRORCODE_RESET;
+      *rc = recvfrom(sock_handle, message_read, 1, 0, NULL, 0);
+    } while (*rc == -1 && XSB_SOCKET_ERRORCODE == EINTR);
     return NORMAL_TERMINATION;
   } else {
     return TIMED_OUT;
@@ -577,6 +584,8 @@ xsbBool xsb_socket_request(CTXTdecl)
     
   case SOCKET_RECV:
     /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
+    // TODO: consider adding protection against interrupts, EINTR, like
+    //       in socket_get0.
     timeout_flag = socket_recv(CTXTc &rc, &message_buffer, &msg_len, (int)pflags[SYS_TIMER]);
 	  
     if (timeout_flag == TIMED_OUT) {
@@ -694,11 +703,11 @@ xsbBool xsb_socket_request(CTXTdecl)
       if (SETSOCKOPT(sock_handle, SOL_SOCKET, SO_LINGER,
 		     &sock_linger_opt, sizeof(sock_linger_opt))
 	  < 0) {
-	xsb_warn("[SOCKET_SET_OPTION] Cannot set socket linger time");
+	xsb_warn(CTXTc "[SOCKET_SET_OPTION] Cannot set socket linger time");
 	return FALSE;
       } 
     }else {
-      xsb_warn("[SOCKET_SET_OPTION] Invalid option, `%s'", option_name);
+      xsb_warn(CTXTc "[SOCKET_SET_OPTION] Invalid option, `%s'", option_name);
       return FALSE;
     }
     
@@ -869,7 +878,7 @@ xsbBool xsb_socket_request(CTXTdecl)
   }
 
   default:
-    xsb_warn("[SOCKET_REQUEST] Invalid socket request %d", (int) ptoc_int(CTXTc 1));
+    xsb_warn(CTXTc "[SOCKET_REQUEST] Invalid socket request %d", (int) ptoc_int(CTXTc 1));
     return FALSE;
   }
 

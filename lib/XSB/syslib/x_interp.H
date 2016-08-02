@@ -25,21 +25,28 @@
 
 
 :- export break/0.
+:- export handle_timed_calls/0, reinvoke_timed_calls/0.
 
 :- import [] / 0 from usermod.	% just to make usermod typed "module"
+:- import assert/1, retract/1 from assert.
 :- import xsb_flag/2 from curr_sym.
 :- import numbervars/1 from num_vars.
 :- import set_inthandler/2 from loader.
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import file_read/3, vv/2 from xsb_read.
+:- import handle_goal_interrupt/1 from mutex_xsb.
 %% These are explicitly imported because they are used early on, 
 %% before XSB is fully bootstrapped.
-:- import abort/0, call/1, call_c/1, call_expose/1, catch/3, call_goal_cut_trans/3,
+   :- import abort/0,call/1, call_c/1, call_expose/1, catch/3, call_goal_cut_trans/3,
    atom_codes/2, seeing/1, telling/1, see/1, tell/1, seen/0, told/0,
    gc_tables/1,gc_dynamic/1,
    handle_interrupts/1
      from standard.
+:- import '_$timed_call_rep_handler'/3 from standard.
+:- import '_$timed_call_max_handler'/5 from standard.
+:- import '_$timed_call_rep_max_handler'/7 from standard.
+:- import get_interpreter_index/1 from standard.
 :- import '$$exception_ball'/2 from standard.
 :- import close_open_tables/1,
           is_xwammode/1, 
@@ -48,6 +55,7 @@
 	  xwam_state/2,
 	  prompt/2, prompt/3
      from machine.
+:- import cancel_sleeper_thread/0,start_sleeper_thread/1 from machine.
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
           file_flush/2, /*ioport2iostream/2,*/
 %	  fmt_write/3, 

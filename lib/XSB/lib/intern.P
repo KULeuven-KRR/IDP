@@ -751,40 +751,43 @@ i_trie_interned(Term,Root,Leaf):-
 :- import incr_table_update/0 from increval.
 :- import invalidate_callnode_trie/1 from increval.
 
-:- export incr_trie_intern/2, incr_trie_uninternall/2.
-:- export incr_trie_intern_inval/2, incr_trie_uninternall_inval/2.
-:- export incr_trie_unintern/2, incr_trie_unintern_inval/2.
-incr_trie_intern(Root,Term) :-
+:- export incr_trie_intern/2, incr_trie_intern_immed/2, incr_trie_intern_inval/2.
+:- export incr_trie_uninternall/2,  incr_trie_uninternall_immed/2, incr_trie_uninternall_inval/2.
+:- export incr_trie_unintern/2, incr_trie_unintern_inval/2, incr_trie_unintern_immed/2.
+incr_trie_intern_immed(Root,Term) :-
         trie_intern(Term,Root),
         invalidate_callnode_trie(Root), /* root -> callnodeptr */
 	incr_table_update.
 
 incr_trie_intern_inval(Root,Term) :-
+	incr_trie_intern(Root,Term).
+
+incr_trie_intern(Root,Term) :-
         trie_intern(Term,Root),
         invalidate_callnode_trie(Root). /* root -> callnodeptr */
+
+incr_trie_uninternall_immed(Root,Term) :-
+	incr_trie_uninternall(Root,Term),
+  	incr_table_update.
+
+incr_trie_uninternall_inval(Root,Term) :-
+	incr_trie_uninternall(Root,Term).
 
 incr_trie_uninternall(Root,Term) :-
 	( trie_interned(Term,Root,Leaf,_S),
 	  private_trie_unintern(Root,Leaf,NO_CPS_CHECK),
 	  fail
          ; 
-          invalidate_callnode_trie(Root), /* root -> callnodeptr */
-  	  incr_table_update).
-
-incr_trie_uninternall_inval(Root,Term) :-
-	( trie_interned(Term,Root,Leaf,_S),
-	  private_trie_unintern(Root,Leaf,NO_CPS_CHECK),
-	  fail
-         ; 
           invalidate_callnode_trie(Root)). /* root -> callnodeptr */
 
-incr_trie_unintern(Root,Term) :-
-          trie_interned(Term,Root,Leaf,_S),
-	  private_trie_unintern(Root,Leaf,NO_CPS_CHECK),
-          invalidate_callnode_trie(Root), /* root -> callnodeptr */
-  	  incr_table_update.
+incr_trie_unintern_immed(Root,Term) :-
+	incr_trie_unintern(Root,Term),
+  	incr_table_update.
 
 incr_trie_unintern_inval(Root,Term) :-
+	incr_trie_unintern(Root,Term).
+
+incr_trie_unintern(Root,Term) :-
 	  trie_interned(Term,Root,Leaf,_S),
 	  private_trie_unintern(Root,Leaf,NO_CPS_CHECK),
           invalidate_callnode_trie(Root). /* root -> callnodeptr */
@@ -793,37 +796,50 @@ incr_trie_unintern_inval(Root,Term) :-
 % 4-ary (intended to be used in storage.P)
 %---------
 
-:- export incr_trie_intern/4,incr_trie_intern_inval/4.
-:- export incr_trie_unintern_nr/2, incr_trie_unintern_nr_inval/2.
+:- export incr_trie_intern/4,incr_trie_intern_inval/4,incr_trie_intern_immed/4.
+:- export incr_trie_unintern_nr/2, incr_trie_unintern_nr_inval/2, incr_trie_unintern_nr_immed/2.
 
 % incr_trie_intern(+Term,+Root,-Leaf,-Flag)
 % Flag = 0 means the term was new.
-incr_trie_intern(Term,Root,Leaf,Flag) :-
+incr_trie_intern_immed(Root,Term,Leaf,Flag) :-
 	new_i_trie_intern(Root,Term,Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
+        invalidate_callnode_trie(Root), /* root -> callnodeptr */
+	incr_table_update.
+
+incr_trie_intern(Root,Term,Leaf,Flag) :-
+	new_i_trie_intern(Root,Term,Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
+        invalidate_callnode_trie(Root). /* root -> callnodeptr */
+
+incr_trie_intern_inval(Root,Term,Leaf,Flag) :-
+	incr_trie_intern(Root,Term,Leaf,Flag).
+
+%-----
+
+incr_trie_unintern_nr_immed(Root,Leaf):- 
+        trie_dispose_nr(Root, Leaf),
         invalidate_callnode_trie(Root), /* root -> callnodeptr */
 	incr_table_update.
 
 incr_trie_unintern_nr(Root,Leaf):- 
         trie_dispose_nr(Root, Leaf),
-        invalidate_callnode_trie(Root), /* root -> callnodeptr */
-	incr_table_update.
-
-incr_trie_intern_inval(Root,Term,Leaf,Flag) :-
-	new_i_trie_intern(Root,Term,Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
         invalidate_callnode_trie(Root). /* root -> callnodeptr */
 
 incr_trie_unintern_nr_inval(Root,Leaf):- 
-        trie_dispose_nr(Root, Leaf),
-        invalidate_callnode_trie(Root). /* root -> callnodeptr */
+	incr_trie_unintern_nr(Root,Leaf).
 
-incr_unmark_uninterned_nr(Root,Leaf) :- 
+%-----
+
+incr_unmark_uninterned_nr_immed(Root,Leaf) :- 
 	unmark_uninterned_nr(Root,Leaf),
         invalidate_callnode_trie(Root), /* root -> callnodeptr */
 	incr_table_update.
 
-incr_unmark_uninterned_nr_inval(Root,Leaf) :- 
+incr_unmark_uninterned_nr(Root,Leaf) :- 
 	unmark_uninterned_nr(Root,Leaf),
         invalidate_callnode_trie(Root). /* root -> callnodeptr */
+
+incr_unmark_uninterned_nr_inval(Root,Leaf) :- 
+	incr_unmark_uninterned_nr(Root,Leaf).
 
 end_of_file.
 

@@ -41,7 +41,12 @@
 :- index(c_call_xsb_goal_cache/2,trie).
 :- index(cache_index/2,trie).
 
-%:- 	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV).
+:- import handle_goal_interrupt/1 from mutex_xsb.
+'_$goal_int'(One,_Two) :- 
+	handle_goal_interrupt(Message),
+%	writeln(call(Message)),
+	call(Message),
+	call_c(One).
 
 c_callloop_query_loop(Regs) :- 
 	catch(c_callloop_query_loop0(Regs),Ball,ccall_error_handler(Ball)).
@@ -49,6 +54,9 @@ c_callloop_query_loop(Regs) :-
 c_callloop_query_loop0(Regs) :-
 %	set_xsb_ready,
  	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
+	set_thread_interrupt,
+	set_inthandler('_$timer_int'(_,_), TIMER_INTERRUPT),
+	set_inthandler('_$lazy_reeval_int'(_,_), LAZY_REEVAL_INTERRUPT),
 	repeat,
 	suspend_on_forign_function(Par,VarTerm,Command),
 	(\+integer(Command)
@@ -147,3 +155,35 @@ save_query_in_cache(Atom,Goal) :-
 %	file_write(1, '.... leaving _$attv_int/2'), file_nl(1),
 	call_c(Call).
 
+%% TES not sure whether thread interrupt is needed.  It wasn't set for
+%% C-calling-Prolog before.
+set_thread_interrupt:- 
+	xsb_configuration(engine_mode,'slg-wam'),!,
+	set_inthandler('_$goal_int'(_,_), THREADSIG_CANCEL).
+set_thread_interrupt.
+%	set_inthandler('_$thread_int'(_,_), THREADSIG_CANCEL).
+
+:- import handle_goal_interrupt/1 from mutex_xsb.
+'_$goal_int'(One,_Two) :- 
+	handle_goal_interrupt(Message),
+%	writeln(call(Message)),
+	call(Message),
+	call_c(One).
+
+% Continuation is in first arg as opposed to second in attv_int 
+%'_$thread_int'(One,_Two) :- 
+%	execute_messages_on_signal_queue,
+%	writeln(One),
+%	call_c(One).
+
+%%execute_messages_on_signal_queue:- 
+%	repeat,
+%	(thread_peek_signal(Message) -> 
+%	    thread_get_signal(Message),
+%	    call(Message),
+%	    fail
+%	 ;  true),!.
+
+:- import timer_interrupt_trap/2 from standard.
+'_$timer_int'(One,Two):- 
+	timer_interrupt_trap(One,Two).

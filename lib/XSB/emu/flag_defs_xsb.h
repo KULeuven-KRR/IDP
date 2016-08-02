@@ -133,14 +133,16 @@ interrupt flag
 #define WARNING_ACTION            81   /* Action to take on warnings: print,silent,exception */
 #define HEAP_GC_MARGIN            82   /* Size of heap overflow margin */
 #define ANSWER_COMPLETION         83   /* amp: Incremental Answer Completion switch */   
-#define MAX_TABLE_SUBGOAL_DEPTH   84   /* maximum depth for terms in a tabled subgoal */
+#define MAX_TABLE_SUBGOAL_SIZE    84   /* maximum size for terms in a tabled subgoal */
 #define MAX_TABLE_SUBGOAL_ACTION  85   /* abort/fail/abstract (abstract not yet impld.)*/
-#define MAX_TABLE_ANSWER_LIST_DEPTH    86   /* maximum depth for lists in a tabled answer */
-#define MAX_TABLE_ANSWER_LIST_ACTION   87   /* abort/warn/abstract (abstract not yet impld.)*/
+#define MAX_ANSWERS_FOR_SUBGOAL   86
+#define MAX_ANSWERS_FOR_SUBGOAL_ACTION   87
+//#define MAX_TABLE_ANSWER_LIST_DEPTH    86   /* maximum depth for lists in a tabled answer */
+//#define MAX_TABLE_ANSWER_LIST_ACTION   87   /* abort/warn/abstract (abstract not yet impld.)*/
 #define MAXTOINDEX_FLAG           88   /* Experimental only */             
 #define CTRACE_CALLS              89
 #define EC_REMOVE_SCC             90
-#define MAX_TABLE_ANSWER_DEPTH    91   /* maximum depth for non-list terms in a tabled answer */
+#define MAX_TABLE_ANSWER_METRIC    91   /* maximum depth for non-list terms in a tabled answer */
 #define MAX_TABLE_ANSWER_ACTION   92   /* abort/warn/abstract (abstract not yet impld.)*/
 #define UNIFY_WITH_OCCURS_CHECK_FLAG 93   /* make all unifications use occur_check, under development by DSW */
 #define MAX_MEMORY                94
@@ -153,6 +155,15 @@ interrupt flag
 #define EXCEPTION_ACTION         100
 #define CHARACTER_SET            101
 #define ERRORS_WITH_POSITION     102
+#define SIMPLIFICATION_DONE	 103  /* set when simplification done during completion.*/
+#define MAX_INCOMPLETE_SUBGOALS  104
+#define MAX_INCOMPLETE_SUBGOALS_ACTION  105
+#define MAX_SCC_SUBGOALS                106
+#define MAX_SCC_SUBGOALS_ACTION         107
+#define CYCLIC_CHECK_SIZE               108
+#define MAX_TABLE_SUBGOAL_VAR_NUM       109
+#define MAX_TABLE_ANSWER_VAR_NUM        110
+#define MAX_MEMORY_ACTION               111
 
 #define MAX_FLAGS		 120
 
@@ -188,6 +199,7 @@ interrupt flag
 #define WA_IGNORE            2
 #define WA_WRITE             3
 
-/* for  MAX_TABLE_SUBGOAL_DEPTH and call abstraction */
+/* for  MAX_TABLE_SUBGOAL_SIZE and call abstraction / restraint */
 #define XSB_ABSTRACT         4
 #define XSB_BRAT             5
+#define XSB_SUSPEND          6

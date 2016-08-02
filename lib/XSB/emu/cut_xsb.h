@@ -71,6 +71,7 @@
 #define IS_INCR_TRIE_ROOT(instruc)		\
   (instruc == trie_root)
 
+/*
 #define CHECK_TABLE_CUT(instruc)       \
   if (IS_TABLE_INSTRUC(instruc) && !is_completed(tcp_subgoal_ptr(breg)))  {\
           char msg[MAXBUFSIZE];  \
@@ -80,6 +81,18 @@
 		    get_name(psc), get_arity(psc),          \
 		    get_name(call_psc), get_arity(call_psc));          \
 	  xsb_table_error(CTXTc msg);  \
+  }
+*/
+
+#define CHECK_TABLE_CUT(instruc)       \
+  if (IS_TABLE_INSTRUC(instruc) && !is_completed(tcp_subgoal_ptr(breg)))  {\
+  Psc calling_psc = *(*((Psc **)ereg-1)-1);				\
+  sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF) tcp_subgoal_ptr(breg));	\
+  printf("Illegal cut over incomplete tabled subgoal: %s, from within a call to %s/%d", \
+	 forest_log_buffer_1->fl_buffer,get_name(calling_psc), get_arity(calling_psc));	\
+  xsb_table_error_vargs(CTXTc "NULL", \
+				"Illegal cut over incomplete tabled subgoal: %s, from within a call to %s/%d", \
+				forest_log_buffer_1->fl_buffer,get_name(calling_psc), get_arity(calling_psc));\
   }
 
 extern CPtr call_cleanup_gl;

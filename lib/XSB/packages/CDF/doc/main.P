@@ -34,7 +34,7 @@ important parts of CDF are not yet available.  Nonetheless, the OMS
 has already been used heavily in commercial and research products to
 represent and manipulate knowledge in a way that is useful to XSB, to
 allow the knowledge to persist in a database of file system, and to
-visualize that knowledge through Interprolog @cite{Cale01} or other
+visualize that knowledge through InterProlog @cite{Cale01} or other
 tools.
 
 @section{A (somewhat) Formal Introduction to CDF}

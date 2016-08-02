@@ -174,34 +174,40 @@ open(File,Mode,Stream) :- 'open aux'(File,Mode,0,Stream).
 	    permission_error(open,file,File,open/3)
 	 ;  true).
 'open aux'(SrcSnk,_,_,_):- 
-	domain_error(source_or_sink,SrcSnk,open/3,1).
+	domain_error(source_sink,SrcSnk,open/3,1).
 
-file_translate(read,r):- !.
-file_translate(write,w):- !.
-file_translate(write_binary,wb):- !.
-file_translate(append,a):- !.
-file_translate(append_binary,ab):- !.
-file_translate(Mode,_):- 
-	domain_error(file_io_mode,Mode,open/3,2).
+file_translate(Mode,_) :-
+	var(Mode),
+	instantiation_error(open/3,2).
+file_translate(read,r) :- !.
+file_translate(write,w) :- !.
+file_translate(write_binary,wb) :- !.
+file_translate(append,a) :- !.
+file_translate(append_binary,ab) :- !.
+file_translate(Mode,_) :-
+	(	atom(Mode) ->
+		domain_error(io_mode,Mode,open/3,2)
+	;	type_error(atom,Mode,open/3,2)
+	).
 
 open_url(url(Atom),read,Stream,Options) :- 
 	!, 
-	load_page(url(Atom), X, Options, [DirEnc, FileBase, Suffix, _, _], _), 
-	(X == '' -> 
+	load_page(url(Atom), Options, [DirEnc,FileBase,Suffix,_,_], Doc, _), 
+	(Doc == '' -> 
 		permission_error(open,file,url(Atom),open/4); 
 		true
 	), 
 	curl:www_cache_filename(Options,FileBase,Suffix,FileUnEnc), 
 	curl:set_tmp_file(DirEnc, FileUnEnc, TmpFile), 
 	open(TmpFile, write, W),
-	write(W, X),
+	write(W, Doc),
 	close(W),
 	open(TmpFile, read, Stream), 
 	curl:post_us_pair(Atom, read, Stream).
 
 open_url(url(Atom),write,Stream,_) :- 
 	!, 
-	load_page(url(Atom),_,[redirect(false)],[DirEnc,FileBase,Suffix,_,_],_),
+	load_page(url(Atom),[redirect(false)],[DirEnc,FileBase,Suffix,_,_],_Doc,_),
 	curl:www_cache_filename([redirect(false)],FileBase,Suffix,FileUnEnc), 
 	curl:set_tmp_file(DirEnc, FileUnEnc, TmpFile), 
 	open(TmpFile, write, Stream), 
@@ -217,7 +223,13 @@ open(F,Mode,Stream,Options):-
 	%% writeln(open(F,Mode,Stream)),
 	add_aliases(Aliases,STREAM_ALIAS,Stream,open/4).
 
-examine_open_options([],[],[]).
+examine_open_options(Options,_,_) :-
+	var(Options),
+	instantiation_error(open/4,4).
+examine_open_options([],[],[]) :- !.
+examine_open_options([Option|_],_,_) :-
+	var(Option),
+	instantiation_error(open/4,4).
 examine_open_options([reposition(_Bool)|T],Aliases,Eof):- !,
 	warning('Reposition option ignored -- see manual.'),
 	examine_open_options(T,Aliases,Eof).
@@ -228,9 +240,16 @@ examine_open_options([eof_action(Action)|T],Aliases,[eof_action(Action)|Eof]):- 
 	warning('Eof actions are currently ignored in XSB.'),
 	examine_open_options(T,Aliases,Eof).
 examine_open_options([alias(A)|T],[A|Aliases],Eof):- !,
-	examine_open_options(T,Aliases,Eof).
+	(atom(A)
+	 ->	examine_open_options(T,Aliases,Eof)
+	 ; var(A)
+	 ->	instantiation_error(open/4,4)
+	 ;	domain_error(stream_option,alias(A),open/4,4)
+	).
 examine_open_options([Option|_],_,_):- 
-	domain_error(stream_options,Option,open/4,4).
+	domain_error(stream_option,Option,open/4,4).
+examine_open_options(Option,_,_):- 
+	type_error(list,Option,open/4,4).
 
 %------------------------------------------------
 close(Var):- var(Var),!,instantiation_error(close/1,1).
@@ -295,17 +314,27 @@ close(S_or_A,Options) :-
 	delete_curl_pair(_,_,S_or_A).
 
 examine_close_options(List,Action):-
-	(examine_close_options_1(List,Action) -> 
-	    true
-	  ; domain_error(close_option,List,close/2,2) ).
+	(	examine_close_options_1(List,Action) -> 
+		true
+	;	domain_error(close_option,List,close/2,2)
+	).
 
 /* Traverse list in all cases to determine contradictions */	
-examine_close_options_1([],_).
-examine_close_options_1([force(Bool)|T],Res):- !,
+examine_close_options_1(Options,_) :-
+	var(Options),
+	instantiation_error(close/2,2).
+examine_close_options_1([],_) :-
+	!.
+examine_close_options_1([Option|_],_) :-
+	var(Option),
+	instantiation_error(close/2,2).
+examine_close_options_1([force(Bool)|T],Res) :- !,
 	Res = Bool,
 	examine_close_options_1(T,Res).
-examine_close_options_1([Option|_],_):- 
-	domain_error(close_option,Option,open/4,4).
+examine_close_options_1([Option|_],_) :- 
+	domain_error(close_option,Option,close/2,2).
+examine_close_options_1(Options,_) :- 
+	type_error(list,Options,close/2,2).
 
 %-----------------------------------------------------------------------%
 % Character I/O Predicates %
@@ -359,20 +388,24 @@ get_code(C) :-
 %ISO
 get_byte(S_or_A,C) :- 
 	check_open_stream_or_alias(S_or_A,get_byte/2,1,input,Str),
-	(var(C) -> 
+	(	var(C) -> 
 	    file_get_byte(Str,C)
-	 ; (integer(C) -> 
-	        file_get_byte(Str,C1),C1 = C
-	     ;  domain_error(integer_or_variable,C,get_byte/2,2) ) ).
+	;	integer(C), C >= 0, C =< 255 -> 
+		file_get_byte(Str,C1),
+		C1 = C
+	;	type_error(in_byte,C,get_byte/2,2)
+	).
 
 %ISO
 get_byte(C) :- 
-	 stat_flag(CURRENT_INPUT, Str), 
-	 (var(C) -> 
-	    file_get_byte(Str,C)
-	 ; (integer(C) -> 
-        	file_get_byte(Str,C1),C1 = C
-	     ;  domain_error(integer_or_variable,C,get_byte/1,1) ) ).
+	stat_flag(CURRENT_INPUT, Str), 
+	(	var(C) -> 
+		file_get_byte(Str,C)
+	;	integer(C), C >= 0, C =< 255 -> 
+		file_get_byte(Str,C1),
+		C1 = C
+	;	type_error(in_byte,C,get_byte/1,1)
+	).
 
 get(C) :- get0(C0), ( char_blank(C0), !, get(C) ; C = C0 ).
 
@@ -387,7 +420,7 @@ get0(C) :- stat_flag(CURRENT_INPUT, Str),
 skip(C) :- get0(C0), (C0=C ; skip(C)).
 
 %ISO
-put_char(S_or_A,C):- 
+put_char(S_or_A,C) :-
 	check_open_stream_or_alias(S_or_A,put_char/2,1,output,Str),
 	file_put_char(Str,C).
 %	atom_codes(C,L),
@@ -397,7 +430,7 @@ put_char(S_or_A,C):-
 %	file_put(Str,L1).
 
 %ISO
-put_char(C):- 			
+put_char(C) :-
         stat_flag(CURRENT_OUTPUT, Str), 
 	file_put_char(Str,C).
 %	atom_codes(C,L),
@@ -407,18 +440,24 @@ put_char(C):-
 %	put(L1).
 
 %ISO
-put_code(S_or_A,C):- 
+put_code(S_or_A,C) :-
 	check_open_stream_or_alias(S_or_A,put_code/2,1,output,Str),
-	(integer(C) -> 
-	        file_put_code(Str,C)
-	 ;  domain_error(integer_or_variable,C,put_code/2,2) ).
+	(	integer(C) -> 
+		file_put_code(Str,C)
+	;	var(C) ->
+		instantiation_error(put_code/2,2,bound)
+	;	type_error(integer,C,put_code/2,2)
+	).
 
 %ISO
-put_code(C):- 
-	 stat_flag(CURRENT_OUTPUT, Str), 
-	(integer(C) -> 
-	        file_put_code(Str,C)
-	 ;  domain_error(integer_or_variable,C,put_code/1,1) ).
+put_code(C) :-
+	stat_flag(CURRENT_OUTPUT, Str),
+	(	integer(C) ->
+		file_put_code(Str,C)
+	;	var(C) ->
+		instantiation_error(put_code/1,1,bound)
+	;	type_error(integer,C,put_code/1,1)
+	).
 
 
 % TLS: changed definition of put so that stream-based version (w. mutexes) is used. 
@@ -438,8 +477,23 @@ file_exists(F) :-
 	expand_filename(F, EF),
 	machine_file_exists(EF).
 
-put_byte(C):- put(C).
-put_byte(S,C):- file_put(S,C).
+put_byte(C) :- 
+	stat_flag(CURRENT_OUTPUT, Str),
+	(	integer(C), C >= 0, C =< 255 ->
+		file_put(Str,C)
+	;	var(C) ->
+		instantiation_error(put_byte/1,1,bound)
+	;	type_error(byte,C,put_byte/1,1)
+	).
+
+put_byte(S_or_A,C) :-
+	check_open_stream_or_alias(S_or_A,put_byte/2,1,output,Str),
+	(	integer(C), C >= 0, C =< 255 ->
+		file_put(Str,C)
+	;	var(C) ->
+		instantiation_error(put_byte/2,2,bound)
+	;	type_error(byte,C,put_byte/2,2)
+	).
 
 %---------------------%
 % Term I/O Predicates %
@@ -499,6 +553,9 @@ extract_vars([H|R],[V|R1]):-
 
 isoify([],[]).
 isoify([vv(A,V)|R],[A = V|R1]):- 
+	A \== '_', !,
+	isoify(R,R1).
+isoify([_|R],R1):- 
 	isoify(R,R1).
 
 %-------------
@@ -513,9 +570,6 @@ write(S_or_A,Term):-
 	file_write(Ostr,Term).
 
 write(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write(Str, T).
-
-:- import   file_function/3, xsb_stream_lock/1,xsb_stream_unlock/1 from file_io.
-:- import l_write/3 from xsb_writ.
 
 %writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),
@@ -745,7 +799,7 @@ hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
 %----------------------------%
 
 %atom_length(A, N) :- str_len(A, N).
-atom_length(A, N) :-  file_function(ATOM_LENGTH, A, NN), NN=N.
+atom_length(A, N) :-  file_function(ATOM_LENGTH, A, N).
 
 
 atom_chars(A, L) :- atom_chars(A, L).
@@ -829,20 +883,28 @@ int_fromlist([H|T], I) :- 	% It shouldn''t be empty.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % ISO
-atom_concat(One,Two,Three):- 
-	(atom(One) -> 
-	    (atom(Two) -> 
-	       concat_atom([One,Two],Three)
-	     ; (var(Two) -> 
-	           (atom(Three) -> 
-		   atom_disassemble(Three,One,Two)
-	             ;  instantiation_error(atom_concat/2,'2 or 3',ground) )
-	         ; type_error(atom,Two,atom_concat/3,2) ) )
-               ; var(One) -> 
-	        (atom(Three) -> 
-	            atom_disassemble(Three,One,Two)
-	          ; instantiation_error(atom_concat/2,'1 or 3',ground) )
-	       ; type_error(atom,Two,atom_concat/3,1) ).
+atom_concat(One,Two,Three) :-
+	(	atom(One) ->
+		(	atom(Two) ->
+			concat_atom([One,Two],Three)
+		;	var(Two) ->
+			(	atom(Three) ->
+				atom_disassemble(Three,One,Two)
+			;	var(Three) ->
+				instantiation_error(atom_concat/3,3,ground)
+			;	type_error(atom,Three,atom_concat/3,3)
+			)
+		;	type_error(atom,Two,atom_concat/3,2)
+		)
+	;	var(One) ->
+		(	atom(Three) ->
+			atom_disassemble(Three,One,Two)
+		;	var(Three) ->
+			instantiation_error(atom_concat/3,3,ground)
+		;	type_error(atom,Three,atom_concat/3,3)
+		)
+	;	type_error(atom,One,atom_concat/3,1)
+	).
 
 % TLS: I dont think this mode will be used much, so I'm not bothering
 % to make it efficient.
@@ -854,7 +916,26 @@ atom_disassemble(Three,One,Two):-
 	atom_codes(One,OneL),
 	atom_codes(Two,TwoL).
 
-char_code(Char,Code):- atom_codes(Char,[Code]).
+% PM: If performance of this predicate become critical for some application,
+% implementing it in C might help by making error checking faster
+char_code(Char,Code) :-
+	(	atom(Char),
+		atom_length(Char, 1) ->
+		(	var(Code) ->
+			atom_codes(Char,[Code])
+		;	integer(Code) ->
+			atom_codes(Char,[Code])
+		;	type_error(integer,Code,char_code/2,2)
+		)
+	;	var(Char) ->
+		(	integer(Code) ->
+			atom_codes(Char,[Code])
+		;	var(Code) ->
+			instantiation_error(char_code/2,2)
+		;	type_error(integer,Code,char_code/2,2)
+		)
+	;	type_error(character,Char,char_code/2,1)
+	).
 
 			/********************/
 			/*   TERM READING   */
@@ -882,47 +963,89 @@ expand_term(Term, Term).
 hilog(HS) :- 
 	add_hilog_symbol(HS).
 
-
-op(Priority, Specifier, OPs) :- 
-	( (op_priority(Priority), op_specifier(Specifier)) ->
-		( ok_op(OPs) -> add_ops(Priority, Specifier, [OPs])
-		; ok_ops(OPs) -> add_ops(Priority, Specifier, OPs)
-	%--- From here on start the error conditions of this predicate ---
-		; ( atom(OPs) -> L = [OPs] ; OPs = [_|_] -> L = OPs ) ->
-			%--- From here on we deal only with lists (proper or improper) ---
-			( is_list(L) ->
-				( all_atoms(L) -> 
-					abort('Not permitted to change the meaning of the "," operator')
-				; contains_var(L) ->
-				        instantiation_error(op/3,3,bound)
-				; domain_error(atom_or_atomList,Ops,op/3,3)
-				)
-			; instantiation_error(op/3,3,bound)
-			)
-		; domain_error(atom_or_atomList,Ops,op/3,3)
-		)
-	; var(Priority) -> 
-		instantiation_error(op/3,1,bound)
-	; var(Specifier) -> 
-		instantiation_error(op/3,2,bound)
-	; \+ integer(Priority) ->
-	        type_error(integer,Priority,op/3,1)
-	; \+ atom(Specifier) ->
-	        type_error(atom,Specifier,op/3,2)
-	; integer(Priority), (Priority < 0 ; Priority > 1200) ->
-	        domain_error(operator_priority,Priority,op/3,2)
-	; \+ op_specifier(Specifier) ->
-	        domain_error(operator_specifier,Specifier,op/3,2)
-	; abort('Argument 2 of op/3 is not compatible with current set of operators')
+op(Priority, Specifier, Operators) :-
+	check_operator_priority(Priority),
+	check_operator_specifier(Specifier),
+	check_operator_names(Operators, Priority, Specifier),
+	(	atom(Operators) ->
+		add_ops(Priority, Specifier, [Operators])
+	;	add_ops(Priority, Specifier, Operators)
 	).
 
-ok_ops(L) :-
-	var(L), !, fail.	% This captures improper lists
-ok_ops([]).
-ok_ops([OP|OPs]) :-		% This captures lists containing 
-	ok_op(OP), ok_ops(OPs).	% ',' or a non-atom (i.e variables)
+check_operator_priority(Priority) :-
+	(	var(Priority) ->
+		instantiation_error(op/3, 1, bound)
+	;	\+ integer(Priority),
+		type_error(integer, Priority, op/3, 1)
+	;	(Priority < 0; Priority > 1200) ->
+		domain_error(operator_priority, Priority, op/3, 1)
+	;	true
+	).
 
-ok_op(OP) :- atom(OP), OP \== ','.
+check_operator_specifier(Term) :-
+	(	var(Term) ->
+		instantiation_error(op/3, 2, bound)
+	;	\+ atom(Term) ->
+		type_error(atom, Term, op/3, 2)
+	;	operator_specifier(Term, _) ->
+		true
+	;	domain_error(operator_specifier, Term, op/3, 2)
+	).
+
+operator_specifier(fx, prefix).
+operator_specifier(fy, prefix).
+operator_specifier(xfx, infix).
+operator_specifier(xfy, infix).
+operator_specifier(yfx, infix).
+operator_specifier(xf, postfix).
+operator_specifier(yf, postfix).
+
+check_operator_names(Term, Priority, Specifier) :-
+	(	var(Term) ->
+		instantiation_error(op/3, 3, bound)
+	;	forbidden_operator(Term, Priority, Specifier, Permission) ->
+		permission_error(Permission, operator, Term, op/3)
+	;	atom(Term) ->
+		true
+	;	contains_var(Term) ->
+		instantiation_error(op/3, 3, bound)	
+	;	\+ is_list(Term) ->
+		type_error(list, Term, op/3, 3)
+	;	\+ (member(Operator, Term), \+ check_operator_name(Operator, Priority, Specifier))
+	).
+
+forbidden_operator((','), _, _, modify) :-
+	!.
+forbidden_operator(('{}'), _, _, create) :-
+	!.
+forbidden_operator(('|'), Priority, Specifier, create) :-
+	!,
+	(	Priority \== 0, Priority \== 1105 ->
+		true
+	;	Specifier \== xfy
+	).
+forbidden_operator(Operator, _, Specifier, create) :-
+	atom(Operator),
+	(	operator_specifier(Specifier, infix),
+		current_op(_, PostfixSpecifier, Operator),
+		operator_specifier(PostfixSpecifier, postfix) ->
+		true
+	;	operator_specifier(Specifier, postfix),
+		current_op(_, InfixSpecifier, Operator),
+		operator_specifier(InfixSpecifier, infix) ->
+		true
+	;	fail
+	).
+
+check_operator_name(Term, Priority, Specifier) :-
+	(	var(Term) ->
+		instantiation_error(op/3, 3, bound)
+	;	forbidden_operator(Term, Priority, Specifier, Permission) ->
+		permission_error(Permission, operator, Term, op/3)
+	;	atom(Term) ->
+		true
+	;	type_error(atom, Term, op/3, 3)
+	).
 
 /*------------------------------------------------------------------*/
 /* add index declaration */
@@ -1043,6 +1166,41 @@ table_1(Ps):-
 	add_table(Ps).
 table_1(Pred):- 
 	domain_error(comma_list_or_predicate_indicator,Pred,(table)/1,1).
+
+:- import mpa_to_skel/2 from file_op.
+:- import collect_orders_from_indexes/4 from cp_opt.
+:- import module_of_term/2 from machine.
+:- import concat_atom/3 from string.
+:- import abolish_table_pred/1 from tables.
+:- export table_index/2, abolish_table_index_pred/1.
+
+:- dynamic table_index_predicates/2.
+
+%% handle table_index declarations for abolish_table_index_pred.
+table_index(PredSpecs,IndexSpec) :-
+	comma_member(PSpec,PredSpecs),
+	functor(PSpec,Pred,Arity),
+	collect_orders_from_indexes(IndexSpec,Arity,_,IndexOrds),
+	module_of_term(PSpec,Module),
+	member(IndexOrd,IndexOrds),
+	concat_atom([Pred,'$'],PredD),
+	concat_atom([PredD|IndexOrd],'_',NPredName),
+	functor(NTermU,NPredName,Arity),
+	term_new_mod(Module,NTermU,NTerm),
+	(table_index_predicates(PSpec,NTerm)
+	 ->	true
+	 ;	assert(table_index_predicates(PSpec,NTerm))
+	),
+	fail.
+table_index(_PredSpecs,_IndexSpec).
+		       
+abolish_table_index_pred(PredSpec) :-
+	mpa_to_skel(PredSpec,RPredSpec),
+	table_index_predicates(RPredSpec,TPredSpec),
+	abolish_table_pred(TPredSpec),
+	fail.
+abolish_table_index_pred(_PredSpec).
+ 
 
 exec_table_options(Options,PredList) :- !,
 	check_ground(Options,(table)/1,1),
@@ -1359,9 +1517,10 @@ call(G,A1,A2,A3,A4,A5,A6,A7,A8,A9) :- calln(9,A1,A2,A3,A4,A5,A6,A7,A8,A9,G).
 call(G,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) :- calln(10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,G).
 
 call_tv(Call,Ans):-
+	xwam_state(2,DelayReg1),
         call(Call),
-	xwam_state(2,DelayReg),
-        (DelayReg =:= 0
+	xwam_state(2,DelayReg2),
+        (DelayReg1 =:= DelayReg2
          ->     Ans = true
          ;      Ans = undefined
         ).
@@ -1442,7 +1601,9 @@ call_goal_cut_trans(Goal,TGoal,Cutpoint) :-
 requires_call_cut_transforming(X) :-
 	(var(X)
 	 ->	true
-	 ;	requires_call_cut_transforming1(X)
+	 ; callable(X)
+	 ->	requires_call_cut_transforming1(X)
+	 ;	type_error(callable,X,call/1,1)
 	).
 
 requires_call_cut_transforming1([_|_]).
@@ -1468,8 +1629,11 @@ call_goal_cut_transform(Goal,TGoal,Cutpoint) :-
 	 ;	TGoal = Goal
 	).
 
+call_goal_cut_transform1(Goal,_,_) :-
+	\+callable(Goal),
+	type_error(callable,Goal,call/1,1).	 
 call_goal_cut_transform1([X|Y],Z,_) :- hack_consult([X|Y],Z).	% a HACK!
-call_goal_cut_transform1(!,'_$cutto'(Cutpoint),Cutpoint).
+call_goal_cut_transform1('!','_$cutto'(Cutpoint),Cutpoint).
 call_goal_cut_transform1('_$load_undef'(X),Y,_) :-
 	(atom(X) -> conname(X,Y1),Y=Y1 ; Y=X).
 call_goal_cut_transform1((A,B),(Na,Nb),Cutpoint) :-
@@ -1479,8 +1643,8 @@ call_goal_cut_transform1((A;B),';;'(Na,Nb),Cutpoint) :-
 	call_goal_cut_transform(A,Na,Cutpoint),
 	call_goal_cut_transform(B,Nb,Cutpoint).
 call_goal_cut_transform1((A->B),(Na->Nb),Cutpoint) :-
-	'_$savecp'(Condcutpoint),
-	call_goal_cut_transform(A,Na,Condcutpoint),
+	Na = ('_$savecp'(Condcutpoint),Naa),
+	call_goal_cut_transform(A,Naa,Condcutpoint),
 	call_goal_cut_transform(B,Nb,Cutpoint).
 
 hack_consult([X],consult(X)) :- var(X),!.
@@ -1552,7 +1716,13 @@ repeat :- true; repeat.
 
 '_$cutto'(X) :- '_$cutto'(X).
 
-'_$savecp'(X) :- '_$savecp'(X).
+/* This following is required because the gettbreg instruction, which
+would be generated without the explicit =/2, is odd.  It only sets the
+register, not unifying the variable; and somewhere it seems to be
+using in a context where the register is invalid.  Anyway this way
+forces a use of the putpbreg, and returns the CP displacement as
+desired. */
+'_$savecp'(X) :- '_$savecp'(Y),X=Y.
 
 forall(G1,G2) :-
 	\+ (call(G1), \+call(G2)).
@@ -1586,7 +1756,13 @@ false :- fail.
 
 halt :- halt.
 
-halt(Code) :- sys_exit(Code).
+halt(Code) :-
+	(	integer(Code) ->
+		sys_exit(Code)
+	;	var(Code) ->
+		instantiation_error(halt/1,1)
+	;	type_error(integer,Code,halt/1,1)
+	).
 
 			/***********************/
 			/*   TERM COMPARISON   */
@@ -1730,9 +1906,6 @@ check_statistics_input(atom,STAT_ATOM):- !.
 check_statistics_input(X,_):-
 	domain_error(statisticsInputDomain,X,statistics/1,1).
 
-:- export statistics/2.
-:- import sys_syscall/5 from machine.
-
 statistics_2_trans(runtime,RUNTIME):- !.
 statistics_2_trans(walltime,WALLTIME):- !.
 statistics_2_trans(total_memory,TOTALMEMORY):- !.
@@ -1740,13 +1913,17 @@ statistics_2_trans(gl,GLMEMORY):- !.
 statistics_2_trans(tc,TCMEMORY):- !.
 statistics_2_trans(tablespace,TABLESPACE):- !.
 statistics_2_trans(shared_tablespace,SHARED_TABLESPACE):- !.
-statistics_2_trans(trieassert,TRIEASSERTMEM):- !.
+statistics_2_trans(trie\_assert,TRIEASSERTMEM):- !.  % not yet documented
 statistics_2_trans(heap,HEAPMEM):- !.
 statistics_2_trans(choice_point,CPMEM):- !.
 statistics_2_trans(trail,TRAILMEM):- !.
 statistics_2_trans(local,LOCALMEM):- !.
+statistics_2_trans(incomplete_tables,OPENTABLECOUNT):- !.
+% open_tables deprecated
 statistics_2_trans(open_tables,OPENTABLECOUNT):- !.
 statistics_2_trans(atoms,ATOMMEM):- !.
+statistics_2_trans(idg,IDG_COUNTS):- !.
+statistics_2_trans(table_ops,TABLE_OPS):- !.
 statistics_2_trans(X,_):-
 	domain_error(statisticsInputDomain,X,statistics/2,1).
 
@@ -1778,11 +1955,15 @@ statistics_1(TRAILMEM,R1):-
 	sys_syscall(STATISTICS_2,_RES,TRAILMEM,R1,_R2).
 statistics_1(LOCALMEM,R1):- 
 	sys_syscall(STATISTICS_2,_RES,LOCALMEM,R1,_R2).
-statistics_1(OPENTABLECOUNT,R1):- 
-	sys_syscall(STATISTICS_2,_RES,OPENTABLECOUNT,R1,_R2).
+statistics_1(OPENTABLECOUNT,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,OPENTABLECOUNT,R1,R2).
 statistics_1(ATOMMEM,R1):- 
 	sys_syscall(STATISTICS_2,_RES,ATOMMEM,R1,_R2).
-
+%:- import idg/2 from usermod.
+statistics_1(IDG_COUNTS,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,IDG_COUNTS,R1,R2).
+statistics_1(TABLE_OPS,[SubsGoalChkIns,SubsGoalUniq,VarGoalChkIns,VarGoalUniq,AnsChkIns,AnsUniq]):- 
+	sys_syscall(STATISTICS_2,_RES,TABLE_OPS,SubsGoalChkIns,SubsGoalUniq,VarGoalChkIns,VarGoalUniq,AnsChkIns,AnsUniq).
 
 %%	time(+Goal)
 %
@@ -1814,23 +1995,35 @@ time(Goal) :-
 	).
 
 
-get_date(_Year,_Month,_Day,_Hour,_Minute,_Second) :-
+get_date_internal(_Local,_Year,_Month,_Day,_Hour,_Minute,_Second) :-
 	'_$builtin'(GET_DATE).
+get_utcdate(Year,Month,Day,Hour,Minute,Second) :-
+	get_date_internal(0,Year,Month,Day,Hour,Minute,Second).
+get_localdate(Year,Month,Day,Hour,Minute,Second) :-
+	get_date_internal(1,Year,Month,Day,Hour,Minute,Second).
+get_date(Year,Month,Day,Hour,Minute,Second) :-
+	get_utcdate(Year,Month,Day,Hour,Minute,Second).
+
 
 now(When) :-
 	(   var(When)
 	->  get_date(Y,Mo,D,H,Mi,S),
 	    concat_atom([Y,'/',Mo,'/',D,' ',H,':',Mi,':',S],When)
-	;   throw(error(instantiation_error,
-			('Error: now(-When) called with bound var: ',When)))
+	;   throw(error(instantiation_error,context(('Error: now(-When) called with bound var: ',When))))
 	).
 
 datime(Datime) :-
 	(   var(When)
 	->  get_date(Y,Mo,D,H,Mi,S),
 	    Datime = datime(Y,Mo,D,H,Mi,S)
-	;   throw(error(instantiation_error,
-		('Error: datime(-Datime) called with bound var: ',When)))
+	;   throw(error(instantiation_error,context(('Error: datime(-Datime) called with bound var: ',When))))
+	).
+
+local_datime(Datime) :-
+	(   var(When)
+	->  get_localdate(Y,Mo,D,H,Mi,S),
+	    Datime = datime(Y,Mo,D,H,Mi,S)
+	;   throw(error(instantiation_error,context(('Error: datime(-Datime) called with bound var: ',When))))
 	).
 
 %-----------------------------------------------------------------------------%
@@ -1879,18 +2072,24 @@ arity_integer(N) :-
 % 255 (representation).  But it seems pedantic to add unnecessary ISO
 % checks. 
 check_arity_integer(N,Pred,Arg) :-
-	(integer(N) -> 
-	    (N >= 0, N =< 255 -> 
-		true 
-	     ;  domain_error(arity_integer,N,Pred,Arg) )
-         ; type_error(integer,N,Pred,Arg) ).
+	(	integer(N) -> 
+		(	N >= 0, N =< 255 -> 
+			true 
+		;	N < 0 ->
+			domain_error(not_less_than_zero,N,Pred,Arg)
+		;	representation_error(max_arity,Pred,Arg)
+		)
+	;	var(N) ->
+		instantiation_error(Pred,Arg)
+	;	type_error(integer,N,Pred,Arg)
+	).
 
 
 %  all_atoms(+List)
 %  Given a proper list List determines whether it contains atoms only.
 
-all_atoms([]).
-all_atoms([Atom|Atoms]) :- atom(Atom), all_atoms(Atoms).
+%all_atoms([]).
+%all_atoms([Atom|Atoms]) :- atom(Atom), all_atoms(Atoms).
 
 %  contains_var(+List)
 %  Given a proper list List determines whether it contains a variable
@@ -1906,10 +2105,28 @@ contains_var([_|T]) :- contains_var(T).
 length([], N, N).
 length([_|R], M, N) :- N1 is M+1, length(R, N1, N).
 
-abort :- misc_error('Aborting...').
+abort :- 
+%    conget('_$break_level',Level),
+    get_interpreter_index(Level),
+    (Level == 0 -> 
+       misc_error('Aborting...')
+     ; abort_all('Aborting...') ). 
 
 %  abort/1
-abort(Msg) :- misc_error(Msg).
+abort(Msg) :- 
+%    conget('_$break_level',Level),
+    get_interpreter_index(Level),
+    (Level == 0 -> 
+       misc_error(Msg)
+     ; abort_all(Msg) ). 
+
+abort_all(Msg):- 
+    get_interpreter_index(Level),
+%    conget('_$break_level',Level),
+    misc_error(Msg,Level).
+
+abort_level(Msg):- 
+    misc_error(Msg).
 
 console_write(X):- 
 	message(X,STDFDBK).
@@ -1917,9 +2134,9 @@ console_writeln(X):-
 	messageln(X,STDFDBK).
 
 error_write(X):- 
-	message(X,STDERR).
+	message(['++Error[XSB]: ',X],STDERR).
 error_writeln(X):- 
-	messageln(X,STDERR).
+	messageln(['++Error[XSB]: ',X],STDERR).
 
 warning(Message) :- 
 	warning(Message,'Runtime/P').
@@ -1994,6 +2211,13 @@ call_expose(Goal) :-
 
 multifile([P/A, _T1, T2]) :-	% T1 is not used
 	functor(TT1, P, A),	% TT1 is in usermod
+	('_$multifile'(TT1)
+	 ->	true
+	 ; \+ clause(TT1,_)
+	 ->	true
+	 ;	concat_atom([P,'/',A],Pred),
+		permission_error('Declare Multifile',Pred,'Predicate already contains clauses','multifile/3')
+	),
 	TT1 =.. [_|Args],
 	T2 =.. [_|Args],	% T2 still belongs to the original module
 	(clause(TT1, T2)
@@ -2019,7 +2243,6 @@ multifile([P/A, _T1, T2]) :-	% T1 is not used
 use_module(Mod,Syms):- 
 	import(from(Syms, Mod)).
 
-:- export use_module/3.
 use_module(Mod,Syms,_):- 
 	import(from(Syms, Mod)).
 
@@ -2099,9 +2322,13 @@ catch(_Goal,Catcher,Handler) :-
         ).
 
 throw(Ball) :-
+	(	var(Ball) ->
+		Ball = error(instantiation_error, context('Error: non-instantiated exception term in call to throw/1', throw/1))
+	;	true
+	),
 	xsb_thread_self(T),
-        asserta('$$exception_ball'(T,Ball)),
-        '$$unwind_stack'. % unwind_stack xsb_exits if no catcher was found
+	asserta('$$exception_ball'(T,Ball)),
+	'$$unwind_stack'.	% unwind_stack xsb_exits if no catcher was found
 
 :- import return_memory_exception/2 from error_handler.
 get_exception_ball(T,Ball):- '$$exception_ball'(T,Ball),!.
@@ -2109,7 +2336,8 @@ get_exception_ball(_T,E):-
 %	stat_flag(MEMORY_ERROR_FLAG,Flag),
 	stat_flag(95,Flag),
 	Flag > 0,
-	return_memory_exception(Flag,E).
+	return_memory_exception(Flag,E),
+	stat_set_flag(95,0).
 
 ?- dynamic_code_function(INIT_STANDARD_CGC_BLOCKS,_,_,_,_).
 
@@ -2242,44 +2470,192 @@ call_attribute_handlers([Mod,Attr|Rest],Value) :-
 	                       call_attribute_handlers/2,1) ) ),
 call_attribute_handlers(Rest,Value).	
 
-:- dynamic '_$timed_call_handler'/2.
-:- export  '_$timed_call_handler'/2.
-:- import check_pos_integer/3 from error_handler.
+:- dynamic '_$timed_call_rep_handler'/3.
+:- dynamic '_$timed_call_max_handler'/5.
+:- dynamic '_$timed_call_rep_max_handler'/7.
+:- import interpreter_index_hook/1 from usermod.
+:- dynamic interpreter_index_hook/1.
 
-timed_call(Call,Interval,Handler):- timed_call(Call,Interval,Handler,nonesting).
+timed_call(Call,Options):- 
+	check_timed_call_options(Options,Rep_interval,Rep_handler,Max_interval,Max_handler,Nesting),
+        (Rep_interval = 0,Max_interval \== 0 -> 
+	   timed_call_max(Call,Max_interval,Max_handler,Nesting)
+   	 ; (Rep_interval \== 0,Max_interval == 0 -> 
+	         timed_call_rep(Call,Rep_interval,Rep_handler,Nesting)
+               ; timed_call_rep_max(Call,Rep_interval,Rep_handler,Max_interval,Max_handler,Nesting)) ).
 
-timed_call(Call,Interval,Handler,Options):- 
-	(Options == nesting -> Nesting = true ; Nesting = false),
-	(integer(Interval),Interval > 0 -> 
-	    timed_call_1(Call,Interval,Handler,0,Nesting)
-	  ; (nonvar(Interval),Interval = repeating(Int) -> 
-	       timed_call_1(Call,Int,Handler,Int,Nesting)
-	     ; check_pos_integer(Interval,timed_call/3,2) ) ).
+check_timed_call_options(Options,Rep_interval,Rep_handler,Max_interval,Max_handler,Nesting):- 
+        check_nonvar_list(Options,timed_call/2,2),
+	(memberchk(nesting,Options) -> Nesting = true ; Nesting = false),
+	(memberchk(max(I1,H1),Options) -> 
+	   check_pos_integer(I1,timed_call/2,2),
+	   check_callable(H1,timed_call/2,2),
+	   Max_interval = I1, Max_handler = H1
+	 ; Max_interval = 0, Max_handler = true),
+	(memberchk(repeating(I2,H2),Options) -> 
+	   check_pos_integer(I2,timed_call/2,2),
+	   check_callable(H2,timed_call/2,2),
+	   Rep_interval = I2, Rep_handler = H2
+	 ; Rep_interval = 0, Rep_handler = true),
+	(Rep_interval = 0,Max_interval = 0 -> 
+	   misc_error('Either maximum or repeating intervals/handlers must be specified in timed_call/2')
+	 ; true).
 
-% need to make assert faster.
-timed_call_1(Call,Interval,Handler,Repeating,Nesting):- 
-	('_$timed_call_handler'(_,_) -> 
+% need to make assert faster
+timed_call_rep(Call,Rep_interval,Rep_handler,Nesting):- 
+%	writeln(timed_call_rep(Call,Rep_interval,Rep_handler,Nesting)),
+	get_interpreter_index(Index),
+        (timed_call_handler_is_active(Index) -> 
+            (Nesting == true ->
+                  call(Call)
+              ;   permission_error(nested_call,predicate,timed_call(Call),'timed_call/2') )
+          ;
+            assert('_$timed_call_rep_handler'(Index,Rep_handler,Rep_interval)),
+            start_sleeper_thread(Rep_interval),
+            call_cleanup(Call,retractall('_$timed_call_rep_handler'(Index,_Handler,_Interval))) ).
+timed_call_max(Call,Max_interval,Max_handler,Nesting):- 
+%	writeln(timed_call_max(Call,Max_interval,Max_handler,Nesting)),
+	get_interpreter_index(Index),
+        (timed_call_handler_is_active(Index) -> 
+            (Nesting == true ->
+                  call(Call)
+              ;   permission_error(nested_call,predicate,timed_call(Call),'timed_call/2') )
+          ;
+	    machine:stat_walltime(Walltime),
+            assert('_$timed_call_max_handler'(Index,Max_handler,Max_interval,Walltime,Max_interval)),
+            start_sleeper_thread(Max_interval),
+            call_cleanup(Call,retractall('_$timed_call_max_handler'(Index,_Handler,_Int,_Walltime,_Orig_intl))) ).
+timed_call_rep_max(Call,Rep_int,Rep_handler,Max_int,Max_handler,Nesting):- 
+%writeln(timed_call_rep_max(Call,Rep_int,Rep_handler,Max_int,Max_handler,Nesting)),
+	get_interpreter_index(Index),
+        (timed_call_handler_is_active(Index) -> 
    	    (Nesting == true -> 
 	          call(Call)
-              ;   permission_error(nested_call,predicate,timed_call(Call),'timed_call/3'))
+              ;   permission_error(nested_call,predicate,timed_call(Call),'timed_call/2'))
 	  ; 
-	    assert('_$timed_call_handler'(Handler,Repeating)),
-	    start_sleeper_thread(Interval),
-	    call_cleanup(Call,retractall('_$timed_call_handler'(_Handler,_Interval))) ).
+            machine:stat_walltime(Walltime),
+	    assert('_$timed_call_rep_max_handler'(Index,Rep_handler,Rep_int,Max_handler,Max_int,Walltime,Max_int)),
+	    start_sleeper_thread(Rep_int),
+	    call_cleanup(Call,retractall('_$timed_call_rep_max_handler'(Index,_Rep_hand,_Rep_int,_Max_hand,_Max_int,
+	                                                                _Walltime,_Orig_int))) ).
 
-:- export bounded_call/4.
+get_interpreter_index(Index) :-  %% for apps that have their own command loop
+        interpreter_index_hook(Hook),
+	arg(1,Hook,Index),
+        call(Hook),
+	!.
+get_interpreter_index(Index):- conget('_$break_level',Index). 
+
+timed_call_handler_is_active(Index):- 	'_$timed_call_rep_max_handler'(Index,_,_,_,_,_,_),!.
+timed_call_handler_is_active(Index):- 	'_$timed_call_rep_handler'(Index,_,_),!.
+timed_call_handler_is_active(Index):- 	'_$timed_call_max_handler'(Index,_,_,_,_),!.
+
+%:- import writeln/1 from standard.
+timer_interrupt_trap(One,_Two) :-
+%	writeln(timer_int),
+        get_interpreter_index(Index),
+        '_$timed_call_rep_handler'(Index,Handler,Interval),!,
+        timed_call_handler(Handler),
+        (Interval > 0 ->
+            start_sleeper_thread(Interval)
+	 ; true),!,
+	 call_c(One).
+timer_interrupt_trap(_One,_Two) :-
+        get_interpreter_index(Index),
+        '_$timed_call_max_handler'(Index,Handler,_Max,_Walltime,_Orig),!,
+%	writeln('_$timed_call_max_handler'(Index,Handler,_Max,_Walltime,_Orig)),
+        timed_call_handler(Handler).
+timer_interrupt_trap(One,_Two) :- 
+        get_interpreter_index(Index),
+	'_$timed_call_rep_max_handler'(Index,Rep_handler,Rep_int,Max_handler,Max_int,_Walltime,Orig),
+%	writeln('_$timed_call_rep_max_handler'(Rep_handler,Rep_int,Max_handler,Max_int,Walltime,Orig)),
+	New_Max is Max_int - Rep_int,
+	(New_Max =< 0 -> 
+	      timed_call_handler(Max_handler)
+	    ; 
+	      timed_call_handler(Rep_handler),
+	      retract('_$timed_call_rep_max_handler'(Index,_Handler,_Rep_int,Max_handler,_Max_int,_Walltime,Orig)),
+	      machine:stat_walltime(NewWalltime),
+	      assert('_$timed_call_rep_max_handler'(Index,Rep_handler,Rep_int,Max_handler,New_Max,NewWalltime,Orig)),
+              start_sleeper_thread(Rep_int)	
+	  ; true),!,
+	call_c(One).
+timer_interrupt_trap(_One,_Two):- 
+%	writeln((_One,_Two)),
+	call_c(_One).
+%timer_interrupt_trap(One,_Two) :- 
+%	call_c(One).
+
+timed_call_handler(Handler):- call(Handler),!.
+%call_handler(_).
+
+current_timed_call(Index,[repeating(Rep_interval,Rep_handler)]):-
+%	get_interpreter_index(Index),
+	'_$timed_call_rep_handler'(Index,Rep_handler,Rep_interval).
+current_timed_call(Index,[max(Max_interval/Orig_interval,Max_handler)]):-
+%	get_interpreter_index(Index),
+       '_$timed_call_max_handler'(Index,Max_handler,Max_interval,_Walltime,Orig_interval).
+current_timed_call(Index,[repeating(Rep_interval,Rep_handler),max(Max_interval,Max_handler)]):-
+%	get_interpreter_index(Index),
+       '_$timed_call_rep_max_handler'(Index,Rep_handler,Rep_interval,Max_handler,Max_interval,_Walltime,_Orig).
+
+% needs to be exported for use in call_cleanup handlers.
+remove_timed_call_state(Index):- 
+	retractall('_$timed_call_rep_handler'(Index,_,_)),
+	retractall('_$timed_call_max_handler'(Index,_,_,_,_)),
+	retractall('_$timed_call_rep_max_handler'(Index,_,_,_,_,_,_)).
+remove_timed_call_state(_Index).
+
+timed_call_modify(Options):- 
+	check_timed_call_options(Options,Rep_int,Rep_handl,Max_int,Max_handl,_Nesting),
+%	writeln(check_timed_call_options(Options,Rep_int,Rep_handl,Max_int,Max_handl,_Nesting)),
+	get_interpreter_index(Index),
+	(Index = 0 -> permission_error(modify,predicate,timed_call,'timed_call/2') ; true),
+	UpIndex is Index -1,
+%	writeln(upindex(UpIndex)),
+	remove_timed_call_state(UpIndex),
+%	writeln(remove_timed_call_state(UpIndex)),
+        (Rep_int = 0,Max_int \== 0 -> 
+	    machine:stat_walltime(Walltime),
+%            writeln('_$timed_call_max_handler'(UpIndex,Max_handl,Max_int,Walltime,Orig_interval)),
+            assert('_$timed_call_max_handler'(UpIndex,Max_handl,Max_int,Walltime,Max_int))
+   	 ; (Rep_int \== 0,Max_int == 0 -> 
+%               writeln('_$timed_call_rep_handler'(UpIndex,Rep_handl,Rep_int)),
+               assert('_$timed_call_rep_handler'(UpIndex,Rep_handl,Rep_int))
+            ;  machine:stat_walltime(Walltime),
+%	       writeln('_$timed_call_rep_max_handler'(UpIndex,Rep_handl,Rep_int,Max_handl,Max_int,Walltime,Orig)),
+	       assert('_$timed_call_rep_max_handler'(UpIndex,Rep_handl,Rep_int,Max_handl,Max_int,Walltime,Max_int)) ) ).
+
+timed_call_cancel:- 
+	get_interpreter_index(Index),
+	Cancel_index is Index-1,
+	timed_call_cancel_1(Cancel_index),
+	cancel_sleeper_thread.
+
+timed_call_cancel_1(Index):- 
+	'_$timed_call_rep_handler'(Index,_Rep_handler,_Rep_interval),!,
+	retractall('_$timed_call_rep_handler'(Index,_,_)).
+%        assert('_$timed_call_max_handler'(Index,true,0,0,0)).
+timed_call_cancel_1(Index):- 
+	'_$timed_call_max_handler'(Index,_Max_handler,_Max_interval,_Walltime,_Orig_interval),!,
+	retractall('_$timed_call_max_handler'(Index,_,_,_,_)).
+%        assert('_$timed_call_max_handler'(Index,true,0,0,0)).
+timed_call_cancel_1(Index):- 
+        '_$timed_call_rep_max_handler'(Index,_Rep_handler,_Rep_int,_Max_handler,_Max_int,_Walltime,_Orig),!,
+	retractall('_$timed_call_rep_max_handler'(Index,_,_,_,_,_,_)).
+%        assert('_$timed_call_max_handler'(Index,true,0,0,0)).
+
 bounded_call(Goal,MaxMemory,MaxTime,Handler):-
 	check_pos_integer(MaxMemory,bounded_call/4,2),
 	check_pos_integer(MaxTime,bounded_call/4,3),
 	cputime(Before),
-	timed_call(Goal,repeating(1000),bounded_call_handler(MaxMemory,Before,MaxTime,Handler)).
+	timed_call(Goal,[repeating(1000,bounded_call_handler(MaxMemory,Before,MaxTime,Handler))]).
 
-:- export bounded_call/3.
 bounded_call(Goal,MaxMemory,MaxTime):-
 	check_pos_integer(MaxMemory,bounded_call/3,2),
 	check_pos_integer(MaxTime,bounded_call/3,3),
 	cputime(Before),
-	timed_call(Goal,repeating(1000),bounded_call_abort(MaxMemory,Before,MaxTime)).
+	timed_call(Goal,[repeating(1000,bounded_call_abort(MaxMemory,Before,MaxTime))]).
 
 bounded_call_abort(MaxMemory,Before,MaxTime) :-
 	sys_syscall(STATISTICS_2,_RES,TOTALMEMORY,Alloc,_Used),
@@ -2304,7 +2680,7 @@ bounded_call_handler(MaxMemory,Before,MaxTime,Handler) :-
 %-----------------
 
 memory_bounded_call(Goal,MaxMemorySize,Handler) :-
-	timed_call(Goal,repeating(1000),handle_timer_interrupt(MaxMemorySize,Handler)).
+	timed_call(Goal,[repeating(1000,handle_timer_interrupt(MaxMemorySize,Handler))]).
 
 handle_timer_interrupt(MaxMemorySize,Handler) :-
 	xwam_state(5,CurMemorySize),

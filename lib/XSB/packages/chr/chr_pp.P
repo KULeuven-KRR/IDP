@@ -83,7 +83,7 @@
 :- op(1180,xfx,<=>).
 :- op(500,yfx,#).
 :- op(1150,fx,constraints).
-:- op(1100,xfx,'|').
+%:- op(1100,xfx,'|').
 :- op(1100,xfx,\).
 
 %% dummy implementations

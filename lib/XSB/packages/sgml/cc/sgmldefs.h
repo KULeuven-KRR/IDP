@@ -79,7 +79,7 @@ typedef unsigned char ichar;		/* input character */
 #define FALSE 0
 #endif
 
-#define LF 10
-#define CR 13
+#define LINEFEED 10
+#define CARRIAGERETURN 13
 
 #endif /*SGMLDEFS_H_INCLUDED*/

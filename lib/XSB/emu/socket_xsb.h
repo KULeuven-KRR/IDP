@@ -37,6 +37,7 @@
 #define SOCKET_OP_FAILED(sockfd)   sockfd==SOCKET_ERROR
 #define IS_IP_ADDR(string)    	   inet_addr(string) != INADDR_NONE
 #define XSB_SOCKET_ERRORCODE	   WSAGetLastError()
+#define XSB_SOCKET_ERRORCODE_RESET WSASetLastError(0)
 #define FillWithZeros(addr)    	  ZeroMemory(&addr, sizeof(addr));
 #ifndef EINPROGRESS
 #define EINPROGRESS               WSAEINPROGRESS
@@ -54,12 +55,13 @@
 #define SOCKET 	        int
 #define SOCKADDR_IN 	struct sockaddr_in /* in windows, but not Unix */
 #define PSOCKADDR       struct sockaddr *  /* in windows, but not Unix */
-#define closesocket    	       	  close
-#define XSB_SOCKET_ERRORCODE   	  errno
-#define BAD_SOCKET(sockfd)        sockfd<0
-#define SOCKET_OP_FAILED(sockfd)  sockfd<0
-#define IS_IP_ADDR(string)    	  inet_addr(string) != -1
-#define FillWithZeros(addr)    	  memset((char *)&addr, (int) 0, sizeof(addr));
+#define closesocket    	       	   close
+#define XSB_SOCKET_ERRORCODE   	   errno
+#define XSB_SOCKET_ERRORCODE_RESET errno = 0
+#define BAD_SOCKET(sockfd)         sockfd<0
+#define SOCKET_OP_FAILED(sockfd)   sockfd<0
+#define IS_IP_ADDR(string)    	   inet_addr(string) != -1
+#define FillWithZeros(addr)    	   memset((char *)&addr, (int) 0, sizeof(addr));
 #define SET_SOCKET_BLOCKING(fd, val) (val \
                                       ? (fcntl(fd, F_SETFL, (fcntl(fd, F_GETFL, 0) | O_NONBLOCK)) != -1) \
                                       : (fcntl(fd, F_SETFL, (fcntl(fd, F_GETFL, 0) ^ O_NONBLOCK)) != -1))

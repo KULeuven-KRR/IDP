@@ -281,15 +281,21 @@ XSB's in-lined predicates, builtins, and functions.
  *  the goal which triggered the interrupt.
  */
 
+:- import conset/2,conget/2 from gensym.
 '_$load_undef'(Term) :-
 	term_type(Term, Type),
 	( Type =:= XSB_STRUCT -> term_psc(Term, PSC)
 	; Type =:= XSB_STRING -> psc_insert(Term, 0, PSC, 0)
 	),
+	conset('_$load_pred_action',0),
 	load_pred(PSC),
+	conget('_$load_pred_action',Action),
 	xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
-	call0(Term).
-
+	(Action =:= 0 -> 
+	       call0(Term)
+	 ; Action =:= 1 -> 
+	     handle_undefined_pred(PSC,Term)
+	).
 
 load_pred(PSC) :- \+ (\+ (load_pred0(PSC))).
 
@@ -301,8 +307,8 @@ load_pred0(PSC) :-
 
 load_pred1(PSC) :-
 %%	'_$savecp'(B),
-	psc_name(PSC, Name),
-	psc_arity(PSC, Arity),
+%%	psc_name(PSC, Name),
+%%	psc_arity(PSC, Arity),
 	psc_env(PSC, Env), 
 	( Env =:= T_UNLOADED
 	->  % is "imported"
@@ -311,7 +317,13 @@ load_pred1(PSC) :-
 	    psc_type(ModPSC, ModType), 
 	    (ModType =:= T_MODU
 	     ->	    true   % module loaded
-	     ;	    load(ModName)	% might abort here 
+	     ;	    load(ModName),	% might abort here 
+	     %%% TES: adding the assert so that ensure_loaded will recognize when 
+	     %%% a file was loaded lazily.  This would only happen if an unloaded predicate were 
+	     %%% called via explict module qualification -- e.g., via bar:pred(A,B)
+	            search_module(ModName, _Dir, _Mod, _SExt, _Base, Obj),
+		    expand_filename(Obj,ExpObj),
+		    assert(consult_file_loaded(ExpObj))
 	    ),
 	    (	psc_type(PSC, NType),
 		(   NType =:= T_PRED; NType =:= T_FORN; NType =:= T_DYNA ), 
@@ -319,22 +331,47 @@ load_pred1(PSC) :-
 		%% '_$cutto'(B)
 		!
 		;
-	        handle_undefined_pred(ModName,Name,Arity)
+		conset('_$load_pred_action',1)
+%	        handle_undefined_pred(ModName,Name,Arity)
 	    )
 	;
-	    handle_undefined_pred('usermod',Name,Arity)
+    	    conset('_$load_pred_action',1)
+%	    handle_undefined_pred('usermod',Name,Arity)
 	).
 
-handle_undefined_pred(ModName,Name,Arity) :-
-	(current_prolog_flag(unknown,fail)
+%:- import undefined/0 from tables.
+
+:- export wcs_undefined/1.
+:- table wcs_undefined/1.
+wcs_undefined(Term):- not_exists(wcs_undefined(Term)).
+
+:- import arg/3 from standard.
+handle_undefined_pred(PSC,Term) :-
+        psc_name(PSC,Name),psc_arity(PSC,Arity),
+	psc_env(PSC, Env), 
+	( Env =:= T_UNLOADED
+	->  % is "imported"
+	    psc_mod(PSC, ModPSC),
+	    psc_name(ModPSC, ModName)
+	  ; ModName = usermod ),
+	current_prolog_flag(unknown,Action),
+	(Action == fail 
 	 ->	fail
-	 ;	current_prolog_flag(unknown,warning)
+	 ;	Action == warning
 	 ->	warning(['Undefined predicate: ',ModName,':',Name,'/',Arity,': failing']),
 		fail
+	 ; 	Action == undefined -> 
+	 	wcs_undefined(Term)
+	 ;	(Action == user_hook,unknown_predicate_hook(Goal),arg(1,Goal,Term)) -> 
+	 	call0(Goal)
 	 ;	xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
 		xsb_backtrace(BT),
-		throw(error(existence_error(procedure,ModName:Name/Arity),[],BT))
+		throw(error(existence_error(procedure,ModName:Name/Arity),context([],BT)))
 	).
+
+:- import unknown_predicate_hook/1 from usermod.
+:- import (dynamic)/1 from assert.
+:- dynamic unknown_predicate_hook/1.
 
 /*
 %% Invoke undefined pred handlers until one succeeds.

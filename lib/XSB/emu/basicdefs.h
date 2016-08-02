@@ -89,6 +89,8 @@
 
 #define XSBINITERRLEN 2048
 
+#define UNUSED(x) ((void)(x))
+
 #endif  /* BASICDEFS_INCLUDED */
 
 #define BASICDEFS_INCLUDED

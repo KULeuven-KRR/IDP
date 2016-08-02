@@ -35,6 +35,7 @@
 :- export t_assert/2.
 :- export code_to_buff/2. % for message queues
 :- export exchange_definitions/2.
+:- export predicate_defined/1.
 :- export update/4, get_fact_clref/2, update_clref/4.  %% hackery...
 :- export check_dynamic_options/2.
 :- export retract_fact/1.
@@ -59,6 +60,7 @@
 :- import domain_error/5,domain_error/4,check_callable/3 from error_handler.
 :- import check_nonvar/3 from error_handler.
 :- import check_nonvar_comma_list/3 from error_handler.
+:- import check_atom/3 from error_handler.
 :- import table_error/1 from error_handler.
 
 :- import '_$index'/3, '_$trie_asserted'/1, retract_trie_index/1,
@@ -67,12 +69,12 @@
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2,
 	  conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
 	  psc_set_ep/2, unload_seg/1, code_call/3, db_retract0/3, term_set_arg/4, term_new_mod/3,
-	  psc_init_info/1, intern_term/2
+	  psc_init_info/1, intern_term/2, psc_data/2, psc_immutable/2
      from machine.
 :- import db_get_last_clause/4 from machine.
 :- import dynamic_code_function/5 from machine.
-:- import psc_set_incr/2 from machine.
-:- import psc_get_incr/2 from machine.
+:- import psc_set_incr/2,psc_set_intern/2  from machine.
+:- import psc_get_intern/2, psc_get_incr/2 from machine.
 :- import buff_set_word/3, term_psc/2 from machine.
 :- import get_attributes/2 from machine.
 :- import db_retract_fact/3 from dbclause.

@@ -17,7 +17,7 @@ void perform_early_completion(CTXTdeclc VariantSF ProdSF,CPtr ProdCPF) {
   if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) 	
     tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   	
   mark_as_completed(ProdSF);					
-  if (flags[CTRACE_CALLS])  { 
+  if (flags[CTRACE_CALLS] && !subg_forest_log_off(ProdSF))  { 
     sprint_subgoal(CTXTc forest_log_buffer_1,0,ProdSF);     
     fprintf(fview_ptr,"cmp(%s,ec,%d).\n",forest_log_buffer_1->fl_buffer,
 	    ctrace_ctr++);

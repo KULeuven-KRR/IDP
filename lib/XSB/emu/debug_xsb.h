@@ -167,11 +167,10 @@ extern void printterm(FILE *, Cell, long);
 #define dbg_printAnswerTemplate(LOG_LEVEL,FP,PAT,S)   \
    if (LOG_LEVEL <= cur_log_level)                    \
       printAnswerTemplate(FP,PAT,S)
-extern void print_completion_stack(void);
+extern void print_completion_stack(FILE *);
+#define xsb_dbgmsg(a) xsb_dbgmsg1 a
 #else
-
 #define xsb_dbgmsg(a)
-//#define xsb_dbgmsg(a) xsb_dbgmsg1 a
 
 #define dbg_print_subgoal(L,F,S)
 #define dbg_printterm(L,F,T,D)

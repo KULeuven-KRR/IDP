@@ -101,7 +101,7 @@
 #endif
 //extern inline float getfloatval(Cell);
 //extern inline Cell makefloat(float);
-extern inline int sign(Float);
+extern int sign(Float);
 
 #define isref(cell)  (!((word)(cell)&0x3))
 #define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> xsbBool */
@@ -112,7 +112,7 @@ extern inline int sign(Float);
 /*======================================================================*/
 
 #ifndef GENERAL_TAGGING
-#if (defined(HP700) || defined(IBM) || defined(MIPS_BASED) || defined(SOLARIS_x86) || defined(LINUX))
+#if ((defined(HP700) || defined(IBM) || defined(MIPS_BASED) || defined(SOLARIS_x86) || defined(LINUX)) && !defined(BITS64))
 #define GENERAL_TAGGING
 #endif
 #endif
@@ -252,10 +252,8 @@ extern unsigned long enc[], dec[];
 
 #define xsb_isnumber(dcell)	((isinteger(dcell)) || (isfloat(dcell)))
 #define isconstant(dcell)  ( isstring(dcell) || xsb_isnumber(dcell) )
-#define isatom(dcell)	((isstring(dcell)) || \
-			 (isconstr(dcell) && get_arity(get_str_psc(dcell))==0))
-#define isatomic(dcell)	((isstring(dcell)) || (xsb_isnumber(dcell)) || \
-			 (isconstr(dcell) && get_arity(get_str_psc(dcell))==0))
+#define isatom(dcell)	(isstring(dcell))
+#define isatomic(dcell)	((isstring(dcell)) || (xsb_isnumber(dcell)))
 
 #define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_string)
 #define isboxed(term) (isconstr(term) && get_str_psc(term) == box_psc )

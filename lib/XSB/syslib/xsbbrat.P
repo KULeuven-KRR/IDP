@@ -5,10 +5,10 @@
 :- export brat_undefined/0.
 :- export floundered_undefined/1.
 
-:- table brat_undefined/0.
+:- table brat_undefined/0 as opaque.
 brat_undefined :- tnot(brat_undefined).
 
-:- table floundered_undefined/1.
+:- table floundered_undefined/1 as opaque.
 floundered_undefined(a) :- tnot(floundered_undefined(a)).
 
 %:- import writeln/1 from standard.

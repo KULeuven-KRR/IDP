@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
        printf("2nd and 3rd subfields must be atoms\n");
     else
       printf("Answer: %d, %s(%s), %s(%s)\n",
-	     p2c_int(p2p_arg(reg_term(1),1)),
+	     (int)p2c_int(p2p_arg(reg_term(1),1)),
 	     p2c_string(p2p_arg(reg_term(1),2)),
 	     xsb_var_string(1),
 	     p2c_string(p2p_arg(reg_term(1),3)),
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
        printf("2nd and 3rd subfields must be atoms\n");
     else
       printf("Answer: %d, %s, %s\n",
-	     xsb_var_int(1),
+	     (int)xsb_var_int(1),
 	     xsb_var_string(2),
 	     xsb_var_string(3)
 	     );

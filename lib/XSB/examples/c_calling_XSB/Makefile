@@ -28,23 +28,33 @@
 
 
 # Where the architectue specific XSB stuff is
-ARCH=powerpc-apple-darwin7.5.1-dflt
+#ARCH=powerpc-apple-darwin7.5.1-dflt
 #ARCH=i686-pc-linux-gnu-dbg
-arch_dir=$(HOME)/XSBNEW/XSB/config/$(ARCH)
+ARCH=x86_64-unknown-linux-gnu
+arch_dir=../../config/$(ARCH)
 
 CC=gcc
-CFLAGS= -O4 -ansi -pedantic -Wall
+CFLAGS= -O4 -Wall
 # for debug:
-#CFLAGS= -ansi -pedantic -Wall -g
-LDFLAGS= -lm -ldl -Wl
+#CFLAGS= -Wall -g
+#LDFLAGS= -lm -ldl -Wl
 # For Solaris use:
 #LDFLAGS=  -lsocket -lm -lnsl -ldl -Wl,-export-dynamic
+# Linux
+LDFLAGS=  -lm -ldl -Wl,-export-dynamic -lpthread
 
 ## DON'T EDIT BELOW THIS LINE
 ############################################################################
 
 # where the object code goes
 arch_config_objlibdir=$(arch_dir)/saved.o
+
+xsbmodule=$(arch_config_objlibdir)/xsb.o
+
+# just to be sure the sh is used 
+SHELL=/bin/sh
+
+
 
 xsbmodule=$(arch_config_objlibdir)/xsb.o
 
@@ -73,8 +83,8 @@ test2: cmain2.o
 
 
 cmain.o: cmain.c
-	gcc -c $(CFLAGS) cmain.c
+	gcc -c $(CFLAGS) -I../../emu -I$(arch_dir) cmain.c
 
 cmain2.o: cmain2.c
-	gcc -c $(CFLAGS) cmain2.c
+	gcc -c $(CFLAGS) -I../../emu -I$(arch_dir) cmain2.c
 

@@ -88,7 +88,7 @@ static void dyn_link_all(char *symtab, Psc cur_mod)
 	}
       }
       if (i>= count) {          /* does not find the name */
-	  xsb_warn("Cannot find foreign procedure %s", name);
+	  xsb_warn(CTXTc "Cannot find foreign procedure %s", name);
 	  set_forn(search_ptr->psc_ptr, (byte *)(dummy));
       }
     }
@@ -100,7 +100,7 @@ static void dyn_link_all(char *symtab, Psc cur_mod)
 
 // TLS: changing 128 -> MAXFILENAME (= 256).  I think this will work
 // for Cygwin 1.7 and later.
-static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
+static byte *load_obj_dyn(CTXTdeclc char *pofilename, Psc cur_mod, char *ld_option)
 {
   int buffsize, fd, loadsize;
   byte *start;	/* Changed from int -- Kostis.	*/

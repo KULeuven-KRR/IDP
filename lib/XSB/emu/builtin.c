@@ -92,6 +92,7 @@
 #include "rw_lock.h"
 #include "deadlock.h"
 #include "struct_intern.h"
+#include "trace_xsb.h"
 #ifdef ORACLE
 #include "oracle_xsb.h"
 #endif
@@ -123,7 +124,7 @@
 #include "debug_xsb.h"
 
 #include "thread_xsb.h"
- /* incremental evaluation */
+/* incremental evaluation */
 
 #include "incr_xsb.h"
 #include "call_graph_xsb.h"
@@ -208,6 +209,7 @@ extern xsbBool xsb_socket_request(CTXTdecl);
 extern int  findall_init(CTXTdecl), findall_add(CTXTdecl),
   findall_get_solutions(CTXTdecl);
 extern int  copy_term(CTXTdecl);
+extern int  copy_term_3(CTXTdecl);
 
 extern xsbBool substring(CTXTdecl);
 extern xsbBool string_substitute(CTXTdecl);
@@ -228,6 +230,9 @@ extern double realtime_count_gl; /* from subp.c */
 
 extern BTNptr trie_asserted_trienode(CPtr clref);
 extern int gc_dynamic(CTXTdecl);
+
+extern int sha1_string(prolog_term, char *);
+extern int md5_string(prolog_term, char *);
 
 /* ------- variables also used in other parts of the system -----------	*/
 
@@ -328,11 +333,12 @@ DllExport prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int regnum,const char 
   return FALSE;
 }
 
+/** now a macro
 Psc get_mod_for_psc(Psc psc) {
   Cell psc_data = (Cell)get_data(psc);
   if (isstring(psc_data)) return global_mod;
   else return (Psc)psc_data;
-}
+  } **/
 
 char *get_filename_for_psc(Psc psc) {
   struct psc_rec *psc_data = get_data(psc);
@@ -596,7 +602,7 @@ DllExport void call_conv ctop_int(CTXTdeclc int regnum, prolog_int value)
     bind_oint(vptr(addr),value);
   }
   else {
-    xsb_abort("[CTOP_INT] Argument %d of illegal type: %s", 
+    xsb_abort("[CTOP_INT] Argument %d of illegal type: %s",
 	      regnum, canonical_term(CTXTc addr, 0));
   }
 }
@@ -656,6 +662,18 @@ inline static void ctop_constr(CTXTdeclc int regnum, Pair psc_pair)
  *  For encoding object pointer, like PSC, PSC-PAIR and Subgoal frames.
  */
 #define ctop_addr(regnum, val)    ctop_int(CTXTc regnum, (prolog_int)val)
+
+/* --------------------------------------------------------------------	*/
+
+int list_unifiable(CTXTdeclc Cell term) {
+  XSB_Deref(term);
+  while (islist(term)) {
+    term = get_list_tail(term);
+    XSB_Deref(term);
+  }
+  if (isref(term) || isnil(term)) return TRUE;
+  else return FALSE;
+}
 
 /* --------------------------------------------------------------------	*/
 
@@ -960,7 +978,8 @@ int make_ground(Cell term, struct ltrail *templ_trail) {
   return TRUE;
 }
 
-CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, struct ltrail *templ_trail, struct ltrail *var_trail) {
+CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, int ifExist,
+		 struct ltrail *templ_trail, struct ltrail *var_trail) {
  begin_excess_vars:
   XSB_Deref(term);
   switch (cell_tag(term)) {
@@ -979,31 +998,31 @@ CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, struct ltrail *templ_trail, 
     psc = get_str_psc(term);
     arity = (int) get_arity(psc);
     if (arity == 0) return varlist;
-    if (psc == caret_psc) {
+    if (psc == caret_psc && ifExist) {
       CPtr *save_templ_base;
       save_templ_base = templ_trail->ltrail_top;
       make_ground(get_str_arg(term,1), templ_trail);
-      varlist = excess_vars(CTXTc get_str_arg(term,2), varlist, templ_trail, var_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,2), varlist, ifExist, templ_trail, var_trail);
       undo_ltrail_bindings(templ_trail,save_templ_base);
       return varlist;
     }
-    if (psc == setof_psc || psc == bagof_psc) {
+    if (ifExist && (psc == setof_psc || psc == bagof_psc)) {
       CPtr *save_templ_base;
       save_templ_base = templ_trail->ltrail_top;
       make_ground(get_str_arg(term,1), templ_trail);
-      varlist = excess_vars(CTXTc get_str_arg(term,2),varlist,templ_trail,var_trail);
-      varlist = excess_vars(CTXTc get_str_arg(term,3),varlist,templ_trail,var_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,2),varlist,ifExist,templ_trail,var_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,3),varlist,ifExist,templ_trail,var_trail);
       undo_ltrail_bindings(templ_trail,save_templ_base);
       return varlist;
     }
       for (i = 1; i < arity; i++) {
-	varlist = excess_vars(CTXTc get_str_arg(term,i), varlist, templ_trail, var_trail);
+	varlist = excess_vars(CTXTc get_str_arg(term,i), varlist, ifExist, templ_trail, var_trail);
       }
       term = get_str_arg(term,arity);
   }
     goto begin_excess_vars;
   case XSB_LIST:
-    varlist = excess_vars(CTXTc get_list_head(term), varlist, templ_trail, var_trail);
+    varlist = excess_vars(CTXTc get_list_head(term), varlist, ifExist, templ_trail, var_trail);
     term = get_list_tail(term);
     goto begin_excess_vars;
   case XSB_FLOAT:
@@ -1201,6 +1220,7 @@ void init_builtin_table(void)
   set_builtin_table(FORMATTED_IO, "formatted_io");
   set_builtin_table(TABLE_STATUS, "table_status");
   set_builtin_table(GET_DELAY_LISTS, "get_delay_lists");
+  set_builtin_table(ANSWER_COMPLETION_OPS, "answer_completion_ops");
 
   set_builtin_table(ABOLISH_TABLE_PREDICATE, "abolish_table_pred");
   set_builtin_table(ABOLISH_TABLE_CALL, "abolish_table_call");
@@ -1294,12 +1314,7 @@ void init_builtin_table(void)
   set_builtin_table(THREAD_REQUEST, "thread_request");
   set_builtin_table(MT_RANDOM_REQUEST, "mt_random_request");
 
-  set_builtin_table(PRINT_LS, "print_ls");
-  set_builtin_table(PRINT_TR, "print_tr");
-  set_builtin_table(PRINT_HEAP, "print_heap");
-  set_builtin_table(PRINT_CP, "print_cp");
-  set_builtin_table(PRINT_REGS, "print_regs");
-  set_builtin_table(PRINT_ALL_STACKS, "print_all_stacks");
+  set_builtin_table(COPY_TERM_3,"copy_term_3");
   set_builtin_table(MARK_HEAP, "mark_heap");
   set_builtin_table(GC_STUFF, "gc_stuff");
   set_builtin_table(FINDALL_INIT, "$$findall_init");
@@ -1416,7 +1431,7 @@ int builtin_call(CTXTdeclc byte number)
       char str[100];
       snprintf(str,100,"[psc_prop/2] Cannot get property of predicate: %s/%d\n",
 	      get_name(psc),get_arity(psc));
-      xsb_warn(str);
+      xsb_warn(CTXTc str);
       return FALSE;
     }
     ctop_int(CTXTc 2, (Integer)get_data(psc));
@@ -1429,7 +1444,7 @@ int builtin_call(CTXTdeclc byte number)
       char str[100];
       snprintf(str,100,"[psc_mod/2] Cannot get property of predicate: %s/%d\n",
 	      get_name(psc),get_arity(psc));
-      xsb_warn(str);
+      xsb_warn(CTXTc str);
       return FALSE;
     }
     ctop_int(CTXTc 2, (Integer)(get_mod_for_psc(psc)));
@@ -1438,7 +1453,7 @@ int builtin_call(CTXTdeclc byte number)
   case PSC_SET_PROP: {	       /* R1: +PSC; R2: +int */
     Psc psc = (Psc)ptoc_addr(1);
     if (get_type(psc) == T_PRED || get_type(psc) == T_DYNA) {
-      xsb_warn("[psc_set_prop/2] Cannot set property of predicate.\n");
+      xsb_warn(CTXTc "[psc_set_prop/2] Cannot set property of predicate.\n");
       return FALSE;
     }
     set_data(psc, (Psc)ptoc_int(CTXTc 2));
@@ -1549,7 +1564,7 @@ int builtin_call(CTXTdeclc byte number)
     newtermpsc = pair_psc(insert(get_name(termpsc),get_arity(termpsc),modpsc,&new));
     if (new) {
       set_data(newtermpsc, modpsc);
-      env_type_set(newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
+      env_type_set(CTXTc newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
     }
     ctop_constr(CTXTc 3, (Pair)hreg);
     new_heap_functor(hreg, newtermpsc);
@@ -1586,8 +1601,8 @@ int builtin_call(CTXTdeclc byte number)
     /* used in file_read.P, array.P, array1.P */
     //    int  disp = ptoc_int(CTXTc 2);
   //    Cell term = ptoc_tag(CTXTc 1);
-    int  disp = (int) iso_ptoc_int(CTXTc 2,"setarg/3");
-    Cell term = iso_ptoc_callable(CTXTc 1,"setarg/3");
+    int  disp = (int) iso_ptoc_int(CTXTc 2,"term_set_arg/3");
+    Cell term = iso_ptoc_callable(CTXTc 1,"term_set_arg/3");
     CPtr arg_loc = clref_val(term)+disp;
     Cell new_val = cell(reg+3);
     int perm_flag = (int)ptoc_int(CTXTc 4);
@@ -1638,7 +1653,7 @@ int builtin_call(CTXTdeclc byte number)
     value = ((ptoc_int(CTXTc 3)+7)>>3)<<3;	/* alignment */
     value *= ZOOM_FACTOR ;
     if (value > disp) {
-      xsb_warn("[BUFF_DEALLOC] New Buffer Size (%d) Cannot exceed the old one (%d)!!",
+      xsb_warn(CTXTc "[BUFF_DEALLOC] New Buffer Size (%d) Cannot exceed the old one (%d)!!",
 	       value, disp);
       break;
     }
@@ -1709,7 +1724,7 @@ int builtin_call(CTXTdeclc byte number)
     case XSB_LIST:
       bld_list(vptr(addr+disp), (CPtr)ptoc_int(CTXTc 4)); break;
     default:
-      xsb_warn("[BUFF_SET_CELL] Type %d is not implemented", value);
+      xsb_warn(CTXTc "[BUFF_SET_CELL] Type %d is not implemented", value);
     }
     break;
   }
@@ -1735,7 +1750,7 @@ int builtin_call(CTXTdeclc byte number)
     }
     break;
   }
-  case COPY_TERM: /* R1: +term to copy; R2: -variant */
+  case COPY_TERM: /* R1: +term to copy; R2: -variant; R3: -list_of_attvars */
     return copy_term(CTXT);
 
   case CALL0: {			/* R1: +Term, the call to be made */
@@ -1769,6 +1784,7 @@ int builtin_call(CTXTdeclc byte number)
       char *goalname;
       CPtr addr;
       if (psc == colon_psc) {
+	//printf("found colon_psc\n");
 	Cell modstring = get_str_arg(goal,1);
 	XSB_Deref(modstring);
 	if (!isstring(modstring)) {
@@ -1776,18 +1792,26 @@ int builtin_call(CTXTdeclc byte number)
 	  return FALSE;
 	}
 	modpsc = pair_psc(insert_module(0,string_val(modstring)));
+	//printf("modpsc1 %s\n",get_name(modpsc));
 	goal = get_str_arg(goal,2);
 	XSB_Deref(goal);
 	if (!isstring(goal)) {
 	  psc = get_str_psc(goal);
+	  //printf("here00 %s/%d\n",get_name(psc),get_arity(psc));
+	} else {
+	  //printf("isstring\n");
+	  psc = pair_psc(insert(string_val(goal),(byte)k,modpsc,&new));
 	}
       } else {
+	//printf("string\n");
 	modpsc = get_mod_for_psc(psc);
       }
+      //printf("here0 %s/%d\n",get_name(psc),get_arity(psc));
       if (isstring(goal)) {
 	for (i = 1; i <= k; i++) {
 	  bld_copy(reg+i,cell(reg+i+1));
 	}
+	//printf("inserting\n");  
 	newpsc = pair_psc(insert(string_val(goal),(byte)k,modpsc,&new));
 	pcreg = get_ep(newpsc);
 	if (asynint_val) intercept(CTXTc newpsc);
@@ -1810,6 +1834,7 @@ int builtin_call(CTXTdeclc byte number)
       goalname = get_name(psc);
       if (!modpsc) modpsc = (Psc)flags[CURRENT_MODULE];
       if (!modpsc) modpsc = global_mod;
+      //printf("inserting %s/%d into modpsc %s\n",goalname,get_arity(psc),get_name(modpsc));
       newpsc = pair_psc(insert(goalname,(byte)(arity+k),modpsc,&new));
       if (new) {
 	set_data(newpsc, modpsc);
@@ -1884,13 +1909,13 @@ int builtin_call(CTXTdeclc byte number)
   }
   case GET_DATE: {
     int year=0, month=0, day=0, hour=0, minute=0, second=0;
-    get_date(&year,&month,&day,&hour,&minute,&second);
-    ctop_int(CTXTc 1,year);
-    ctop_int(CTXTc 2,month);
-    ctop_int(CTXTc 3,day);
-    ctop_int(CTXTc 4,hour);
-    ctop_int(CTXTc 5,minute);
-    ctop_int(CTXTc 6,second);
+    get_date((int)ptoc_int(CTXTc 1),&year,&month,&day,&hour,&minute,&second);
+    ctop_int(CTXTc 2,year);
+    ctop_int(CTXTc 3,month);
+    ctop_int(CTXTc 4,day);
+    ctop_int(CTXTc 5,hour);
+    ctop_int(CTXTc 6,minute);
+    ctop_int(CTXTc 7,second);
     break;
   }
   case STAT_WALLTIME: {
@@ -1915,7 +1940,7 @@ int builtin_call(CTXTdeclc byte number)
 	HashStats abtht;
 	size_t trieassert_used;
 	abtn = node_statistics(&smAssertBTN);
-	abtht = hash_statistics(&smAssertBTHT);
+	abtht = hash_statistics(CTXTc &smAssertBTHT);
 	trieassert_used =
 	  NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
 	ctop_int(CTXTc 2, (Integer)trieassert_used);
@@ -1951,16 +1976,19 @@ int builtin_call(CTXTdeclc byte number)
 			   R4: +String, module to be inserted */
     /* inserts or finds a symbol in a given module.	*/
     /* When the given module is 0 (null string), current module is used. */
-    Psc  psc;
-    Pair sym;
-    int  value;
+    Psc  psc, sym;
+    int  value = 0;
     char *addr = ptoc_string(CTXTc 4);
     if (addr)
       psc = pair_psc(insert_module(0, addr));
     else
       psc = (Psc)flags[CURRENT_MODULE];
-    sym = insert(ptoc_string(CTXTc 1), (char)ptoc_int(CTXTc 2), psc, &value);
-    ctop_addr(3, pair_psc(sym));
+    sym = pair_psc(insert(ptoc_string(CTXTc 1), (char)ptoc_int(CTXTc 2), psc, &value));
+    if (value) {
+      set_data(sym, psc);
+      env_type_set(CTXTc sym, (addr?T_IMPORTED:T_GLOBAL) , T_ORDI, (xsbBool)value);
+    }
+    ctop_addr(3, sym);
     break;
   }
 
@@ -1976,15 +2004,15 @@ int builtin_call(CTXTdeclc byte number)
     Pair sym = insert(ptoc_string(CTXTc 1), (char)ptoc_int(CTXTc 2), psc, &value);
     if (value)       /* if predicate is new */
       set_data(pair_psc(sym), (psc));
-    env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (xsbBool)value);
+    env_type_set(CTXTc pair_psc(sym), T_IMPORTED, T_ORDI, (xsbBool)value);
     if (flags[CURRENT_MODULE]) /* in case before flags is initted */
-      link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
-    else link_sym(pair_psc(sym), global_mod);
+      link_sym(CTXTc pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
+    else link_sym(CTXTc pair_psc(sym), global_mod);
     break;
   }
 
   case PSC_IMPORT_AS: {    /* R1: PSC addr of source psc, R2 PSC addr of target psc */
-    set_psc_ep_to_psc((Psc)ptoc_int(CTXTc 2),(Psc)ptoc_int(CTXTc 1));
+    set_psc_ep_to_psc(CTXTc (Psc)ptoc_int(CTXTc 2),(Psc)ptoc_int(CTXTc 1));
     break;
   }
 
@@ -2053,29 +2081,39 @@ int builtin_call(CTXTdeclc byte number)
       xsb_fprint_variable(CTXTc fptr, var);
       break;
     }
-    case XSB_INT    : 
+    case XSB_INT    :
+      if (fprintf(fptr, "%" Intfmt, (Integer)ptoc_int(CTXTc 3)) < 0)
+	xsb_permission_error(CTXTc strerror(errno),"file write",
+			     open_file_name(io_port),"file_puttoken",3);
 
-      fprintf(fptr, "%" Intfmt, (Integer)ptoc_int(CTXTc 3)); break;
-    case XSB_STRING : 
+      break;
+    case XSB_STRING :
       write_string_code(fptr,charset,(byte *)ptoc_string(CTXTc 3));
       break;
     case XSB_FLOAT  : fprintf(fptr, "%2.4f", ptoc_float(CTXTc 3)); break;
     case TK_INT_0  : {
       int tmp = (int) ptoc_int(CTXTc 3);
       fix_bb4((byte *)&tmp);
-      fwrite(&tmp, 4, 1, fptr); break;
+      if (fwrite(&tmp, 4, 1, fptr) != 1)
+	xsb_permission_error(CTXTc strerror(errno),"file write",
+			     open_file_name(io_port),"file_puttoken",3);
+      break;
     }
     case TK_FLOAT_0: {
       //printf("TK_FLOAT_0 case in put token entered\n");
       float ftmp = (float)ptoc_float(CTXTc 3);
       fix_bb4((byte *)&ftmp);
-      fwrite(&ftmp, 4, 1, fptr);
+      if (fwrite(&ftmp, 4, 1, fptr) != 1)
+	xsb_permission_error(CTXTc strerror(errno),"file write",
+			     open_file_name(io_port),"file_puttoken",3);
       //printf("TK_FLOAT_0 case in put token left\n");
       break;
     }
     case TK_DOUBLE_0: {
       double ftmp = ptoc_float(CTXTc 3);
-      fwrite(&ftmp, 8, 1, fptr);
+      if (fwrite(&ftmp, 8, 1, fptr) != 1)
+	xsb_permission_error(CTXTc strerror(errno),"file write",
+			     open_file_name(io_port),"file_puttoken",3);
       break;
     }
     case TK_PREOP  : print_op(fptr, charset, ptoc_string(CTXTc 3), 1); break;
@@ -2111,7 +2149,7 @@ int builtin_call(CTXTdeclc byte number)
   case LOAD_OBJ:		/* R1: +FileName, R2: +Module (Psc) */
 	    			/* R3: +ld option, R4: -InitAddr */
 #ifdef FOREIGN
-    ctop_int(CTXTc 4, (Integer)load_obj(ptoc_string(CTXTc 1),(Psc)ptoc_addr(2),
+    ctop_int(CTXTc 4, (Integer)load_obj(CTXTc ptoc_string(CTXTc 1),(Psc)ptoc_addr(2),
 				  ptoc_string(CTXTc 3)));
 #else
     xsb_abort("Loading foreign object files is not implemented for this configuration");
@@ -2359,7 +2397,7 @@ int builtin_call(CTXTdeclc byte number)
     else ctop_int(CTXTc 1,0);
     break;
 
-  case CLOSE_OPEN_TABLES:	
+  case CLOSE_OPEN_TABLES:
     //    printf("close open tables... %d\n",ptoc_int(CTXTc 1));
     remove_incomplete_tables_reset_freezes(CTXTc (int)ptoc_int(CTXTc 1));
 #ifdef MULTI_THREAD
@@ -2447,7 +2485,7 @@ case WRITE_OUT_PROFILE:
     break;
 
   case EXCESS_VARS: {
-    Cell term, templ, startvlist, ovar;
+    Cell term, templ, startvlist, ovar, retlist;
     CPtr anslist, tanslist, tail;
     int max_num_vars;
     struct ltrail templ_trail, var_trail;
@@ -2475,17 +2513,25 @@ case WRITE_OUT_PROFILE:
 	  hreg += 2;
 	  startvlist = get_list_tail(startvlist);
 	  XSB_Deref(startvlist);
-	} else {xsb_error("Excess_vars: arg 3 must be a list of variables"); break;}
-      } else {xsb_error("Excess_vars: arg 3 must be a list"); break;}
+	} else {
+	  xsb_type_error(CTXTc "list of variables",ptoc_tag(CTXTc 3),"excess_vars/4",3);
+	  break;
+	}
+      } else {
+	  xsb_type_error(CTXTc "list of variables",ptoc_tag(CTXTc 3),"excess_vars/4",3);
+	break;
+      }
     }
     templ = ptoc_tag(CTXTc 2);
     make_ground(templ, &var_trail);
     term = ptoc_tag(CTXTc 1);
-    tail = excess_vars(CTXTc term,tanslist,&templ_trail,&var_trail);
+    tail = excess_vars(CTXTc term,tanslist,(int)ptoc_int(CTXTc 4),&templ_trail,&var_trail);
     cell(tail) = makenil;
     undo_ltrail_bindings(&templ_trail,templ_trail_base);
     undo_ltrail_bindings(&var_trail,var_trail_base);
-    return unify(CTXTc (Cell)anslist,ptoc_tag(CTXTc 4));
+    retlist = ptoc_tag(CTXTc 5);
+    if (list_unifiable(CTXTc retlist)) return unify(CTXTc (Cell)anslist,retlist);
+    else xsb_type_error(CTXTc "list",retlist,"term_variables/2",2);
   }
   break;
 
@@ -2529,7 +2575,23 @@ case WRITE_OUT_PROFILE:
     ctop_int(CTXTc 4,TableStatusFrame_answer_set_status(TSF));
     ctop_addr(5, TableStatusFrame_subgoal(TSF));
     return TRUE;
-  } 
+  }
+
+  case ANSWER_COMPLETION_OPS: {
+    switch (ptoc_int(CTXTc 1)) {
+    case 1:  // 1 is reset needs_completion
+      answer_complete_subg(ptoc_int(CTXTc 2));
+      break;
+    case 2:  // 2 is get needs_answer_completion flag
+      if (subg_is_answer_completed(ptoc_int(CTXTc 2)))
+	ctop_int(CTXTc 3, 1);
+      else ctop_int(CTXTc 3, 0);
+      break;
+    default: 
+      xsb_abort("builtin(ANSWER_COMPLETION_OPS): illegal op: %d",ptoc_int(CTXTc 1));
+    }
+    return TRUE;
+  }
 
   case ABOLISH_TABLE_PREDICATE: {
     const int regTerm = 1;   /* in: tabled predicate as term */
@@ -2549,12 +2611,8 @@ case WRITE_OUT_PROFILE:
   }
 
   case ABOLISH_TABLE_CALL: {
-    /* incremental evaluation */
     VariantSF subg=(VariantSF) ptoc_int(CTXTc 1);
-    if(IsIncrSF(subg))
-      abolish_table_call_incr(CTXTc subg);
-    else
-      abolish_table_call(CTXTc subg, (int)ptoc_int(CTXTc 2));
+    abolish_table_call(CTXTc subg, (int)ptoc_int(CTXTc 2));
     return TRUE;
   }
 
@@ -2643,7 +2701,7 @@ case WRITE_OUT_PROFILE:
       xsb_instantiation_error(CTXTc "trie_get_return/2",regRetTerm);
       break;
     }
-    pcreg = trie_get_return(CTXTc sf, retTerm);
+    pcreg = trie_get_return(CTXTc sf, retTerm, (int)ptoc_int(CTXTc 3));
     break;
   }
 
@@ -2816,7 +2874,7 @@ case WRITE_OUT_PROFILE:
       if (get_tip(CTXTc psc)) {
 	TIF_EvalMethod(get_tip(CTXTc psc)) = VARIANT_EVAL_METHOD;
 	if (TIF_CallTrie(get_tip(CTXTc psc))) {
-	  xsb_warn("Change to variant tabling method for predicate with tabled subgoals: %s/%d",
+	  xsb_warn(CTXTc "Change to variant tabling method for predicate with tabled subgoals: %s/%d",
 		   get_name(psc),get_arity(psc));
 	}
       }
@@ -2829,7 +2887,7 @@ case WRITE_OUT_PROFILE:
       if (get_tip(CTXTc psc)) {
 	TIF_EvalMethod(get_tip(CTXTc psc)) = SUBSUMPTIVE_EVAL_METHOD;
 	if (TIF_CallTrie(get_tip(CTXTc psc))) {
-	  xsb_warn("Change to subsumptive tabling method for predicate with tabled subgoals: %s/%d",
+	  xsb_warn(CTXTc "Change to subsumptive tabling method for predicate with tabled subgoals: %s/%d",
 		   get_name(psc),get_arity(psc));
 	}
       }
@@ -2837,11 +2895,11 @@ case WRITE_OUT_PROFILE:
 
     /***    tif = get_tip(CTXTc psc);
     if ( IsNULL(tif) ) {
-      xsb_warn("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
+      xsb_warn(CTXTc "Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
       return FALSE;
     }
     if ( IsNonNULL(TIF_CallTrie(tif)) ) {
-      xsb_warn("Cannot change tabling method for tabled predicate %s/%d\n"
+      xsb_warn(CTXTc "Cannot change tabling method for tabled predicate %s/%d\n"
 	       "\t   Calls to %s/%d have already been issued\n",
 	       get_name(psc), get_arity(psc), get_name(psc), get_arity(psc));
       return FALSE;
@@ -2887,13 +2945,12 @@ case WRITE_OUT_PROFILE:
     }
     break;
 
-  case PRINT_LS: print_ls(CTXTc 1) ; return TRUE ;
-  case PRINT_TR: print_tr(CTXTc 1) ; return TRUE ;
-  case PRINT_HEAP: print_heap(CTXTc 0,2000,1) ; return TRUE ;
-  case PRINT_CP: alt_print_cp(CTXTc ptoc_string(CTXTc 1)) ; return TRUE ;
-  case PRINT_REGS: print_regs(CTXTc 10,1) ; return TRUE ;
-  case PRINT_ALL_STACKS: print_all_stacks(CTXTc 10) ; return TRUE ;
+  case COPY_TERM_3:
+    return copy_term_3(CTXT);
+
+    // Does not appear to be used
   case EXP_HEAP: glstack_realloc(CTXTc glstack.size + 1,0) ; return TRUE ;
+
   case MARK_HEAP: {
     size_t tmpval;
     mark_heap(CTXTc (int)ptoc_int(CTXTc 1),&tmpval);
@@ -2919,7 +2976,7 @@ case WRITE_OUT_PROFILE:
       local_ret_val = gc_tabled_preds(CTXT);
 
 #ifndef MULTI_THREAD
-      total_table_gc_time =  total_table_gc_time + (cpu_time() - timer); 
+      total_table_gc_time =  total_table_gc_time + (cpu_time() - timer);
 #endif
 
       ret_val |= local_ret_val;
@@ -3006,7 +3063,7 @@ case WRITE_OUT_PROFILE:
   {
     Integer termsize;
     prolog_term term;
-    
+
     term = ptoc_tag(CTXTc 1);
     XSB_Deref(term);
     if (!isinternstr_really(term)) {
@@ -3017,7 +3074,7 @@ case WRITE_OUT_PROFILE:
     if (term) {
       //printf("o %p\n",term);
       return unify(CTXTc term, ptoc_tag(CTXTc 2));
-    } else {    
+    } else {
       //printf("of\n");
       return FALSE;
     }
@@ -3039,7 +3096,7 @@ case WRITE_OUT_PROFILE:
       xsb_default_segfault_handler = xsb_segfault_catcher;
       break;
     default:
-      xsb_warn("Request for unsupported type of segfault handling, %s", type);
+      xsb_warn(CTXTc "Request for unsupported type of segfault handling, %s", type);
       return TRUE;
     }
 #ifdef SIGBUS
@@ -3156,7 +3213,7 @@ case WRITE_OUT_PROFILE:
 |	     bld_copy(attv_attr,atts);
 	***/
 	bind_attv((CPtr)dec_addr(attv), hreg);
-	bld_free(hreg); 
+	bld_free(hreg);
 	bld_copy(hreg+1, atts); hreg += 2;
       }
     }
@@ -3206,14 +3263,24 @@ case WRITE_OUT_PROFILE:
     break;
   }
 
-  case START_SLEEPER_THREAD: {
+  case SLEEPER_THREAD_OPERATION: {
 #ifndef MULTI_THREAD
-    startSleeperThread(CTXTc (int)ptoc_int(CTXTc 1));
+    Integer selection = ptoc_int(CTXTc 1);
+    if (selection == START_SLEEPER_THREAD) {
+      //printf("starting sleeper thread\n");
+      startSleeperThread(CTXTc (int)ptoc_int(CTXTc 2));
+    }
+    else if (selection == CANCEL_SLEEPER_THREAD) {
+      //printf("cancelling sleeper thread\n");
+      cancelSleeperThread(CTXT);
+    }
+    else
+      xsb_abort("sleeper thread operation called with bad operation number: %d\n",selection);
 #else
     xsb_abort("timed_call/3 not implemented for multi-threaded engine.  Please use "
               "thread signalling");
 #endif
-    break; 
+    break;
 }
 
   case MARK_TERM_CYCLIC: {
@@ -3226,9 +3293,9 @@ case WRITE_OUT_PROFILE:
     break;
   }
   case UNWIND_STACK: {
-    if (flags[CTRACE_CALLS])  { 
-      if (ptcpreg) 
-	sprint_subgoal(CTXTc forest_log_buffer_1,0, (VariantSF)ptcpreg); 
+    if (flags[CTRACE_CALLS])  {
+      if (ptcpreg)
+	sprint_subgoal(CTXTc forest_log_buffer_1,0, (VariantSF)ptcpreg);
       else sprintf(forest_log_buffer_1->fl_buffer,"null");
       fprintf(fview_ptr,"err(%s,%d).\n",forest_log_buffer_1->fl_buffer,
 	      ctrace_ctr++);
@@ -3253,6 +3320,36 @@ case WRITE_OUT_PROFILE:
   case MT_RANDOM_REQUEST: {
     return mt_random_request(CTXT) ;
   }
+
+  case CRYPTO_HASH:
+    /* Arg 1: int: type of hash - 1 (MD5) or 2 (SHA1)
+       Arg 2: input string: - atom or file(filename)
+       Arg 3: output: atom
+    */
+    {
+      Integer type = ptoc_int(CTXTc 1);
+      prolog_term InputTerm = reg_term(CTXTc 2);
+      prolog_term Output = reg_term(CTXTc 3);
+      // SHA1 hash has 40 characters; MD5 has less
+      char *Result = (char *)mem_alloc(41,BUFF_SPACE);
+      int retcode;
+
+      switch (type) {
+      case MD5: {
+	retcode = md5_string(InputTerm,Result);
+	break;
+      }
+      case SHA1: {
+	retcode = sha1_string(InputTerm,Result);
+	break;
+      }
+      default: {
+	xsb_error("crypto_hash: unknown hash function type");
+	return FALSE;
+      }
+      }
+      return retcode && atom_unify(CTXTc makestring(string_find(Result,1)),Output);
+    }
 
   default:
     xsb_abort("Builtin #%d is not implemented", number);
@@ -3517,7 +3614,7 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
   prolog_term backtrace;
   int backtrace_cnt = 0;
 
-  if (heap_local_overflow(MAX_BACKTRACE_LEN*2*sizeof(Cell)) 
+  if (heap_local_overflow(MAX_BACKTRACE_LEN*2*sizeof(Cell))
       || !pflags[BACKTRACE]) {
     return makenil;
   }
@@ -3536,8 +3633,8 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
     instruction = *(tmp_cpreg-2*sizeof(Cell));
-    while (backtrace_cnt++ < MAX_BACKTRACE_LEN 
-	   && tmp_cpreg 
+    while (backtrace_cnt++ < MAX_BACKTRACE_LEN
+	   && tmp_cpreg
 	   && (instruction == call || instruction == trymeorelse)
 	   && (pb)top_of_localstk > (pb)top_of_heap + 96) {
       if (instruction == call) {

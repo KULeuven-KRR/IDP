@@ -62,7 +62,8 @@ extern "C" {
 #define EVALUATION_DOMAIN_ERROR 0
 #define EVALUATION_INSTANTIATION_ERROR 1
 #define EVALUATION_UNDERFLOW_ERROR 2
-#define EVALUATION_OVERFLOW_ERROR 3b
+#define EVALUATION_OVERFLOW_ERROR 3
+#define EVALUATION_TYPE_ERROR 4
 
 #define pow_domain_error(op1,op2)	{			\
   XSB_StrSet(&(*tsgSBuff1),"");					\
@@ -98,7 +99,7 @@ DllExport extern void call_conv xsb_bug(char *, ...);
 DllExport extern void call_conv bug_xsb(char *);
 void call_conv xsb_basic_abort(char *);
 
-DllExport extern void call_conv xsb_warn(char *, ...);
+DllExport extern void call_conv xsb_warn(CTXTdeclc char *, ...);
 DllExport extern void call_conv warn_xsb(char *);
 
 DllExport extern void call_conv xsb_mesg(char *, ...);
@@ -110,8 +111,10 @@ DllExport extern void call_conv error_xsb(char *);
 DllExport extern void call_conv xsb_dbgmsg1(int, char *, ...);
 DllExport extern void call_conv dbgmsg1_xsb(int, char *);
 
-extern void arithmetic_abort1(CTXTdeclc char *, Cell);
+  extern void unifunc_abort(CTXTdeclc int, CPtr);
+extern void addintfastuni_abort(CTXTdeclc Cell , Cell);
 extern void arithmetic_abort(CTXTdeclc Cell, char *, Cell);
+extern void arithmetic_abort1(CTXTdeclc char *, Cell);
 extern void arithmetic_comp_abort(CTXTdeclc Cell, char *, Cell);
 extern void err_handle(CTXTdeclc int, int, char *, int, char *, Cell);
 
@@ -152,7 +155,8 @@ DllExport extern void call_conv xsb_syntax_error(CTXTdeclc char *) ;
 DllExport extern void call_conv xsb_syntax_error_non_compile(CTXTdeclc Cell,
 							     const char *,int) ;
 DllExport extern void call_conv xsb_table_error(CTXTdeclc char *) ;
-DllExport extern void call_conv xsb_new_table_error(CTXTdeclc char *, char *,const char*,int) ;
+DllExport extern void call_conv xsb_table_error_vargs(CTXTdeclc char *, char *, ...) ;
+DllExport extern void call_conv xsb_new_table_error(CTXTdeclc char *, char *,char*, ...) ;
 DllExport extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , const char *,int) ;
 
 extern void call_conv xsb_memory_error(char *, char *);

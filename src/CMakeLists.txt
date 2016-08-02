@@ -48,7 +48,17 @@ endif()
 set(IDPFILES "")
  
 find_package(BISON)
-find_package(FLEX)
+
+
+
+#Flex, forcing version 2.5.35, which works
+option(WITHFLEX "Use included source code of Flex instead of standard packages. Current included version is 2.5.35 which is guaranteed to work." ON)
+if(WITHFLEX)
+
+else()
+	#Use native Flex package, let CMake search for it
+	find_package(FLEX 2.5.35 EXACT)
+endif()
 
 BISON_TARGET(myparser parser/parser.yy ${CMAKE_CURRENT_BINARY_DIR}/parser.cc)
 FLEX_TARGET(myscanner parser/lex.ll  ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc)

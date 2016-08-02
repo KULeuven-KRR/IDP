@@ -69,8 +69,16 @@ OUTDIR=$(CONFIGDIR)\bin
 #!ENDIF
 
 OBJDIR=$(CONFIGDIR)\saved.o
+LIBDIR=$(CONFIGDIR)\lib
 
 INTDIR=.
+
+# MSVC_emumkfile.mac must be in the config directory and define LINK_OTHEROBJS
+# as a list of .obj files to be linked with XSB statically. These .obj files
+# are intended to be outside of the XSB tree.
+!IF EXIST("$(CONFIGDIR)\MSVC_emumkfile.mac")
+!INCLUDE "$(CONFIGDIR)\MSVC_emumkfile.mac"
+!ENDIF
 
 !IF "$(CALLCONV)" == "cdecl"
 CALL_CONV=XSB_DLL_C
@@ -105,13 +113,13 @@ SOCKET_LIBRARY=wsock32.lib
 
 CPP_OBJS=$(OBJDIR)/
 CPP_SBRS=
-LINK32=link.exe
-DLL_LINK32_OBJS= \
+EXECUTABLE=link.exe
+DLL_LINK_OBJS= \
 	"$(OBJDIR)/auxlry.obj" \
 	"$(OBJDIR)/builtin.obj" \
 	"$(OBJDIR)/biassert.obj" \
-	"$(OBJDIR)/call_xsb.obj" \
 	"$(OBJDIR)/call_graph_xsb.obj" \
+	"$(OBJDIR)/call_xsb.obj" \
 	"$(OBJDIR)/cinterf.obj" \
 	"$(OBJDIR)/deadlock.obj" \
 	"$(OBJDIR)/debug_xsb.obj" \
@@ -128,6 +136,8 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/hashtable_itr.obj" \
 	"$(OBJDIR)/heap_xsb.obj" \
 	"$(OBJDIR)/url_encode.obj" \
+	"$(OBJDIR)/sha1.obj" \
+	"$(OBJDIR)/md5.obj" \
 	"$(OBJDIR)/incr_xsb.obj" \
 	"$(OBJDIR)/init_xsb.obj" \
 	"$(OBJDIR)/inst_xsb.obj" \
@@ -169,30 +179,31 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/string_xsb.obj" \
 	"$(OBJDIR)/varstring.obj" \
 	"$(OBJDIR)/ubi_BinTree.obj" \
-	"$(OBJDIR)/ubi_SplayTree.obj"
+	"$(OBJDIR)/ubi_SplayTree.obj"\
+	"$(OBJDIR)/getMemorySize.obj"
 
 # DLLs don't use main_xsb.c
 !IF  "$(DLL)" == "no"
-LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/main_xsb.obj
+LINK_OBJS=$(DLL_LINK_OBJS) $(OBJDIR)/main_xsb.obj
 !ELSE
-LINK32_OBJS=$(OBJDIR)/main_xsb.obj
+LINK_OBJS=$(OBJDIR)/main_xsb.obj
 !ENDIF
 
 # Oracle requires one additional file
 !IF "$(ORACLE)" == "yes"
 !IF "$(DLL)" == "yes"
-DLL_LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/orastuff.obj
+DLL_LINK_OBJS=$(DLL_LINK_OBJS) $(OBJDIR)/orastuff.obj
 !ELSE
-LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/orastuff.obj
+LINK_OBJS=$(LINK_OBJS) $(OBJDIR)/orastuff.obj
 !ENDIF
 !ENDIF
 
 # InterProlog's native engine requires one additional file
 !IF "$(XSB_INTERPROLOG)" != ""
 !IF "$(DLL)" == "yes"
-DLL_LINK32_OBJS=$(DLL_LINK32_OBJS) $(OBJDIR)/interprolog_callback.obj
+DLL_LINK_OBJS=$(DLL_LINK_OBJS) $(OBJDIR)/interprolog_callback.obj
 !ELSE
-LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/interprolog_callback.obj
+LINK_OBJS=$(LINK_OBJS) $(OBJDIR)/interprolog_callback.obj
 !ENDIF
 !ENDIF
 
@@ -233,7 +244,7 @@ CPP_PROJ=\
 	$(INTERPROLOG_FLAG) $(DEBUG_CPP_FLAGS) \
 	$(DLL_CPP_FLAGS)
 
-LINK32_FLAGS=\
+LINK_FLAGS=\
 	/nologo \
 	/STACK:8388608 \
 	/subsystem:console \
@@ -257,7 +268,7 @@ LINK32_FLAGS=\
 	/out:"$(OUTDIR)/xsb.exe"
 
 DLL_CPP_PROJ=$(CPP_PROJ) /D "_WINDOWS"
-DLL_LINK32_FLAGS=\
+DLL_LINK_FLAGS=\
 	/nologo \
 	/STACK:8388608 \
 	/subsystem:windows \
@@ -282,14 +293,16 @@ DLL_LINK32_FLAGS=\
 	/pdb:"$(DLLDIR)/xsbdll.pdb" \
 	/out:"$(DLLDIR)/xsb.dll"
 
-"$(OUTDIR)\xsb.exe" : "$(OBJDIR)" $(DEF_FILE) $(LINK32_OBJS)
-	-@$(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
+"$(OUTDIR)\xsb.exe" : "$(OBJDIR)" $(DEF_FILE) $(LINK_OBJS) $(LINK_OTHEROBJS)
+	@echo Linking to create xsb.exe: $(LINK_OBJS) $(LINK_OTHEROBJS)
+	-@$(EXECUTABLE) @<<
+  $(LINK_FLAGS) $(LINK_OBJS) $(LINK_OTHEROBJS)
 <<
 
-"$(DLLDIR)\xsb.dll" : "$(DLLDIR)" $(DEF_FILE) $(DLL_LINK32_OBJS)
-	-@$(LINK32) @<<
-  $(DLL_LINK32_FLAGS) $(DLL_LINK32_OBJS)
+"$(DLLDIR)\xsb.dll": "$(DLLDIR)" $(DEF_FILE) $(DLL_LINK_OBJS) $(LINK_OTHEROBJS)
+	@echo Linking to create xsb.dll: $(DLL_LINK_OBJS) $(LINK_OTHEROBJS)
+	-@$(EXECUTABLE) @<<
+  $(DLL_LINK_FLAGS) $(DLL_LINK_OBJS) $(LINK_OTHEROBJS)
 <<
 
 .c{$(CPP_OBJS)}.obj:
@@ -312,6 +325,7 @@ DLL_LINK32_FLAGS=\
 
 CLEAN :
 	-@if exist "$(OBJDIR)\*.obj" erase "$(OBJDIR)\*.obj"
+	-@if exist "$(LIBDIR)\*.xwam" erase "$(LIBDIR)\*.xwam"
 	-@if exist "$(OUTDIR)\*.exe" erase "$(OUTDIR)\*.exe"
 	-@if exist "$(OUTDIR)\*.lib" erase "$(OUTDIR)\*.lib"
 	-@if exist "$(OUTDIR)\*.dll" erase "$(OUTDIR)\*.dll"

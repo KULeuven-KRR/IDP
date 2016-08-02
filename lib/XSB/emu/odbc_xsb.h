@@ -39,7 +39,7 @@ extern void FindFreeCursor(CTXTdecl);
 extern void SetBindVal(CTXTdecl);
 extern void Parse(CTXTdecl);
 extern int  GetColumn(CTXTdecl);
-extern void SetCursorClose(int);
+extern void SetCursorClose(struct ODBC_Cursor *);
 extern void FetchNextRow(CTXTdecl);
 extern void ODBCCommit(CTXTdecl);
 extern void ODBCRollback(CTXTdecl);

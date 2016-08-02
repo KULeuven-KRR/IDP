@@ -30,6 +30,9 @@
 	storage_find_fact/2,
 	storage_find_fact/3,
 	storage_find_keypair/3,
+	incr_storage_find_fact/2,
+	incr_storage_find_fact/3,
+	incr_storage_find_keypair/3,
 	storage_handle/4,
 	%% this is for debugging/profiling
 	storage_show_table_state/0.

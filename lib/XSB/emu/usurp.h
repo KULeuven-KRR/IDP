@@ -57,7 +57,7 @@ seq_table_try:
     if( !grabbed )
     {
       producer_sf = NewProducerSF(CTXTc CallLUR_Leaf(lookupResults),
-				   CallInfo_TableInfo(callInfo));
+				  CallInfo_TableInfo(callInfo),is_neg_call);
       subg_tid(producer_sf) = (Thread_T) xsb_thread_id;
       subg_grabbed(producer_sf) = FALSE;
       UNLOCK_CALL_TRIE() ;

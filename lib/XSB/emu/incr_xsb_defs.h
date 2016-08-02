@@ -21,12 +21,12 @@
 ** $Id: incr_xsb_defs.h,v 1.15 2012-10-30 23:16:01 tswift Exp $
 ** 
 */
-#define GET_AFFECTED_CALLS         1
-
+//#define GET_AFFECTED_CALLS         1
+//#define CONSUME_AFFECTED_CALLS     2
 //#define GET_CALL_GRAPH           3
 #define INVALIDATE_CALLNODE        4
 //#define PRINT_CALL               5
-#define GET_CHANGED_CALLS          6
+//#define GET_CHANGED_CALLS          6
 #define PSC_SET_INCR               7 
 #define GET_CALLNODEPTR_INCR       8
 #define INVALIDATE_SF              9
@@ -35,13 +35,15 @@
 #define IS_AFFECTED               12
 #define PSC_GET_INCR              13
 #define INVALIDATE_CALLNODE_TRIE  14
-#define CREATE_LAZY_CALL_LIST     15
+#define RETURN_LAZY_CALL_LIST     15
 #define CALL_IF_AFFECTED          16
 #define CHECK_INCREMENTAL         17
 #define IMMED_AFFECTS_PTRLIST     18
 #define GET_SUBGOAL_FRAME         19
 #define GET_INCR_SCCS             20
 #define IMMED_DEPENDS_PTRLIST     21
+#define PSC_GET_INTERN            22
+#define PSC_SET_INTERN            23
 
 // for psc hacking
 #define NONINCREMENTAL 0
@@ -59,3 +61,6 @@
   
 /* dfs_inedges */
 #define CANNOT_UPDATE              1
+
+#define NOT_ABOLISHING             0
+#define ABOLISHING                 1

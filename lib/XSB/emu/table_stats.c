@@ -74,7 +74,7 @@ NodeStats node_statistics(Structure_Manager *sm) {
 /* In order to use with both private and shared tables, this function
    does not use mutexes -- so its the responsability of the caller */
 
-HashStats hash_statistics(Structure_Manager *sm) {
+HashStats hash_statistics(CTXTdeclc Structure_Manager *sm) {
 
   HashStats ht_stats;
   counter num_used_hdrs;
@@ -118,14 +118,14 @@ v    counter num_contents = 0;
     /* Compare counter and header values
        --------------------------------- */
     if ( num_contents != BTHT_NumContents(pBTHT) )
-      xsb_warn("Inconsistent %s Usage Calculations:\n"
+      xsb_warn(CTXTc "Inconsistent %s Usage Calculations:\n"
 	       "\tHash table occupancy mismatch.", SM_StructName(*sm));
 #endif
     pBTHT = BTHT_NextBTHT(pBTHT);
   }
   if ( HashStats_NumAllocHeaders(ht_stats) !=
        (num_used_hdrs + HashStats_NumFreeHeaders(ht_stats)) )
-    xsb_warn("Inconsistent %s Usage Calculations:\n"
+    xsb_warn(CTXTc "Inconsistent %s Usage Calculations:\n"
 	     "\tHeader count mismatch:  Alloc: %d  Used: %d  Free: %d",
 	     SM_StructName(*sm), HashStats_NumAllocHeaders(ht_stats),
 	     num_used_hdrs,  HashStats_NumFreeHeaders(ht_stats));
@@ -183,7 +183,7 @@ NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *sm) {
 
   SYS_MUTEX_UNLOCK( MUTEX_TABLE );				
   if ( NodeStats_NumUsedNodes(sg_stats) != (counter) nSubgoals )
-    xsb_warn("Inconsistent Subgoal Frame Usage Calculations:\n"
+    xsb_warn(CTXTc "Inconsistent Subgoal Frame Usage Calculations:\n"
 	     "\tSubgoal Frame count mismatch");
 
   return sg_stats;
@@ -268,13 +268,13 @@ void print_detailed_tablespace_stats(CTXTdecl) {
 
 
   btn = node_statistics(&smTableBTN);
-  btht = hash_statistics(&smTableBTHT);
+  btht = hash_statistics(CTXTc &smTableBTHT);
   varsf = subgoal_statistics(CTXTc &smVarSF);
   prodsf = subgoal_statistics(CTXTc &smProdSF);
   conssf = subgoal_statistics(CTXTc &smConsSF);
   aln = node_statistics(&smALN);
   tstn = node_statistics(&smTSTN);
-  tstht = hash_statistics(&smTSTHT);
+  tstht = hash_statistics(CTXTc &smTSTHT);
   tsi = node_statistics(&smTSIN);
   tsi = node_statistics(&smTSIN);
   asi = node_statistics(&smASI);
@@ -296,7 +296,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   tablespace_used = tablespace_used + de_space_used + dl_space_used + pnde_space_used;
 
   abtn = node_statistics(&smAssertBTN);
-  abtht = hash_statistics(&smAssertBTHT);
+  abtht = hash_statistics(CTXTc &smAssertBTHT);
   trieassert_alloc =
     NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
   trieassert_used =
@@ -365,10 +365,10 @@ void print_detailed_tablespace_stats(CTXTdecl) {
       print_NodeStats(asi,"Answer Substitution Frames");
   }
 
-  if (call_count_gl) {
-    printf("\nTotal number of incremental subgoals created: %d\n",call_count_gl);
-    printf("   Current number of incremental call nodesd: %d\n",call_node_count_gl);
-    printf("   Total number of incremental call edges created: %d\n",call_edge_count_gl);
+  if (total_call_node_count_gl) {
+    printf("\nTotal number of incremental subgoals created: %d\n",total_call_node_count_gl);
+    printf("   Current number of incremental call nodesd: %d\n",current_call_node_count_gl);
+    printf("   Total number of incremental call edges created: %d\n",current_call_edge_count_gl);
   }
 
   // Private trie assert space
@@ -449,7 +449,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   btn = node_statistics(&smTableBTN);
   SM_Unlock(smTableBTN);
   SM_Lock(smTableBTHT);
-  btht = hash_statistics(&smTableBTHT);
+  btht = hash_statistics(CTXTc &smTableBTHT);
   SM_Unlock(smTableBTHT);
   SM_Lock(smVarSF);
   varsf = subgoal_statistics(CTXTc &smVarSF);
@@ -471,9 +471,9 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   SYS_MUTEX_UNLOCK( MUTEX_DELAY );			
 
   pri_btn = node_statistics(private_smTableBTN);
-  pri_btht = hash_statistics(private_smTableBTHT);
+  pri_btht = hash_statistics(CTXTc private_smTableBTHT);
   pri_assert_btn = node_statistics(private_smAssertBTN);
-  pri_assert_btht = hash_statistics(private_smAssertBTHT);
+  pri_assert_btht = hash_statistics(CTXTc private_smAssertBTHT);
   pri_aln = node_statistics(private_smALN);
   pri_asi = node_statistics(private_smASI);
   pri_varsf = subgoal_statistics(CTXTc private_smVarSF);
@@ -481,8 +481,8 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   pri_conssf = subgoal_statistics(CTXTc private_smConsSF);
   pri_tstn = node_statistics(private_smTSTN);
   pri_tsi = node_statistics(private_smTSIN);
-  pri_btht = hash_statistics(private_smTableBTHT);
-  pri_tstht = hash_statistics(private_smTSTHT);
+  pri_btht = hash_statistics(CTXTc private_smTableBTHT);
+  pri_tstht = hash_statistics(CTXTc private_smTSTHT);
 
   pri_de_space_alloc = allocated_de_space(private_current_de_block,&pri_num_de_blocks);
   pri_de_space_used = pri_de_space_alloc - unused_de_space_private(CTXT);
@@ -512,7 +512,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   tablespace_used =  shared_tablespace_used + pri_tablespace_used;
 
   abtn = node_statistics(&smAssertBTN);
-  abtht = hash_statistics(&smAssertBTHT);
+  abtht = hash_statistics(CTXTc &smAssertBTHT);
   trieassert_alloc = NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
   trieassert_used = NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
   SQUASH_LINUX_COMPILER_WARN(trieassert_used) ; 
@@ -686,11 +686,11 @@ struct {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-void reset_maximum_tablespace_stats() {
-
-  maxTableSpaceUsage.tsi = maxTableSpaceUsage.alns = 0;
-  maxTableSpaceUsage.total_bytes = 0;
-}
+//void reset_maximum_tablespace_stats() {
+//
+//  maxTableSpaceUsage.tsi = maxTableSpaceUsage.alns = 0;
+//  maxTableSpaceUsage.total_bytes = 0;
+//}
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -710,12 +710,12 @@ void compute_maximum_tablespace_stats(CTXTdecl) {
   HashStats tstht, btht;
 
   btn = node_statistics(&smTableBTN);
-  btht = hash_statistics(&smTableBTHT);
+  btht = hash_statistics(CTXTc &smTableBTHT);
   varsf = subgoal_statistics(CTXTc &smVarSF);
   prodsf = subgoal_statistics(CTXTc &smProdSF);
   conssf = subgoal_statistics(CTXTc &smConsSF);
   tstn = node_statistics(&smTSTN);
-  tstht = hash_statistics(&smTSTHT);
+  tstht = hash_statistics(CTXTc &smTSTHT);
   tsi = node_statistics(&smTSIN);
   aln = node_statistics(&smALN);
   asi = node_statistics(&smASI);

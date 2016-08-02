@@ -330,7 +330,7 @@ make_arg(X,_,X).
 
 goal_data(Sym,Args,goal(Sym,Args)).
 
-new_var(varocc(Varocc)) :- gensym('_', Prefix), cat_name(Prefix,(ti),Varocc).
+new_var(varocc(Varocc)) :- cmp_gensym('_', Prefix), cat_name(Prefix,(ti),Varocc).
 
 pass_thru_sym(constant(Sym)) :- sym_pass_thru(Sym).
 

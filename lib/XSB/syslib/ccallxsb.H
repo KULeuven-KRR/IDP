@@ -31,13 +31,13 @@
 :- import file_open/3, file_close/1
      from file_io.
 
-%%:- import set_xsb_ready/0 from thread.
-:- import set_inthandler/2 from loader.
-:- import call_c/1, call_expose/1, (index)/2, catch/3,
-   call_goal_cut_trans/3, handle_interrupts/1, repeat/0, (=..)/2  from standard.
 :- import (dynamic)/1, assert/1, retract/1, retractall/1 from assert.
-:- import file_write/2, file_nl/1 from xsb_writ.
-:- import file_read/3 from xsb_read.
-:- import excess_vars/4 from setof.
-:- import [] / 0 from usermod.	       % just to make usermod typed "module"
 :- import ccall_error_handler/1 from error_handler.
+:- import set_inthandler/2 from loader.
+:- import excess_vars/4 from setof.
+:- import call/1, call_c/1, call_expose/1, (index)/2, catch/3,
+   call_goal_cut_trans/3, handle_interrupts/1, repeat/0, (=..)/2  from standard.
+:- import [] / 0 from usermod.	       % just to make usermod typed "module"
+:- import xsb_configuration/2 from xsb_configuration.
+:- import file_read/3 from xsb_read.
+:- import file_write/2, file_nl/1 from xsb_writ.

@@ -53,6 +53,7 @@
 
 #include "heap_defs_xsb.h"
 #include "context.h"
+#include "sys/types.h"
 
 /*----- The following functions are used in other parts of the system --*/
 

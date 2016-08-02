@@ -65,15 +65,16 @@ char *user_home_gl;    	     	     	/* the user $HOME dir or install dir,
 extern xsbBool is_absolute_filename(char *);
 DllExport extern char * call_conv strip_names_from_path(char*, int);
 
-static void check_create_dir(char *);
+static void check_create_dir(CTXTdeclc char *);
 
 extern void transform_cygwin_pathname(char *);
+extern void fix_cygwin_pathname(char*);
 
 char current_dir_gl[MAXPATHLEN];
 char xsbinfo_dir_gl[MAXPATHLEN];
 
 
-void set_xsbinfo_dir () {
+void set_xsbinfo_dir (CTXTdecl) {
   struct stat *fileinfo = mem_alloc(1*sizeof(struct stat),LEAK_SPACE);
   char old_xinitrc[MAXPATHLEN], new_xinitrc[MAXPATHLEN],
     user_config_dir[MAXPATHLEN], user_arch_dir[MAXPATHLEN];
@@ -89,13 +90,13 @@ void set_xsbinfo_dir () {
   snprintf(user_arch_dir, MAXPATHLEN, "%s%c%s", user_config_dir, SLASH, FULL_CONFIG_NAME);
 
   /* Create USER_HOME/.xsb directory, if it doesn't exist. */
-  check_create_dir(xsbinfo_dir_gl);
-  check_create_dir(user_config_dir);
-  check_create_dir(user_arch_dir);
+  check_create_dir(CTXTc xsbinfo_dir_gl);
+  check_create_dir(CTXTc user_config_dir);
+  check_create_dir(CTXTc user_arch_dir);
   retcode = stat(old_xinitrc, fileinfo);
 
   if ((retcode == 0) && (stat(new_xinitrc, fileinfo) != 0)) {
-    xsb_warn("It appears that you have an old-style `.xsbrc' file!\n           The XSB initialization file is now %s.\n           If your `.xinitrc' defines the `library_directory' predicate,\n           please consult the XSB manual for the new conventions.", new_xinitrc);
+    xsb_warn(CTXTc "It appears that you have an old-style `.xsbrc' file!\n           The XSB initialization file is now %s.\n           If your `.xinitrc' defines the `library_directory' predicate,\n           please consult the XSB manual for the new conventions.", new_xinitrc);
   }
   mem_dealloc(fileinfo,1*sizeof(struct stat),LEAK_SPACE);
 }
@@ -103,7 +104,7 @@ void set_xsbinfo_dir () {
 
 /* Check if PATH exists. Create if it doesn't. Bark if it can't create or if
    PATH exists, but isn't a directory. */
-static void check_create_dir(char *path) {
+static void check_create_dir(CTXTdeclc char *path) {
   struct stat *fileinfo = mem_alloc(1*sizeof(struct stat),LEAK_SPACE);
   int retcode = stat(path, fileinfo);
 
@@ -112,7 +113,7 @@ static void check_create_dir(char *path) {
   }
 
   if (retcode == 0 && ! S_ISDIR(fileinfo->st_mode)) {
-    xsb_warn("File `%s' is not a directory!\n           XSB uses this directory to store data.", path);
+    xsb_warn(CTXTc "File `%s' is not a directory!\n           XSB uses this directory to store data.", path);
     /* exit(1); */
   }
 
@@ -124,7 +125,7 @@ static void check_create_dir(char *path) {
 #endif
 
   if (retcode != 0) {
-    xsb_warn("Cannot create directory `%s'!\n           XSB uses this directory to store data.", path);
+    xsb_warn(CTXTc "Cannot create directory `%s'!\n           XSB uses this directory to store data.", path);
     /* exit(1); */
   }
   mem_dealloc(fileinfo,1*sizeof(struct stat),LEAK_SPACE);
@@ -165,15 +166,18 @@ DllExport char *xsb_executable_full_path(char *myname)
     snprintf(myname_augmented, MAXPATHLEN, "%s.exe", myname);
 #endif
 
-#ifdef WIN_NT
-  /* CygWin32 uses absolute paths like this:
-     //<drive letter>/dir1/dir2/...
-     actually /cygdrive/<drive letter>/....
+#if defined(WIN_NT)
+  /* CYGWIN uses absolute paths like this:
+     /<drive letter>/dir1/dir2/...
      If we find such a path, we transform it to a windows-like pathname.
      This assumes that XSB has been compiled using the native Windows
-     API, and is being run from CygWin32 bash (like from the test
+     API, and is being run from CYGWIN bash (like from the test
      scripts). */
   transform_cygwin_pathname(myname_augmented);
+#endif
+#if defined(CYGWIN)
+  // converts Letter:/dir/dir into /cygdrive/Letter/dir/dir
+  fix_cygwin_pathname(myname_augmented);
 #endif
 
   if (is_absolute_filename(myname_augmented))

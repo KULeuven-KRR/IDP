@@ -131,6 +131,8 @@ safe_atom_codes_all([],[]).
 safe_atom_codes_all([X|R],[Y|S]) :-
 	(var(X),var(Y)
 	 ->	true
+	 ; integer(X)
+	 ->	number_codes(X,Y)
 	 ;	atom_codes(X,Y)
 	),
 	safe_atom_codes_all(R,S).
@@ -226,10 +228,14 @@ term_to_codes(Term,Structure,Var0,Var,Codes0,Codes) :-
          ->	Term=[Term1|Terms],
 	        get_listcode(Term1,Terms,Structure,Var0,Var,Codes0,Codes)
 	 ;	structure(Term)
-	 ->	Term =.. [Fun,Arg1|Args],
-		extern_atom_codes(Fun,Structure,Codes0,[0'(|Codes2]),
-		term_to_codes(Arg1,Structure,Var0,Var1,Codes2,Codes3),
-		cvt_termlist_to_codes(Args,Structure,Var1,Var,Codes3,[0')|Codes])
+	 ->	Term =.. List,
+	 	(List = [Fun,Arg1|Args] ->
+	 		extern_atom_codes(Fun,Structure,Codes0,[0'(|Codes2]),
+			term_to_codes(Arg1,Structure,Var0,Var1,Codes2,Codes3),
+			cvt_termlist_to_codes(Args,Structure,Var1,Var,Codes3,[0')|Codes])
+			; 
+			List = [Fun],
+			extern_atom_codes(Fun,Structure,Codes0,[0'(,0')|Codes]))
 	).
 
 cvt_termlist_to_codes([],_Structure,Var,Var,Codes,Codes).
@@ -401,7 +407,8 @@ codes_to_term_d([0'[|Rest0],Rest,ST0,ST,Term) :- !,
 codes_to_term_d(Rest0,Rest,ST0,ST,Term) :-
 	next_token(Rest0,Rest1,ST0,ST1,Tok0),
 	(Rest1 = [0'(|Rest2]
-	 ->	codes_to_term(Rest2,Rest3,ST1,ST2,Tok1),
+	 ->	nonvar(Tok0),
+		codes_to_term(Rest2,Rest3,ST1,ST2,Tok1),
 		codes_to_term_list(Rest3,[0')|Rest4],Terms,[],ST2,ST),
 		scan_blanks(Rest4,Rest),
 		Term =.. [Tok0,Tok1|Terms]
@@ -532,13 +539,42 @@ read_atom_to_term(Atom,Term) :-
 	read_atom_to_term(Atom,Term,_).
 
 read_atom_to_term(Atom,Term,Vars) :-
-	file_open([Atom,'.'],sr,FileDes),
+	(atom(Atom)
+	 ->	true
+	 ;	type_error(atom,Atom,read_atom/2,1)
+	),
+	(Atom == [] % hack to handle [] treatment as '' ambiguity in ptoc_longstring.
+	 ->	atom_codes(Atom1,"'[]'")
+	 ;	Atom1 = Atom
+	),
+	file_open([Atom1,'.'],sr,FileDes),
 	(file_read_foe(FileDes,Term,Vars)
 	 ->	file_close(FileDes)
 	 ;	file_close(FileDes),
 		fail
 	).
-		  
+
+read_atom_to_term_print_on_error(Atom,Term,Vars) :-
+	(atom(Atom)
+	 ->	true
+	 ;	type_error(atom,Atom,read_atom_to_term_print_on_error/3,1)
+	),
+	(Atom == []  % hack to handle [] treatment as '' in ptoc_longstring.
+	 ->	atom_codes(Atom1,"'[]'")
+	 ;	Atom1 = Atom
+	),
+	file_open([Atom1,'.'],sr,FileDes),
+	(standard:catch(file_read(FileDes,Term,Vars),E,read_handler(E))
+	 ->	file_close(FileDes)
+        ;
+            file_close(FileDes),
+            standard:nl(2),
+            fail
+	).
+
+read_handler(error(_,context(Message,_Trace))) :-
+        error_writeln(Message),
+        fail.
 
 /* ---------------------- end of file string.P ------------------------ */
 

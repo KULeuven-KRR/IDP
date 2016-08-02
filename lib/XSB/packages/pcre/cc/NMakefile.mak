@@ -2,7 +2,7 @@
 ## Author(s): Mandar Pathak
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 2010
+## Copyright (C) The Research Foundation of SUNY, 2010 - 2017
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
@@ -24,8 +24,13 @@
 XSBDIR=..\..\..
 MYPROGRAM=pcre4pl
 
-CC=cl.exe
-OUTDIR=$(XSBDIR)\config\x86-pc-windows\bin
+CPP=cl.exe
+LINKER=link.exe
+
+OUTDIR     = bin
+ARCHDIR    =$(XSBDIR)\config\x86-pc-windows
+ARCHBINDIR =$(ARCHDIR)\bin
+ARCHOBJDIR =$(ARCHDIR)\saved.o
 INTDIR=.
 
 ALL : "$(OUTDIR)\$(MYPROGRAM).dll"
@@ -36,33 +41,27 @@ CLEAN :
 	-@if exist "$(INTDIR)\$(MYPROGRAM).dll" erase "$(INTDIR)\$(MYPROGRAM).dll"
 	-@if exist "$(INTDIR)\$(MYPROGRAM).exp" erase "$(INTDIR)\$(MYPROGRAM).exp"
 
-##"$(OUTDIR)" :
-##    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /I "$(XSBDIR)\config\x86-pc-windows" \
-		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" /I "$(XSBDIR)\packages\pcre\cc\pcre" \
-		/D "WIN_NT" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
-		/Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
+CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /I "$(ARCHDIR)" \
+		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" \
+		 /I "$(XSBDIR)\packages\pcre\cc\pcre" \
+		 /D "WIN_NT" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
+		 /Fo"$(ARCHOBJDIR)\\" /Fd"$(ARCHOBJDIR)\\" /c 
 	
-
 SOURCE=$(MYPROGRAM).c
+"$(ARCHOBJDIR)\$(MYPROGRAM).obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-"$(INTDIR)\$(MYPROGRAM).obj" : $(SOURCE) "$(INTDIR)"
-	$(CC) $(CPP_PROJ) $(SOURCE)
-
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
+LINK_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
 		odbc32.lib odbccp32.lib xsb.lib pcre.lib \
 		/nologo /dll \
 		/machine:I386 /out:"$(OUTDIR)\$(MYPROGRAM).dll" \
-		/libpath:"$(XSBDIR)\config\x86-pc-windows\bin" \
+		/libpath:"$(ARCHBINDIR)" \
 		/libpath:"$(XSBDIR)\prolog_includes" \
 		/libpath:.\bin
 
-LINK32_OBJS=  "$(INTDIR)\$(MYPROGRAM).obj"
+LINK_OBJS=  "$(ARCHOBJDIR)\$(MYPROGRAM).obj"
 
-## "$(OUTDIR)\$(MYPROGRAM).dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-
-"$(OUTDIR)\$(MYPROGRAM).dll" : "$(OUTDIR)" $(LINK32_OBJS)
-    $(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS)
+"$(OUTDIR)\$(MYPROGRAM).dll" : "$(ARCHBINDIR)" $(LINK_OBJS)
+    $(LINKER) $(LINK_FLAGS) $(LINK_OBJS)

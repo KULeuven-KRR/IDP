@@ -29,7 +29,11 @@ standard_metapredicate(abolish,1,1).
 standard_symbol(abolish, 2, assert).			 %????
 standard_metapredicate_template(abolish,2,(:)).
 
+standard_symbol(max_incomplete_subgoals_handler,0,tables).
+standard_symbol(max_scc_subgoals_handler,0,tables).
 standard_symbol(abolish_all_tables, 0, tables).		
+standard_symbol(abolish_nonincremental_tables, 1, tables).		
+standard_symbol(abolish_nonincremental_tables, 0, tables).		
 standard_symbol(abolish_all_private_tables, 0, thread).		
 
 standard_symbol(abolish_table_call, 1, tables).		
@@ -40,8 +44,26 @@ standard_symbol(abolish_table_call, 2, tables).
 standard_metapredicate(abolish_table_call,2,1).
 standard_metapredicate_template(abolish_table_call,2,(:,*)).
 
+standard_symbol(abolish_table_subgoals, 1, tables).		
+standard_metapredicate(abolish_table_subgoals,1,1).
+standard_metapredicate_template(abolish_table_subgoals,1,(:)).
+
+standard_symbol(abolish_table_subgoals, 2, tables).		
+standard_metapredicate(abolish_table_subgoals,2,1).
+standard_metapredicate_template(abolish_table_subgoals,2,(:,*)).
+
+standard_symbol(abolish_table_subgoal, 1, tables).		
+standard_metapredicate(abolish_table_subgoal,1,1).
+standard_metapredicate_template(abolish_table_subgoal,1,(:)).
+
+standard_symbol(abolish_table_subgoal, 2, tables).		
+standard_metapredicate(abolish_table_subgoal,2,1).
+standard_metapredicate_template(abolish_table_subgoal,2,(:,*)).
+
 standard_symbol(abolish_table_pred, 1, tables).		
 standard_symbol(abolish_table_pred, 2, tables).		
+standard_symbol(abolish_table_index_pred, 1, standard).
+standard_symbol(table_index, 2, standard).
 standard_symbol(abort, 0, standard).
 standard_symbol(abort, 1, standard).
 standard_symbol(abort_on_thread_cancel,0,error_handler).
@@ -250,6 +272,8 @@ standard_symbol(get_call, 3, tables).
 standard_symbol(get_calls, 3, tables).
 standard_symbol(get_calls_for_table, 2, tables).
 standard_symbol(get_date, 6, standard).
+standard_symbol(get_utcdate, 6, standard).
+standard_symbol(get_localdate, 6, standard).
 standard_symbol(get_producer_call, 3, tables).
 standard_symbol(get_residual, 2, tables).
 standard_symbol(variant_get_residual, 2, tables).
@@ -308,6 +332,7 @@ standard_symbol(mutex_unlock_all,0,  mutex_xsb).
 standard_symbol(mutex_property,2, mutex_xsb).
 standard_symbol((multifile), 1, standard).
 
+
 %standard_symbol(member,2,basics).
 
 standard_symbol(name, 2, standard).
@@ -351,6 +376,7 @@ standard_symbol(phrase, 2, dcg).
 standard_symbol(phrase, 3, dcg).
 standard_symbol(predicate_property, 2, curr_sym).
 %standard_symbol(print, 1, standard).
+standard_symbol(print_sdg_info, 0, tables).
 standard_symbol(proper_hilog, 1, standard).
 standard_symbol(put, 1, standard).		% not ISO
 standard_symbol(put_attr, 3, machine).		
@@ -428,8 +454,11 @@ standard_symbol(sys_exit, 1, shell).
 standard_symbol(tab, 1, standard).
 standard_symbol(table_dump, 0, dump_table).
 standard_symbol((table), 1, standard).
-standard_symbol(timed_call,3,standard).
-standard_symbol(timed_call,4,standard).
+standard_symbol(timed_call,2,standard).
+standard_symbol(timed_call_modify,1,standard).
+standard_symbol(current_timed_call,2,standard).
+standard_symbol(timed_call_cancel,0,standard).
+standard_symbol(remove_timed_call_state,1,standard).
 
 standard_metapredicate_template(table_once,1,(0)).
 
@@ -440,7 +469,8 @@ standard_symbol(table_state, 2, tables).
 standard_symbol(table_state, 4, tables).
 standard_symbol(tell, 1, standard).
 standard_symbol(telling, 1, standard).
-standard_symbol(term_variables, 2, constraintLib).
+%standard_symbol(term_variables, 2, constraintLib).
+standard_symbol(term_variables, 2, setof).
 standard_symbol(term_depth, 2, machine).
 standard_symbol(term_size, 2, machine).
 standard_symbol(term_size_limit, 2, machine).

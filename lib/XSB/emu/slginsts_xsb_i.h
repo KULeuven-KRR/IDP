@@ -117,7 +117,8 @@
 #endif
 
 #define  LOG_TABLE_CALL(state)						\
-  if (flags[CTRACE_CALLS])  {						\
+  /*  printf("ctrace %d forest_log_off %d\n",flags[CTRACE_CALLS],!subg_forest_log_off(producer_sf)); */	\
+  if (flags[CTRACE_CALLS] && !subg_forest_log_off(producer_sf))  {		\
     sprint_subgoal(CTXTc forest_log_buffer_1,0,(VariantSF)producer_sf);	\
     if (ptcpreg) {							\
       sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)ptcpreg);	\
@@ -131,8 +132,8 @@
 	      forest_log_buffer_2->fl_buffer,state,ctrace_ctr++); }	\
   }
 
-#define LOG_ANSWER_RETURN(answer,template_ptr)		\
-  if (flags[CTRACE_CALLS] > 1)  {			\
+#define LOG_ANSWER_RETURN(answer,template_ptr)				\
+  if (flags[CTRACE_CALLS] > 1 && !subg_forest_log_off(consumer_sf))  {			\
     sprintAnswerTemplate(CTXTc forest_log_buffer_1,template_ptr, template_size); \
     sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)consumer_sf);	\
     sprint_subgoal(CTXTc forest_log_buffer_3,0,(VariantSF)ptcpreg); \
@@ -145,6 +146,20 @@
 	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer, \
 	      ctrace_ctr++);						\
   }
+
+/* need to test if ground (or better, but harder, if goals are
+   identical) since p(X) :- p(X) is different from p(X) :- p(Y), yet
+   they have the same goals. */
+#define fail_if_direct_recursion(SUBGOAL)				\
+  do {									\
+    if (SUBGOAL == (VariantSF)ptcpreg					\
+	&& is_ground_subgoal(SUBGOAL) ) {				\
+      Fail1;								\
+      XSB_Next_Instr();							\
+    }									\
+    } while (0)
+
+#include "complete_xsb_i.h"
 
 /*
  *  Instruction format:
@@ -168,20 +183,21 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   VariantSF producer_sf, consumer_sf;
   CPtr answer_template_cps, answer_template_heap;
   int template_size, attv_num, is_neg_call; Integer tmp;
-#ifdef CALL_ABSTRACTION
-  int abstr_size;
-#endif
   TIFptr tip;
   int ret;
   int parent_table_is_incr = 0; /* for incremental evaluation */
   VariantSF parent_table_sf=NULL; /* used for creating call graph */
+#ifdef CALL_ABSTRACTION
+  int abstr_size;
+  UNUSED(abstr_size);
+#endif
+
+  UNUSED(op1);
 
   //  printf("starting breg is %x %x\n",breg,((pb)tcpstack.high - (pb)breg));
 
-  old_call_gl=NULL;   /* incremental evaluation */
-
 #ifdef SHARED_COMPL_TABLES
-  byte * inst_addr = lpcreg;
+  byte *inst_addr = lpcreg;
   Integer table_tid ;
   int grabbed = FALSE;
   th_context * waiting_for_thread;
@@ -192,6 +208,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CPtr old_cptop;
 #endif
 #endif
+
+  old_call_gl=NULL;   /* incremental evaluation */
 
   xwammode = 1;
   CallInfo_Arguments(callInfo) = reg + 1;
@@ -279,7 +297,8 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
 	} 
 	else{
 	  if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
-	    xsb_abort("Predicate %s/%d not declared incr_table: cannot create dependency edge\n", 
+	    xsb_abort("Predicate %s:%s/%d not declared incr_table: cannot create dependency edge\n", 
+		      get_mod_name(TIF_PSC(CallInfo_TableInfo(callInfo))),
 		      get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),
 		      get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
 	}
@@ -300,8 +319,8 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
     /* New Producer
        ------------ */
     CPtr producer_cpf;
-    producer_sf = NewProducerSF(CTXTc CallLUR_Leaf(lookupResults),
-				 CallInfo_TableInfo(callInfo));
+    producer_sf = NewProducerSF(CTXTc CallLUR_Leaf(lookupResults),CallInfo_TableInfo(callInfo),is_neg_call);
+    //    printf("new producer sf %p\n",producer_sf);
 
 #endif /* !SHARED_COMPL_TABLES */
 #ifdef CONC_COMPL
@@ -331,7 +350,7 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
     } 
     else {
       if(IsIncrSF(producer_sf))
-	initoutedges(producer_sf->callnode);
+	initoutedges(CTXTc producer_sf->callnode);
     }
 
     if(parent_table_is_incr){  
@@ -339,7 +358,10 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
 	addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
       }else{
 	if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
-	  xsb_abort("Predicate %s/%d not declared incr_table\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
+	  xsb_abort("Predicate %s:%s/%d not declared incr_table\n",
+		    get_mod_name(TIF_PSC(CallInfo_TableInfo(callInfo))),
+		    get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),
+		    get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
       }
     }
 
@@ -451,7 +473,9 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
       }
       //      printf("unif stk size is %d\n",i);
       delay_it = 1;
-      lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
+
+      setup_to_return_completed_answers(producer_sf,template_size);
+
       //#ifdef MULTI_THREAD_RWL
       ///* save choice point for trie_unlock instruction */
       //      save_find_locx(ereg);
@@ -662,6 +686,7 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
 	   * delay_positively().
 	   */
 	  if (num_heap_term_vars == 0) {
+	    fail_if_direct_recursion(producer_sf);
 	    delay_positively(producer_sf, first_answer,
 			     makestring(get_ret_string()));
 	  }
@@ -700,6 +725,7 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
    *  Retrieve instruction arguments and test the system stacks for
    *  overflow.  The local PCreg, "lpcreg", is incremented to point to
    *  the instruction to be executed should this one fail.
+   *  Parameters are the same as tabletrysingle
    */
   
   TabledCallInfo callInfo;
@@ -707,6 +733,9 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
   VariantSF  sf;
   TIFptr tip;
   callnodeptr cn;
+
+    UNUSED(op1);
+    UNUSED(op3);
 
     //#ifdef MULTI_THREAD
     //  xsb_abort("Incremental Maintenance of tables is not available for multithreaded engine.\n");
@@ -716,7 +745,6 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
 
   xwammode = 1;
    
-
   CallInfo_CallArity(callInfo) = get_xxa; 
   LABEL = (CPtr)((byte *) get_xxxl);  
   Op1(get_xxxxl);
@@ -767,8 +795,11 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
   else  /* not incremental */
     if (!get_opaque(TIF_PSC(tip))) {
       sf=(VariantSF)ptcpreg;
-      xsb_abort("Parent predicate %s/%d not declared incr_table\n", 
-		get_name(TIF_PSC(subg_tif_ptr(sf))),get_arity(TIF_PSC(subg_tif_ptr(sf)))); 
+      xsb_abort("Parent predicate %s:%s/%d not declared incr_table\n", 
+		get_mod_name(TIF_PSC(subg_tif_ptr(sf))),
+		get_name(TIF_PSC(subg_tif_ptr(sf))),
+		get_arity(TIF_PSC(subg_tif_ptr(sf)))
+		); 
     }
 #endif
   ADVANCE_PC(size_xxx);
@@ -960,16 +991,50 @@ XSB_End_Instr()
  */
 
 
+#define check_new_answer_interrupt {					\
+    if ( !(asynint_val) ) {						\
+      Fail1;								\
+    } else {								\
+      if (asynint_val & THREADINT_MARK) {				\
+	/*	printf("Entered thread cancel: proceed\n");	*/	\
+        synint_proc(CTXTc true_psc, THREADSIG_CANCEL);			\
+        lpcreg = pcreg;							\
+        asynint_val = 0;						\
+        asynint_code = 0;						\
+      } else if (asynint_val & KEYINT_MARK) {				\
+		printf("Entered keyb handle: new_answer_dealloc\n");  \
+	synint_proc(CTXTc true_psc, MYSIG_KEYB);			\
+	lpcreg = pcreg;							\
+        asynint_val = asynint_val & ~KEYINT_MARK;			\
+        asynint_code = 0;						\
+      } else if (asynint_val & TIMER_MARK) {				\
+	/*	printf("Entered timer handle: new_answer_dealloc\n"); */ \
+	synint_proc(CTXTc true_psc, TIMER_INTERRUPT);			\
+        lpcreg = pcreg;							\
+        asynint_val = 0;						\
+        asynint_code = 0;						\
+      } else {								\
+	lpcreg = pcreg;							\
+        asynint_code = 0;						\
+      }									\
+    }									\
+  }								
+
+
 XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc) 
   Def2ops
   CPtr producer_cpf, producer_csf, answer_template;
   int template_size, attv_num; Integer tmp;
-#ifdef CALL_ABSTRACTION
-  int abstr_size;
-#endif
   VariantSF producer_sf;
   xsbBool isNewAnswer = FALSE;
   BTNptr answer_leaf;
+#ifdef CALL_ABSTRACTION
+  int abstr_size;
+  UNUSED(abstr_size);
+#endif
+
+  UNUSED(op1);
+  UNUSED(producer_csf);
 
   ARITY = get_xax;
   Yn = get_xxa; /* we want the # of the register, not a pointer to it */
@@ -1046,11 +1111,11 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */
 
-  if (flags[CTRACE_CALLS])  { 
+  if (flags[CTRACE_CALLS] && !subg_forest_log_off(producer_sf))  { 
     memset(forest_log_buffer_1->fl_buffer,0,MAXTERMBUFSIZE);
     memset(forest_log_buffer_2->fl_buffer,0,MAXTERMBUFSIZE);
     memset(forest_log_buffer_3->fl_buffer,0,MAXTERMBUFSIZE);
-    //    sprint_registers(CTXTc  buffera,TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_DEPTH]);
+    //    sprint_registers(CTXTc  buffera,TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_SIZE]);
     //    printAnswerTemplate(stddbg,answer_template ,(int) template_size);
     sprintAnswerTemplate(CTXTc forest_log_buffer_1, 
 			 answer_template, template_size);
@@ -1071,7 +1136,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   printf("AT (na) %p size %d\n",answer_template,template_size);
   print_heap_abstraction(answer_template-2*(abstr_size)-(template_size-1),abstr_size);
   printAnswerTemplate(stddbg,answer_template,template_size);
-  print_registers(stddbg, TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_DEPTH]);
+  print_registers(stddbg, TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_SIZE]);
 #endif
 
     SUBG_INCREMENT_ANSWER_CTR(producer_sf);
@@ -1097,6 +1162,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
        * answer was saved as a term ret/n (in variant_answer_search()).
        */
 #ifndef IGNORE_DELAYVAR
+      fail_if_direct_recursion(producer_sf);
       if (isinteger(cell(ans_var_pos_reg))) {
 	delay_positively(producer_sf, answer_leaf,
 			 makestring(get_ret_string()));
@@ -1128,7 +1194,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 	perform_early_completion(CTXTc producer_sf, producer_cpf);
 #if defined(LOCAL_EVAL)
 	flags[PIL_TRACE] = 1;
-	/* do not comment following condition: results in unnecessary recomputation (dsw for Pablo Chico) */
+	/* The following prunes deeper choicepoints at early completion if possible */
 	if (tcp_pcreg(producer_cpf) != (byte *) &answer_return_inst) {
           CPtr b = breg;
 	  //          printf("+++ ec breg: %p, producer %p\n",b,producer_cpf);
@@ -1144,7 +1210,8 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
       }
     }
 #ifdef LOCAL_EVAL
-    Fail1;	/* and do not return answer to the generator */
+   check_new_answer_interrupt;
+    //    Fail1;	/* and do not return answer to the generator */
     xsb_dbgmsg((LOG_DEBUG,"Failing from new answer %x to %x (inst %x)\n",
 		breg,tcp_pcreg(breg),*tcp_pcreg(breg)));
 
@@ -1214,8 +1281,6 @@ XSB_Start_Instr(tabletrust,_tabletrust)
   TABLE_RESTORE_SUB
 XSB_End_Instr()
 /*-------------------------------------------------------------------------*/
-
-#include "complete_xsb_i.h"
 
 /*-------------------------------------------------------------------------*/
 

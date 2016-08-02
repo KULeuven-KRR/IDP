@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <libxml/xpathInternals.h>
 #include "cinterf.h"
+#include "auxlry.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -94,6 +95,8 @@ DllExport int call_conv parse_xpath__()
   char *source = NULL, *tmpsource = NULL, *tmp = NULL, flag = 0, server[MAXSTRLEN], fname[MAXSTRLEN];
   xmlChar *xpath_expr = NULL, *namespace = NULL;
   int ret = 0,  n=0;
+
+  SQUASH_LINUX_COMPILER_WARN(n)
 
   /*Initialize the xpath parser*/  
   xmlInitParser();

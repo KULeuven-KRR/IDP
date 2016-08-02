@@ -818,8 +818,12 @@ XSB_Start_Instr(trie_root,_trie_root)
  TRIE_R_LOCK()
  NodePtr = (BTNptr) lpcreg;
  lpcreg = (byte *) BTN_Child(NodePtr);
- // trie_instr_print(("trie_root %d %p\n",trieinstr_vars_num,NodePtr));
+ trie_instr_print(("trie_root %d %p\n",trieinstr_vars_num,NodePtr));
  // printf("stack bottom %x @ %x\n",trieinstr_unif_stk[0],*(CPtr)trieinstr_unif_stk[0]);
+ // if (BTN_Parent(NodePtr)) { 
+ //   printf("trie root NP %p for %p visitors %d",NodePtr,BTN_Parent(NodePtr),subg_visitors(BTN_Parent(NodePtr))+1);print_subgoal(stddbg,(VariantSF) BTN_Parent(NodePtr));
+ //  printf("\n");
+ // else printf("trie root NP %p called with 0 nodeptr\n",NodePtr);
 #ifdef COUNT_TRIE_VISITORS
  if (BTN_Parent(NodePtr)  && IsIncrSF(BTN_Parent(NodePtr)) ) {  
    trie_instr_print(("trie_root %d %p parent%p\n",trieinstr_vars_num,NodePtr,BTN_Parent(NodePtr)));
@@ -845,6 +849,7 @@ XSB_Start_Instr(trie_root,_trie_root)
 #endif
 XSB_End_Instr()
 
+  /* If the way info on the CP stack changes, make sure to change  get_psc_for_trie_fail() in tr_utils.c */
 XSB_Start_Instr(trie_fail,_trie_fail)
   CPtr tbreg;
  TRIE_R_UNLOCK()
@@ -856,6 +861,8 @@ XSB_Start_Instr(trie_fail,_trie_fail)
  breg = cp_prevbreg(breg);       /* Remove this CP */
  //    restore_trail_condition_registers(breg);
  subg_visitors(BTN_Parent(NodePtr)) =    subg_visitors(BTN_Parent(NodePtr)) - 1;
+ // if (BTN_Parent(NodePtr)) { 
+ //   printf("trie fail for %p ",BTN_Parent(NodePtr) );print_subgoal(stddbg,(VariantSF) BTN_Parent(NodePtr));printf(" visitors %d\n", subg_visitors(BTN_Parent(NodePtr)));}
  lpcreg = (byte *) & fail_inst;
 XSB_End_Instr()
 

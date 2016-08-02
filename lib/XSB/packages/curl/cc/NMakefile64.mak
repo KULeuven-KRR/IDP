@@ -2,7 +2,7 @@
 ## Author(s): Aneesh Ali
 ## Contact:   xsb-contact@cs.sunysb.edu
 ## 
-## Copyright (C) The Research Foundation of SUNY, 2010-2011
+## Copyright (C) The Research Foundation of SUNY, 2010 - 2017
 ## 
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
@@ -27,12 +27,15 @@ XSBDIR=..\..\..
 MYPROGRAM=curl2pl
 
 CPP=cl.exe
-OUTDIR=$(XSBDIR)\config\x64-pc-windows
-OUTBINDIR=$(OUTDIR)\bin
-OUTOBJDIR=$(OUTDIR)\saved.o
+LINKER=link.exe
+
+OUTDIR     = bin64
+ARCHDIR    =$(XSBDIR)\config\x64-pc-windows
+ARCHBINDIR =$(ARCHDIR)\bin
+ARCHOBJDIR =$(ARCHDIR)\saved.o
 INTDIR=.
 
-ALL : "$(OUTBINDIR)\$(MYPROGRAM).dll"
+ALL : "$(OUTDIR)\$(MYPROGRAM).dll"
 
 CLEAN :
 	-@if exist "$(INTDIR)\*.obj" erase "$(INTDIR)\*.obj"
@@ -40,32 +43,32 @@ CLEAN :
 	-@if exist "$(INTDIR)\*.exp" erase "$(INTDIR)\*.exp"
 
 
-CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /I "$(OUTDIR)" \
+CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /I "$(ARCHDIR)" \
 	/I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" \
 	/I "$(XSBDIR)\packages\curl\cc"\
 	/D "WIN64" /D "WIN_NT" $(DEBUG_FLAG) /D "_WINDOWS" /D "_MBCS" \
-	/Fo"$(OUTOBJDIR)\\" /Fd"$(OUTOBJDIR)\\" /c 
+	/Fo"$(ARCHOBJDIR)\\" /Fd"$(ARCHOBJDIR)\\" /c 
 	
 SOURCE=load_page.c
-"$(OUTOBJDIR)\load_page.obj" : $(SOURCE) "$(INTDIR)"
+"$(ARCHOBJDIR)\load_page.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
 SOURCE=error.c curl2pl.c
-"$(OUTOBJDIR)\$(MYPROGRAM).obj" : $(SOURCE) "$(INTDIR)"
+"$(ARCHOBJDIR)\$(MYPROGRAM).obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
+LINK_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
 		odbc32.lib odbccp32.lib xsb.lib wsock32.lib libcurl.lib \
 		/nologo /dll \
-		/machine:x64 /out:"$(OUTBINDIR)\$(MYPROGRAM).dll" \
-		/libpath:"$(OUTBINDIR)"	\
+		/machine:x64 /out:"$(OUTDIR)\$(MYPROGRAM).dll" \
+		/libpath:"$(ARCHBINDIR)"	\
 		/libpath:.\bin64
-LINK32_OBJS=  "$(OUTOBJDIR)\load_page.obj" "$(OUTOBJDIR)\$(MYPROGRAM).obj"
 
-"$(OUTBINDIR)\$(MYPROGRAM).dll" : "$(OUTBINDIR)" $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
+LINK_OBJS=  "$(ARCHOBJDIR)\load_page.obj" "$(ARCHOBJDIR)\$(MYPROGRAM).obj"
+
+"$(OUTDIR)\$(MYPROGRAM).dll" : "$(ARCHBINDIR)" $(LINK_OBJS)
+    $(LINKER) @<<
+  $(LINK_FLAGS) $(LINK_OBJS)
 <<

@@ -239,26 +239,31 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 
 	numFields = query->returnFields;
 	result = (struct xsb_data **)malloc(numFields * sizeof(struct xsb_data *));
-	for (i = 0 ; i < numFields ; i++)
-	{
-		result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
-		result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
-		result[i]->type = driverMySQL_getXSBType(mysql_fetch_field_direct(query->resultSet, i));
-
-		switch (result[i]->type){
-		  case INT_TYPE:
-		    result[i]->val->i_val = strtol(row[i],p_temp,10);
-		    break;
-
-		  case FLOAT_TYPE:
-		    result[i]->val->f_val = strtod(row[i],p_temp);
-		    break;
-
-		  case STRING_TYPE:
-		    result[i]->val->str_val = (char *)malloc((strlen(row[i])+1) * sizeof(char));
-		    strcpy(result[i]->val->str_val, (char *)row[i]);
-		    break;
-		}
+	for (i = 0 ; i < numFields ; i++) {
+	  result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
+	  result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
+	  result[i]->type = driverMySQL_getXSBType(mysql_fetch_field_direct(query->resultSet, i));
+	  
+	  if (row[i] == NULL)
+	    result[i]->type = NULL_VALUE_TYPE;
+	  
+	  switch (result[i]->type) {
+	  case INT_TYPE:
+	    result[i]->val->i_val = strtol(row[i],p_temp,10);
+	    break;
+	    
+	  case FLOAT_TYPE:
+	    result[i]->val->f_val = strtod(row[i],p_temp);
+	    break;
+	    
+	  case STRING_TYPE:
+	    result[i]->val->str_val = (char *)malloc((strlen(row[i])+1) * sizeof(char));
+	    strcpy(result[i]->val->str_val, (char *)row[i]);
+	    break;
+	    
+	  case NULL_VALUE_TYPE:
+	    break;
+	  }
 	}
 
 	return result;
@@ -388,7 +393,7 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 	
 	numOfParams = rs->handle->numParams;
 	bind = (MYSQL_BIND *)calloc( numOfParams, sizeof(MYSQL_BIND));
-	memset(bind, 0, sizeof(bind));
+	memset(bind, 0, sizeof(*bind));
 	for (i = 0 ; i < numOfParams ; i++)
 	{
 		if (bindValues[i]->type == INT_TYPE)
@@ -440,7 +445,7 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 	  }
 
 	bindResult = (MYSQL_BIND *)malloc(rs->returnFields * sizeof(MYSQL_BIND));
-	memset(bindResult, 0, sizeof(bindResult));
+	memset(bindResult, 0, sizeof(*bindResult));
 	for (i = 0 ; i < rs->returnFields ; i++)
 	{
 		switch (rs->metaInfo[i]->type)

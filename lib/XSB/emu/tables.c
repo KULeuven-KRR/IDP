@@ -111,7 +111,7 @@ Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
 #if !defined(WIN_NT)
 inline 
 #endif
-VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {   
+VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo,unsigned int is_negative_call) {   
     									
   void *pNewSF;							
 
@@ -147,6 +147,7 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    
    INIT_SUBGOAL_CALLSTO_NUMBER(pNewSF);
    ((VariantSF) pNewSF)->visited = 0;
+   subg_negative_initial_call(pNewSF) = (unsigned int) is_negative_call;
 /* incremental evaluation start */
 if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
   //  sfPrintGoal(stdout,pNewSF,NO);printf(" is marked incr\n");
@@ -313,6 +314,7 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
     CPtr tmplt_component, tmplt_var_addr, hrg_addr;
 #ifdef CALL_ABSTRACTION
     int size, j,attv_num,abstr_size;  /* call abstraction */
+    UNUSED(attv_num);
 #else
     int size, j;
 #endif
@@ -321,7 +323,7 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
     size = int_val(*tmplt_component) & 0xffff;
 #ifdef CALL_ABSTRACTION
     get_var_and_attv_nums(size, attv_num, abstr_size, int_val(*tmplt_component)); 
-    //    printf("done with vcs, answer_template info %x lur %x size %d\n",
+    //        printf("done with vcs, size %d attv_num %d abstr_size %d\n",size, attv_num, abstr_size);
     //	   CallLUR_AnsTempl(*results),CallInfo_AnsTempl(*call_info),size);
 #endif
     /* expand heap if there's not enough space */
@@ -402,7 +404,7 @@ int table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
       BTN_Child(leaf) = (BTNptr)cn;
       callnode_tif_ptr(cn) = tif;
       callnode_leaf_ptr(cn) = leaf;
-      initoutedges((callnodeptr)BTN_Child(leaf));
+      initoutedges(CTXTc (callnodeptr)BTN_Child(leaf));
     }
   }
   else
@@ -627,20 +629,21 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
  */
 
 /*
- *  Deallocate all the data structures which become superfluous once the
- *  table has completed.  Currently, this includes the answer list nodes
- *  from the producer, and if subsumption was used, the TSIs from the
- *  answer set and the answer list nodes from the subsumed subgoals.
- *  For the producers, the engine requires that the dummy answer-list
- *  node remain, and that its 'next' field be set to either the constant
- *  CON_ANSWERS or UNCOND_ANSWERS depending on whether there were any
- *  conditional answers in the answer list.  For the subsumed (consumer)
- *  subgoals, the entire answer list, including the dummy, is reclaimed.
+ *  Deallocate all the data structures which become superfluous once
+ *  the table has completed.  Currently, this includes the answer list
+ *  nodes from the producer (for non-incremental tables), and if
+ *  subsumption was used, the TSIs from the answer set along with the
+ *  answer list nodes from the subsumed subgoals.  For the producers,
+ *  the engine requires that the dummy answer-list node remain, and
+ *  that its 'next' field be set to either the constant CON_ANSWERS or
+ *  UNCOND_ANSWERS depending on whether there were any conditional
+ *  answers in the answer list.  For the subsumed (consumer) subgoals,
+ *  the entire answer list, including the dummy, is reclaimed.
  *
  *  For statistical purposes, we check whether the current usage of
- *  these incomplete-table structures are new maximums.
+ *  these incomplete-table structures are new maximums.  TLS 09/11 --
+ *  Now only doing this in NON_OPT_COMPILE
  *
- *  TLS 09/11 -- Now only doing this in NON_OPT_COMPILE
  *  Currently, timestamps from the TSIs are copied back to the TSTNs.
  *  Although not necessary, this method has some advantages.  Foremost,
  *  this field will never contain garbage values, and so we avoid
@@ -691,7 +694,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 	   IsNonNULL(TSIN_Next(TSTHT_IndexTail(ht))) ||
 	   IsNULL(TSTHT_IndexHead(ht)) ||
 	   IsNonNULL(TSIN_Prev(TSTHT_IndexHead(ht))) )
-	xsb_warn("Malconstructed TSI");
+	xsb_warn(CTXTc "Malconstructed TSI");
 
       xsb_dbgmsg((LOG_STRUCT_MANAGER, "  Reclaiming TS Index\n"));
       dbg_smPrint(LOG_STRUCT_MANAGER, smTSIN, "  before chain reclamation");
@@ -704,6 +707,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
     }
 
   subg_visitors(producerSF) = 0;    /* was compl_stack_ptr */
+  subg_pos_cons(producerSF) = 0;
 
   /* incremental  evaluation start */
   /* 
@@ -753,15 +757,15 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
       if (pc->changed==0){
 	unchanged_call_gl++;
 	propagate_no_change(pc); /* defined in call_graph_xsb.c */
-      } else
-	add_callnode(&changed_gl,producerSF->callnode);
+      } //else
+	//add_callnode(&changed_gl,producerSF->callnode);
     
       producerSF->callnode->prev_call=NULL;
     	
       deallocate_previous_call(pc);
             
-    } else /* newly added calls */
-      add_callnode(&changed_gl,producerSF->callnode);
+    } // else /* newly added calls */
+      //      add_callnode(&changed_gl,producerSF->callnode);
     
     if ( has_answers(producerSF) ) {
       pALN = pRealAnsList = subg_answers(producerSF);
@@ -904,7 +908,7 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    else {			
      /* incremental evaluation */
      if(get_nonincremental(pPSC))					
-       xsb_warn("%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
+       xsb_warn(CTXTc "%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
 		get_name(pPSC),get_arity(pPSC));				
       TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
       set_tabled(pPSC,T_TABLED_VAR);					
@@ -913,6 +917,7 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    TIF_Mark(pTIF) = 0;                                                  
    TIF_Visited(pTIF) = 0; 
    TIF_Interning(pTIF) = 0;  /* for now; figure out how to set... DSWDSW */
+   TIF_SkipForestLog(pTIF) = 0;
    TIF_DelTF(pTIF) = NULL;						
    TIF_Subgoals(pTIF) = NULL;						
    TIF_NextTIF(pTIF) = NULL;						

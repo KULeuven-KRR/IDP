@@ -88,7 +88,11 @@ struct psc_rec {
   byte env;			/* 0&0x3 - visible; 1&0x3 - local; 2&0x3 - unloaded;  */
   				/* 0xc0, 2 bits for spy */
 				/* 0x20 - shared, 0x10 for determined; 0x8 - tabled */
-  byte incr;                    /* Only first 2 bits used: 1 incremental; 0 is non-incremental, 2: opaque; 4 for INTERN */
+  //  byte incr;                    /* Only first 2 bits used: 1 incremental; 0 is non-incremental, 2: opaque; 4 for INTERNED */
+  unsigned int incremental:2;
+  unsigned int intern:1;
+  unsigned int immutable:1;
+  unsigned int unused:4;
   byte entry_type;		/* see psc_defs.h */
   byte arity; 
   char *nameptr;
@@ -131,23 +135,33 @@ typedef struct psc_pair *Pair;
 #define  get_shared(psc)	((psc)->env & T_SHARED)
 #define  get_private(psc)	((psc)->env & ~T_SHARED & T_SHARED_DET)
 
-#define  get_incr(psc)           (((psc)->incr & T_INCR) == INCREMENTAL)  
-#define  get_intern(psc)	 ((psc)->incr & T_INTERN)
-#define  get_opaque(psc)         (((psc)->incr & T_INCR) == OPAQUE)  
-#define  get_nonincremental(psc) (((psc)->incr & T_INCR) == NONINCREMENTAL) 
+  //#define  get_incr(psc)           (((psc)->incr & T_INCR) == INCREMENTAL)  
+#define  get_incr(psc)           ((psc)->incremental == INCREMENTAL)  
+#define  get_opaque(psc)         ((psc)->incremental == OPAQUE)  
+#define  get_nonincremental(psc) ((psc)->incremental == NONINCREMENTAL) 
+
+  //#define  get_intern(psc)	 ((psc)->incr & T_INTERN)
+#define  get_intern(psc)	 ((psc)->intern)
+#define  get_immutable(psc)	 ((psc)->immutable)
 
 #define  get_arity(psc)		((psc)->arity)
 #define  get_ep(psc)		((psc)->ep)
 #define  get_data(psc)		((psc)->data)
 #define  get_name(psc)		((psc)->nameptr)
+#define  get_mod_for_psc(psc)	(isstring(get_data(psc))?global_mod:get_data(psc))
+#define  get_mod_name(psc)	get_name(get_mod_for_psc(psc))
 
 #define  set_type(psc, type)	(psc)->entry_type = type
 #define  set_env(psc, envir)	(psc)->env = ((psc)->env & ~T_ENV) | envir
 #define  set_spy(psc, spy)	(psc)->env = ((psc)->env & ~T_SPY) | spy
 #define  set_shared(psc, shar)	(psc)->env = ((psc)->env & ~T_SHARED) | shar
 #define  set_tabled(psc, tab)	(psc)->env = ((psc)->env & ~T_TABLED) | tab
-#define  set_incr(psc,val)      ((psc)->incr = ((psc)->incr & ~3) | val)  /* incremental */
-#define  set_intern(psc,val)    ((psc)->incr = ((psc)->incr & ~T_INTERN) | val)  /* val 0 or T_INTERN */
+
+#define  set_incr(psc,val)      ((psc)->incremental = val)  /* incremental */
+
+#define  set_intern(psc,val)    ((psc)->intern = val) /* val 0 or T_INTERN */
+#define  set_immutable(psc,val)    ((psc)->immutable = val) 
+
 #define  set_arity(psc, ari)	((psc)->arity = ari)
 #define  set_length(psc, len)	((psc)->length = len)
 #define  set_ep(psc, val)	do {(psc)->ep = val;     \
@@ -158,7 +172,7 @@ typedef struct psc_pair *Pair;
 
 #define set_forn(psc, val) {                   \
     cell_opcode(get_ep(psc)) = call_forn;      \
-    *(((byte **)get_ep(psc))+1) = val;         \
+    *(((byte **)get_ep(psc))+1) = (byte *)(val);	\
 }
 
 #define  pair_psc(pair)		((pair)->psc_ptr)
@@ -168,11 +182,9 @@ typedef struct psc_pair *Pair;
 /* Interface routines							*/
 /*======================================================================*/
 
-extern Pair link_sym(Psc, Psc);
 extern Pair search_in_usermod(int, char *);
 extern Pair insert_module(int, char *);
 extern Pair insert(char *, byte, Psc, int *);
-extern void set_psc_ep_to_psc(Psc, Psc);
 
 DllExport extern char* call_conv string_find(const char*, int);
 
@@ -197,8 +209,10 @@ extern Psc delay_psc;
 extern Psc cond_psc;
 extern Psc cut_psc;
 extern Psc load_undef_psc;
+extern Psc answer_completion_psc;
 extern Psc cyclic_psc;
 extern Psc visited_psc;
+extern Psc dollar_var_psc;
 
 extern char *nil_string;
 extern char *true_string;
@@ -217,13 +231,19 @@ extern Psc get_intern_psc();
 
 /* Can't use CTXTdeclc here because its included early in context.h */
 #ifdef MULTI_THREAD
+extern Pair link_sym(struct th_context *, Psc, Psc);
 extern struct Table_Info_Frame *get_tip(struct th_context *, Psc);
+extern void set_psc_ep_to_psc(struct th_context *, Psc, Psc);
 #else
 extern struct Table_Info_Frame *get_tip(Psc);
+extern Pair link_sym(Psc, Psc);
+extern void set_psc_ep_to_psc(Psc, Psc);
 #endif
 
 extern void print_symbol_table();
 extern Psc get_psc_from_ep(void *);
+
+extern void insert_cpred(char * ,int ,int (*)(void) );
 
 /*======================================================================*/
 /*  HiLog related macros.						*/

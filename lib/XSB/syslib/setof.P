@@ -103,43 +103,13 @@ decide([], Bag, Key, Key, Bag) :- !.
 decide(_, Bag, Key, Key, Bag).
 decide(Bags, _, _, Key, Bag) :- pick(Bags, Key, Bag).
 
-%% now use builtin
-excess_vars(_Term,_Tmpl,_PVars,_Vars) :- '_$builtin'(EXCESS_VARS).
+excess_vars(Term,Tmpl,PVars,Vars) :- excess_vars(Term,Tmpl,PVars,1,Vars).
 
+term_variables(Term,Vars) :- excess_vars(Term,[],[],0,Vars).
 
-old_excess_vars(T,X,L0,L) :- var(T), !,
-   ( no_occurrence(T,X), !, introduce(T,L0,L)
-   ; L = L0 ).
-old_excess_vars(X^P,Y,L0,L) :- !, old_excess_vars(P,(X,Y),L0,L).
-old_excess_vars(setof(X,P,S),Y,L0,L) :- !, old_excess_vars((P,S),(X,Y),L0,L).
-old_excess_vars(bagof(X,P,S),Y,L0,L) :- !, old_excess_vars((P,S),(X,Y),L0,L).
-old_excess_vars(T,X,L0,L) :- functor(T,_,N), rem_excess_vars(N,T,X,L0,L).
+%% use builtin
+excess_vars(_Term,_Tmpl,_PVars,_IfExist,_Vars) :- '_$builtin'(EXCESS_VARS).
 
-rem_excess_vars(N,T,X,L0,L) :-
-	( N =:= 0 -> L0 = L
-	; arg(N,T,T1), old_excess_vars(T1,X,L0,L1),
-	  N1 is N-1, rem_excess_vars(N1,T,X,L1,L)
-	).
-
-introduce(X,L,L) :- included(X,L), !.
-introduce(X,L,[X|L]).
-
-included(X,L) :- doesnt_include(L,X), !, fail.
-included(_,_).
-
-doesnt_include([],_).
-doesnt_include([Y|L],X) :- Y \== X, doesnt_include(L,X).
-
-no_occurrence(X,Term) :- contains(Term,X), !, fail.
-no_occurrence(_,_).
-
-contains(T,X) :- 
-	( var(T) -> T == X
-	; functor(T,_,N), upto(N,I), arg(I,T,T1), contains(T1,X)
-	).
-
-upto(N,N) :- N > 0.
-upto(N,I) :- N > 0, N1 is N-1, upto(N1,I).
 
 /* -------------------------------------------------------------------- */
 /*	Sorting now is implemented in C via qsort(). 			*/

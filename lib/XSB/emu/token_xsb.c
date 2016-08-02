@@ -42,6 +42,7 @@
 #include "memory_xsb.h"
 #include "io_builtins_xsb.h"
 #include "cinterf.h"
+#include "sig_xsb.h"
 
 #define exit_if_null(x) {\
   if(x == NULL){\
@@ -238,6 +239,24 @@ char digval[AlphabetSize+1] =
         99,     99,     99,     99,     99,     99,     99,     99
     };
 
+Integer input_file_position(FILE *curr_in, STRFILE *instr) {
+  if (curr_in) {
+    return ftell(curr_in);
+  } else {
+    return (instr->strptr - instr->strbase);
+  }
+}
+
+char *input_file_name(FILE *curr_in, STRFILE *instr) {
+  if (curr_in) {
+    int xsb_filedes = unset_fileptr(curr_in);
+    if (xsb_filedes < 0) return "unknown";
+    else return open_files[xsb_filedes].file_name;
+  } else {
+    return "reading string";
+  }
+}
+
 int intype(int c)
 {
   return (intab.chtype+1)[c];
@@ -299,19 +318,19 @@ int code_page_1252[256] =
 	0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
  /*	x	y	z	{	|	}	~	DEL	*/
 	0x0078, 0x0079, 0x007A, 0x007B, 0x007C, 0x007D, 0x007E, 0x007F,
- /* 	euro	??	qut	£	¤	¥	¦	§	*/
+ /* 	euro	??	qut	£	‘¡è	¥	¦	‘¡ì	*/
 	0x20AC, 0x0081, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 
  /*	¨	©	ª	«	¬	??	®	??	*/
 	0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008D, 0x017D, 0x008F,
- /*	?? 	±	²	³	´	µ	¶	·	*/
+ /*	?? 	‘¡À	²	³	´	µ	¶	•¡±	*/
 	0x0090, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
  /*	¸	¹	º	»	¼	??	 ¾	¿	*/
 	0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x009D, 0x017E, 0x0178,
- /* 	NBSP	¡	¢	£	¤	¥	¦	§	*/
+ /* 	NBSP	¡	¢	£	‘¡è	¥	¦	‘¡ì	*/
 	0x00A0, 0x00A1, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7,
- /*	¨	©	ª	«	¬	SHY	®	¯	*/
+ /*	‘¡§	©	ª	«	¬	SHY	®	¯	*/
 	0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x00AF,
- /* 	°	±	²	³	´	µ	¶	·	*/
+ /* 	‘¡ã	‘¡À	²	³	´	µ	¶	•¡±	*/
 	0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7,
  /*	¸	¹	º	»	¼	½	¾	¿ 	*/
 	0x00B8, 0x00B9, 0x00BA, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x00BF,
@@ -319,17 +338,17 @@ int code_page_1252[256] =
 	0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7,
  /*	È	É	Ê	Ë	Ì	Í	Î	Ï	*/
 	0x00C8, 0x00C9, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF,
- /* 	Ð	Ñ	Ò	Ó	Ô	Õ	Ö	×	*/
+ /* 	Ð	Ñ	Ò	Ó	Ô	Õ	Ö	‘¡Á	*/
 	0x00D0, 0x00D1, 0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7,
  /*	Ø	Ù	Ú	Û	Ü	Ý	Þ	ß	*/
 	0x00D8, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF, 
- /* 	à	á	â	ã	ä	å	¡	ç	*/
+ /* 	‘¨¤	‘¨¢	â	ã	ä	å	¡	ç	*/
 	0x00E0, 0x00E1, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7,
- /*	è	é	ê	ë	ì	í	î	ï	*/
+ /*	‘¨¨	‘¨¦	‘¨º	ë	‘¨¬	‘¨ª	î	ï	*/
 	0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF,
- /* 	ð	ñ	ò	ó	ô	õ	ö	÷ */
+ /* 	ð	ñ	‘¨°	‘¨®	ô	õ	ö	‘¡Â */
 	0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7,
- /*	ø	ù	ú	û	ü	ý	þ	ÿ 	*/
+ /*	ø	‘¨´	‘¨²	û	‘¨¹	ý	þ	ÿ 	*/
 	0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
    };
 
@@ -337,7 +356,7 @@ int code_page_1252[256] =
 int code_page_1252_hash[256] = {0};
 
 int w1252_char_to_codepoint(byte **s) {
-  return code_page_1252[**s];
+  return code_page_1252[*((*(s))++)];
 }
 
 /* many are self-inversions in w1252, i.e., 00-7F and A0-FF; For
@@ -497,6 +516,7 @@ extern int utf8_GetCode(FILE *, STRFILE *, int);
 int GetCode(int charset, FILE *curr_in, STRFILE *instr) {
   int c;
   c = GetC(curr_in,instr);
+  if (c < 0) return c;  /* if eof, return it */
   if (instr) { /* encoding in strings is always utf8 */
     return utf8_GetCode(curr_in, instr, c);
   }
@@ -765,24 +785,20 @@ static int read_character(CTXTdeclc register FILE *card,
         c = GetCode(charset,card,instr);
 BACK:   if (c < 0) {
           if (c == EOF) { /* to mostly handle cygwin stdio.h bug ... */
-	    char *filename;
-	    int xsb_filedes;
 READ_ERROR: 
-	    if (instr) filename = "reading string";
-	    else {
-	      xsb_filedes = unset_fileptr(card);
-	      if (xsb_filedes < 0) filename = "unknown";
-	      else filename = open_files[xsb_filedes].file_name;
-	    }
 	    if (!instr && ferror(card)) {
-	      xsb_warn("[TOKENIZER] I/O error in file %s: %s\n",filename,strerror(errno));
+	      xsb_warn(CTXTc "[TOKENIZER] I/O error in file %s: %s at position %d\n",
+		       input_file_name(card,instr),input_file_position(card,instr),
+		       strerror(errno));
 	    }
 	    if (q < 0) {
-	      snprintf(message,200,"end of file in character constant in file %s",filename);
+	      snprintf(message,200,"end of file in character constant in %s",
+		       input_file_name(card,instr));
 	      SyntaxError(CTXTc message);
 		//		return -2;		/* encounters EOF */
             } else {
-	      snprintf(message,200, "end of file in %cquoted%c constant in file %s", q, q, filename);
+	      snprintf(message,200, "end of file in %cquoted%c constant in %s", 
+		       q, q, input_file_name(card,instr));
 	      SyntaxError(CTXTc message);
 		//		return -2;		/* encounters EOF */
             }
@@ -803,18 +819,25 @@ READ_ERROR:
         switch (c) {
             case EOF:
 	        if (!instr && ferror(card)) 
-		  xsb_warn("[TOKENIZER] I/O error: %s\n",strerror(errno));
+		  xsb_warn(CTXTc "[TOKENIZER] I/O error: %s at position %d in %s\n",
+			   strerror(errno),input_file_position(card,instr),
+			   input_file_name(card,instr));
 		clearerr(card);
                 goto READ_ERROR;
-	          case 'a':		        /* alarm */
+	    case 'a':		        /* alarm */
                 return  '\a';
             case 'b':		        /* backspace */
                 return  '\b';
             case 'f':		        /* formfeed */
                 return '\f';
             case '\n':		      /* seeing a newline */
-	      while (IsLayout(c = GetCode(charset,card,instr)));
+	      //	      while (IsLayout(c = GetCode(charset,card,instr)));
+	        c = GetCode(charset,card,instr); // ignore it
                 goto BACK;
+	case '\r':  // newline for windows eol?
+	        c = GetCode(charset,card,instr); // ignore it
+		if (c == '\n') c = GetCode(charset,card,instr);
+		goto BACK;
             case 'n':		        /* newline */
 	        return '\n';
             case 'r':		        /* return */
@@ -826,14 +849,20 @@ READ_ERROR:
             case 'v': 		      /* vertical tab */
                 return '\v';
             case 'x':		        /* hexadecimal */
-                {   int i, n;
-                    for (n = 0, i = 2; --i >= 0; n = (n<<4) + DigVal(c))
-		      if (DigVal(c = GetCode(charset,card,instr)) >= 16) {
-                            if (c < 0) goto READ_ERROR;
-                            (void)unGetC(c, card, instr); /* may not recover */
-                            break;
-                        }
-                    return n & 255;
+                { int n = 0;
+		  c = GetCode(charset,card,instr);
+		  while (DigVal(c) < 16) {
+		    n = n * 16 + DigVal(c);
+		    c = GetCode(charset,card,instr);
+		  }
+		  if (c < 0) goto READ_ERROR;
+		  if (c != '\\') {
+		    unGetC(c, card, instr);
+		    //  xsb_warn(CTXTc "Ill-formed \\xHEX\\ escape: %d (dec) at position %d in %s",
+		    //	     n,input_file_position(card,instr),
+		    //	     input_file_name(card,instr));
+		  }
+		  return n;
                 }
 
    	    /* nfznfznfznfznfznfznfznfznfznfznfznfznfznfznfznfznfz */
@@ -845,11 +874,13 @@ READ_ERROR:
 		      c = GetCode(charset,card,instr);
 		      if (DigVal(c) <= 15 && c != '_'){
 			n = (n<<4) + DigVal(c);
-		      } else {
+		      } else if (c != '\\') {
 			unGetC(c,card,instr);
-			xsb_warn("[TOKENIZER] Ill-formed \\u unicode escape");
+			xsb_warn(CTXTc "Ill-formed \\u unicode escape: %d (dec) at position %d in %s",
+				 n,input_file_position(card,instr),
+				 input_file_name(card,instr));
 			return n;
-		      }
+		      } else return n;
 		    }
 		    c = GetCode(charset,card,instr);
 		    if (DigVal(c) <= 15 && c != '_'){      /* \uxxxxxxxx */
@@ -858,14 +889,16 @@ READ_ERROR:
 			c = GetCode(charset,card,instr);
 			if (DigVal(c) <= 15 && c != '_'){
 			  n = (n<<4) + DigVal(c);
-			} else {
+			} else if (c != '\\') {
 			  unGetC(c,card,instr);
-			  xsb_warn("[TOKENIZER] Ill-formed \\u unicode escape");
+			  xsb_warn(CTXTc "Ill-formed \\u unicode escape: %d (dec) at position %d in %s",
+				   n,input_file_position(card,instr),
+				   input_file_name(card,instr));
 			  return n;
-			}
+			} else return n;
 		      }
 		    } else {
-		      if (c>0) {unGetC(c,card,instr);}	
+		      if (c>0 && c != '\\') {unGetC(c,card,instr);}	
 		    }
 		    return n;
 		  } else {   // not UTF_8
@@ -877,22 +910,24 @@ READ_ERROR:
 
 	case '0': case '1': case '2': case '3':
             case '4': case '5': case '6': case '7':
-                {   int i, n;
-                    for (n = c-'0', i = 2; --i >= 0; n = (n<<3) + DigVal(c))
-		      if (DigVal(c = GetCode(charset,card,instr)) >= 8) {
-			  // if (c < 0) goto READ_ERROR;
-			  // (void) unGetC(c, card, instr);
-			  if (c != '\\') (void) unGetC(c,card,instr); // more standardish
-                            break;
-                        }
-                    return n & 255;
+	        { int n = 0;
+		  do {
+		    n = n * 8 + DigVal(c);
+		    c = GetCode(charset,card,instr);
+		  } while (DigVal(c) < 8);
+		  //		  if (c < 0) goto READ_ERROR;
+		  if (c != '\\') {
+		    unGetC(c, card, instr);
+		    //		    xsb_warn(CTXTc "Ill-formed \\OCTAL\\ escape: %d (dec) at position %d in %s",
+		    //			     n,input_file_position(card,instr),
+		    //			     input_file_name(card,instr));
+		  }
+		  return n;
                 }
 	    case '\\':			/* backslash */
 	        return '\\';
-// Don't include ISO's single quote escape; it breaks '/\', which is (commonly?) used in XSB
-// If this is changed, change double_quotes() in io_builtins_xsb.c
-//	    case '\'':			/* single quote */
-//	        return '\'';
+	    case '\'':			/* single quote */
+	        return '\'';
 	    case '"':			/* double quote */
 	        return '"';
 	    case '`':			/* back quote */
@@ -993,7 +1028,7 @@ void realloc_strbuff(CTXTdeclc byte **pstrbuff, byte **ps, int *pn)
   newbuff = (byte *)mem_realloc(*pstrbuff, strbuff_len, strbuff_len * 2,OTHER_SPACE);
   exit_if_null(newbuff);
   if (token_too_long_warning) {
-    xsb_warn("Extra-long token. Runaway string?");
+    xsb_warn(CTXTc "Extra-long token. Runaway string?");
     token_too_long_warning = 0;
   }
 
@@ -1006,6 +1041,7 @@ void realloc_strbuff(CTXTdeclc byte **pstrbuff, byte **ps, int *pn)
   strbuff_len *= 2;
   return;
 }
+
 
 struct xsb_token_t *GetToken(CTXTdeclc int io_port, int prevch)
 {
@@ -1272,10 +1308,11 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                     *++s = d, d = GetCode(charset,card,instr);
                 }
                 *++s = 0;
-                if (InType(d)>=SPACE && c==intab.termin && strbuff[1]==0) {
+                if ((InType(d)>=SPACE || d == '%') && c==intab.termin && strbuff[1]==0) {
 		    token->nextch = d;
 		    token->value = 0;
 		    token->type = TK_EOC;
+		    unGetC(d, card, instr); // dsw added ??
 		    return token;       /* i.e. '.' followed by layout */
                 }
                 c = d;
@@ -1311,6 +1348,12 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                 }
                 d = GetCode(charset,card,instr);
                 if (c == intab.begcom && d == intab.astcom) goto ASTCOM;
+		if ((c == '{' && d == '}') || (c == '[' && d == ']')) {
+		  /* handle {}, and [] as tokens, so can be functors */
+		  strbuff[0] = c; strbuff[1] = d; strbuff[2] = 0;
+		  c = GetCode(charset,card,instr);
+		  goto SYMBOL;
+		}
  
               /*  If we arrive here, c is an ordinary punctuation mark  */
 /*                  if (c == '(')  *s++ = ' '; */
@@ -1354,7 +1397,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
                 return token;
  
             case ATMQT:
-	        while ((d = read_character(CTXTc card, instr, charset, c)) >= 0) {
+	        while ((d = read_character(CTXTc card, instr, charset, c)) != -1) {
 		  CODEPOINT_TO_UTF8_STR(d,s,n); /* nfz */
 		}
                 *s = 0;
@@ -1377,7 +1420,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
 case deleted ****/
 
 	    case LISQT: 
-	        while ((d = read_character(CTXTc card, instr, charset, c)) >= 0) {
+	        while ((d = read_character(CTXTc card, instr, charset, c)) != -1) {
 		  CODEPOINT_TO_UTF8_STR(d,s,n);  /* nfz */
 		}
 		*s = 0;
@@ -1393,8 +1436,8 @@ case deleted ****/
  
             case EOFCH:
 	        if (!instr) {
-		  if (ferror(card))
-		    xsb_warn("[TOKENIZER] I/O error: %s\n",strerror(errno));
+		  if (ferror(card) && !(asynint_val & KEYINT_MARK)) 
+		    xsb_warn(CTXTc "[TOKENIZER] I/O error: %s",strerror(errno));
 		  clearerr(card);
 	        }
 		token->nextch = ' ';

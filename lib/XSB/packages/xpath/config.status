@@ -427,7 +427,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This config.status script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it."
 
-ac_pwd='/Users/macuser/xsb-temp/xsb-src/XSB/packages/xpath'
+ac_pwd='/Users/theresa/tempxsb/xsb-src/XSB/packages/xpath'
 srcdir='.'
 test -n "$AWK" || AWK=awk
 # The default lists apply if the user does not specify any file.
@@ -586,14 +586,14 @@ S["LIBOBJS"]=""
 S["ldflags"]="-L/usr/lib -lxml2"
 S["ccflags"]="-I/usr/include/libxml2"
 S["support"]="yes"
-S["host_os"]="darwin13.3.0"
+S["host_os"]="darwin14.5.0"
 S["host_vendor"]="apple"
 S["host_cpu"]="i386"
-S["host"]="i386-apple-darwin13.3.0"
-S["build_os"]="darwin13.3.0"
+S["host"]="i386-apple-darwin14.5.0"
+S["build_os"]="darwin14.5.0"
 S["build_vendor"]="apple"
 S["build_cpu"]="i386"
-S["build"]="i386-apple-darwin13.3.0"
+S["build"]="i386-apple-darwin14.5.0"
 S["target_alias"]=""
 S["host_alias"]=""
 S["build_alias"]=""

@@ -43,7 +43,7 @@ ALNptr	table_identify_relevant_answers(CTXTdeclc SubProdSF, SubConsSF, CPtr);
 void	table_complete_entry(CTXTdeclc VariantSF);
 
 void	release_all_tabling_resources(CTXTdecl);
-VariantSF NewProducerSF(CTXTdeclc BTNptr,TIFptr);
+VariantSF NewProducerSF(CTXTdeclc BTNptr,TIFptr,unsigned int);
 VariantSF tnotNewSubConsSF(CTXTdeclc BTNptr ,TIFptr,VariantSF);
 
 //extern void inline perform_early_completion(CTXTdeclc VariantSF ,CPtr );

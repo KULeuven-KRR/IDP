@@ -61,6 +61,8 @@
 #include "term_psc_xsb_i.h"
 #include "ptoc_tag_xsb_i.h"
 #include "cell_xsb_i.h"
+#include "table_inspection_defs.h"
+#include "cut_xsb.h"
 
 /* --- routines used from other files ---------------------------------	*/
 
@@ -716,14 +718,14 @@ static void db_genaput(CTXTdeclc prolog_term, int, struct instruction_q *, RegSt
 /*  literal on the right-hand-side as a call to the predicate ,/2.	*/
 /*======================================================================*/
 
-int assert_code_to_buff_p(CTXTdeclc prolog_term);
+static int assert_code_to_buff_p(CTXTdeclc prolog_term);
 
 int assert_code_to_buff( CTXTdecl /* Clause */)
 {
   return assert_code_to_buff_p(CTXTc reg_term(CTXTc 1));
 }
 
-int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
+static int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
 {
   prolog_term Head, Body;
   int Location;
@@ -785,6 +787,17 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
   write_word(asrtBuff->Buff,&Loc_size,(512+2*asrtBuff->Size/sizeof(Cell)));
 
   return TRUE;
+}
+
+void c_assert_code_to_buff(CTXTdeclc prolog_term term_to_assert) {
+  CPtr *start_trreg;
+
+  start_trreg = trreg;  /* following binds vars, so must untrail */
+  assert_code_to_buff_p(CTXTc term_to_assert);
+  while (start_trreg != trreg) {
+    untrail2(trreg, (Cell) trail_variable(trreg));
+    trreg = trail_parent(trreg);
+  }
 }
 
 static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
@@ -1775,6 +1788,8 @@ static void db_addbuff_i(byte Arity, ClRef Clause, PrRef Pred, int AZ,
 	|| ClRefSOBArg(SOBbuff,1) != (byte)(Ind>>16)  /* for byte-back */
 	|| ClRefSOBArg(SOBbuff,2) != (byte)(Ind>>8)
 	|| ClRefSOBArg(SOBbuff,3) != (byte)Ind) {
+      if (PredOpCode(Pred) != fail && ClRefType(SOBbuff) != SOB_RECORD) 
+      	ThisTabSize = 1;
       SOBbuff = new_SOBblock(ThisTabSize,Ind,get_str_psc(Head));
       /* add new SOB block */
       db_addbuff(Arity,SOBbuff,Pred,AZ,TRUE,Inum);
@@ -3277,8 +3292,8 @@ static inline void allocate_prref_tab_and_tif(CTXTdeclc Psc psc, PrRef *prref, p
 
   if (!(*prref = (PrRef)mem_alloc_nocheck(sizeof(PrRefData),ASSERT_SPACE))) 
     xsb_exit( "[Resource] Out of memory (PrRef)");
-  //fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p, incr=%d\n",
-  //          get_name(psc),get_arity(psc),get_shared(psc),prref,get_incr(psc));
+  // fprintf(stdout,"build_prref: %p %s/%d, shared=%d, prref=%p, incr=%d\n",
+  //	 psc,get_name(psc),get_arity(psc),get_shared(psc),prref,get_incr(psc));
 
   if (xsb_profiling_enabled)
     add_prog_seg(psc,(byte *)*prref,sizeof(PrRefData)); /* dsw profiling */
@@ -3295,6 +3310,7 @@ static inline void allocate_prref_tab_and_tif(CTXTdeclc Psc psc, PrRef *prref, p
     {
       TIFptr tip;
       CPtr tp;
+      //      printf("allocate prref tab tabled %d nonincremental %d\n",get_tabled(psc),get_nonincremental(psc));
       /* PSC is declared tabled in New_TIF */
       tip = New_TIF(CTXTc psc);
       tp  = (CPtr)mem_alloc_nocheck(FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ;
@@ -3303,7 +3319,7 @@ static inline void allocate_prref_tab_and_tif(CTXTdeclc Psc psc, PrRef *prref, p
       }
       Loc = 0 ;
       if (!get_nonincremental(psc)) { /* incremental evaluation */
-	//	printf("%s is incr %p\n",get_name(psc),*prref);
+	//       	printf("%s is incr prref: %p\n",get_name(psc),*prref);
 	dbgen_inst_ppvww(tabletrysinglenoanswers,get_arity(psc),*prref,tip,tp,&Loc);
       } else {
 	dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
@@ -3324,6 +3340,9 @@ PrRef build_prref( CTXTdeclc Psc psc )
   PrRef p;
   pb new_ep;
   //  Integer Tabled = ptoc_int(CTXTc 2);
+#ifdef MULTI_THREAD
+  struct DispBlk_t *dispblk;
+#endif
 
   set_type(psc, T_DYNA);
   set_env(psc, T_VISIBLE);
@@ -3332,7 +3351,14 @@ PrRef build_prref( CTXTdeclc Psc psc )
   if (get_data(psc) == NULL) 
     set_data(psc,global_mod);
     
+#ifdef MULTI_THREAD
+  dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
   allocate_prref_tab_and_tif(CTXTc psc,&p,&new_ep);
+  (&(dispblk->Thread0))[xsb_thread_entry] = (CPtr) new_ep;
+#else
+  allocate_prref_tab_and_tif(CTXTc psc,&p,&new_ep);
+#endif
+
   p->psc = psc;
   p-> mark = 0;
 
@@ -3590,6 +3616,16 @@ void retractall_prref(CTXTdeclc PrRef prref) {
     PrRef_FirstClRef(prref) = NULL;
     cell_opcode((CPtr)prref) = fail;
   }
+  else {
+    if (prref != NULL) {
+      PrRef_FirstClRef(prref) = NULL;
+      PrRef_DelCF(prref) = NULL;
+      //PrRef_Instr(prref) = ????;
+      PrRef_LastClRef(prref) = NULL;
+      PrRef_Psc(prref) = NULL;
+      PrRef_Mark(prref) = 0;
+    }
+  }
 }
 
 /* Like retractall_prref() but used from access is from a DelFC, so we
@@ -3745,7 +3781,8 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
 		    "Cannot abolish tabled predicate when table is incomplete");
     } else {
       tif = get_tip(CTXTc psc);
-      abolish_table_predicate_switch(CTXTc tif, psc, (int)(flags[TABLE_GC_ACTION]), FALSE);
+      // cps check done in following predicate...
+      abolish_table_predicate_switch(CTXTc tif, psc, (int)(flags[TABLE_GC_ACTION]), FALSE,ERROR_ON_INCOMPLETE);
     }
   }
 
@@ -3779,7 +3816,7 @@ static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc, int flag ) {
 
   
   mark_for_deletion(CTXTc Clause);
-
+  //  printf("retractall clause psc %p %s/%d\n",psc,get_name(psc),get_arity(psc));
     if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
 	&& pflags[CLAUSE_GARBAGE_COLLECT] == 1  
 	&& !dyntabled_incomplete(CTXTc psc) && !flag) {
@@ -4012,6 +4049,29 @@ xsbBool dynamic_code_function( CTXTdecl )
       break;
   }
 
+  case DYNAMIC_PRED_HAS_CLAUSES: {
+    Psc psc;
+    Cell addr;
+    byte termType;
+
+      addr = iso_ptoc_callable_arg(CTXTc 2, 4,5);
+      psc = term_psc(addr);
+      termType = get_type(psc);
+      if ( termType == T_DYNA ) {		
+	//	printf("ep %p %x %p %x \n",get_ep(psc),*get_ep(psc),dynpredep_to_prref(CTXTc get_ep(psc)),
+	//     *(pb) dynpredep_to_prref(CTXTc get_ep(psc)));
+	if (*(pb) dynpredep_to_prref(CTXTc get_ep(psc)) == fail) 
+	  ctop_int(CTXTc 3,FALSE);
+	else 	  
+	  ctop_int(CTXTc 3,TRUE);
+      }
+      else //if (termType == T_PRED) 
+	xsb_permission_error(CTXTc "access","non_dynamic",ptoc_tag(CTXTc 2),
+			     ptoc_string(CTXTc 4),(int)ptoc_int(CTXTc 5));
+      //      else return FALSE;
+      break;
+  }
+
   default: 
     break;
 
@@ -4025,7 +4085,7 @@ xsbBool dynamic_code_function( CTXTdecl )
 
 // Problems with clang
 #if !defined(DARWIN) 
-inline 
+//inline 
 #endif
 CPtr trie_asserted_clref(CPtr prref)
 {

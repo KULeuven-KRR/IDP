@@ -26,6 +26,7 @@
 :- compiler_options([sysmod, xpp_on]).
 #include "flag_defs_xsb.h"
 #include "standard.h"
+#include "char_defs.h"
 %%#define DEBUG_GPP 1
 
 /*======================================================================*/
@@ -185,7 +186,10 @@ xpp_process_file(FileName,XPP_process,IOportFromProc,Make_XPP_Command) :-
 	-> fmt_write_string(FullXPP_command,'%s',arg(XPP_command)),
 	    InputStream = FileName
 	;
-	    fmt_write_string(FullXPP_command,'%s "%s"',args(XPP_command,FileName)),
+	    escape_dbl_quotes(FileName,FileNameEsc),
+	    fmt_write_string(FullXPP_command,
+			     '%s "%s"',
+			     args(XPP_command,FileNameEsc)),
 	    InputStream = block
 	),
         preprocessor_name(Make_XPP_Command,XPP_Name),
@@ -206,7 +210,7 @@ xpp_process_file(FileName,XPP_process,IOportFromProc,Make_XPP_Command) :-
 	-> XPP_command_msg = ('[',XPP_Name,': Preprocessing input stream]')
 	; fmt_write_string(XPP_command_msg,
 			   '[%s: Preprocessing %s]',
-			   args(XPP_Name,FileName))
+			   args(XPP_Name,FileNameEsc))
 	),
 #endif
         %% If --quietload, don't print Preprocessing messages
@@ -656,8 +660,6 @@ transform_slash_to_skel(Spec,ModName,SymTab,Skel) :-
 	 ;	Skel = Skel0
 	).
 
-%:- import console_writeln/1 from standard.
-
 /*======================================================================*/
 /* parse_directive(+Directive, #Symbol_Table,ModName)			*/
 /*	Processes the given directive and updates the symbol table	*/
@@ -686,7 +688,6 @@ parse_directive(else, QrList,SymTab,ModName,ModStruct):- !,
 parse_directive(endif, _QrList,_SymTab,_ModName,_ModStruct):- !,
 	conset(conditional_compile,0).
 parse_directive(module(ModIn,X,_Dialect), _QrList,SymTab,ModName,_ModStruct) :- !, 	
-	console_writeln(module(ModIn,X,_Dialect)),
 	parse_directive(module(ModIn,X), _QrList,SymTab,ModName,_ModStruct).
 parse_directive(module(ModIn,X), _QrList,SymTab,ModName,_ModStruct) :- !, 	
 	(ModIn == ModName -> 
@@ -733,6 +734,11 @@ parse_directive(document_import(from(X, Mod)), _QrList,SymTab,_ModName,_ModStruc
 	 ->	error(('Module cannot be a variable. Document_importing: ',X))
 	 ;	parse_comma_list(X, SymTab, [docim(Mod)], (document_import))
 	).
+
+:- import current_prolog_flag/2 from curr_sym.
+verbose_writeln(Term):- current_prolog_flag(verboseness,X),X > 0,!,console_writeln(Term).
+verbose_writeln(_Term).
+
 % not worrying about .h files
 % not worrying about resetting hash table size
 % not worrying about redefining file extensions
@@ -794,6 +800,9 @@ parse_directive(ti(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_ti(X, (ti), SymTab).
 parse_directive(ti_all, _QrList,_SymTab,_ModName,_ModStruct) :- !,
 	conset(ti_all, 1).
+parse_directive(immutable, _QrList,_SymTab,_ModName,_ModStruct) :- !,
+	   verbose_writeln('compiling as immutable '(_ModName)),	
+           conset(immutable, 1).
 parse_directive(ti_off(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_ti(X, (ti_off), SymTab).
 parse_directive(ti_off_all, _QrList,_SymTab,_ModName,_ModStruct) :- !,
@@ -814,6 +823,7 @@ parse_directive(compiler_options(Options),_QrList,_SymTab,_ModName,_ModStruct) :
 	check_file_compiler_options(Options),
 	setoptions1(Options).
 parse_directive(comment(_,_),_QrList,_SymTab,_ModName,_ModStruct) :- !.
+parse_directive(annotation(_),_QrList,_SymTab,_ModName,_ModStruct) :- !.
 parse_directive(meta_predicate(_),_QrList,_SymTab,_ModName,_ModStruct) :- !.
 parse_directive(thread_shared(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_shared)],(thread_shared)).
@@ -833,6 +843,10 @@ parse_directive(use_subsumptive_tabling(PredCList),_QrList,SymTab,_ModName,_ModS
 parse_directive(use_variant_tabling(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list_table(PredCList,SymTab,variant),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_variant_tabling)],(use_variant_tabling)).
+parse_directive(table_index(PredCList,IndexSpec),QrList,SymTab,_ModName,_ModStruct) :- !,
+	parse_table_index(PredCList,IndexSpec,SymTab),
+	mpa_to_skel_cl(PredCList,SPredCList),
+	parse_query(table_index(SPredCList,IndexSpec),QrList,SymTab).	
 parse_directive(dynamic(as(PredCList,Options)),QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list_dyn(PredCList,SymTab),
 %	copy_term(PredCList,PredCListVars),
@@ -1064,7 +1078,7 @@ parse_comma_list_table(Spec, SymTab,Options) :-
 	sym_insert(P, A, [tabled], SymTab, _),
 	insert_compiler_based_options(Options,P/A,SymTab).
 parse_comma_list_table(Spec, SymTab,Options) :- 
-	is_aggregation_spec(Spec),
+	is_aggregation_spec(Spec,SymTab),
 	!,
 	functor(Spec,P,A),
 	sym_insert(P, A, [aggregation(Spec)], SymTab, _),
@@ -1073,28 +1087,28 @@ parse_comma_list_table(X, _Symtab,_Options) :-
 	warning(('Non predicate specification "', X, 
 		 '" found in table directive. Ignored!')).
 
-is_aggregation_spec(Spec) :-
+is_aggregation_spec(Spec,SymTab) :-
 	Spec =.. [_|Args],
 	get_aggregation_spec(Args,Arg),
-	is_aggregation_arg_spec(Arg).
+	is_aggregation_arg_spec(Arg,SymTab).
 
-is_aggregation_arg_spec(Spec3-_) :- is_spec3(Spec3), !.
-is_aggregation_arg_spec(Spec2) :- is_spec2(Spec2), !.
-is_aggregation_arg_spec(lattice(Spec3)) :- is_spec3(Spec3), !.
-is_aggregation_arg_spec(fold(Spec3,Id)) :- is_spec3(Spec3),is_spec1(Id),!.
-is_aggregation_arg_spec(po(Spec2)) :- is_spec2(Spec2),!.
-is_aggregation_arg_spec(po(Spec2,Spec3)) :- is_spec2(Spec2),is_spec3(Spec3),!.
-is_aggregation_arg_spec(termset).
+is_aggregation_arg_spec(Spec3-_,SymTab) :- !, is_spec3(Spec3,SymTab).
+is_aggregation_arg_spec(lattice(Spec3),SymTab) :- !, is_spec3(Spec3,SymTab).
+is_aggregation_arg_spec(fold(Spec3,Id),SymTab) :- !, is_spec3(Spec3,SymTab),is_spec1(Id,SymTab).
+is_aggregation_arg_spec(po(Spec2),SymTab) :- !, is_spec2(Spec2,SymTab).
+is_aggregation_arg_spec(po(Spec2,Spec3),SymTab) :- !, is_spec2(Spec2,SymTab),is_spec3(Spec3,SymTab).
+is_aggregation_arg_spec(termset,_SymTab) :- !.
+is_aggregation_arg_spec(Spec2,SymTab) :- is_spec2(Spec2,SymTab), !.
 
-is_spec3(P/3) :- atom(P),!.
-is_spec3(Skel) :- functor(Skel,_,3).
+is_spec3(P/3,SymTab) :- atom(P),!,sym_insert(P,3,[pred],SymTab,_).
+is_spec3(Skel,SymTab) :- functor(Skel,P,3),sym_insert(P,3,[pred],SymTab,_).
 
-is_spec2(P/2) :- atom(P),!.
-is_spec2(Skel) :- functor(Skel,_,2).
+is_spec2(P/2,SymTab) :- atom(P),!,sym_insert(P,2,[pred],SymTab,_).
+is_spec2(Skel,SymTab) :- functor(Skel,P,2),sym_insert(P,2,[pred],SymTab,_).
 
-is_spec1(Id) :- atom(Id),!.
-is_spec1(P/1) :- atom(P),!.
-is_spec1(Skel) :- functor(Skel,_,1).
+is_spec1(Id,_SymTab) :- atomic(Id), !.
+is_spec1(P/1,SymTab) :- atom(P),!,sym_insert(P,1,[pred],SymTab,_).
+is_spec1(Skel,SymTab) :- functor(Skel,P,1),sym_insert(P,1,[pred],SymTab,_).
 
 /**	(Arg = P/3- _Id, atom(P)
 	 ;
@@ -1139,6 +1153,31 @@ is_mode_list([M|Ms]) :- is_a_mode(M), !, is_mode_list(Ms).
 
 is_a_mode('-').
 is_a_mode('+').
+
+parse_table_index(PredSpec,IndexSpec,SymTab) :-
+	(PredSpec = Pred/Arity
+	  ->	 true
+	  ;	 functor(PredSpec,Pred,Arity)
+	),
+	(valid_index_spec(IndexSpec,Arity)
+	 ->	sym_insert(Pred,Arity,[table_index(IndexSpec)],SymTab,_)
+	 ;	warning(('Illegal index specification: ',IndexSpec,
+			 ' in table_index declaration for ',PredSpec))
+	).
+
+valid_index_spec([],_Arity) :- !.
+valid_index_spec([Ind|Inds],Arity) :- !,
+	valid_index_spec(Ind,Arity),
+	valid_index_spec(Inds,Arity).
+valid_index_spec(Ind,Arity) :-
+	valid_single_index_spec(Ind,Arity).
+
+valid_single_index_spec(Ind1+Ind2,Arity) :- !,
+	valid_single_index_spec(Ind1,Arity),
+	valid_single_index_spec(Ind2,Arity).
+valid_single_index_spec(Ind,Arity) :-
+	integer(Ind), !,
+	Ind >= 0, Ind =< Arity.
 
 parse_comma_list_dyn((Spec,Specs),SymTab) :- !,
 	parse_comma_list_dyn(Spec,SymTab),
@@ -1274,6 +1313,7 @@ trans_goals('$$var'(Vid), goal(Sym,[varocc(Vid)]), SymTab, VidIn, VidOut) :- !,
 %% hack to eliminate true goals at end of clauses, so that
 %% the compiler may consider TCO --lfcastro, 050801
 trans_goals((A, True), Goal,SymTab,VidIn,VidOut) :-
+	\+ A = (_->_),		% but not in context of a conditional!
 	True == true,  %% can't be a variable!
 	!,
 	trans_goals(A,Goal,SymTab,VidIn,VidOut).
@@ -1327,6 +1367,7 @@ fix_for_0_ary_preds(Pred,Arity,Args,FixedArgs) :-
 	standard_metapredicate(Pred,Arity,ArgNo),
 	ith(ArgNo,Args,String),
 	atom(String),
+	String \== !,  % ! is not a callable predicate
 	!,
 	conpsc(String,PSC),term_new(PSC,PString),
 	replace_ith(Args,ArgNo,PString,FixedArgs).
@@ -1430,6 +1471,21 @@ filename_pop(File):-
 	; true
 	),
 	!.
+
+%% escape double quotes with a backslash.
+%% used to fix file names
+escape_dbl_quotes(Atm,AtmOut) :-
+	atom_codes(Atm,AtmL),
+	escape_dbl_quotes_aux(AtmL,AtmOutL),
+	atom_codes(AtmOut,AtmOutL).
+
+escape_dbl_quotes_aux([],[]) :- !.
+escape_dbl_quotes_aux([CH_DOUBLEQUOTE|AtmL],[CH_BACKSLASH,CH_DOUBLEQUOTE|AtmOutL]) :-
+	!,
+	escape_dbl_quotes_aux(AtmL,AtmOutL).
+escape_dbl_quotes_aux([Ch|AtmL],[Ch|AtmOutL]) :-
+	escape_dbl_quotes_aux(AtmL,AtmOutL).
+
 
 end_of_file.
 
