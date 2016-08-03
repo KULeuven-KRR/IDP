@@ -31,3 +31,6 @@ Alternatively, cmake-gui can be used as a graphical way to set cmake options.
 
 # Further information
 For more information on using the system, see the documentation, which can be found in `docs/official/idp-manual.pdf`
+
+# Warning for people updating to version 3.6.0
+Due to issues with the XSB library it is advised to make a clean clone of the repository before recompiling.
