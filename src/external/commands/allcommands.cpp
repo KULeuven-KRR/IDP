@@ -52,6 +52,7 @@
 #include "names.hpp"
 #include "equal.hpp"
 #include "newvocabulary.hpp"
+#include "vocabulary.hpp"
 #include "modeliteration.hpp"
 #include "twoValuedIterator.hpp"
 #include "negateTerm.hpp"
@@ -107,6 +108,10 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<NewOptionsInference>());
 	inferences.push_back(make_shared<NewStructureInference>());
 	inferences.push_back(make_shared<NewVocabularyInference>());
+	inferences.push_back(make_shared<getSortNamesInference>());
+	inferences.push_back(make_shared<getPredicateNamesInference>());
+	inferences.push_back(make_shared<getFunctionNamesInference>());
+	inferences.push_back(make_shared<getTypeNamesInference>());
 	inferences.push_back(make_shared<CloneStructureInference>());
 	inferences.push_back(make_shared<CloneTheoryInference>());
 	inferences.push_back(make_shared<IdpTypeInference>());

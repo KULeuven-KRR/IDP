@@ -192,6 +192,8 @@ struct AddTypes<Loki::NullType, FullList> {
 };
 
 typedef TypedInference<LIST()> EmptyBase;
+typedef TypedInference<LIST(Vocabulary*)> VocabularyBase;
+typedef TypedInference<LIST(Vocabulary*,std::string*)> VocabularyStringBase;
 typedef TypedInference<LIST(Structure*)> StructureBase;
 typedef TypedInference<LIST(Term*)> TermBase;
 typedef TypedInference<LIST(std::string*)> StringBase;
