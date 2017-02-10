@@ -48,12 +48,24 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Vocabulary* invoc = get<0>(args);
 		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
-		for (auto name2pred : invoc->getPreds()) {
-			Predicate* p = name2pred.second;
-			if (invoc->std()->hasPredWithName(p->name()) or invoc->hasSortWithName(p->nameNoArity())) {
+		for (auto symbol : invoc->getNonBuiltinNonOverloadedSymbols()) {
+			if (not symbol->isPredicate()) { 
+				continue; 
+			}
+			Predicate* p = dynamic_cast<Predicate*>(symbol);
+			if (PredUtils::isTypePredicate(p)) {
 				continue;
 			}
-			std::string* strcopy = new std::string(p->name());
+			std::stringstream ss;
+			ss << p->nameNoArity() << "(";
+			for (int i = 0; i < p->sorts().size(); i++) {
+				ss << p->sorts()[i]->name();
+				if (i < p->sorts().size() -1) {
+					ss << ",";
+				}
+			}
+			ss << ")";
+			std::string* strcopy = new std::string(ss.str());
 			InternalArgument toadd = InternalArgument(strcopy);
 			ret->push_back(toadd);
 		}
@@ -71,12 +83,21 @@ public:
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Vocabulary* invoc = get<0>(args);
 		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
-		for (auto name2func : invoc->getFuncs()) {
-			Function* f = name2func.second;
-			if (invoc->std()->hasFuncWithName(f->name())) {
-				continue;
+		for (auto symbol : invoc->getNonBuiltinNonOverloadedSymbols()) {
+			if (not symbol->isFunction()) { 
+				continue; 
 			}
-			std::string* strcopy = new std::string(f->name());
+			Function* f = dynamic_cast<Function*>(symbol);
+			std::stringstream ss;
+			ss << f->nameNoArity() << "(";
+			for (int i = 0; i < f->sorts().size() -1; i++) {
+				ss << f->sorts()[i]->name();
+				if (i < f->sorts().size() -2) {
+					ss << ",";
+				}
+			}
+			ss << "):" << f->sorts().back()->name();
+			std::string* strcopy = new std::string(ss.str());
 			InternalArgument toadd = InternalArgument(strcopy);
 			ret->push_back(toadd);
 		}
@@ -93,27 +114,3 @@ InternalArgument createInternalArgumentVector(const std::vector<Sort*> sorts) {
 		}
 		return InternalArgument(ret);
 }
-
-class getTypeNamesInference: public VocabularyStringBase {
-public:
-	getTypeNamesInference()
-			: VocabularyStringBase("gettypesof", "Takes as input a vocabulary and a string representing the name/arity of a predicate or function in that vocabulary. Returns a table with the names of the sorts of the given symbol in the given vocabulary.") {
-		setNameSpace(getVocabularyNamespaceName());
-	}
-
-	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		Vocabulary* invoc = get<0>(args);
-		std::string* inname = get<1>(args);
-		const std::vector<Sort*> sorts;
-		if (invoc->hasPredWithName(*inname)) {
-			Predicate* predicate = invoc->pred(*inname);
-			return createInternalArgumentVector(predicate->sorts());
-		} else if(invoc->hasFuncWithName(*inname)) {
-			Function* function = invoc->func(*inname);
-			return createInternalArgumentVector(function->sorts());
-		} else {
-			Warning::warning("Tried retrieving the sorts of a string that did not represent a predicate or function in the given vocabulary");
-			return createInternalArgumentVector(std::vector<Sort*>());
-		}
-	}
-};

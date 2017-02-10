@@ -111,7 +111,6 @@ const vector<shared_ptr<Inference>>& getAllInferences() {
 	inferences.push_back(make_shared<getSortNamesInference>());
 	inferences.push_back(make_shared<getPredicateNamesInference>());
 	inferences.push_back(make_shared<getFunctionNamesInference>());
-	inferences.push_back(make_shared<getTypeNamesInference>());
 	inferences.push_back(make_shared<CloneStructureInference>());
 	inferences.push_back(make_shared<CloneTheoryInference>());
 	inferences.push_back(make_shared<IdpTypeInference>());

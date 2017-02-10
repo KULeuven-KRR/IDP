@@ -1101,6 +1101,10 @@ Predicate* overload(const set<Predicate*>& sp) {
 	}
 }
 
+bool isTypePredicate(Predicate* p) {
+	return p->nrSorts() == 1 and (p->sort(0)->name() == p->nameNoArity());
+}
+
 }
 
 Function::Function(const std::string& name, const std::vector<Sort*>& is, Sort* os, const ParseInfo& pi, bool isConstructor)
