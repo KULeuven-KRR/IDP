@@ -53,34 +53,36 @@ public:
 	 *		If true: allow further code to not calculate the definition if it is too big
 	 *
 	 * parameter symbolsToQuery:
-	 * 		A subset of the defined symbols that you are interested in.
-	 * 		Defined symbols not in this set will not be calculated.
+	 * 		A subset of the defined symbols in the theory that you are interested in.
+	 * 		Defined symbols not in this set will not be calculated by IDP.
+	 * 		They might be partially evaluated (i.e., by XSB) during evaluation of symbols that are in this set.
 	 */
 	static DefinitionCalculationResult doCalculateDefinitions(Theory* theory, Structure* structure,
 			bool satdelay = false, std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
-		CalculateDefinitions c;
-		return c.calculateKnownDefinitions(theory, structure, satdelay, symbolsToQuery);
+		CalculateDefinitions c(theory,structure,satdelay,symbolsToQuery);
+		return c.calculateKnownDefinitions();
 	}
 	static DefinitionCalculationResult doCalculateDefinitions(
 			const Definition* definition, Structure* structure, bool satdelay = false,
-			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
-		CalculateDefinitions c;
-		return c.calculateKnownDefinition(definition, structure, satdelay, symbolsToQuery);
-	}
+			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>());
 
 #ifdef WITHXSB
 	static bool determineXSBUsage(const Definition* definition);
 #endif
 
 private:
-	DefinitionCalculationResult calculateKnownDefinitions(Theory* theory, Structure* structure,
-			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
+	Theory* _theory;
+	Structure* _structure;
+	std::set<PFSymbol*> _symbolsToQuery;
+	bool _satdelay;
+	bool _tooExpensive;
+	
+	CalculateDefinitions(Theory*, Structure*, bool, std::set<PFSymbol*>);
+	CalculateDefinitions(const Definition*, Structure*, bool, std::set<PFSymbol*>);
+	
+	DefinitionCalculationResult calculateKnownDefinitions();
+	DefinitionCalculationResult calculateDefinition(const Definition* definition);
 
-	DefinitionCalculationResult calculateKnownDefinition(const Definition* definition, Structure* structure,
-			bool satdelay, std::set<PFSymbol*> symbolsToQuery) const;
-
-	DefinitionCalculationResult calculateDefinition(const Definition* definition, Structure* structure,
-			bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const;
 
 	/** Splitting of definition may have caused the given set of symbolsToQuery to not be enough:
 	 *  E.g. Definition
@@ -93,6 +95,12 @@ private:
 	 *  querying the second definition and need to query q in order to evaluate it.
 	 */
 	void updateSymbolsToQuery(std::set<PFSymbol*>& symbolsToQuery, std::vector<Definition*>) const;
+	
+	// For the current structure, determine which defined symbols can be evaluated (= are input*)
+	std::set<PFSymbol*> determineInputStarSymbols(Theory*) const;
+	// For the current structure, determine add the input* symbols of the given definition to the set given as second argument
+	void addNewInputStar(const Definition*, std::set<PFSymbol*>&) const;
 
 	static void removeNonTotalDefnitions(std::map<Definition*, std::set<PFSymbol*> >& opens);
+	bool definitionDoesNotResultInTwovaluedModel(const Definition*) const;
 };

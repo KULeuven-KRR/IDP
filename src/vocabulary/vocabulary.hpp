@@ -17,6 +17,7 @@
 #include <ostream>
 #include "parseinfo.hpp"
 #include "commontypes.hpp"
+#include "common.hpp"
 
 
 /*********
@@ -562,6 +563,18 @@ public:
 	}
 	const std::map<std::string, Sort*>& getSorts() const{
 		return _name2sort;
+	}
+
+	std::vector<PFSymbol*> getListedPredicatesAndFunctions() const {
+		auto ret = std::vector<PFSymbol*>();
+		for (auto symbol : getNonBuiltinNonOverloadedSymbols()) {
+			if (isa<Predicate>(*symbol)) {
+				if (not PredUtils::isTypePredicate(dynamic_cast<Predicate*>(symbol))) {
+					ret.push_back(symbol);
+				}
+			}
+		}
+		return ret;
 	}
 
 	std::vector<PFSymbol*> getNonBuiltinNonOverloadedSymbols() const {

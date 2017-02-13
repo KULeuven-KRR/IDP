@@ -32,77 +32,97 @@
 #include <iostream>
 
 using namespace std;
-DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Definition* definition, Structure* structure,
-		bool satdelay, bool& tooExpensive, std::set<PFSymbol*> symbolsToQuery) const {
+
+CalculateDefinitions::CalculateDefinitions(Theory* t, Structure* s, bool satdelay, std::set<PFSymbol*> symbolsToQuery) :
+	_theory(t), _structure(s), _symbolsToQuery(symbolsToQuery), _satdelay(satdelay), _tooExpensive(false) {
+	if (_theory == NULL || _structure == NULL) {
+		throw IdpException("Unexpected NULL-pointer.");
+	}
+	if (_structure->vocabulary() != _theory->vocabulary()) {
+		throw IdpException("Definition Evaluation requires that the theory and structure range over the same vocabulary.");
+	}
+}
+
+
+// IMPORTANT: becomes owner of new theory and cloned definition!
+CalculateDefinitions::CalculateDefinitions(const Definition* definition,
+		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) :
+	_structure(structure), _symbolsToQuery(symbolsToQuery), _satdelay(satdelay), _tooExpensive(false) {
+	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+	auto newdef = definition->clone();
+	theory->add(newdef);
+	_theory = theory;
+}
+
+DefinitionCalculationResult CalculateDefinitions::doCalculateDefinitions(
+	const Definition* definition, Structure* structure, bool satdelay, std::set<PFSymbol *> symbolsToQuery) {
+	CalculateDefinitions c(definition, structure, satdelay, symbolsToQuery);
+	auto ret = c.calculateKnownDefinitions();
+	c._theory->recursiveDelete();
+	return ret;
+}
+
+
+DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Definition* definition) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Calculating definition: " << toString(definition) << "\n";
 	}
-	DefinitionCalculationResult result(structure);
+	DefinitionCalculationResult result(_structure);
 	result._hasModel = true;
 #ifdef WITHXSB
 	auto withxsb = CalculateDefinitions::determineXSBUsage(definition);
 	if (withxsb) {
-		if(satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation (see issue #850)
+		if(_satdelay or getOption(SATISFIABILITYDELAY)) { // TODO implement checking threshold by size estimation (see issue #850)
 			Warning::warning("Lazy threshold is not checked for definitions evaluated with XSB");
 		}
 		if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 			clog << "Calculating the above definition using XSB\n";
 		}
 		auto xsb_interface = XSBInterface::instance();
-		xsb_interface->load(definition,structure);
+		xsb_interface->load(definition,_structure);
 		auto symbols = definition->defsymbols();
-		if(not symbolsToQuery.empty()) {
+		if(not _symbolsToQuery.empty()) {
 			for(auto it = symbols.begin(); it != symbols.end();) {
 				auto symbol = *(it++);
-				if(symbolsToQuery.find(symbol) == symbolsToQuery.end()) {
+				if(_symbolsToQuery.find(symbol) == _symbolsToQuery.end()) {
 					symbols.erase(symbol);
 				}
 			}
 		}
-
-		auto possRecNegSymbols = DefinitionUtils::approxRecurionsOverNegationSymbols(definition);
+		if (definitionDoesNotResultInTwovaluedModel(definition)) {
+			result._hasModel=false;
+			return result;
+		}
 		for (auto symbol : symbols) {
-			if (possRecNegSymbols.find(symbol) != possRecNegSymbols.end()) {
-				if(xsb_interface->hasUnknowns(symbol)) {
-					xsb_interface->reset();
-					result._hasModel=false;
-					result._calculated_model=structure;
-					return result;
-				}
-			}
 			auto sorted = xsb_interface->queryDefinition(symbol);
             auto internpredtable1 = new EnumeratedInternalPredTable(sorted);
-            auto predtable1 = new PredTable(internpredtable1, structure->universe(symbol));
-            if(not isConsistentWith(predtable1, structure->inter(symbol))){
+            auto predtable1 = new PredTable(internpredtable1, _structure->universe(symbol));
+            if(not isConsistentWith(predtable1, _structure->inter(symbol))){
             	delete(predtable1);
             	xsb_interface->reset();
             	result._hasModel=false;
-            	result._calculated_model=structure;
             	return result;
             }
-            structure->inter(symbol)->ctpt(predtable1);
+            _structure->inter(symbol)->ctpt(predtable1);
         	delete(predtable1);
-            structure->clean();
+            _structure->clean();
             if(isa<Function>(*symbol)) {
             	auto fun = dynamic_cast<Function*>(symbol);
-            	if(not structure->inter(fun)->approxTwoValued()){ // E.g. for functions
+            	if(not _structure->inter(fun)->approxTwoValued()){ // E.g. for functions
                 	xsb_interface->reset();
                 	result._hasModel=false;
-                	result._calculated_model=structure;
                 	return result;
     			}
             }
-			if(not structure->inter(symbol)->isConsistent()){
+			if(not _structure->inter(symbol)->isConsistent()){
             	xsb_interface->reset();
             	result._hasModel=false;
-            	result._calculated_model=structure;
             	return result;
 			}
 		}
 
     	xsb_interface->reset();
-    	result._calculated_model=structure;
-		if (not structure->isConsistent()) {
+		if (not _structure->isConsistent()) {
         	result._hasModel=false;
         	return result;
 		} else {
@@ -113,17 +133,17 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 #endif
 	// Default: Evaluation using ground-and-solve
 	auto data = SolverConnection::createsolver(1);
-	auto theory = new Theory("", structure->vocabulary(), ParseInfo());
+	auto theory = new Theory("", _structure->vocabulary(), ParseInfo());
 	theory->add(definition->clone());
 	bool LUP = getOption(BoolType::LIFTEDUNITPROPAGATION);
 	bool propagate = LUP || getOption(BoolType::GROUNDWITHBOUNDS);
-	auto symstructure = generateBounds(theory, structure, propagate, LUP);
-	auto grounder = GrounderFactory::create(GroundInfo(theory, { structure, symstructure }, NULL, true), data);
+	auto symstructure = generateBounds(theory, _structure, propagate, LUP);
+	auto grounder = GrounderFactory::create(GroundInfo(theory, { _structure, symstructure }, NULL, true), data);
 
 	auto size = toDouble(grounder->getMaxGroundSize());
 	size = size < 1 ? 1 : size;
-	if ((satdelay or getOption(SATISFIABILITYDELAY)) and log(size) / log(2) > 2 * getOption(LAZYSIZETHRESHOLD)) {
-		tooExpensive = true;
+	if ((_satdelay or getOption(SATISFIABILITYDELAY)) and log(size) / log(2) > 2 * getOption(LAZYSIZETHRESHOLD)) {
+		      _tooExpensive = true;
 		delete (data);
 		delete (grounder);
     	result._hasModel=true;
@@ -159,14 +179,14 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	if (not abstractsolutions.empty()) {
 		Assert(abstractsolutions.size() == 1);
 		auto model = *(abstractsolutions.cbegin());
-		SolverConnection::addLiterals(*model, grounding->translator(), structure);
-		SolverConnection::addTerms(*model, grounding->translator(), structure);
-		structure->clean();
+		SolverConnection::addLiterals(*model, grounding->translator(), _structure);
+		SolverConnection::addTerms(*model, grounding->translator(), _structure);
+		      _structure->clean();
 	}
 	for (auto symbol : definition->defsymbols()) {
 		if (isa<Function>(*symbol)) {
 			auto fun = dynamic_cast<Function*>(symbol);
-			if (not structure->inter(fun)->approxTwoValued()) { // Check for functions that are defined badly
+			if (not _structure->inter(fun)->approxTwoValued()) { // Check for functions that are defined badly
 				result._hasModel = false;
 			}
 		}
@@ -179,21 +199,13 @@ DefinitionCalculationResult CalculateDefinitions::calculateDefinition(const Defi
 	delete (mx);
 	delete (grounder);
 
-	result._hasModel &= (not abstractsolutions.empty() && structure->isConsistent());
+	result._hasModel &= (not abstractsolutions.empty() && _structure->isConsistent());
 	return result;
 }
 
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theory* theory, Structure* structure,
-		bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
-	if (theory == NULL || structure == NULL) {
-		throw IdpException("Unexpected NULL-pointer.");
-	}
-	if (structure->vocabulary() != theory->vocabulary()) {
-		throw IdpException("Definition Evaluation requires that the theory and structure range over the same vocabulary.");
-	}
-
-	if(theory->definitions().empty()){
-		DefinitionCalculationResult result(structure);
+DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions() {
+	if(_theory->definitions().empty()){
+		DefinitionCalculationResult result(_structure);
 		result._hasModel = true;
 		return result;
 	}
@@ -204,23 +216,23 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 #ifdef WITHXSB
 	if (getOption(XSB)) {
-		DefinitionUtils::joinDefinitionsForXSB(theory, structure);
+		DefinitionUtils::joinDefinitionsForXSB(_theory, _structure);
 	}
 #endif
 
-	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
-	if (not symbolsToQuery.empty()) {
-		updateSymbolsToQuery(symbolsToQuery, theory->definitions());
+	   _theory = FormulaUtils::improveTheoryForInference(_theory, _structure, false, false);
+	if (not _symbolsToQuery.empty()) {
+		updateSymbolsToQuery(_symbolsToQuery, _theory->definitions());
 	}
 
 	// Collect the open symbols of all definitions
-	auto opens = DefinitionUtils::opens(theory->definitions());
+	auto opens = DefinitionUtils::opens(_theory->definitions());
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		CalculateDefinitions::removeNonTotalDefnitions(opens);
 	}
 
-	DefinitionCalculationResult result(structure);
+	DefinitionCalculationResult result(_structure);
 	result._hasModel = true;
 
 	// Calculate the interpretation of the defined atoms from definitions that do not have
@@ -232,7 +244,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 			auto currentdefinition = it++; // REASON: set erasure does only invalidate iterators pointing to the erased elements
 
 			// Remove opens that have a two-valued interpretation
-			auto toRemove = DefinitionUtils::approxTwoValuedOpens(currentdefinition->first, structure);
+			auto toRemove = DefinitionUtils::approxTwoValuedOpens(currentdefinition->first, _structure);
 			for (auto symbol : toRemove) {
 				if (currentdefinition->second.find(symbol) != currentdefinition->second.end()) {
 					currentdefinition->second.erase(symbol);
@@ -245,10 +257,10 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 
 				if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 					clog << "Evaluating " << toString(currentdefinition->first) << "\n";
-					clog << "Using structure " << toString(structure) << "\n";
+					clog << "Using structure " << toString(_structure) << "\n";
 				}
 				bool tooexpensive = false;
-				auto defCalcResult = calculateDefinition(definition, structure, satdelay, tooexpensive, symbolsToQuery);
+				auto defCalcResult = calculateDefinition(definition);
 				if (tooexpensive) {
 					continue;
 				}
@@ -262,7 +274,7 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 				} else { // If it did have a model, update result and continue
 					fixpoint = false;
 					opens.erase(currentdefinition);
-					theory->remove(definition);
+					               _theory->remove(definition);
 					definition->recursiveDelete();
 				}
 			}
@@ -277,23 +289,12 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 	}
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 1) {
 		clog << "Done calculating known definitions\n";
-		clog << "Resulting structure:\n" << toString(structure) << "\n";
+		clog << "Resulting structure:\n" << toString(_structure) << "\n";
 	}
 	result._hasModel = true;
-	result._calculated_model = structure;
 	return result;
 }
 
-// IMPORTANT: if no longer wrapper in theory, repeat transformations from theory!
-DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinition(const Definition* definition,
-		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) const {
-	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
-	auto newdef = definition->clone();
-	theory->add(newdef);
-	auto ret = calculateKnownDefinitions(theory,structure,satdelay, symbolsToQuery);
-	theory->recursiveDelete();
-	return  ret;
-}
 
 void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 		std::set<PFSymbol*> >& opens) {
@@ -318,9 +319,9 @@ void CalculateDefinitions::removeNonTotalDefnitions(std::map<Definition*,
 
 void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, std::vector<Definition*> defs) const {
 	std::set<PFSymbol*> opens;
-	bool stop = false;
-	while (not stop) {
-		stop = true;
+	bool fixpoint = false;
+	while (not fixpoint) {
+		fixpoint = true;
 		for (auto def : defs) {
 			for (auto symbol : symbols) {
 				if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
@@ -332,12 +333,10 @@ void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, st
 								continue;
 							}
 							if (def2->defsymbols().find(dependency) != def2->defsymbols().end()) {
-								auto oldsize = (symbols.size());
-								for (auto defsymbol : def2->defsymbols()) {
-									symbols.insert(defsymbol);
-								}
-								if (oldsize < symbols.size()) {
-									stop = false;
+								// There is an "external" definition that defines the required
+								// dependency, so it must also be queried (and inserted into IDP)
+								if (symbols.insert(dependency).second) { // .second return value indicates whether it was a "new" element in the set
+									fixpoint = false;
 								}
 							}
 						}
@@ -347,6 +346,54 @@ void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, st
 		}
 	}
 }
+
+std::set<PFSymbol *> CalculateDefinitions::determineInputStarSymbols(Theory* t) const {
+	set<PFSymbol*> inputstar;
+	bool fixpoint = false;
+	while(not fixpoint) {
+		fixpoint = true;
+		for (auto def : t->definitions()) {
+			auto oldsize = inputstar.size();
+			addNewInputStar(def,inputstar);
+			if (oldsize <  inputstar.size()) {
+				fixpoint = false;
+			}
+		}
+	}
+	return inputstar;
+}
+
+
+void CalculateDefinitions::addNewInputStar(const Definition* d, std::set<PFSymbol*>& inputstar) const {
+	addAll(inputstar, DefinitionUtils::approxTwoValuedOpens(d,_structure));
+	set<PFSymbol*> potentialNewSymbols = DefinitionUtils::defined(d);
+	bool fixpoint = false;
+	while (not fixpoint) {
+		fixpoint = true;
+		for (auto it = potentialNewSymbols.begin(); it != potentialNewSymbols.end();) {
+			auto defsymbol = *(it++); // potential set erasure
+			auto deps = DefinitionUtils::getDirectDependencies(d, defsymbol);
+			if (isSubset(deps,inputstar)) { // i.e., all dependencies are inputstar
+				inputstar.insert(defsymbol);
+				fixpoint = false;
+				potentialNewSymbols.erase(defsymbol);
+			}
+		}
+	}
+}
+
+bool CalculateDefinitions::definitionDoesNotResultInTwovaluedModel(const Definition* definition) const {
+	auto possRecNegSymbols = DefinitionUtils::approxRecurionsOverNegationSymbols(definition);
+	auto xsb_interface = XSBInterface::instance();
+	for (auto symbol : possRecNegSymbols) {
+		if(xsb_interface->hasUnknowns(symbol)) {
+			xsb_interface->reset();
+			return true;
+		}
+	}
+	return false;
+}
+
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
@@ -359,3 +406,4 @@ bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
 	return getOption(XSB) && not has_recursive_aggregate;
 }
 #endif
+
