@@ -107,10 +107,21 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	FormulaUtils::flatten(theory);
 	auto startclock = clock();
 	_pp->setDefinition(cloned_definition->clone());
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		logActionAndTimeSince("Translating the definition to XSB took ",startclock);
+	}
 	theory->recursiveDelete(); // memory management - delete everything of the temp. theory
 	//TODO: Not really a reason anymore to generate code separate from facts and ranges, since "facts" now also possibly contain P :- tnot(P) rules
+	startclock = clock();
 	auto str2 = _pp->getFacts();
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		logActionAndTimeSince("Printing out the facts took ",startclock);
+	}
+	startclock = clock();
 	auto str = _pp->getCode();
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		logActionAndTimeSince("Printing out the rules took ",startclock);
+	}
 	auto str3 = _pp->getRanges();
 	auto compiler = PrologProgram::getCompilerCode();
 
@@ -121,9 +132,6 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	ss << compiler << "\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3;
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << "\n";
-	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
-		logActionAndTimeSince("Translating the definition to XSB took ",startclock);
 	}
 	startclock = clock();
 	sendToXSB(ss.str());
