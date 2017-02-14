@@ -7,6 +7,7 @@
 #include "PrologProgram.hpp"
 #include "FormulaClause.hpp"
 #include "XSBToIDPTranslator.hpp"
+#include "utils/LogAction.hpp"
 #include "common.hpp"
 #include "GlobalData.hpp"
 #include "theory/TheoryUtils.hpp"
@@ -104,6 +105,7 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	FormulaUtils::removeEquivalences(theory);
 	FormulaUtils::pushNegations(theory);
 	FormulaUtils::flatten(theory);
+	auto startclock = clock();
 	_pp->setDefinition(cloned_definition->clone());
 	theory->recursiveDelete(); // memory management - delete everything of the temp. theory
 	//TODO: Not really a reason anymore to generate code separate from facts and ranges, since "facts" now also possibly contain P :- tnot(P) rules
@@ -120,7 +122,14 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << "\n";
 	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		logActionAndTimeSince("Translating the definition to XSB took ",startclock);
+	}
+	startclock = clock();
 	sendToXSB(ss.str());
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		logActionAndTimeSince("Sending the XSB program took ",startclock);
+	}
 }
 
 void XSBInterface::sendToXSB(string str) {
@@ -171,12 +180,15 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	ss << "call_tv(" << *term << "," << _translator->to_xsb_truth_type(tv) << ").";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
-		clog << "Quering XSB with: " <<  query << "\n";
-	}
-    char* delimiter = new char [strlen(" ") + 1];
-    strcpy(delimiter," ");
+	auto startclock = clock();
+	char* delimiter = new char [strlen(" ") + 1];
+	strcpy(delimiter," ");
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		std::stringstream ss;
+		ss << "Quering XSB with: " <<  query << " took ";
+		logActionAndTimeSince(ss.str(),startclock);
+	}
 	handleResult(rc);
 
 	while (rc == XSB_SUCCESS) {
