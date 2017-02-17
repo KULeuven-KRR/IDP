@@ -48,6 +48,8 @@
 #include "transformations/SubstituteTerm.hpp"
 #include "transformations/SplitDefinitions.hpp"
 #include "transformations/SubstituteVarWithDom.hpp"
+#include "transformations/DefinitionsToNormalForm.hpp"
+#include "transformations/UnnestForXSB.hpp"
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
@@ -539,6 +541,7 @@ Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, bool addinout
 	return transform<ReplacePredByFunctions, Theory*>(newTheory, newTheory->vocabulary(), pred, addinoutputdef, domainindices, codomainsindices, partialfunctions);
 }
 
+
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str);
 }
@@ -670,6 +673,14 @@ Theory* eliminateUniversalQuantifications(Theory* t) {
 
 AbstractTheory* removeEquivalences(AbstractTheory* t) {
 	return transform<RemoveEquivalences, AbstractTheory*>(t);
+}
+
+Theory* definitionsToNormalForm(Theory* t) {
+	return transform<DefinitionsToNormalForm, Theory*>(t);
+}
+
+AbstractTheory* unnestForXSB(AbstractTheory* t, const Structure* str) {
+	return transform<UnnestForXSB, AbstractTheory*>(t, str);
 }
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str) {

@@ -111,6 +111,8 @@ class ReplaceVariableUsingEqualities;
 		friend class SubstituteTerm; \
 		friend class SubstituteVarWithDom; \
 		friend class UnnestTerms; \
+		friend class DefinitionsToNormalForm; \
+		friend class UnnestForXSB; \
 		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
 		friend class UnnestThreeValuedTerms;\

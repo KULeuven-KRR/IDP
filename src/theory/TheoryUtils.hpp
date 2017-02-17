@@ -265,6 +265,18 @@ Theory* eliminateUniversalQuantifications(Theory*);
 /** Rewrite A <=> B to (A => B) & (B => A) */
 AbstractTheory* removeEquivalences(AbstractTheory*);
 
+/** Recursively move all function and aggregate terms, except for constructor functions */
+AbstractTheory* unnestForXSB(AbstractTheory*, const Structure* str = NULL);
+
+/** Reduce definitions to a "normal form", where tseitinisation is used to transform definitions into definitions
+that only have rules of one of the following 4 forms:
+ predform(..) <- conjunction of predforms
+ predform(..) <- disjunction of predforms
+ predform(..) <- forall with nested predform
+ predform(..) <- exists with nested predform
+ */
+Theory* definitionsToNormalForm(Theory*);
+
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL);
 

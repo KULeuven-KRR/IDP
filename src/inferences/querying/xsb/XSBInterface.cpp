@@ -100,7 +100,7 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	auto cloned_definition = d->clone();
 	auto theory = new Theory("", _structure->vocabulary(), ParseInfo());
 	theory->add(cloned_definition);
-	FormulaUtils::unnestFuncsAndAggs(theory, _structure);
+	FormulaUtils::unnestForXSB(theory, _structure);
 	FormulaUtils::graphFuncsAndAggs(theory, _structure, cloned_definition->defsymbols(), true, false);
 	FormulaUtils::removeEquivalences(theory);
 	FormulaUtils::pushNegations(theory);
