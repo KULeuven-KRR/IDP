@@ -1,0 +1,24 @@
+vocabulary V {
+	type x
+	foo(x)
+	bar(x)
+}
+theory T:V {
+	?1 x: foo(x).
+	{ !x: bar(x) <- foo(x). }
+}
+structure S:V{
+	x = {A;B;}
+}
+procedure main(){
+	count = 0
+	itx = modelIterator(T,S)
+	for model in itx do
+		count = count + 1
+	end
+	if count == 2 then
+		return 1
+	else 
+		return 0
+	end
+}

@@ -75,7 +75,6 @@ void ModelIterator::init() {
 	_structure->changeVocabulary(_currentVoc);
 	_theory->vocabulary(_currentVoc);
 	_assumptions = new litlist();
-	postprocessdefs = preprocess(_theory);
 	ground(_theory);
 	prepareSolver();
 }
