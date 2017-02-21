@@ -16,10 +16,7 @@
 #include "vocabulary/vocabulary.hpp"
 
 #include "../../../lib/minisatid/src/external/Lit.hpp"
-
-
-//Somehow max is included here %Ruben // Jo: huh? Why not simply include <algorithm> in header?
-#include "inferences/approximatingdefinition/GenerateApproximatingDefinition.hpp"
+#include <algorithm>
 
 using namespace std;
 
@@ -78,7 +75,6 @@ void ModelIterator::init() {
 	_structure->changeVocabulary(_currentVoc);
 	_theory->vocabulary(_currentVoc);
 	_assumptions = new litlist();
-	preprocess(_theory);
 	ground(_theory);
 	prepareSolver();
 }
