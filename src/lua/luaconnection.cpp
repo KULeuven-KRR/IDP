@@ -1672,25 +1672,17 @@ int predtableCall(lua_State* L) {
  */
 int funcinterCall(lua_State* L) {
 	FuncInter* funcinter = *(FuncInter**) lua_touserdata(L, 1);
-	if (funcinter->approxTwoValued()) {
-		FuncTable* ft = funcinter->funcTable();
-		lua_remove(L, 1);
-		unsigned int nrargs = lua_gettop(L);
-		if (nrargs == 1) {
-			InternalArgument argone = createArgument(1, L);
-			if (argone._type == AT_TUPLE) {
-				ElementTuple tuple = *(argone._value._tuple);
-				while (tuple.size() > ft->arity()) {
-					tuple.pop_back();
-				}
-				while (tuple.size() < ft->arity()) {
-					tuple.push_back(0);
-				}
-				const DomainElement* d = (*ft)[tuple];
-				return convertToLua(L, d);
-			}
-		}
-		ElementTuple tuple;
+	if (!funcinter->approxTwoValued()) {
+		lua_pushstring(L, "Only two-valued function interpretations can be called");
+		return lua_error(L);
+    }
+    FuncTable* ft = funcinter->funcTable();
+    lua_remove(L, 1);
+    unsigned int nrargs = lua_gettop(L);
+    ElementTuple tuple;
+    if (nrargs == 1 && createArgument(1, L)._type == AT_TUPLE) {
+        tuple = *(createArgument(1, L)._value._tuple);
+    } else {
 		for (unsigned int n = 1; n <= nrargs; ++n) {
 			InternalArgument arg = createArgument(n, L);
 			switch (arg._type) {
@@ -1698,7 +1690,7 @@ int funcinterCall(lua_State* L) {
 				tuple.push_back(createDomElem(arg._value._int));
 				break;
 			case AT_DOUBLE:
-				tuple.push_back(createDomElem(arg._value._double));
+      			tuple.push_back(createDomElem(arg._value._double));
 				break;
 			case AT_STRING:
 				tuple.push_back(createDomElem(*arg._value._string));
@@ -1708,22 +1700,16 @@ int funcinterCall(lua_State* L) {
 				break;
 			default:
 				lua_pushstring(L, "Only numbers, strings, and compounds can be arguments of a function interpretation");
-				lua_error(L);
-				return 0;
+                return lua_error(L);
 			}
 		}
-		while (tuple.size() > ft->arity()) {
-			tuple.pop_back();
-		}
-		while (tuple.size() < ft->arity()) {
-			tuple.push_back(0);
-		}
-		const DomainElement* d = (*ft)[tuple];
-		return convertToLua(L, d);
-	} else {
-		lua_pushstring(L, "Only two-valued function interpretations can be called");
-		return lua_error(L);
-	}
+    } 
+    if (tuple.size() != ft->arity()) {
+        lua_pushstring(L, "Call the function interpretation with the correct number of arguments");
+        return lua_error(L);
+    }
+    const DomainElement* d = (*ft)[tuple];
+    return convertToLua(L, d);
 }
 
 /**
