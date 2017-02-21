@@ -16,9 +16,6 @@
 #include "vocabulary/vocabulary.hpp"
 
 #include "../../../lib/minisatid/src/external/Lit.hpp"
-
-
-//Somehow max is included here %Ruben // Jo: huh? Why not simply include <algorithm> in header?
 #include <algorithm>
 
 using namespace std;
