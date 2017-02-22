@@ -225,6 +225,10 @@ void compile(UserProcedure* procedure, lua_State* state) {
  * Push a domain element to the lua stack
  */
 int convertToLua(lua_State* L, const DomainElement* d) {
+	if (d == NULL) {
+		lua_pushnil(L);
+		return 1;
+	}
 	int result = -1;
 	switch (d->type()) {
 	case DET_INT:
