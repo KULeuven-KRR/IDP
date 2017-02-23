@@ -225,6 +225,10 @@ void compile(UserProcedure* procedure, lua_State* state) {
  * Push a domain element to the lua stack
  */
 int convertToLua(lua_State* L, const DomainElement* d) {
+	if (d == NULL) {
+		lua_pushnil(L);
+		return 1;
+	}
 	int result = -1;
 	switch (d->type()) {
 	case DET_INT:
@@ -440,10 +444,10 @@ int convertToLua(lua_State* L, InternalArgument arg) {
 		Assert(arg._value._modelIterator!=NULL);
 		result = addUserData(L, arg._value._modelIterator, arg._type);
 		break;
-        case AT_TWOVALUEDITERATOR:
-            Assert(arg._value._twoValuedIterator!=NULL);
-            result = addUserData(L, arg._value._twoValuedIterator, arg._type);
-            break;
+	case AT_TWOVALUEDITERATOR:
+		Assert(arg._value._twoValuedIterator!=NULL);
+		result = addUserData(L, arg._value._twoValuedIterator, arg._type);
+		break;
 	case AT_TRACEMONITOR:
 		throw IdpException("Tracemonitors cannot be passed to lua.");
 	}
@@ -574,8 +578,8 @@ InternalArgument createArgument(int arg, lua_State* L) {
 			ia._value._modelIterator = *(WrapModelIterator**) lua_touserdata(L, arg);
 			break;
 		case AT_TWOVALUEDITERATOR:
-                    ia._value._twoValuedIterator = *(TwoValuedStructureIterator**) lua_touserdata(L, arg);
-                    break;
+			ia._value._twoValuedIterator = *(TwoValuedStructureIterator**) lua_touserdata(L, arg);
+			break;
 		default:
 			throw IdpException("Encountered a lua USERDATA for which not internal type exists (or it is not handled correctly).");
 		}
@@ -1672,25 +1676,17 @@ int predtableCall(lua_State* L) {
  */
 int funcinterCall(lua_State* L) {
 	FuncInter* funcinter = *(FuncInter**) lua_touserdata(L, 1);
-	if (funcinter->approxTwoValued()) {
-		FuncTable* ft = funcinter->funcTable();
-		lua_remove(L, 1);
-		unsigned int nrargs = lua_gettop(L);
-		if (nrargs == 1) {
-			InternalArgument argone = createArgument(1, L);
-			if (argone._type == AT_TUPLE) {
-				ElementTuple tuple = *(argone._value._tuple);
-				while (tuple.size() > ft->arity()) {
-					tuple.pop_back();
-				}
-				while (tuple.size() < ft->arity()) {
-					tuple.push_back(0);
-				}
-				const DomainElement* d = (*ft)[tuple];
-				return convertToLua(L, d);
-			}
-		}
-		ElementTuple tuple;
+	if (!funcinter->approxTwoValued()) {
+		lua_pushstring(L, "Only two-valued function interpretations can be called");
+		return lua_error(L);
+	}
+	FuncTable* ft = funcinter->funcTable();
+	lua_remove(L, 1);
+	unsigned int nrargs = lua_gettop(L);
+	ElementTuple tuple;
+	if (nrargs == 1 && createArgument(1, L)._type == AT_TUPLE) {
+		tuple = *(createArgument(1, L)._value._tuple);
+	} else {
 		for (unsigned int n = 1; n <= nrargs; ++n) {
 			InternalArgument arg = createArgument(n, L);
 			switch (arg._type) {
@@ -1698,7 +1694,7 @@ int funcinterCall(lua_State* L) {
 				tuple.push_back(createDomElem(arg._value._int));
 				break;
 			case AT_DOUBLE:
-				tuple.push_back(createDomElem(arg._value._double));
+	  			tuple.push_back(createDomElem(arg._value._double));
 				break;
 			case AT_STRING:
 				tuple.push_back(createDomElem(*arg._value._string));
@@ -1708,22 +1704,16 @@ int funcinterCall(lua_State* L) {
 				break;
 			default:
 				lua_pushstring(L, "Only numbers, strings, and compounds can be arguments of a function interpretation");
-				lua_error(L);
-				return 0;
+				return lua_error(L);
 			}
 		}
-		while (tuple.size() > ft->arity()) {
-			tuple.pop_back();
-		}
-		while (tuple.size() < ft->arity()) {
-			tuple.push_back(0);
-		}
-		const DomainElement* d = (*ft)[tuple];
-		return convertToLua(L, d);
-	} else {
-		lua_pushstring(L, "Only two-valued function interpretations can be called");
+	} 
+	if (tuple.size() != ft->arity()) {
+		lua_pushstring(L, "Call the function interpretation with the correct number of arguments");
 		return lua_error(L);
 	}
+	const DomainElement* d = (*ft)[tuple];
+	return convertToLua(L, d);
 }
 
 /**
@@ -1811,24 +1801,24 @@ int mxNext(lua_State* L) {
 }
 
 int twoValuedNext(lua_State* L) {
-    if (lua_type(L, 1) == LUA_TNONE) {
-        lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
-        return lua_error(L);
-    }
-    InternalArgument ia = createArgument(1, L);
-    if (ia._type != AT_TWOVALUEDITERATOR) {
-        lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
-        return lua_error(L);
-    }
-    TwoValuedStructureIterator* iter = ia._value._twoValuedIterator;
-    auto result = iter->next();
-    if (result == NULL) {
-        lua_pushnil(L);
-        return 1;
-    } else {
-        InternalArgument ia(result);
-        return convertToLua(L, ia);
-    }
+	if (lua_type(L, 1) == LUA_TNONE) {
+		lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
+		return lua_error(L);
+	}
+	InternalArgument ia = createArgument(1, L);
+	if (ia._type != AT_TWOVALUEDITERATOR) {
+		lua_pushstring(L, "next expects an twoValuedIterator. Use the \":\" operator.");
+		return lua_error(L);
+	}
+	TwoValuedStructureIterator* iter = ia._value._twoValuedIterator;
+	auto result = iter->next();
+	if (result == NULL) {
+		lua_pushnil(L);
+		return 1;
+	} else {
+		InternalArgument ia(result);
+		return convertToLua(L, ia);
+	}
 }
 
 typedef pair<int (*)(lua_State*), string> tablecolheader;
@@ -2039,19 +2029,19 @@ void mxIteratorMetaTable(lua_State* L) {
 }
 
 void twoValuedIteratorMetaTable(lua_State* L) {
-    vector<tablecolheader> elements;
-    elements.push_back(tablecolheader { &gcTwoValuedIterator, "__gc" });
-    elements.push_back(tablecolheader { &twoValuedNext, "next" });
-    createNewTable(L, AT_TWOVALUEDITERATOR, elements);
+	vector<tablecolheader> elements;
+	elements.push_back(tablecolheader { &gcTwoValuedIterator, "__gc" });
+	elements.push_back(tablecolheader { &twoValuedNext, "next" });
+	createNewTable(L, AT_TWOVALUEDITERATOR, elements);
 
-    //Make metatable own table:
-    //mt.__index = mt
-    string name = toCString(AT_TWOVALUEDITERATOR);
-    luaL_getmetatable(L, name.c_str());
-    lua_pushvalue(L, -1);
-    string index = "__index";
-    lua_setfield(L, -2, index.c_str());
-    lua_pop(L, 1);
+	//Make metatable own table:
+	//mt.__index = mt
+	string name = toCString(AT_TWOVALUEDITERATOR);
+	luaL_getmetatable(L, name.c_str());
+	lua_pushvalue(L, -1);
+	string index = "__index";
+	lua_setfield(L, -2, index.c_str());
+	lua_pop(L, 1);
 }
 
 /**
@@ -2086,7 +2076,7 @@ void createMetaTables(lua_State* L) {
 
 	overloadedMetaTable(L);
 	mxIteratorMetaTable(L);
-        twoValuedIteratorMetaTable(L);
+	twoValuedIteratorMetaTable(L);
 }
 
 std::set<Namespace*> _checkedAddToGlobal;
