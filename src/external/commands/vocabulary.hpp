@@ -60,7 +60,7 @@ public:
 			ss << p->nameNoArity() << "(";
 			for (int i = 0; i < p->sorts().size(); i++) {
 				ss << p->sorts()[i]->name();
-				if (i < p->sorts().size() -1) {
+				if (i < p->sorts().size() - 1) {
 					ss << ",";
 				}
 			}
@@ -90,7 +90,7 @@ public:
 			Function* f = dynamic_cast<Function*>(symbol);
 			std::stringstream ss;
 			ss << f->nameNoArity() << "(";
-			for (int i = 0; i < f->sorts().size() -1; i++) {
+			for (int i = 0; i < f->sorts().size() - 1; i++) {
 				ss << f->sorts()[i]->name();
 				if (i < f->sorts().size() -2) {
 					ss << ",";
