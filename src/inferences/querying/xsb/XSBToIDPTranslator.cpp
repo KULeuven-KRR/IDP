@@ -54,6 +54,36 @@ bool XSBToIDPTranslator::isXSBNumber(std::string str) {
 	return isNumber;
 }
 
+bool XSBToIDPTranslator::isXSBIntegerNumber(std::string str) {
+	bool isNumber = true;
+	auto start = str.begin();
+	if (*start == '-') {
+		start++;
+	}
+	for (auto i = start; i != str.end() && isNumber; ++i) {
+		if (!isdigit(*i)) {
+			isNumber = false;
+		}
+	}
+	return isNumber;
+}
+
+std::string XSBToIDPTranslator::toIntegerNumberString(std::string str) const {
+	Assert(isDouble(str));
+	std::stringstream ss;
+	auto start = str.begin();
+	if (*start == '-') {
+		ss << *start;
+		start++;
+	}
+	for (auto i = start; i != str.end(); ++i) {
+		if (!isdigit(*i)) {
+			return ss.str();
+		}
+		ss << *i;
+	}
+}
+
 // Note: It is important that each of these strings are present as
 // predicates in data/share/std/xsb_compiler.P, accompanied of the
 // IDPXSB_PREFIX.
@@ -168,14 +198,11 @@ string XSBToIDPTranslator::to_prolog_term(const DomainElement* domelem) {
 	return ret;
 }
 
-const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str) {
-	auto it = _prolog_string_to_domainels.find(str);
-	if (it == _prolog_string_to_domainels.end()) {
-		return createDomElem(str);
-	}
-	return it->second;
-}
 const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) {
+	auto it = _prolog_string_to_domainels.find(str);
+	if (it != _prolog_string_to_domainels.end()) {
+		return it->second;
+	}
 	const DomainElement* ret;
 	if (sort->isConstructed()) {
 		auto ctor = split(str,"(")[0];
@@ -191,12 +218,12 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) 
 				if (ch == ',' and nestings == 0) {
 					args.push_back(ss.str());
 					ss.str(string()); // empty contents of stringstream
-				} else {
-					ss << ch;
-				}
+			} else {
+				ss << ch;
 			}
-			Assert(nestings == 0);
-			args.push_back(ss.str());
+		}
+		Assert(nestings == 0);
+		args.push_back(ss.str());
 		}
 		auto sortctor = _prolog_string_to_pfsymbols[ctor];
 		Assert(isa<Function>(*sortctor));
@@ -204,9 +231,19 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) 
 		Function* f = const_cast<Function*>(constructorfunction);
 		auto elemtuple = to_idp_elementtuple(args,f);
 		ret = createDomElem(createCompound(f,elemtuple));
-	}else {
-		ret = to_idp_domelem(str);
+	} else { 
+		// Create a domain element. Since everything XSB gives back is a string, we inspect the string format as well as the expected Sort
+		if (isXSBIntegerNumber(str)) { // If 
+			ret = createDomElem((int)(toDouble(str)));
+		} else if (SortUtils::isSubsort(sort,get(STDSORT::INTSORT))) {
+			return to_idp_domelem(toIntegerNumberString(str),sort);
+		} else if (isXSBNumber(str)) {
+			ret = createDomElem(toDouble(str), NumType::CERTAINLYNOTINT);
+		} else { 
+			ret = createDomElem(str);
+		}
 	}
+	add_to_mappings(ret,str);
 	return ret;
 }
 

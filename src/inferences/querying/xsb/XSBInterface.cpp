@@ -134,12 +134,15 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	stringstream ss;
 	ss << "\n%Rules\n" << str << "\n%Ranges\n" << str3;
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 7) {
-		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << endl;
+		clog << "The transformation to XSB resulted in the following rules:\n\n" << ss.str() << endl;
 	}
 	startclock = clock();
 	sendToXSB(ss.str());
-	 ss.str("");
+	ss.str("");
 	ss << "\n%Facts\n" << str2 << endl;
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 7) {
+		clog << "The transformation to XSB resulted in the following facts:\n\n" << ss.str() << endl;
+	}
 	sendToXSB(ss.str(), true);
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		logActionAndTimeSince("Sending the XSB program took ",startclock);

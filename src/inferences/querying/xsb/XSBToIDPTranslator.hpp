@@ -50,6 +50,8 @@ public:
 //	predefined XSB code for IDP found in data/share/std/xsb_compiler.P
 	bool isoperator(int c);
 	bool isXSBNumber(std::string str);
+	bool isXSBIntegerNumber(std::string str);
+	std::string toIntegerNumberString(std::string) const;
 	bool isXSBBuiltIn(std::string str);
 	bool isXSBCompilerSupported(const PFSymbol* symbol);
 	bool isXSBCompilerSupported(const Sort*);
@@ -60,7 +62,6 @@ public:
 	std::string to_prolog_pred_and_arity(const Sort*);
 
 	std::string to_prolog_term(const DomainElement*);
-	const DomainElement* to_idp_domelem(std::string);
 	const DomainElement* to_idp_domelem(std::string, Sort*);
 	ElementTuple to_idp_elementtuple(std::list<std::string>, const PFSymbol*);
 
