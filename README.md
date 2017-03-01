@@ -17,6 +17,8 @@ Required software packages:
    - Cmake build environment. 
    - Bison and flex packages or yacc and lex packages.
    - Pdflatex and doxygen for building the documentation. (On linux, search for the `latex2html` package)
+   - texinfo package
+
 
 Assume idp is unpacked in `<idpdir>`, you want to build in `<builddir>` (cannot be the same as `<idpdir>`) and install in `<installdir>`.
 Building and installing is then achieved by executing the following commands:
