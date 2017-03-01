@@ -16,38 +16,62 @@
 #include "errorhandling/error.hpp"
 
 
-class getSortNamesInference: public VocabularyBase {
+std::string* nameOfPFSymbol(PFSymbol* s) {
+	std::stringstream ss;
+	ss << s->nameNoArity();
+	return new std::string(ss.str());
+}
+
+class getSortsInference: public VocabularyBase {
 public:
-	getSortNamesInference()
-			: VocabularyBase("getsortnames", "Returns a table with all the names of the non built-in sorts in the vocabulary.") {
+	getSortsInference()
+			: VocabularyBase("gettypes", "Returns a table with all non built-in types in the vocabulary.") {
 		setNameSpace(getVocabularyNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
-		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
+		auto sortsvector = new std::vector<std::set<Sort*>*>();
 		for (auto name2sort : get<0>(args)->getSorts()) {
 			Sort* s = name2sort.second;
 			if (s->builtin()) {
 				continue;
 			}
-			std::string* strcopy = new std::string(s->name());
-			InternalArgument toadd = InternalArgument(strcopy);
-			ret->push_back(toadd);
+			sortsvector->push_back(new std::set<Sort*>({s}));
 		}
-		return InternalArgument(ret);
+		return InternalArgument(sortsvector);
 	}
 };
 
-class getPredicateNamesInference: public VocabularyBase {
+class getSortNameInference: public SortBase {
 public:
-	getPredicateNamesInference()
-			: VocabularyBase("getpredicatenames", "Returns a table with all the names of the predicates in the vocabulary, excluding sort predicates and built-in predicates.") {
+	getSortNameInference()
+			: SortBase("name", "Returns the name of a given type.") {
+		setNameSpace(getVocabularyNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Sort* s = get<0>(args);
+		if (s == NULL) {
+			Warning::warning("Type was expected as argument, but something else was given.");
+			return nilarg();
+		} else {
+			std::stringstream ss;
+			ss << s->name();
+			return InternalArgument(new std::string(ss.str()));
+		}
+	}
+};
+
+class getPredicatesInference: public VocabularyBase {
+public:
+	getPredicatesInference()
+			: VocabularyBase("getpredicates", "Returns a table with all the predicate symbols in the vocabulary, excluding type predicates and built-in predicates.") {
 		setNameSpace(getVocabularyNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Vocabulary* invoc = get<0>(args);
-		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
+		auto predvector = new std::vector<std::set<Predicate*>*>();
 		for (auto symbol : invoc->getNonBuiltinNonOverloadedSymbols()) {
 			if (not symbol->isPredicate()) { 
 				continue; 
@@ -56,52 +80,66 @@ public:
 			if (PredUtils::isTypePredicate(p)) {
 				continue;
 			}
-			std::stringstream ss;
-			ss << p->nameNoArity() << "(";
-			for (int i = 0; i < p->sorts().size(); i++) {
-				ss << p->sorts()[i]->name();
-				if (i < p->sorts().size() - 1) {
-					ss << ",";
-				}
-			}
-			ss << ")";
-			std::string* strcopy = new std::string(ss.str());
-			InternalArgument toadd = InternalArgument(strcopy);
-			ret->push_back(toadd);
+			predvector->push_back(new std::set<Predicate*>({p}));
 		}
-		return InternalArgument(ret);
+		return InternalArgument(predvector);
 	}
 };
 
-class getFunctionNamesInference: public VocabularyBase {
+class getPredicateNameInference: public PredicateBase {
 public:
-	getFunctionNamesInference()
-			: VocabularyBase("getfunctionnames", "Returns a table with all the names of the non built-in functions in the vocabulary.") {
+	getPredicateNameInference()
+			: PredicateBase("name", "Returns the name of a given predicate symobl.") {
+		setNameSpace(getVocabularyNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Predicate* pred = get<0>(args);
+		if (pred == NULL) {
+			Warning::warning("Predicate symbol was expected as argument, but something else was given.");
+			return nilarg();
+		} else {
+			return InternalArgument(nameOfPFSymbol(pred));
+		}
+	}
+};
+
+class getFunctionsInference: public VocabularyBase {
+public:
+	getFunctionsInference()
+			: VocabularyBase("getfunctions", "Returns a table with all non built-in function symbols in the vocabulary.") {
 		setNameSpace(getVocabularyNamespaceName());
 	}
 
 	InternalArgument execute(const std::vector<InternalArgument>& args) const {
 		Vocabulary* invoc = get<0>(args);
-		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
+		auto funcvector = new std::vector<std::set<Function*>*>();
 		for (auto symbol : invoc->getNonBuiltinNonOverloadedSymbols()) {
 			if (not symbol->isFunction()) { 
 				continue; 
 			}
-			Function* f = dynamic_cast<Function*>(symbol);
-			std::stringstream ss;
-			ss << f->nameNoArity() << "(";
-			for (int i = 0; i < f->sorts().size() - 1; i++) {
-				ss << f->sorts()[i]->name();
-				if (i < f->sorts().size() -2) {
-					ss << ",";
-				}
-			}
-			ss << "):" << f->sorts().back()->name();
-			std::string* strcopy = new std::string(ss.str());
-			InternalArgument toadd = InternalArgument(strcopy);
-			ret->push_back(toadd);
+			Function* func = dynamic_cast<Function*>(symbol);
+			funcvector->push_back(new std::set<Function*>({func}));
 		}
-		return InternalArgument(ret);
+		return InternalArgument(funcvector);
+	}
+};
+
+class getFunctionNameInference: public FunctionBase {
+public:
+	getFunctionNameInference()
+			: FunctionBase("name", "Returns the name of a given function symbol.") {
+		setNameSpace(getVocabularyNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Function* func = get<0>(args);
+		if (func == NULL) {
+			Warning::warning("Function symbol was expected as argument, but something else was given.");
+			return nilarg();
+		} else {
+			return InternalArgument(nameOfPFSymbol(func));
+		}
 	}
 };
 
