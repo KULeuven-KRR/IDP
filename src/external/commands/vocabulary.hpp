@@ -187,15 +187,3 @@ public:
 		}
 	}
 };
-
-
-
-InternalArgument createInternalArgumentVector(const std::vector<Sort*> sorts) {
-		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
-		for (auto sort : sorts) {
-			std::string* strcopy = new std::string(sort->name());
-			InternalArgument toadd = InternalArgument(strcopy);
-			ret->push_back(toadd);
-		}
-		return InternalArgument(ret);
-}
