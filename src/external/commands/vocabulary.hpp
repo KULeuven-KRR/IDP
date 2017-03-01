@@ -22,6 +22,15 @@ std::string* nameOfPFSymbol(PFSymbol* s) {
 	return new std::string(ss.str());
 }
 
+std::vector<std::set<Sort*>*>* sortsOfPFSymbol(PFSymbol* s) {
+	auto allsorts = s->sorts();
+	auto ret = new std::vector<std::set<Sort*>*>();
+	for (auto it = allsorts.begin(); it != allsorts.end(); it++) {
+		ret->push_back(new std::set<Sort*>({*it}));
+	}
+	return ret;
+}
+
 class getSortsInference: public VocabularyBase {
 public:
 	getSortsInference()
@@ -104,6 +113,24 @@ public:
 	}
 };
 
+class getPredicateSortsInference: public PredicateBase {
+public:
+	getPredicateSortsInference()
+			: PredicateBase("gettyping", "Returns a table containing, in-order, the types of a given predicate symbol.") {
+		setNameSpace(getVocabularyNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Predicate* pred = get<0>(args);
+		if (pred == NULL) {
+			Warning::warning("Predicate symbol was expected as argument, but something else was given.");
+			return nilarg();
+		} else {
+			return InternalArgument(sortsOfPFSymbol(pred));
+		}
+	}
+};
+
 class getFunctionsInference: public VocabularyBase {
 public:
 	getFunctionsInference()
@@ -142,6 +169,26 @@ public:
 		}
 	}
 };
+
+class getFunctionSortsInference: public FunctionBase {
+public:
+	getFunctionSortsInference()
+			: FunctionBase("gettyping", "Returns a table containing, in-order, the types of a given function symbol.") {
+		setNameSpace(getVocabularyNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		Function* func = get<0>(args);
+		if (func == NULL) {
+			Warning::warning("Function symbol was expected as argument, but something else was given.");
+			return nilarg();
+		} else {
+			return InternalArgument(sortsOfPFSymbol(func));
+		}
+	}
+};
+
+
 
 InternalArgument createInternalArgumentVector(const std::vector<Sort*> sorts) {
 		std::vector<InternalArgument>* ret = new std::vector<InternalArgument>();
