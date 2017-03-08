@@ -1102,7 +1102,7 @@ Predicate* overload(const set<Predicate*>& sp) {
 }
 
 bool isTypePredicate(Predicate* p) {
-	return p->nrSorts() == 1 and (p->sort(0)->name() == p->nameNoArity());
+	return p->nrSorts() == 1 and p == p->sort(0)->pred();
 }
 
 }

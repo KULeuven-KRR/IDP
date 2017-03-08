@@ -114,7 +114,7 @@ public:
 			auto sp = it->second->nonbuiltins();
 			for (auto jt = sp.cbegin(); jt != sp.cend(); ++jt) {
 				auto p = *jt;
-				if (p->arity() == 1 && p->sorts()[0]->pred() == p) { // If it is in fact a sort, ignore it
+				if (PredUtils::isTypePredicate(p)) { // If it is in fact a sort, ignore it
 					continue;
 				}
 				auto pi = structure->inter(p);
@@ -240,7 +240,7 @@ public:
 				if (v != Vocabulary::std() and pred->builtin()) { // Only print builtins when printing the std voc
 					continue;
 				}
-				if (pred->nrSorts() == 1 and pred == pred->sort(0)->pred()) { // Do not print sort-predicates
+				if (PredUtils::isTypePredicate(pred)) { // Do not print sort-predicates
 					continue;
 				}
 				printTab();
