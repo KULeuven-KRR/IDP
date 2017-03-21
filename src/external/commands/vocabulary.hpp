@@ -98,7 +98,7 @@ public:
 class getPredicateNameInference: public PredicateBase {
 public:
 	getPredicateNameInference()
-			: PredicateBase("name", "Returns the name of a given predicate symobl.") {
+			: PredicateBase("name", "Returns the name of a given predicate symbol.") {
 		setNameSpace(getVocabularyNamespaceName());
 	}
 
