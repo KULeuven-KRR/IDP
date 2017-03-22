@@ -2209,6 +2209,10 @@ bool isNumeric(Sort* s) {
 	return SortUtils::isSubsort(s, get(STDSORT::FLOATSORT));
 }
 
+bool isConstructorFunction(const PFSymbol* symbol) {
+	return isa<Function>(*symbol) and dynamic_cast<const Function*>(symbol)->isConstructorFunction();
+}
+
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent) {
 	if (parent == child || child == NULL) {
 		return true;
