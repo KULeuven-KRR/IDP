@@ -39,6 +39,8 @@ private:
 	set<string> _all_predicates;
 	XSBToIDPTranslator* _translator;
 	void printAsFacts(std::string, PFSymbol*, std::ostream&);
+	void print3valFacts(std::string, PFSymbol*, std::ostream&);
+	void print2valFacts(std::string, PFSymbol*, std::ostream&);
 	void printTuple(const ElementTuple&, std::ostream&);
 
 public:

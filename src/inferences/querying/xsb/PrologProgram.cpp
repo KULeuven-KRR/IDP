@@ -127,7 +127,25 @@ string PrologProgram::getFacts() {
 }
 
 void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostream& ss) {
+	if (_structure->inter(symbol)->approxTwoValued()) {
+		print2valFacts(symbol_name,symbol,ss);
+	} else {
+		print3valFacts(symbol_name,symbol,ss);
+	}
+}
+
+void PrologProgram::print2valFacts(string symbol_name, PFSymbol* symbol, std::ostream& ss) {
 	auto certainly_true = _structure->inter(symbol)->ct();
+	for (auto it = certainly_true->begin(); !it.isAtEnd(); ++it) {
+		ss << symbol_name;
+		ElementTuple tuple = *it;
+		printTuple(tuple,ss);
+		ss << ".\n";
+	}
+}
+
+void PrologProgram::print3valFacts(string symbol_name, PFSymbol* symbol, std::ostream& ss) {
+	auto certainly_true = _structure->inter(symbol)->ct(); // TODO: This can probably be done more efficiently by a creeping iterator method
 	auto possibly_true = _structure->inter(symbol)->pt();
 	for (auto it = possibly_true->begin(); !it.isAtEnd(); ++it) {
 		ss << symbol_name;
@@ -141,7 +159,6 @@ void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostr
 		}
 		ss << ".\n";
 	}
-
 }
 
 void PrologProgram::printTuple(const ElementTuple& tuple, std::ostream& ss) {
