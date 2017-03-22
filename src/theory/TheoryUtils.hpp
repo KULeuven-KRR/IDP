@@ -237,6 +237,7 @@ T splitComparisonChains(T, Vocabulary* voc = NULL);
  *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
  *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Theory* graphFuncsAndAggs(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+Theory* graphFuncsAndAggsForXSB(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Merge two theories, returns a full clone */
@@ -339,6 +340,7 @@ bool isFunc(Term* t);
 bool isDom(Term* t);
 bool isVar(Term* t);
 bool isAggOrFunc(Term* t);
+bool isAggOrNonConstructorFunction(Term* t);
 bool isVarOrDom(Term* t);
 
 bool isCard(Term* term);

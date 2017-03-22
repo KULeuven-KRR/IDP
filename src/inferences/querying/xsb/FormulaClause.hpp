@@ -35,13 +35,15 @@ protected:
 	set<PrologVariable*> _instantiatedVariables;
 	string _name;
 	bool _numeric;
+	bool _constructor;
 	set<PrologVariable*> _inputvars_to_check;
 	set<PrologVariable*> _outputvars_to_check;
 public:
 	FormulaClause(const string& name, FormulaClause* parent = NULL)
 	: 	_parent(parent),
 				_name(name),
-				_numeric(false){
+				_numeric(false),
+				_constructor(false) {
 	}
 	virtual ~FormulaClause() {
 
@@ -68,7 +70,7 @@ public:
 	}
 	void parent(FormulaClause* parent) {
 		_parent = parent;
-		if (parent != NULL) {
+		if (parent != NULL and not constructor()) {
 			parent->addChild(this);
 		}
 	}
@@ -117,6 +119,12 @@ public:
 	}
 	void numeric(bool b) {
 		_numeric = b;
+	}
+	bool constructor() {
+		return _constructor;
+	}
+	void constructor(bool b) {
+		_constructor = b;
 	}
 
 	set<PrologVariable*>& inputvarsToCheck() {

@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "visitors/TheoryMutatingVisitor.hpp"
+#include "GraphFuncsAndAggs.hpp"
 #include "parseinfo.hpp"
 #include "commontypes.hpp"
 #include "utils/CPUtils.hpp"
@@ -23,34 +23,15 @@ class Structure;
  * Graph all direct occurrences of functions in equality and aggregates in any comparison in a predform,
  * unless they can be turned into cp (and it is enabled)
  */
-class GraphFuncsAndAggs: public TheoryMutatingVisitor {
+class GraphFuncsAndAggsForXSB: public GraphFuncsAndAggs {
 	VISITORFRIENDS()
-private:
-	bool _all3valued; // True if during unnesting, should consider all symbols as three-valued
-	const Structure* _structure;
-	Vocabulary* _vocabulary;
-	Context _context;
-	bool _cpsupport;
-	std::set<PFSymbol*> _definedsymbols;
+
 public:
 	template<typename T>
 	T execute(T t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestAll = true, bool cpsupport = false, Context c = Context::POSITIVE) {
-		_all3valued = unnestAll;
-		_structure = str;
-		_definedsymbols = definedsymbols;
-		_vocabulary = (_structure != NULL) ? _structure->vocabulary() : NULL;
-		_context = c;
-		_cpsupport = cpsupport;
-		return t->accept(this);
+		return GraphFuncsAndAggs::execute(t, str, definedsymbols, unnestAll, cpsupport, c);
 	}
 
-private:
-	static PredForm* makeFuncGraph(SIGN, Term* functerm, Term* valueterm, const FormulaParseInfo&, const Structure* structure);
-	static AggForm* makeAggForm(Term* valueterm, CompType, AggTerm* aggterm, const FormulaParseInfo&, const Structure* structure);
-
 protected:
-	Formula* visit(PredForm* pf);
-	Formula* visit(EqChainForm* ef);
-
-	virtual bool wouldGraph(Term*) const;
+	bool wouldGraph(Term*) const;
 };

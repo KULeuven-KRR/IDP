@@ -20,6 +20,7 @@
 #include "utils/ListUtils.hpp"
 #include "structure/Structure.hpp"
 #include "structure/MainStructureComponents.hpp"
+#include "Assert.hpp"
 
 using namespace std;
 
@@ -41,7 +42,7 @@ void PrologProgram::setDefinition(Definition* d) {
 			table(symbol);
 		}
 	}
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 5) {
 		clog << "Definition before XSB transformation: " << toString(d) << std::endl;
 	}
 	FormulaClauseBuilder builder(this, d, _translator);
@@ -63,7 +64,7 @@ string PrologProgram::getCode() {
 	}
 	stringstream s;
 	s <<":- set_prolog_flag(unknown, fail).\n";
-	s << *this;
+	s << *this << endl;
 	return s.str();
 }
 
@@ -95,35 +96,41 @@ string PrologProgram::getFacts() {
 		_sorts.insert(name2sort.second);
 	}
 
-	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
-		if (_loaded.find((*it)->name()) == _loaded.end()) {
-			SortTable* st = _structure->inter((*it));
-			if (not st->isRange() && st->finite()) {
-				_loaded.insert((*it)->name());
-				_all_predicates.insert(_translator->to_prolog_pred_and_arity(*it));
-				auto factname = _translator->to_prolog_sortname((*it));
-				for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
-
-					output << factname << "(" << _translator->to_prolog_term((*tuple).front()) << ").\n";
-				}
-			}
-		}
-	}
-
 	auto openSymbols = DefinitionUtils::opens(_definition);
 
 	for (auto symbol : openSymbols) {
-		if (_translator->isXSBBuiltIn(symbol->nameNoArity()) ||
-				_translator->isXSBCompilerSupported(symbol)) {
-			continue;
-		}
-
-		if (not hasElem(_sorts, [&](const Sort* sort){return sort->pred() == symbol;}) ) {
-			_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
-			printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
+		printOpenSymbol(symbol,output);
+	}
+	
+	auto sortsize = 0;
+	while (sortsize < _sorts.size()) {
+		sortsize = _sorts.size(); // flow control: during execution, more sorts can be added. Thus, if the size increases again, all sorts must be iterated again as well
+		for (auto sort : _sorts) {
+			if (_loaded.find(sort->name()) == _loaded.end()) { // advance until first one that hasn't been loaded
+				printSort(sort,output);
+			}
 		}
 	}
 	return output.str();
+}
+void PrologProgram::printSort(const Sort* sort, std::ostream& output) {
+	if (sort->isConstructed()) {
+		printConstructedTypesRules(sort,output);
+		_loaded.insert(sort->name());
+		_all_predicates.insert(_translator->to_prolog_pred_and_arity(sort));
+	} else {
+		SortTable* st = _structure->inter(sort);
+		if (not st->isRange() && st->finite()) {
+			_loaded.insert(sort->name());
+			_all_predicates.insert(_translator->to_prolog_pred_and_arity(sort));
+			auto factname = _translator->to_prolog_sortname(sort);
+			for (auto tuple = st->begin(); !tuple.isAtEnd(); ++tuple) {
+				output << factname << "(";
+				printDomainElement((*tuple).front(),output);
+				output << ").\n";
+			}
+		}
+	}
 }
 
 void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostream& ss) {
@@ -131,6 +138,21 @@ void PrologProgram::printAsFacts(string symbol_name, PFSymbol* symbol, std::ostr
 		print2valFacts(symbol_name,symbol,ss);
 	} else {
 		print3valFacts(symbol_name,symbol,ss);
+	}
+}
+
+void PrologProgram::printOpenSymbol(PFSymbol* symbol, std::ostream& output) {
+	if (VocabularyUtils::isConstructorFunction(symbol)) {
+		Assert(isa<Function>(*symbol));
+		return;
+	}
+	if (_translator->isXSBBuiltIn(symbol->nameNoArity()) or
+			_translator->isXSBCompilerSupported(symbol)) {
+		return;
+	}
+	if (not hasElem(_sorts, [&](const Sort* sort){return sort->pred() == symbol;}) ) {
+		_all_predicates.insert(_translator->to_prolog_pred_and_arity(symbol));
+		printAsFacts(_translator->to_prolog_term(symbol), symbol, output);
 	}
 }
 
@@ -164,10 +186,53 @@ void PrologProgram::print3valFacts(string symbol_name, PFSymbol* symbol, std::os
 void PrologProgram::printTuple(const ElementTuple& tuple, std::ostream& ss) {
 	if (tuple.size()>0){
 		ss << "(";
-		printList(ss, tuple, ",", [&](std::ostream& output, const DomainElement* domelem){output << _translator->to_prolog_term(domelem); }, true);
+		printList(ss, tuple, ",", [&](std::ostream& output, const DomainElement* domelem){
+			printDomainElement(domelem,output);
+		}, true);
 		ss <<")";
 	}
 }
+
+void PrologProgram::printDomainElement(const DomainElement* domelem, std::ostream& ss) {
+	if (domelem->type() == DomainElementType::DET_COMPOUND) {
+		ss << _translator->to_prolog_term(domelem->value()._compound->function());
+		printTuple(domelem->value()._compound->args(),ss);
+	} else {
+		ss << _translator->to_prolog_term(domelem); 
+	}
+}
+void PrologProgram::printConstructedTypesRules(const Sort* sort, std::ostream& ss) {
+	for (auto constructor : sort->getConstructors()) {
+		printConstructorRules(sort,constructor,ss);
+	}
+}
+
+void PrologProgram::printConstructorRules(const Sort* sort, Function* constructor, std::ostream& ss) {
+	int nr = 0;
+	ss << _translator->to_prolog_sortname(sort) << "(";
+	ss << _translator->to_prolog_term(constructor);
+	if (constructor->insorts().size() > 0) {
+		ss << "(";
+		printList(ss, constructor->insorts(), ",", [&](std::ostream& output, const Sort*){
+			output << "V" << nr++;
+		}, true);
+		ss << ")";
+	}
+	ss << ")";
+	if (constructor->insorts().size() > 0) {
+		ss << " :- ";
+		nr = 0;
+		printList(ss, constructor->insorts(), ", ", [&](std::ostream& output, const Sort* sort){
+			output << _translator->to_prolog_sortname(sort) << "(V" << nr++ << ")";
+		}, true);
+	}
+	ss << "." << endl;
+	for (auto sort : constructor->insorts()) {
+		addDomainDeclarationFor(sort);
+	}
+}
+
+
 
 void PrologProgram::table(PFSymbol* pt) {
 	_tabled.insert(pt);

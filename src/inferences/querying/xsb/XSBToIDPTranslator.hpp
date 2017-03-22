@@ -12,6 +12,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <list>
 
 #include "commontypes.hpp"
 #include "vocabulary/VarCompare.hpp"
@@ -28,6 +29,7 @@ private:
 	std::unordered_map<std::string, const DomainElement*> _domainels;
 	std::unordered_map<std::string, std::string> _termnames;
 	unsigned int _predicate_name_counter;
+	bool isValidArg(std::list<std::string>, const PFSymbol*);
 
 	std::string transform_into_term_name(std::string);
 
@@ -56,6 +58,8 @@ public:
 
 	std::string to_prolog_term(const DomainElement*);
 	const DomainElement* to_idp_domelem(std::string);
+	const DomainElement* to_idp_domelem(std::string, Sort*);
+	ElementTuple to_idp_elementtuple(std::list<std::string>, PFSymbol*);
 
 	std::string to_prolog_term(CompType);
 	std::string to_prolog_term(AggFunction);

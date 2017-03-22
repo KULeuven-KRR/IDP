@@ -101,7 +101,7 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	auto theory = new Theory("", _structure->vocabulary(), ParseInfo());
 	theory->add(cloned_definition);
 	FormulaUtils::unnestForXSB(theory, _structure);
-	FormulaUtils::graphFuncsAndAggs(theory, _structure, cloned_definition->defsymbols(), true, false);
+	FormulaUtils::graphFuncsAndAggsForXSB(theory, _structure, cloned_definition->defsymbols(), true, false);
 	FormulaUtils::removeEquivalences(theory);
 	FormulaUtils::pushNegations(theory);
 	FormulaUtils::flatten(theory);
@@ -130,7 +130,7 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	// In this way, the table declarations are joined into one file
 	stringstream ss;
 	ss << compiler << "\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3;
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 7) {
 		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << "\n";
 	}
 	startclock = clock();
@@ -143,7 +143,7 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 void XSBInterface::sendToXSB(string str) {
 	char* filename;
 #ifdef DEBUG
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		stringstream filess;
 		filess << ".xsb" << getGlobal()->getNewID() << ".P";
 		filename = new char[filess.str().size() + 1];
@@ -203,9 +203,9 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	ss << "call_tv(" << *term << "," << _translator->to_xsb_truth_type(tv) << ").";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
-	auto startclock = clock();
 	char* delimiter = new char [strlen(" ") + 1];
 	strcpy(delimiter," ");
+	auto startclock = clock();
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		clog << "Quering XSB with: " <<  query << "... ";
 	}
@@ -217,16 +217,21 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	}
 	handleResult(rc);
 
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		startclock = clock();
+		clog << "> Translating the answers back to IDP values... ";
+	}
 	while (rc == XSB_SUCCESS) {
 		std::list<string> answer = split(buff.string);
-		ElementTuple tuple;
-		for (auto it = answer.begin(); it != answer.end(); ++it) {
-			tuple.push_back(_translator->to_idp_domelem(*it));
-		}
-		result.insert(tuple);
+		result.insert(_translator->to_idp_elementtuple(answer,s));
 
 		rc = xsb_next_string(&buff, delimiter);
 		handleResult(rc);
+	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		std::stringstream ss;
+		ss << "\ttook ";
+		logActionAndTimeSince(ss.str(),startclock);
 	}
 	XSB_StrDestroy(&buff);
 

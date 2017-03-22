@@ -13,6 +13,7 @@
 #include <utility>
 #include "Assert.hpp"
 
+#include "utils/StringUtils.hpp"
 #include "XSBToIDPTranslator.hpp"
 #include "common.hpp"
 #include "vocabulary/vocabulary.hpp"
@@ -21,6 +22,7 @@
 #include "FormulaClause.hpp"
 
 using std::string;
+using std::list;
 using std::stringstream;
 
 bool XSBToIDPTranslator::isoperator(int c) {
@@ -159,6 +161,63 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str) {
 		return createDomElem(str);
 	}
 	return it->second;
+}
+const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) {
+	const DomainElement* ret;
+	if (sort->isConstructed()) {
+		auto ctor = split(str,"(")[0];
+		list<string> args = {};
+		if (ctor.length() < str.length()) { // only if there arguments
+			Assert(split(str,")")[0].length() != str.length()); // assert: a ')' has to occur in the string
+			auto allargs = string(str,ctor.length() + 1,str.length()-2-ctor.length());
+			stringstream ss;
+			int nestings = 0;
+			for (auto ch : allargs) {
+				if (ch == '(') { nestings++; }
+				if (ch == ')') { nestings--; }
+				if (ch == ',' and nestings == 0) {
+					args.push_back(ss.str());
+					ss.str(string()); // empty contents of stringstream
+				} else {
+					ss << ch;
+				}
+			}
+			Assert(nestings == 0);
+			args.push_back(ss.str());
+		}
+		for (auto sortctor : sort->getConstructors()) {
+			if (to_prolog_term(sortctor) == ctor and args.size() == sortctor->insorts().size()) {
+				auto elemtuple = to_idp_elementtuple(args,sortctor);
+				ret = createDomElem(createCompound(sortctor,elemtuple));
+				break;
+			}
+		}
+	} else {
+		ret = to_idp_domelem(str);
+	}
+	return ret;
+}
+
+bool XSBToIDPTranslator::isValidArg(std::list<std::string> answers, const PFSymbol* symbol) {
+	if (VocabularyUtils::isConstructorFunction(symbol)) {
+		return answers.size() == symbol->nrSorts() - 1;
+	} else {
+		return answers.size() == symbol->nrSorts();
+	}
+}
+
+
+ElementTuple XSBToIDPTranslator::to_idp_elementtuple(list<string> answers, PFSymbol* symbol) {
+	Assert(isValidArg(answers,symbol));
+	ElementTuple ret = {};
+	int argnr = 0;
+	for (auto answer : answers) {
+		auto ans = (to_idp_domelem(answer,symbol->sorts()[argnr]));
+		ret.push_back(ans);
+		argnr++;
+	}
+	
+	return ret;
 }
 
 string XSBToIDPTranslator::to_prolog_term(CompType c) {

@@ -40,6 +40,7 @@
 #include "transformations/ReplaceDefinitionsWithCompletion.hpp"
 #include "transformations/AddIfCompletion.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
+#include "transformations/GraphFuncsAndAggsForXSB.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
 #include "transformations/PullQuantifications.hpp"
@@ -98,6 +99,17 @@ bool isVar(Term* t) {
 
 bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
+}
+
+bool isAggOrNonConstructorFunction(Term* t) {
+	if (isAgg(t)) {
+		return true;
+	}
+	if (t->type() == TermType::FUNC) {
+		FuncTerm* f = dynamic_cast<FuncTerm*>(t);
+		return not f->function()->isConstructorFunction();
+	}
+	return false;
 }
 
 bool isVarOrDom(Term* t) {
@@ -610,6 +622,10 @@ Theory* graphFuncsAndAggs(Theory* t, const Structure* str, const std::set<PFSymb
 }
 AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, definedsymbols, unnestall, cpsupport, con);
+}
+
+Theory* graphFuncsAndAggsForXSB(Theory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggsForXSB, Theory*>(t, str, definedsymbols, unnestall, cpsupport, con);
 }
 
 template<class T>
