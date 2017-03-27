@@ -346,6 +346,12 @@ Predicate* overload(Predicate* p1, Predicate* p2);
  */
 Predicate* overload(const std::set<Predicate*>&);
 
+
+/**
+ * Return true if and only if the predicate is a type predicate
+ */
+bool isTypePredicate(Predicate*);
+
 }
 
 class FuncGenerator;

@@ -387,6 +387,14 @@ struct InternalArgument {
 			: _type(AT_TABLE) {
 		_value._table = t;
 	}
+	template<class T>
+	InternalArgument(std::vector<T>* v) : _type(AT_TABLE) {
+		auto contents = new std::vector<InternalArgument>();
+		for (auto it = v->begin(); it != v->end(); it++) {
+			contents->push_back(InternalArgument(*it));
+		}
+		_value._table = contents;
+	}
 	InternalArgument(std::set<Sort*>* s)
 			: _type(AT_SORT) {
 		_value._sort = s;

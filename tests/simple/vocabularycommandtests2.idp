@@ -1,0 +1,61 @@
+vocabulary V {
+	type t isa int
+	type s constructed from {wrap(t)}
+	p(t,s)
+	q(s)
+	q(t)
+	q(t,t)
+	f(s,t):t
+	f2:t
+	f3(s):t
+	f3(s):s
+}
+
+
+procedure main() {
+
+	-- Type tests
+	if not ((table.getn(gettypes(V)) == 2)) then
+		return 0
+	end
+	if not (name(gettypes(V)[1]) == "t" or name(gettypes(V)[1]) == "s") then
+		return 0
+	end
+	if not (name(gettypes(V)[2]) == "t" or name(gettypes(V)[2]) == "s") then
+		return 0
+	end
+
+
+	-- Predicate tests
+	if not ((table.getn(getpredicates(V)) == 4)) then
+		return 0
+	end
+	if not (table.getn(gettyping(V::p)) == 2) then
+		return 0
+	end
+	if not (name(gettyping(V::p)[1]) == "t") then
+		return 0
+	end
+	if not (name(gettyping(V::p)[2]) == "s") then
+		return 0
+	end
+
+
+	-- Function tests
+	if not ((table.getn(getfunctions(V)) == 4)) then
+		return 0
+	end
+	if not (table.getn(gettyping(V::f)) == 3) then
+		return 0
+	end
+	if not (name(gettyping(V::f)[1]) == "s") then
+		return 0
+	end
+	if not (name(gettyping(V::f)[2]) == "t") then
+		return 0
+	end
+	if not (name(gettyping(V::f)[3]) == "t") then
+		return 0
+	end
+	return 1
+}

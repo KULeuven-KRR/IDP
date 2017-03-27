@@ -256,7 +256,7 @@ The \code{theory} namespace and all its procedures are included in the global na
 \end{description}
 
 \subsubsection{vocabulary}
-The \code{vocabulary} namespace and all its procedures are included in the global namespace. It contains methods for setting and getting vocabularies.
+The \code{vocabulary} namespace and all its procedures are included in the global namespace. It contains methods for getting and setting vocabularies of a structure, retrieving symbols from a vocabulary, and inspecting symbol properties.
 \begin{description}
 	\item[getvocabulary(query)]
 		Returns the vocabulary of the given object.
@@ -269,8 +269,23 @@ The \code{vocabulary} namespace and all its procedures are included in the globa
 	\item[setvocabulary(structure,vocabulary)]
 		Changes the vocabulary of a structure to the given one.
 	\item[newvocabulary(string)]
- 		Create an empty vocabulary with the given name.
-
+		Create an empty vocabulary with the given name.
+	\item[getfunctions(vocabulary)]
+		Returns a table with all non built-in function symbols in the vocabulary.
+	\item[getpredicates(vocabulary)]
+		Returns a table with all the predicate symbols in the vocabulary, excluding type predicates and built-in predicates.
+	\item[gettypes(vocabulary)]
+		Returns a table with all non built-in types in the vocabulary.
+	\item[gettyping(function_symbol)]
+		Returns a table containing, in-order, the types of a given function symbol.
+	\item[gettyping(predicate_symbol)]
+		Returns a table containing, in-order, the types of a given predicate symbol.
+	\item[name(function_symbol)]
+		Returns the name of a given function symbol.
+	\item[name(predicate_symbol)]
+		Returns the name of a given predicate symbol.
+	\item[name(type)]
+		Returns the name of a given type.
 \end{description}
 
 
