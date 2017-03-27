@@ -198,11 +198,18 @@ if(WITHXSB AND (NOT 32BITS)) # Don't use XSB for 32Bits, this results in current
 	execute_process(COMMAND ${PROJECT_SOURCE_DIR}/lib/XSB/build/config.guess 
 					OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG)
 	file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
+
 	if (32BITS)   # Currently never used, since it's filtered out in the top-level if above
 		set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} --with-bits32 -with-optimization=fPIC)
 		set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb -j 1 --config-tag=bits32)
 		set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb install -j 1 --config-tag=bits32)
 		set(XSB_CONFIG_STRING ${XSB_CONFIG_STRING}-bits32)
+	elseif((${CMAKE_BUILD_TYPE} MATCHES "^Debug$"))
+		file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG "${XSB_CONFIG_STRING}-dbg")
+		file (STRINGS "${CMAKE_CURRENT_BINARY_DIR}/XSB_CONFIG" XSB_CONFIG_STRING)
+		set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC --enable-debug)
+		set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=dbg -j 1)
+		set(XSB_INSTALL_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb --config-tag=dbg install -j 1)
 	else()
 		set(XSB_CONFIG_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/configure --prefix=${XSB_INSTALL_DIR} -with-optimization=fPIC)
 		set(XSB_BUILD_COMMAND ${XSB_COPIED_SOURCE_DIR}/build/makexsb -j 1)
