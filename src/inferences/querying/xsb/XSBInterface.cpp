@@ -141,14 +141,27 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 }
 
 void XSBInterface::sendToXSB(string str) {
-	auto name = GlobalData::instance()->getTempFileName();
+	char* filename;
+#ifdef DEBUG
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		stringstream filess;
+		filess << ".xsb" << getGlobal()->getNewID() << ".P";
+		filename = new char[filess.str().size() + 1];
+		strcpy(filename, filess.str().c_str());
+		clog << "The resulting XSB program can be found in the file\t" << filename << endl;
+	} else {
+#endif
+		filename = GlobalData::instance()->getTempFileName();
+#ifdef DEBUG
+	}
+#endif
 	try {
 		ofstream tmp;
-		tmp.open(name);
+		tmp.open(filename);
 		tmp << str;
 		tmp.close();
 		stringstream ss;
-		ss << "load_dyn('" << name << "').\n";
+		ss << "load_dyn('" << filename << "').\n";
 		commandCall(ss.str());
 	} catch (const Exception& ex) {
 		stringstream ss;
@@ -156,7 +169,9 @@ void XSBInterface::sendToXSB(string str) {
 		Error::error(ss.str());
 		clog.flush();
 	}
-	GlobalData::instance()->removeTempFile(name);
+#ifndef DEBUG
+	GlobalData::instance()->removeTempFile(filename); // Quick delete of the file (instead of when IDP terminates)
+#endif
 }
 
 void XSBInterface::reset() {
@@ -191,10 +206,13 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	auto startclock = clock();
 	char* delimiter = new char [strlen(" ") + 1];
 	strcpy(delimiter," ");
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		clog << "Quering XSB with: " <<  query << "... ";
+	}
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		std::stringstream ss;
-		ss << "Quering XSB with: " <<  query << " took ";
+		ss << "\ttook ";
 		logActionAndTimeSince(ss.str(),startclock);
 	}
 	handleResult(rc);
