@@ -102,7 +102,8 @@ enum BoolType {
 	POSTPROCESS_DEFS,
 	SPLIT_DEFS,
 	JOIN_DEFS_FOR_XSB,
-	GUARANTEE_NO_REC_NEG, //user guarantees that his theories have no recursion over negation
+	GUARANTEE_NO_REC_NEG, //user guarantees that the theory contains no recursion over negation
+	GUARANTEE_NO_REC_AGG, // user guarantees that the theory contains no recursion through aggregates
 	PROVER_SUPPORTS_TFA,
 	XSB_SHORT_NAMES,
 	SHOW_XSB_WARNINGS,

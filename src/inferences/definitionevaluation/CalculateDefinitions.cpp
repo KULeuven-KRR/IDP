@@ -438,13 +438,17 @@ bool CalculateDefinitions::definitionDoesNotResultInTwovaluedModel(const Definit
 
 #ifdef WITHXSB
 bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
-
-	auto has_recursive_aggregate = DefinitionUtils::approxContainsRecDefAggTerms(definition);
-	if(getOption(XSB) && has_recursive_aggregate) {
-		Warning::warning("Currently, no support for definitions that have recursive aggregates");
+	if (not (getOption(XSB))) {
+		return false;
 	}
-
-	return getOption(XSB) && not has_recursive_aggregate;
+	if (getOption(BoolType::GUARANTEE_NO_REC_AGG)) {
+		return true;
+	}
+	if (DefinitionUtils::approxContainsRecDefAggTerms(definition)) {
+		Warning::warning("Currently, no support for definitions that have recursive aggregates");
+		return false;
+	}
+	return true;
 }
 #endif
 
