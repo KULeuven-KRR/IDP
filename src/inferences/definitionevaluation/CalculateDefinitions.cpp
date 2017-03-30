@@ -324,13 +324,14 @@ void CalculateDefinitions::updateSymbolsToQuery(std::set<PFSymbol*>& symbols, st
 		for (auto def : defs) {
 			for (auto symbol : symbols) {
 				if (def->defsymbols().find(symbol) != def->defsymbols().end()) {
-					auto opensofdef = DefinitionUtils::opens(def);
-					for (auto opensymbol : opensofdef) {
+					auto dependenciesOfSymbol = DefinitionUtils::getDirectDependencies(def,symbol);
+					for (auto dependency : dependenciesOfSymbol) {
+						if (dependency == symbol) { continue; }
 						for (auto def2 : defs) {
 							if (def2 == def) {
 								continue;
 							}
-							if (def2->defsymbols().find(opensymbol) != def2->defsymbols().end()) {
+							if (def2->defsymbols().find(dependency) != def2->defsymbols().end()) {
 								auto oldsize = (symbols.size());
 								for (auto defsymbol : def2->defsymbols()) {
 									symbols.insert(defsymbol);

@@ -24,6 +24,7 @@ class CheckPartialTerm;
 class CheckSorts;
 class CollectQuantifiedVariables;
 class CollectOpensOfDefinitions;
+class GetDefinedSymbolDirectDependencies;
 class CountNbOfSubFormulas;
 class DefaultFormulaVisitor;
 class FOBDDFactory;
@@ -73,6 +74,7 @@ class ReplaceVariableUsingEqualities;
 		friend class CheckPartialTerm; \
 		friend class CheckSorts; \
 		friend class CollectOpensOfDefinitions; \
+		friend class GetDefinedSymbolDirectDependencies; \
 		friend class CountNbOfSubFormulas; \
 		friend class DefaultFormulaVisitor; \
 		friend class DeriveTermBounds; \

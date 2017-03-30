@@ -20,6 +20,7 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/Estimations.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
+#include "information/GetDefinedSymbolDirectDependencies.hpp"
 #include "information/CheckContainment.hpp"
 #include "information/CheckContainsFuncTerms.hpp"
 #include "information/CheckContainsDomainTerms.hpp"
@@ -243,6 +244,12 @@ std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*> defs)
 	}
 	return opens;
 }
+
+std::set<PFSymbol*> getDirectDependencies(const Definition* d, PFSymbol* symbol) {
+	return transform<GetDefinedSymbolDirectDependencies, std::set<PFSymbol*>>(d, symbol);
+}
+
+
 std::set<PFSymbol*> defined(Definition* d) {
 	return d->defsymbols();
 }
