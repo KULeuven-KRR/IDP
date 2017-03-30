@@ -387,7 +387,7 @@ void deriveSorts(Vocabulary* v, Rule* f);
 
 /** Compute the open symbols of a definition */
 std::set<PFSymbol*> opens(const Definition*);
-std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s);
+std::set<PFSymbol*> approxTwoValuedOpens(const Definition* d, Structure* s);
 
 /** Collect the open symbols of all definitions, put them in a map */
 std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*>);
@@ -401,7 +401,7 @@ std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*>);
 std::set<PFSymbol*> getDirectDependencies(const Definition*, PFSymbol*);
 
 /** Get the defined symbols of the given definition */
-std::set<PFSymbol*> defined(Definition*);
+std::set<PFSymbol*> defined(const Definition*);
 
 /** Approximate check whether the given definition is total */
 bool approxTotal(Definition*);
