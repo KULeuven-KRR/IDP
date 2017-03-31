@@ -82,6 +82,9 @@ XSBInterface::XSBInterface() {
 	_translator = new XSBToIDPTranslator();
 	stringstream ss;
 	ss << getInstallDirectoryPath() << XSB_INSTALL_URL << " -n --quietload";
+	if (getOption(BoolType::XSB_SUBSUMPTIVE_TABLING)) {
+		ss << " -S";
+	}
 	auto checkvalue = xsb_init_string(const_cast<char*>(ss.str().c_str()));
 	handleResult(checkvalue);
 	commandCall("[basics].");
