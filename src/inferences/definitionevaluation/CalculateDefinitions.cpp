@@ -202,16 +202,16 @@ DefinitionCalculationResult CalculateDefinitions::calculateKnownDefinitions(Theo
 		clog << "Calculating known definitions\n";
 	}
 
-	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
-	if (not symbolsToQuery.empty()) {
-		updateSymbolsToQuery(symbolsToQuery, theory->definitions());
-	}
-
 #ifdef WITHXSB
 	if (getOption(XSB)) {
 		DefinitionUtils::joinDefinitionsForXSB(theory, structure);
 	}
 #endif
+
+	theory = FormulaUtils::improveTheoryForInference(theory, structure, false, false);
+	if (not symbolsToQuery.empty()) {
+		updateSymbolsToQuery(symbolsToQuery, theory->definitions());
+	}
 
 	// Collect the open symbols of all definitions
 	auto opens = DefinitionUtils::opens(theory->definitions());
