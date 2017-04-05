@@ -12,12 +12,19 @@ structure S : V {
 }
 procedure main() {
 		if pcall(S[V::F], 1) then
+			//No error received
 			return 0
 		elseif pcall(S[V::F], 1, 1, 2) then
+			//No error recieved
 			return 0
 		elseif S[V::F](1,1) ~= 2 then
+			//Wrong value for 1,1
 			return 0
-		elseif pcall(S[V::F2], 1) ~= nil then
+		elseif not pcall(S[V::F2], 1)  then
+			//Got an error when asking for F2(1), should return nil
+			return 0
+		elseif S[V::F2](1) ~= nil then
+			//wrong output value
 			return 0
 		else
 			return 1
