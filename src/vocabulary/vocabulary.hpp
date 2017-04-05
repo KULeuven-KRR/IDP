@@ -565,17 +565,7 @@ public:
 		return _name2sort;
 	}
 
-	std::vector<PFSymbol*> getListedPredicatesAndFunctions() const {
-		auto ret = std::vector<PFSymbol*>();
-		for (auto symbol : getNonBuiltinNonOverloadedSymbols()) {
-			if (isa<Predicate>(*symbol)) {
-				if (not PredUtils::isTypePredicate(dynamic_cast<Predicate*>(symbol))) {
-					ret.push_back(symbol);
-				}
-			}
-		}
-		return ret;
-	}
+	std::vector<PFSymbol*> getListedPredicatesAndFunctions() const;
 
 	std::vector<PFSymbol*> getNonBuiltinNonOverloadedSymbols() const {
 		std::vector<PFSymbol*> symbols;
@@ -678,6 +668,7 @@ namespace VocabularyUtils {
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
 bool isPredicate(const PFSymbol*, STDPRED predtype); //!< returns true iff the given symbol is an instance of the given predicate type
 bool isFunction(const PFSymbol*, STDFUNC functype); //!< returns true iff the given symbol is an instance of the given function type
+bool isTypePredicate(PFSymbol*);
 CompType getComparisonType(const PFSymbol* symbol);
 bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
