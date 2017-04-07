@@ -565,7 +565,7 @@ public:
 		return _name2sort;
 	}
 
-	std::vector<PFSymbol*> getListedPredicatesAndFunctions() const;
+	std::vector<PFSymbol*> getNonBuiltinNonOverloadedNonTypeSymbols() const;
 
 	std::vector<PFSymbol*> getNonBuiltinNonOverloadedSymbols() const {
 		std::vector<PFSymbol*> symbols;

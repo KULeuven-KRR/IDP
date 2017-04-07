@@ -2057,7 +2057,7 @@ bool Vocabulary::contains(const PFSymbol* s) const {
 	}
 }
 
-std::vector<PFSymbol*> Vocabulary::getListedPredicatesAndFunctions() const {
+std::vector<PFSymbol*> Vocabulary::getNonBuiltinNonOverloadedNonTypeSymbols() const {
 		auto ret = std::vector<PFSymbol*>();
 		for (auto symbol : getNonBuiltinNonOverloadedSymbols()) {
 			if (VocabularyUtils::isTypePredicate(symbol)) {

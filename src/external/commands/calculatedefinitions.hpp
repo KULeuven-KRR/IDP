@@ -65,7 +65,7 @@ public:
 			return nilarg();
 		}
 		
-		return performCalculateDefinitions(theory,get<1>(args)->clone(),getSet(get<2>(args)->getListedPredicatesAndFunctions()));
+		return performCalculateDefinitions(theory,get<1>(args)->clone(),getSet(get<2>(args)->getNonBuiltinNonOverloadedNonTypeSymbols()));
 	}
 };
 
