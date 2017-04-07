@@ -62,7 +62,7 @@ public:
 		CalculateDefinitions c(theory,structure,satdelay,symbolsToQuery);
 		return c.calculateKnownDefinitions();
 	}
-	static DefinitionCalculationResult doCalculateDefinitions(
+	static DefinitionCalculationResult doCalculateDefinition(
 			const Definition* definition, Structure* structure, bool satdelay = false,
 			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>());
 
@@ -78,7 +78,6 @@ private:
 	bool _tooExpensive;
 	
 	CalculateDefinitions(Theory*, Structure*, bool, std::set<PFSymbol*>);
-	CalculateDefinitions(const Definition*, Structure*, bool, std::set<PFSymbol*>);
 	
 	DefinitionCalculationResult calculateKnownDefinitions();
 	DefinitionCalculationResult calculateDefinition(const Definition* definition);

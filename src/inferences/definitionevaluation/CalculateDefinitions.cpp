@@ -43,20 +43,12 @@ CalculateDefinitions::CalculateDefinitions(Theory* t, Structure* s, bool satdela
 	}
 }
 
-
-// IMPORTANT: becomes owner of new theory and cloned definition!
-CalculateDefinitions::CalculateDefinitions(const Definition* definition,
-		Structure* structure, bool satdelay, std::set<PFSymbol*> symbolsToQuery) :
-	_structure(structure), _symbolsToQuery(symbolsToQuery), _satdelay(satdelay), _tooExpensive(false) {
+DefinitionCalculationResult CalculateDefinitions::doCalculateDefinition(
+	const Definition* definition, Structure* structure, bool satdelay, std::set<PFSymbol *> symbolsToQuery) {
 	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
 	auto newdef = definition->clone();
 	theory->add(newdef);
-	_theory = theory;
-}
-
-DefinitionCalculationResult CalculateDefinitions::doCalculateDefinitions(
-	const Definition* definition, Structure* structure, bool satdelay, std::set<PFSymbol *> symbolsToQuery) {
-	CalculateDefinitions c(definition, structure, satdelay, symbolsToQuery);
+	CalculateDefinitions c(theory, structure, satdelay, symbolsToQuery);
 	auto ret = c.calculateKnownDefinitions();
 	c._theory->recursiveDelete();
 	return ret;
