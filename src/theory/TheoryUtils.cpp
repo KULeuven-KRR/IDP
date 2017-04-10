@@ -254,6 +254,19 @@ std::set<PFSymbol*> defined(const Definition* d) {
 	return d->defsymbols();
 }
 
+bool definesSymbol(const Rule* r, PFSymbol* symbol) {
+	if (r->head()->symbol() == symbol) {
+		return true;
+	} else if (VocabularyUtils::isPredicate(r->head()->symbol(),STDPRED::EQ)) {
+		auto firstarg = *(r->head()->subterms().begin());
+		if (firstarg->type() == TermType::FUNC and dynamic_cast<FuncTerm*>(firstarg)->function() == symbol) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 bool approxTotal(Definition* def) {
 	auto total = true;
 	total &= not DefinitionUtils::approxHasRecursionOverNegation(def);

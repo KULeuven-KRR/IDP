@@ -403,6 +403,9 @@ std::set<PFSymbol*> getDirectDependencies(const Definition*, PFSymbol*);
 /** Get the defined symbols of the given definition */
 std::set<PFSymbol*> defined(const Definition*);
 
+/** Inspect whether the given rule defines the given symbol */
+bool definesSymbol(const Rule*, PFSymbol*);
+
 /** Approximate check whether the given definition is total */
 bool approxTotal(Definition*);
 
