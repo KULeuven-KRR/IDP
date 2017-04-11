@@ -50,6 +50,24 @@ CalculateDefinitions::CalculateDefinitions(Theory* t, Structure* s, Vocabulary* 
 		}
 	}
 #endif DEBUG
+	if (getOption(VERBOSE_DEFINITIONS) > 1) {
+		clog << "Evaluating the following symbols: ";
+		printList(clog,_symbolsToQuery,",",true);
+		clog << endl;
+	}
+	if (getOption(VERBOSE_DEFINITIONS) > 0) {
+		std::set<PFSymbol*> symbolsUnableToEvaluate;
+		for (auto symbol : determineInputStarSymbols(t)) {
+			if (not contains(_symbolsToQuery,symbol)) {
+				symbolsUnableToEvaluate.insert(symbol);
+			}
+		}
+		if (not symbolsUnableToEvaluate.empty()) {
+			clog << "CalculateDefinitions is NOT able to calculate the following symbols, even though it was (implicitly) asked: ";
+			printList(clog,_symbolsToQuery,",",true);
+			clog << endl;
+		}
+	}
 }
 
 
