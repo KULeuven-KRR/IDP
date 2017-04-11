@@ -12,11 +12,13 @@
 #pragma once
 #include <vector>
 #include <set>
-#include "vocabulary/vocabulary.hpp"
+#include <map>
 
 class Structure;
 class Theory;
 class Definition;
+class Vocabulary;
+class PFSymbol;
 
 /*
  * The resulting struct for a definition calculation. It contains:
@@ -57,14 +59,17 @@ public:
 	 * 		Defined symbols not in this set will not be calculated by IDP.
 	 * 		They might be partially evaluated (i.e., by XSB) during evaluation of symbols that are in this set.
 	 */
-	static DefinitionCalculationResult doCalculateDefinitions(Theory* theory, Structure* structure,
-			bool satdelay = false, std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
-		CalculateDefinitions c(theory,structure,satdelay,symbolsToQuery);
-		return c.calculateKnownDefinitions();
-	}
+	static DefinitionCalculationResult doCalculateDefinitions(
+			Theory* theory, Structure* structure, bool satdelay = false);
+	static DefinitionCalculationResult doCalculateDefinitions(
+			Theory* theory, Structure* structure,
+			Vocabulary* vocabulary, bool satdelay = false);
+	
 	static DefinitionCalculationResult doCalculateDefinition(
-			const Definition* definition, Structure* structure, bool satdelay = false,
-			std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>());
+			const Definition* definition, Structure* structure, bool satdelay = false);
+	static DefinitionCalculationResult doCalculateDefinition(
+			const Definition* definition, Structure* structure,
+			Vocabulary* vocabulary, bool satdelay = false);
 
 #ifdef WITHXSB
 	static bool determineXSBUsage(const Definition* definition);
@@ -77,7 +82,7 @@ private:
 	bool _satdelay;
 	bool _tooExpensive;
 	
-	CalculateDefinitions(Theory*, Structure*, bool, std::set<PFSymbol*>);
+	CalculateDefinitions(Theory*, Structure*, Vocabulary*, bool);
 	
 	DefinitionCalculationResult calculateKnownDefinitions();
 	DefinitionCalculationResult calculateDefinition(const Definition* definition);

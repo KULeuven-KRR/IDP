@@ -17,9 +17,9 @@
 #include "errorhandling/error.hpp"
 #include <vector>
 
-InternalArgument performCalculateDefinitions(Theory* theory, Structure* structure, std::set<PFSymbol*> symbolsToQuery = std::set<PFSymbol*>()) {
-	auto sols = CalculateDefinitions::doCalculateDefinitions(theory, structure, false, symbolsToQuery);
-	if(not sols._hasModel ){
+InternalArgument performCalculateDefinitions(Theory* theory, Structure* structure, Vocabulary* vocabulary) {
+	auto sols = CalculateDefinitions::doCalculateDefinitions(theory, structure, vocabulary, false);
+	if (not sols._hasModel ) {
 		return InternalArgument();
 	}
 	Assert(sols._hasModel and sols._calculated_model != NULL);
@@ -43,7 +43,7 @@ public:
 			Error::error("Can only calculate definitions with a non-ground theory.");
 			return nilarg();
 		}
-		return performCalculateDefinitions(theory,get<1>(args)->clone());
+		return performCalculateDefinitions(theory,get<1>(args)->clone(),theory->vocabulary());
 	}
 };
 
@@ -65,7 +65,7 @@ public:
 			return nilarg();
 		}
 		
-		return performCalculateDefinitions(theory,get<1>(args)->clone(),getSet(get<2>(args)->getNonBuiltinNonOverloadedNonTypeSymbols()));
+		return performCalculateDefinitions(theory,get<1>(args)->clone(),get<2>(args));
 	}
 };
 

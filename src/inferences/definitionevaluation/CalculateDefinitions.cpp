@@ -14,6 +14,8 @@
 #include "fobdds/FoBddManager.hpp"
 
 #include "theory/TheoryUtils.hpp"
+#include "vocabulary/vocabulary.hpp"
+#include "utils/ListUtils.hpp"
 #include "structure/StructureComponents.hpp"
 
 #include "groundtheories/SolverTheory.hpp"
@@ -33,24 +35,53 @@
 
 using namespace std;
 
-CalculateDefinitions::CalculateDefinitions(Theory* t, Structure* s, bool satdelay, std::set<PFSymbol*> symbolsToQuery) :
-	_theory(t), _structure(s), _symbolsToQuery(symbolsToQuery), _satdelay(satdelay), _tooExpensive(false) {
+CalculateDefinitions::CalculateDefinitions(Theory* t, Structure* s, Vocabulary* vocabulary, bool satdelay) :
+	_theory(t), _structure(s), _satdelay(satdelay), _tooExpensive(false) {
 	if (_theory == NULL || _structure == NULL) {
 		throw IdpException("Unexpected NULL-pointer.");
 	}
-	if (_structure->vocabulary() != _theory->vocabulary()) {
-		throw IdpException("Definition Evaluation requires that the theory and structure range over the same vocabulary.");
+	_symbolsToQuery = getSet(vocabulary->getNonBuiltinNonOverloadedNonTypeSymbols());
+#ifdef DEBUG
+	for (auto symbol : _symbolsToQuery) {
+		if (not _structure->vocabulary()->contains(symbol)) {
+			stringstream ss;
+			ss << "Asked to evaluate symbol " << symbol->name() << ", but this is impossible because it is not in the vocabulary of the given structure";
+			throw IdpException(ss.str());
+		}
 	}
+#endif DEBUG
+}
+
+
+DefinitionCalculationResult CalculateDefinitions::doCalculateDefinitions(
+		Theory* theory, Structure* structure, bool satdelay) {
+	return doCalculateDefinitions(theory,structure,theory->vocabulary(),satdelay);
+}
+
+DefinitionCalculationResult CalculateDefinitions::doCalculateDefinitions(
+		Theory* theory, Structure* structure, Vocabulary* vocabulary, bool satdelay) {
+	CalculateDefinitions c(theory, structure, vocabulary, satdelay);
+	return c.calculateKnownDefinitions();
 }
 
 DefinitionCalculationResult CalculateDefinitions::doCalculateDefinition(
-	const Definition* definition, Structure* structure, bool satdelay, std::set<PFSymbol *> symbolsToQuery) {
-	auto theory = new Theory("wrapper_theory", structure->vocabulary(), ParseInfo());
+	const Definition* definition, Structure* structure, bool satdelay) {
+	auto vocabulary = new Vocabulary("wrapper_vocabulary");
+	for (auto symbol : definition->defsymbols()) {
+		vocabulary->add(symbol);
+	}
+	auto ret = doCalculateDefinition(definition,structure,vocabulary,satdelay);
+	delete(vocabulary);
+	return ret;
+}
+
+DefinitionCalculationResult CalculateDefinitions::doCalculateDefinition(
+	const Definition* definition, Structure* structure, Vocabulary* vocabulary, bool satdelay) {
+	auto theory = new Theory("wrapper_theory", vocabulary, ParseInfo());
 	auto newdef = definition->clone();
 	theory->add(newdef);
-	CalculateDefinitions c(theory, structure, satdelay, symbolsToQuery);
-	auto ret = c.calculateKnownDefinitions();
-	c._theory->recursiveDelete();
+	auto ret = doCalculateDefinitions(theory, structure, vocabulary, satdelay);
+	theory->recursiveDelete();
 	return ret;
 }
 

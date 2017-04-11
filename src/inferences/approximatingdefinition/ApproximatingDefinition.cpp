@@ -34,14 +34,13 @@ bool ApproximatingDefinition::DerivationTypes::hasDerivation(Direction dir) {
 	return false;
 }
 
-std::set<PFSymbol*> ApproximatingDefinition::getSymbolsToQuery() {
-	auto ret = std::set<PFSymbol*>();
-
+Vocabulary* ApproximatingDefinition::getSymbolsToQuery() {
+	auto ret = new Vocabulary("approxdef_outvoc");
 	for(auto ctf : _mappings->_pred2predCt) {
-		ret.insert(ctf.second);
+		ret->add(ctf.second);
 	}
 	for(auto cff : _mappings->_pred2predCf) {
-		ret.insert(cff.second);
+		ret->add(cff.second);
 	}
 	return ret;
 }
