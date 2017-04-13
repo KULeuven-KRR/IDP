@@ -2156,6 +2156,22 @@ bool isComparisonPredicate(const PFSymbol* symbol) {
 	return isPredicate(symbol, STDPRED::EQ) || isPredicate(symbol, STDPRED::LT) || isPredicate(symbol, STDPRED::GT);
 }
 
+bool isBuiltinFunction(const PFSymbol* symbol) {
+	return isFunction(symbol, STDFUNC::UNARYMINUS)
+		|| isFunction(symbol, STDFUNC::ADDITION)
+		|| isFunction(symbol, STDFUNC::SUBSTRACTION)
+		|| isFunction(symbol, STDFUNC::PRODUCT)
+		|| isFunction(symbol, STDFUNC::DIVISION)
+		|| isFunction(symbol, STDFUNC::ABS)
+		|| isFunction(symbol, STDFUNC::MODULO)
+		|| isFunction(symbol, STDFUNC::EXPONENTIAL)
+		|| isFunction(symbol, STDFUNC::MINELEM)
+		|| isFunction(symbol, STDFUNC::MAXELEM)
+		|| isFunction(symbol, STDFUNC::SUCCESSOR)
+		|| isFunction(symbol, STDFUNC::PREDECESSOR);
+}
+
+
 CompType getComparisonType(const PFSymbol* symbol) {
 	Assert(isComparisonPredicate(symbol));
 	if (is(symbol, STDPRED::EQ)) {
