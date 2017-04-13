@@ -351,7 +351,7 @@ Predicate* overload(const std::set<Predicate*>&);
 /**
  * Return true if and only if the predicate is a type predicate
  */
-bool isTypePredicate(Predicate*);
+bool isTypePredicate(const Predicate*);
 
 }
 
@@ -668,7 +668,7 @@ namespace VocabularyUtils {
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
 bool isPredicate(const PFSymbol*, STDPRED predtype); //!< returns true iff the given symbol is an instance of the given predicate type
 bool isFunction(const PFSymbol*, STDFUNC functype); //!< returns true iff the given symbol is an instance of the given function type
-bool isTypePredicate(PFSymbol*);
+bool isTypePredicate(const PFSymbol*);
 CompType getComparisonType(const PFSymbol* symbol);
 bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);

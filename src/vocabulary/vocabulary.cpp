@@ -1101,7 +1101,7 @@ Predicate* overload(const set<Predicate*>& sp) {
 	}
 }
 
-bool isTypePredicate(Predicate* p) {
+bool isTypePredicate(const Predicate* p) {
 	return p->nrSorts() == 1 and p == p->sort(0)->pred();
 }
 
@@ -2147,8 +2147,8 @@ bool isFunction(const PFSymbol* symbol, STDFUNC functype){
 	return isa<Function>(*symbol) && is(symbol, functype);
 }
 
-bool isTypePredicate(PFSymbol* symbol) {
-	return (isa<Predicate>(*symbol) and PredUtils::isTypePredicate(dynamic_cast<Predicate*>(symbol)));
+bool isTypePredicate(const PFSymbol* symbol) {
+    	return (isa<Predicate>(*symbol) and PredUtils::isTypePredicate(dynamic_cast<const Predicate*>(symbol)));
 }
 
 
