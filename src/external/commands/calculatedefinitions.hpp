@@ -17,6 +17,15 @@
 #include "errorhandling/error.hpp"
 #include <vector>
 
+InternalArgument performCalculateDefinitions(Theory* theory, Structure* structure, Vocabulary* vocabulary) {
+	auto sols = CalculateDefinitions::doCalculateDefinitions(theory, structure, vocabulary, false);
+	if (not sols._hasModel ) {
+		return InternalArgument();
+	}
+	Assert(sols._hasModel and sols._calculated_model != NULL);
+	return InternalArgument(sols._calculated_model);
+}
+
 class CalculateDefinitionInference: public TheoryStructureBase {
 public:
 	CalculateDefinitionInference()
@@ -34,12 +43,29 @@ public:
 			Error::error("Can only calculate definitions with a non-ground theory.");
 			return nilarg();
 		}
-		auto sols = CalculateDefinitions::doCalculateDefinitions(theory, get<1>(args)->clone());
-		if(not sols._hasModel ){
-			return InternalArgument();
+		return performCalculateDefinitions(theory,get<1>(args)->clone(),theory->vocabulary());
+	}
+};
+
+class CalculateDefinitionWithVocabularyInference: public TheoryStructureVocabularyBase {
+public:
+	CalculateDefinitionWithVocabularyInference()
+			: TheoryStructureVocabularyBase("calculatedefinitions",
+					"Make the structure more precise than the given one by evaluating all definitions with known open symbols for those symbols that are also in the given vocabulary.") {
+		setNameSpace(getInferenceNamespaceName());
+	}
+
+	InternalArgument execute(const std::vector<InternalArgument>& args) const {
+		auto t = get<0>(args);
+		Theory* theory = NULL;
+		if (isa<Theory>(*t)) {
+			theory = (dynamic_cast<Theory*>(t))->clone(); //Because the doCalculateDefinitions Inferences changes the theory.
+		} else {
+			Error::error("Can only calculate definitions with a non-ground theory.");
+			return nilarg();
 		}
-		Assert(sols._hasModel and sols._calculated_model != NULL);
-		return InternalArgument(sols._calculated_model);
+		
+		return performCalculateDefinitions(theory,get<1>(args)->clone(),get<2>(args));
 	}
 };
 

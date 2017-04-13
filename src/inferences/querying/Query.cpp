@@ -228,7 +228,7 @@ bool evaluate(TheoryComponent* comp, const Structure* structure){
 		auto xsb = getOption(XSB);
 		setOption(SPLIT_DEFS, false);
 		setOption(XSB, true);
-		auto success = CalculateDefinitions::doCalculateDefinitions(def, newstruct, false, def->defsymbols())._hasModel;
+		auto success = CalculateDefinitions::doCalculateDefinition(def, newstruct)._hasModel;
 		setOption(SPLIT_DEFS, split);
 		setOption(XSB, xsb);
 		def->recursiveDelete();

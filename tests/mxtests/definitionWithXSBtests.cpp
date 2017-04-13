@@ -44,6 +44,7 @@ vector<string> generateListOfThreevaluedDefsFiles() {
 }
 
 class CalculateDefinitionsWithXSBTest: public ::testing::TestWithParam<string> {};
+class CalculateDefinitionsForVocWithXSBTest: public ::testing::TestWithParam<string> {};
 class DefinitionShouldFailWithXSBTest: public ::testing::TestWithParam<string> {};
 class RefineDefinitionsWithXSBTest: public ::testing::TestWithParam<string> {};
 
@@ -80,6 +81,18 @@ TEST_P(CalculateDefinitionsWithXSBTest, CalculatesDefinitionWithXSB) {
 	ASSERT_EQ(result, Status::SUCCESS);
 }
 INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, CalculateDefinitionsWithXSBTest,  ::testing::ValuesIn(generateListOfTwovaluedDefsFiles()));
+
+// Test whether calculatedefinitions with the full vocabulary as third argument is the same as
+// calculatedefinitions with no third argument
+TEST_P(CalculateDefinitionsForVocWithXSBTest, CalculatesDefinitionForVocWithXSB) {
+	string testfile(getTestDirectory() + "calculatedefinitionsWithXSBtest.idp");
+	cerr << "Testing " << GetParam() << "\n";
+	Status result = Status::FAIL;
+	ASSERT_NO_THROW( result = test( { GetParam(), testfile }, "checkDefinitionEvaluationWithVoc(T,S,V)"););
+	ASSERT_EQ(result, Status::SUCCESS);
+}
+INSTANTIATE_TEST_CASE_P(CalculateDefinitionsWithXSB, CalculateDefinitionsForVocWithXSBTest,  ::testing::ValuesIn(generateListOfTwovaluedDefsFiles()));
+
 
 // Separate tests for cases in which an error should be thrown when trying to use XSB
 TEST_P(DefinitionShouldFailWithXSBTest, CalculatesFailingDefinitionWithXSB) {

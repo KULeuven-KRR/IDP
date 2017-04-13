@@ -112,7 +112,7 @@ public:
 	}
 
 	// High-level operations
-	std::set<PFSymbol*> getSymbolsToQuery();
+	Vocabulary* getSymbolsToQuery();
 	Structure* inputStructure(Structure*);
 	bool isConsistent(Structure*);
 	void updateStructure(Structure*, Structure*);

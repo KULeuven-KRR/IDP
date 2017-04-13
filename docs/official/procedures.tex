@@ -80,7 +80,9 @@ The \code{inferences} namespace and all its procedures are included in the globa
 	\item[allmodels(theory,structure)] 
 		Returns all models of the theory that extend the given structure.
 	\item[calculatedefinitions(theory,structure)]
-		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or  nil if inconsistency is detected.
+		Make the structure more precise than the given one by evaluating all definitions with known open symbols. This procedure works recursively: as long as some definition of which all open symbols are known exists, it calculates the definition (possibly deriving open symbols of other definitions). This procedure returns a new structure or nil if inconsistency is detected.
+	\item[calculatedefinitions(theory,structure,vocabulary)]
+		Similar to calculatedefinitions(theory,structure), but only calculates definitions of symbols in the given vocabulary. This procedure returns a new structure or nil if inconsistency is detected.
 	\item[explainunsat(theory, structure, vocabulary)]
 		Given input structure $S_i$, input theory $T_i$ and vocabulary $V_i$, this procedure searches for a structure $S_O$ and a theory $T_O$ such that the following hold:
 		\begin{description}

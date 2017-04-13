@@ -202,6 +202,7 @@ typedef TypedInference<LIST(Function*)> FunctionBase;
 typedef TypedInference<LIST(std::string*)> StringBase;
 typedef TypedInference<LIST(AbstractTheory*)> TheoryBase;
 typedef TypedInference<LIST(AbstractTheory*, Structure*)> TheoryStructureBase;
+typedef TypedInference<LIST(AbstractTheory*, Structure*, Vocabulary*)> TheoryStructureVocabularyBase;
 typedef TypedInference<LIST(Formula*, Structure*)> FormulaStructureBase;
 typedef TypedInference<LIST(Term*, Structure*)> TermStructureBase;
 typedef TypedInference<LIST(SortTable*)> SortTableBase;

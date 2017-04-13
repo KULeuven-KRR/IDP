@@ -20,7 +20,7 @@ procedure checkForRandomInputStructure(theory, structure, nrtimes) {
 }
 
 procedure checkDefinitionEvaluation(theory, structure) {
-  standardoptions()
+	standardoptions()
 	stdoptions.timeout = 10
 	stdoptions.xsb=false
 	NOXSBMODEL=calculatedefinitions(theory,structure)
@@ -61,6 +61,47 @@ procedure checkDefinitionEvaluation(theory, structure) {
 		io.stderr:write("\n")
 		return 0
 	end
+}
+
+procedure checkDefinitionEvaluationWithVoc(theory, structure, voc) {
+	standardoptions()
+	NOVOCMODEL = calculatedefinitions(theory,structure)
+	VOCMODEL = calculatedefinitions(theory,structure,voc)
+	if (VOCMODEL == nil and NOVOCMODEL == nil) then
+		return 1
+	end
+	if (VOCMODEL == nil and NOVOCMODEL ~= nil) then
+		io.stderr:write("FAIL! Calculating the definition with XSB using a vocabulary resulted in no model, while XSB without a specified voc did have a model.\n")
+		return 0
+	end
+	if (VOCMODEL ~= nil and NOVOCMODEL == nil) then
+		io.stderr:write("FAIL! Calculating the definition with XSB without a specified voc resulted in no model, while XSB using a vocabulary did have a model.\n")
+		return 0
+	end
+	if (shouldNotCheck ~= nil) then
+		io.stderr:write("Both definition evaluations resulted in a model.  Not checking equiality since might be too expensive\n")
+		return 1
+	end
+	io.stderr:write("Both definition evaluations resulted in a model. Comparing models...\n")
+	if (shouldNotCompareStructure~=nil) then
+		io.stderr:write("NOTE: XSB+Voc and XSB structure not compared because too expensive!\n")
+		io.stderr:write("\tThe XSB+Voc structure was:\n"..tostring(VOCMODEL))
+		io.stderr:write("\tThe XSB structure was:\n"..tostring(NOVOCMODEL).."\n")
+		return 1;
+	end
+	setvocabulary(NOVOCMODEL,voc)
+	if (equal(VOCMODEL,NOVOCMODEL)) then
+		return 1
+	else
+		io.stderr:write("FAIL! Calculating the definition with XSB using a specified vocabulary resulted in a different model than calculating it using XSB without specifying a vocabulary and limiting the output structure afterwards.\n")
+		io.stderr:write("\n\nStructure resulting from XSB specifying a vocabulary:\n")
+		io.stderr:write(tostring(VOCMODEL))
+		io.stderr:write("\n\nStructure resulting from XSB without specifying a vocabulary:\n")
+		io.stderr:write(tostring(NOVOCMODEL))
+		io.stderr:write("\n")
+		return 0
+	end
+
 }
 
 procedure checkDefinitionRefining(theory, structure) {

@@ -20,6 +20,7 @@
 #include "fobdds/FoBddManager.hpp"
 #include "fobdds/Estimations.hpp"
 #include "information/CollectOpensOfDefinitions.hpp"
+#include "information/GetDefinedSymbolDirectDependencies.hpp"
 #include "information/CheckContainment.hpp"
 #include "information/CheckContainsFuncTerms.hpp"
 #include "information/CheckContainsDomainTerms.hpp"
@@ -227,7 +228,7 @@ void deriveSorts(Vocabulary* voc, Rule* rule) {
 std::set<PFSymbol*> opens(const Definition* d) {
 	return transform<CollectOpensOfDefinitions, std::set<PFSymbol*>>(d);
 }
-std::set<PFSymbol*> approxTwoValuedOpens(Definition* d, Structure* s) {
+std::set<PFSymbol*> approxTwoValuedOpens(const Definition* d, Structure* s) {
 	std::set<PFSymbol*> ret;
 	for (auto symbol : DefinitionUtils::opens(d)) {
 		if (s->inter(symbol)->approxTwoValued()) {
@@ -243,9 +244,28 @@ std::map<Definition*, std::set<PFSymbol*> > opens(std::vector<Definition*> defs)
 	}
 	return opens;
 }
-std::set<PFSymbol*> defined(Definition* d) {
+
+std::set<PFSymbol*> getDirectDependencies(const Definition* d, PFSymbol* symbol) {
+	return transform<GetDefinedSymbolDirectDependencies, std::set<PFSymbol*>>(d, symbol);
+}
+
+
+std::set<PFSymbol*> defined(const Definition* d) {
 	return d->defsymbols();
 }
+
+bool definesSymbol(const Rule* r, PFSymbol* symbol) {
+	if (r->head()->symbol() == symbol) {
+		return true;
+	} else if (VocabularyUtils::isPredicate(r->head()->symbol(),STDPRED::EQ)) {
+		auto firstarg = *(r->head()->subterms().begin());
+		if (firstarg->type() == TermType::FUNC and dynamic_cast<FuncTerm*>(firstarg)->function() == symbol) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 bool approxTotal(Definition* def) {
 	auto total = true;

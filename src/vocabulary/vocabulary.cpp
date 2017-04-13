@@ -2057,6 +2057,17 @@ bool Vocabulary::contains(const PFSymbol* s) const {
 	}
 }
 
+std::vector<PFSymbol*> Vocabulary::getNonBuiltinNonOverloadedNonTypeSymbols() const {
+		auto ret = std::vector<PFSymbol*>();
+		for (auto symbol : getNonBuiltinNonOverloadedSymbols()) {
+			if (VocabularyUtils::isTypePredicate(symbol)) {
+				continue;
+			}
+			ret.push_back(symbol);
+		}
+		return ret;
+	}
+
 Sort* Vocabulary::sort(const string& name) const {
 	auto it = _name2sort.find(name);
 	if (it != _name2sort.cend()) {
@@ -2135,6 +2146,11 @@ bool isPredicate(const PFSymbol* symbol, STDPRED predtype){
 bool isFunction(const PFSymbol* symbol, STDFUNC functype){
 	return isa<Function>(*symbol) && is(symbol, functype);
 }
+
+bool isTypePredicate(PFSymbol* symbol) {
+	return (isa<Predicate>(*symbol) and PredUtils::isTypePredicate(dynamic_cast<Predicate*>(symbol)));
+}
+
 
 bool isComparisonPredicate(const PFSymbol* symbol) {
 	return isPredicate(symbol, STDPRED::EQ) || isPredicate(symbol, STDPRED::LT) || isPredicate(symbol, STDPRED::GT);
