@@ -336,11 +336,16 @@ ostream& Compound::put(ostream& output) const {
  * \brief Comparison of two compound domain element values
  */
 bool operator<(const Compound& c1, const Compound& c2) {
+    Compare<std::vector<Sort*> > svc{}; 
 	if (c1.function()->name() < c2.function()->name()) {
 		return true;
 	} else if (c1.function()->name() > c2.function()->name()) {
 		return false;
-	} else {
+	} else if(svc(c1.function()->sorts(), c2.function()->sorts())){
+            return true;
+	} else if(svc(c2.function()->sorts(), c1.function()->sorts())){
+            return false;
+        } else {
 		for (unsigned int n = 0; n < c1.function()->arity(); ++n) {
 			if (*c1.arg(n) < *c2.arg(n)) {
 				return true;
