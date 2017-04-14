@@ -111,6 +111,8 @@ public:
 	std::ostream& put(std::ostream&) const;
 };
 
+bool operator<(const Sort&, const Sort&);
+
 SortTable* getConstructedInterpretation(Sort* sort, const Structure* struc);
 
 class UnionSort: public Sort {

@@ -383,6 +383,11 @@ ostream& Sort::put(ostream& output) const {
 	return output;
 }
 
+bool operator<(const Sort& s1, const Sort& s2) {
+    return s1.name() < s2.name();
+}
+
+
 UnionSort::UnionSort(const std::vector<Sort*>& sorts)
 		: 	Sort("union"),
 			sorts(sorts) {
