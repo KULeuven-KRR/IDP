@@ -86,9 +86,6 @@ string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 		// XSB Built-in string to go wrong.
 		return to_prolog_term(symbol->nameNoArity());
 	}
-	if (VocabularyUtils::isTypePredicate(symbol)) {
-		return to_prolog_sortname(*symbol->sorts().begin());
-	}
 	stringstream ss;
 	ss << symbol->fqn_name() << symbol;
 	return to_prolog_term(ss.str());
@@ -311,13 +308,7 @@ string XSBToIDPTranslator::to_prolog_varname(string str) {
 }
 
 string XSBToIDPTranslator::to_prolog_sortname(const Sort* sort) {
-	if (isXSBCompilerSupported(sort)) {
-		std::stringstream ss;
-		ss << get_idp_prefix() << sort->name();
-		return ss.str();
-	} else {
-		return to_prolog_term(to_simple_chars(sort->name()));
-	}
+	return to_prolog_term(sort->pred());
 }
 
 
