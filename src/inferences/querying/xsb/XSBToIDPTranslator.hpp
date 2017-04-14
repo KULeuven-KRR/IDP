@@ -26,7 +26,8 @@ class PrologVariable;
 class XSBToIDPTranslator {
 
 private:
-	std::unordered_map<std::string, const DomainElement*> _domainels;
+	std::unordered_map<std::string, const DomainElement*> _domainels; // translation back to domain elements
+	std::unordered_map<std::string, const PFSymbol*> _pfsymbols; // translation back to PFSymbols
 	std::unordered_map<std::string, std::string> _termnames;
 	unsigned int _predicate_name_counter;
 	bool isValidArg(std::list<std::string>, const PFSymbol*);
@@ -59,7 +60,7 @@ public:
 	std::string to_prolog_term(const DomainElement*);
 	const DomainElement* to_idp_domelem(std::string);
 	const DomainElement* to_idp_domelem(std::string, Sort*);
-	ElementTuple to_idp_elementtuple(std::list<std::string>, PFSymbol*);
+	ElementTuple to_idp_elementtuple(std::list<std::string>, const PFSymbol*);
 
 	std::string to_prolog_term(CompType);
 	std::string to_prolog_term(AggFunction);

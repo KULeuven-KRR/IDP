@@ -88,7 +88,11 @@ string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 	}
 	stringstream ss;
 	ss << symbol->fqn_name() << symbol;
-	return to_prolog_term(ss.str());
+	auto ret = to_prolog_term(ss.str());
+	if (_pfsymbols.find(ret) == _pfsymbols.end()) {
+		_pfsymbols.insert({ret,symbol});
+	}
+	return ret;
 }
 
 string XSBToIDPTranslator::to_prolog_term(string str) {
@@ -182,14 +186,13 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) 
 			Assert(nestings == 0);
 			args.push_back(ss.str());
 		}
-		for (auto sortctor : sort->getConstructors()) {
-			if (to_prolog_term(sortctor) == ctor and args.size() == sortctor->insorts().size()) {
-				auto elemtuple = to_idp_elementtuple(args,sortctor);
-				ret = createDomElem(createCompound(sortctor,elemtuple));
-				break;
-			}
-		}
-	} else {
+		auto sortctor = _pfsymbols[ctor];
+		Assert(isa<Function>(*sortctor));
+		const Function* constructorfunction = (Function*) sortctor;
+		Function* f = const_cast<Function*>(constructorfunction);
+		auto elemtuple = to_idp_elementtuple(args,f);
+		ret = createDomElem(createCompound(f,elemtuple));
+	}else {
 		ret = to_idp_domelem(str);
 	}
 	return ret;
@@ -204,7 +207,7 @@ bool XSBToIDPTranslator::isValidArg(std::list<std::string> answers, const PFSymb
 }
 
 
-ElementTuple XSBToIDPTranslator::to_idp_elementtuple(list<string> answers, PFSymbol* symbol) {
+ElementTuple XSBToIDPTranslator::to_idp_elementtuple(list<string> answers, const PFSymbol* symbol) {
 	Assert(isValidArg(answers,symbol));
 	ElementTuple ret = {};
 	int argnr = 0;
