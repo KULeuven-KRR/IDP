@@ -1,0 +1,23 @@
+vocabulary V{
+	type T
+	type Q
+	type S constructed from {f(T), f(Q)}
+	A(T)
+	B(Q)
+	C(S)
+}
+
+theory T:V{
+	{
+		C(f(x)) <- A(x).
+		C(f(x)) <- B(x).
+	}
+
+}
+
+structure S:V{
+	T = {1..3}
+	A = {1;2}
+	Q = {"Jos";"Piet";"Tom";2}
+	B = {"Jos";"Piet"}
+}

@@ -253,6 +253,7 @@ public:
 	virtual bool isPredicate() const = 0;
 
 	virtual bool builtin() const = 0; //!< Returns true iff the symbol is built-in
+	virtual bool isNonConstructorBuiltin() const = 0; //!< Returns true iff the symbol is built-in
 	virtual bool overloaded() const = 0; //!< Returns true iff the symbol is in fact a set of overloaded
 										 //!< symbols
 	virtual std::set<Sort*> allsorts() const = 0; //!< Return all sorts that occur in the (overloaded) symbol(s)
@@ -315,6 +316,8 @@ public:
 		return sorts().size();
 	}
 	bool builtin() const;
+	bool isNonConstructorBuiltin() const;
+	
 	bool overloaded() const;
 	std::set<Sort*> allsorts() const;
 
@@ -353,7 +356,7 @@ Predicate* overload(const std::set<Predicate*>&);
 /**
  * Return true if and only if the predicate is a type predicate
  */
-bool isTypePredicate(Predicate*);
+bool isTypePredicate(const Predicate*);
 
 }
 
@@ -406,6 +409,7 @@ public:
 	Sort* outsort() const; //!< Returns the output sort of the function
 	bool partial() const; //!< Returns true iff the function is partial
 	bool builtin() const;
+	bool isNonConstructorBuiltin() const;
 	bool overloaded() const;
 	bool hasDerivableSorts() const;
 	FuncGenerator* overfuncgenerator() const;
@@ -670,7 +674,7 @@ namespace VocabularyUtils {
 bool isComparisonPredicate(const PFSymbol*); //!< returns true iff the given symbol is =/2, </2, or >/2
 bool isPredicate(const PFSymbol*, STDPRED predtype); //!< returns true iff the given symbol is an instance of the given predicate type
 bool isFunction(const PFSymbol*, STDFUNC functype); //!< returns true iff the given symbol is an instance of the given function type
-bool isTypePredicate(PFSymbol*);
+bool isTypePredicate(const PFSymbol*);
 CompType getComparisonType(const PFSymbol* symbol);
 bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);

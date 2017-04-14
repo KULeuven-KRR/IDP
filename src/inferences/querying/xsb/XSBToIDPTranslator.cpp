@@ -76,13 +76,20 @@ string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 		ss << get_idp_prefix() << symbol->nameNoArity();
 		return ss.str();
 	}
-	if (is(symbol,STDPRED::EQ) || is(symbol,STDPRED::GT) || is(symbol,STDPRED::LT)) {
-		// When translating to XSB, it does not matter for comparison symbols which
-		// namespace they are in or which types of arguments they get since they
-		// need to be mapped to the same XSB built-in anyway
+	if (symbol->isNonConstructorBuiltin()) {
+		// When translating to XSB, it does not matter for comparison symbols or
+		// built-in functions which namespace they are in or which types of arguments
+		// they get since they need to be mapped to the same XSB built-in anyway
+		// Also, the pointer cannot be added because this causes translation to the
+		// XSB Built-in string to go wrong.
 		return to_prolog_term(symbol->nameNoArity());
 	}
-	return to_prolog_term(symbol->fqn_name());
+	if (VocabularyUtils::isTypePredicate(symbol)) {
+		return to_prolog_sortname(*symbol->sorts().begin());
+	}
+	stringstream ss;
+	ss << symbol->fqn_name() << symbol;
+	return to_prolog_term(ss.str());
 }
 
 string XSBToIDPTranslator::to_prolog_term(string str) {

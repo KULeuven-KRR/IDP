@@ -690,6 +690,11 @@ bool Predicate::builtin() const {
 	return _interpretation != 0;
 }
 
+bool Predicate::isNonConstructorBuiltin() const {
+	return builtin(); // predicates cannot be constructors
+}
+
+
 bool Predicate::overloaded() const {
 	return (_overpredgenerator != 0);
 }
@@ -1106,7 +1111,7 @@ Predicate* overload(const set<Predicate*>& sp) {
 	}
 }
 
-bool isTypePredicate(Predicate* p) {
+bool isTypePredicate(const Predicate* p) {
 	return p->nrSorts() == 1 and p == p->sort(0)->pred();
 }
 
@@ -1224,6 +1229,10 @@ bool Function::partial() const {
 
 bool Function::builtin() const {
 	return _interpretation != NULL || Vocabulary::std()->contains(this);
+}
+
+bool Function::isNonConstructorBuiltin() const {
+	return (builtin() and not isConstructorFunction());
 }
 
 FuncGenerator* Function::overfuncgenerator() const {
@@ -2152,8 +2161,8 @@ bool isFunction(const PFSymbol* symbol, STDFUNC functype){
 	return isa<Function>(*symbol) && is(symbol, functype);
 }
 
-bool isTypePredicate(PFSymbol* symbol) {
-	return (isa<Predicate>(*symbol) and PredUtils::isTypePredicate(dynamic_cast<Predicate*>(symbol)));
+bool isTypePredicate(const PFSymbol* symbol) {
+    	return (isa<Predicate>(*symbol) and PredUtils::isTypePredicate(dynamic_cast<const Predicate*>(symbol)));
 }
 
 
