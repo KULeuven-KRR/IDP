@@ -685,6 +685,11 @@ bool Predicate::builtin() const {
 	return _interpretation != 0;
 }
 
+bool Predicate::isNonConstructorBuiltin() const {
+	return builtin(); // predicates cannot be constructors
+}
+
+
 bool Predicate::overloaded() const {
 	return (_overpredgenerator != 0);
 }
@@ -1219,6 +1224,10 @@ bool Function::partial() const {
 
 bool Function::builtin() const {
 	return _interpretation != NULL || Vocabulary::std()->contains(this);
+}
+
+bool Function::isNonConstructorBuiltin() const {
+	return (builtin() and not isConstructorFunction());
 }
 
 FuncGenerator* Function::overfuncgenerator() const {
@@ -2155,22 +2164,6 @@ bool isTypePredicate(const PFSymbol* symbol) {
 bool isComparisonPredicate(const PFSymbol* symbol) {
 	return isPredicate(symbol, STDPRED::EQ) || isPredicate(symbol, STDPRED::LT) || isPredicate(symbol, STDPRED::GT);
 }
-
-bool isBuiltinFunction(const PFSymbol* symbol) {
-	return isFunction(symbol, STDFUNC::UNARYMINUS)
-		|| isFunction(symbol, STDFUNC::ADDITION)
-		|| isFunction(symbol, STDFUNC::SUBSTRACTION)
-		|| isFunction(symbol, STDFUNC::PRODUCT)
-		|| isFunction(symbol, STDFUNC::DIVISION)
-		|| isFunction(symbol, STDFUNC::ABS)
-		|| isFunction(symbol, STDFUNC::MODULO)
-		|| isFunction(symbol, STDFUNC::EXPONENTIAL)
-		|| isFunction(symbol, STDFUNC::MINELEM)
-		|| isFunction(symbol, STDFUNC::MAXELEM)
-		|| isFunction(symbol, STDFUNC::SUCCESSOR)
-		|| isFunction(symbol, STDFUNC::PREDECESSOR);
-}
-
 
 CompType getComparisonType(const PFSymbol* symbol) {
 	Assert(isComparisonPredicate(symbol));

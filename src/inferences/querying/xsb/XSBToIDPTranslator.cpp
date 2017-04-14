@@ -76,8 +76,7 @@ string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 		ss << get_idp_prefix() << symbol->nameNoArity();
 		return ss.str();
 	}
-	if (VocabularyUtils::isComparisonPredicate(symbol) or
-		VocabularyUtils::isBuiltinFunction(symbol)) {
+	if (symbol->isNonConstructorBuiltin()) {
 		// When translating to XSB, it does not matter for comparison symbols or
 		// built-in functions which namespace they are in or which types of arguments
 		// they get since they need to be mapped to the same XSB built-in anyway
