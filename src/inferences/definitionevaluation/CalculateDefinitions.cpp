@@ -438,9 +438,6 @@ bool CalculateDefinitions::determineXSBUsage(const Definition* definition) {
 	if (not (getOption(XSB))) {
 		return false;
 	}
-	if (getOption(BoolType::GUARANTEE_NO_REC_AGG)) {
-		return true;
-	}
 	if (DefinitionUtils::approxContainsRecDefAggTerms(definition)) {
 		Warning::warning("Currently, no support for definitions that have recursive aggregates");
 		return false;
