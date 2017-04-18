@@ -100,13 +100,8 @@ string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
 }
 
 void XSBToIDPTranslator::add_to_mappings(const PFSymbol* symbol, std::string str) {
-	Assert(_prolog_string_to_pfsymbols.find(str) == _prolog_string_to_pfsymbols.end());
+	Assert(isXSBBuiltIn(str) or _prolog_string_to_pfsymbols.find(str) == _prolog_string_to_pfsymbols.end());
 	_prolog_string_to_pfsymbols.insert({str,symbol});
-#ifdef DEBUG
-	for (auto it = _pfsymbols_to_prolog_string.cbegin(); it != _pfsymbols_to_prolog_string.cend(); ++it) {
-		Assert((*it).second != make_into_prolog_term_name(str)); // Value that this str will map to may not already be mapped to!
-	}
-#endif
 	Assert(_pfsymbols_to_prolog_string.find(symbol) == _pfsymbols_to_prolog_string.end());
 	_pfsymbols_to_prolog_string.insert({symbol,str});
 }
