@@ -73,41 +73,57 @@ bool XSBToIDPTranslator::isXSBCompilerSupported(const Sort* sort) {
 }
 
 string XSBToIDPTranslator::to_prolog_term(const PFSymbol* symbol) {
+	auto found = _pfsymbols_to_prolog_string.find(symbol);
+	if (found != _pfsymbols_to_prolog_string.end()) {
+		return found->second;
+	}
+	string ret;
 	if (isXSBCompilerSupported(symbol)) {
 		stringstream ss;
 		ss << get_idp_prefix() << symbol->nameNoArity();
-		return ss.str();
-	}
-	if (symbol->isNonConstructorBuiltin()) {
+		ret = ss.str();
+	} else if (symbol->isNonConstructorBuiltin()) {
 		// When translating to XSB, it does not matter for comparison symbols or
 		// built-in functions which namespace they are in or which types of arguments
 		// they get since they need to be mapped to the same XSB built-in anyway
 		// Also, the pointer cannot be added because this causes translation to the
 		// XSB Built-in string to go wrong.
-		return to_prolog_term(symbol->nameNoArity());
+		ret = make_into_prolog_term_name(symbol->nameNoArity());
+	} else {
+		stringstream ss;
+		ss << symbol->fqn_name() << symbol;
+		ret = make_into_prolog_term_name(ss.str());
 	}
-	stringstream ss;
-	ss << symbol->fqn_name() << symbol;
-	auto ret = to_prolog_term(ss.str());
-	if (_pfsymbols.find(ret) == _pfsymbols.end()) {
-		_pfsymbols.insert({ret,symbol});
-	}
+	add_to_mappings(symbol,ret);
 	return ret;
 }
 
-string XSBToIDPTranslator::to_prolog_term(string str) {
-	for (auto it = _termnames.cbegin(); it != _termnames.cend(); ++it) {
-		if ((*it).first == str) {
-			return (*it).second;
-		}
-		Assert((*it).second != transform_into_term_name(str)); // Value that this str will map to may not already be mapped to!
+void XSBToIDPTranslator::add_to_mappings(const PFSymbol* symbol, std::string str) {
+	Assert(_prolog_string_to_pfsymbols.find(str) == _prolog_string_to_pfsymbols.end());
+	_prolog_string_to_pfsymbols.insert({str,symbol});
+#ifdef DEBUG
+	for (auto it = _pfsymbols_to_prolog_string.cbegin(); it != _pfsymbols_to_prolog_string.cend(); ++it) {
+		Assert((*it).second != make_into_prolog_term_name(str)); // Value that this str will map to may not already be mapped to!
 	}
-	auto ret = transform_into_term_name(str);
-	_termnames[str] = ret;
-	return ret;
+#endif
+	Assert(_pfsymbols_to_prolog_string.find(symbol) == _pfsymbols_to_prolog_string.end());
+	_pfsymbols_to_prolog_string.insert({symbol,str});
 }
 
-string XSBToIDPTranslator::transform_into_term_name(string str) {
+void XSBToIDPTranslator::add_to_mappings(const DomainElement* domelem, std::string str) {
+	Assert(_prolog_string_to_domainels.find(str) == _prolog_string_to_domainels.end());
+	_prolog_string_to_domainels.insert({str,domelem});
+#ifdef DEBUG
+	for (auto it = _domainels_to_prolog_string.cbegin(); it != _domainels_to_prolog_string.cend(); ++it) {
+		Assert((*it).second != make_into_prolog_term_name(str)); // Value that this str will map to may not already be mapped to!
+	}
+#endif
+	Assert(_domainels_to_prolog_string.find(domelem) == _domainels_to_prolog_string.end());
+	_domainels_to_prolog_string.insert({domelem,str});
+}
+
+
+string XSBToIDPTranslator::make_into_prolog_term_name(string str) {
 	if (isXSBBuiltIn(str)) {
 		return str;
 	} else if (getOption(BoolType::XSB_SHORT_NAMES)) {
@@ -121,13 +137,10 @@ string XSBToIDPTranslator::transform_into_term_name(string str) {
 	}
 }
 
-string XSBToIDPTranslator::to_idp_pfsymbol(string str) {
-	auto it = _termnames.find(str);
-	if (it == _termnames.end()) {
-		return str;
-	} else {
-		return it->second;
-	}
+const PFSymbol* XSBToIDPTranslator::to_idp_pfsymbol(string str) {
+	auto it = _prolog_string_to_pfsymbols.find(str);
+	Assert(it != _prolog_string_to_pfsymbols.end());
+	return it->second;
 }
 
 string XSBToIDPTranslator::to_prolog_pred_and_arity(const PFSymbol* symbol) {
@@ -140,25 +153,28 @@ string XSBToIDPTranslator::to_prolog_pred_and_arity(const Sort* sort) {
 }
 
 string XSBToIDPTranslator::to_prolog_term(const DomainElement* domelem) {
+	auto found = _domainels_to_prolog_string.find(domelem);
+	if (found != _domainels_to_prolog_string.end()) {
+		return found->second;
+	}
 	auto str = toString(domelem);
 	string ret;
 	if(domelem->type() == DomainElementType::DET_INT ||
 			domelem->type() == DomainElementType::DET_DOUBLE) {
-		_domainels[str] = domelem;
 		ret = str;
 	} else {
 		// filter the string
 		stringstream s;
-		s << to_prolog_term(to_simple_chars(str));
+		s << make_into_prolog_term_name(to_simple_chars(str));
 		ret = s.str();
-		_domainels[ret] = domelem;
 	}
+	add_to_mappings(domelem,ret);
 	return ret;
 }
 
 const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str) {
-	auto it = _domainels.find(str);
-	if (it == _domainels.end()) {
+	auto it = _prolog_string_to_domainels.find(str);
+	if (it == _prolog_string_to_domainels.end()) {
 		return createDomElem(str);
 	}
 	return it->second;
@@ -186,7 +202,7 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) 
 			Assert(nestings == 0);
 			args.push_back(ss.str());
 		}
-		auto sortctor = _pfsymbols[ctor];
+		auto sortctor = _prolog_string_to_pfsymbols[ctor];
 		Assert(isa<Function>(*sortctor));
 		const Function* constructorfunction = (Function*) sortctor;
 		Function* f = const_cast<Function*>(constructorfunction);
