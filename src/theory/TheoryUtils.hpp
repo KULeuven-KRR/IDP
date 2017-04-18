@@ -274,7 +274,7 @@ that only have rules of one of the following 4 forms:
  predform(..) <- conjunction of predforms
  predform(..) <- disjunction of predforms
  predform(..) <- forall with nested predform
- predform(..) <- exists with nested predform
+ predform(..) <- exists with nested predform // TODO: allow a conjunction here instead of a nested predform (for XSB this leads to fewer Tseitins)
  */
 Theory* definitionsToNormalForm(Theory*);
 
