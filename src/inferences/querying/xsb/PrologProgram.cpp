@@ -72,6 +72,7 @@ string PrologProgram::getCode() {
 string PrologProgram::getRanges() {
 	stringstream output;
 	for (auto it = _sorts.begin(); it != _sorts.end(); ++it) {
+		if (_translator->isXSBCompilerSupported(*it)) { _loaded.insert((*it)->name()); }
 		if (_loaded.find((*it)->name()) == _loaded.end()) {
 			SortTable* st = _structure->inter((*it));
 			if (st->isRange() && not st->size().isInfinite()) {
