@@ -101,6 +101,7 @@ class ReplaceVariableUsingEqualities;
 		friend class GraphAggregates; \
 		friend class GraphFunctions; \
 		friend class GraphFuncsAndAggs; \
+		friend class GraphFuncsAndAggsForXSB; \
 		friend class PushNegations; \
 		friend class PushQuantifications; \
 		friend class PushQuantificationsCompletely; \
@@ -111,6 +112,8 @@ class ReplaceVariableUsingEqualities;
 		friend class SubstituteTerm; \
 		friend class SubstituteVarWithDom; \
 		friend class UnnestTerms; \
+		friend class DefinitionsToNormalForm; \
+		friend class UnnestForXSB; \
 		friend class UnnestFuncsAndAggs; \
 		friend class UnnestPartialTerms; \
 		friend class UnnestThreeValuedTerms;\

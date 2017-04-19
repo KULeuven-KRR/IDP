@@ -24,6 +24,7 @@ private:
 
 public:
 	bool execute(const Definition* def) {
+		if (getOption(BoolType::GUARANTEE_NO_REC_AGG)) { return false; }
 		auto voc = Vocabulary("wrapper_voc");
 		for(auto s: FormulaUtils::collectSymbols(def)){
 			voc.add(s);

@@ -5009,7 +5009,7 @@ if test -n "$with_gcc" ; then
         builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
         loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
-        CFLAGS="-Wall -pipe"
+        CFLAGS="-Wall -pipe -fPIC"
    fi
 else
     case $CC in
@@ -5018,7 +5018,7 @@ else
                 builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
                 loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
-                CFLAGS="-Wall -pipe"
+                CFLAGS="-Wall -pipe -fPIC"
         ;;
         cc) if test "$__sunpro_c" = "no"; then
                 emuloop_opt_level=-${with_optimization-"O4"}

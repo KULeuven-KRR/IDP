@@ -12,6 +12,7 @@
 #pragma once
 
 #include <unordered_map>
+#include <list>
 
 #include "commontypes.hpp"
 #include "vocabulary/VarCompare.hpp"
@@ -25,11 +26,16 @@ class PrologVariable;
 class XSBToIDPTranslator {
 
 private:
-	std::unordered_map<std::string, const DomainElement*> _domainels;
-	std::unordered_map<std::string, std::string> _termnames;
+	std::unordered_map<std::string, const DomainElement*> _prolog_string_to_domainels; // translation back to domain elements
+	std::unordered_map<const DomainElement*, std::string> _domainels_to_prolog_string;
+	std::unordered_map<std::string, const PFSymbol*> _prolog_string_to_pfsymbols; // translation back to PFSymbols
+	std::unordered_map<const PFSymbol*, std::string> _pfsymbols_to_prolog_string;
 	unsigned int _predicate_name_counter;
+	bool isValidArg(std::list<std::string>, const PFSymbol*);
 
-	std::string transform_into_term_name(std::string);
+	std::string make_into_prolog_term_name(std::string);
+	void add_to_mappings(const PFSymbol*, std::string); // Precondition: was not added to the mappings before
+	void add_to_mappings(const DomainElement*, std::string); // Precondition: was not added to the mappings before
 
 	unsigned int getNewID() {
 		return ++_predicate_name_counter;
@@ -49,13 +55,14 @@ public:
 	bool isXSBCompilerSupported(const Sort*);
 
 	std::string to_prolog_term(const PFSymbol*);
-	std::string to_prolog_term(const std::string);
-	std::string to_idp_pfsymbol(std::string);
+	const PFSymbol* to_idp_pfsymbol(std::string); // Assumes that a valid string argument is given (i.e., that it has a PFSymbol associated with it)
 	std::string to_prolog_pred_and_arity(const PFSymbol*);
 	std::string to_prolog_pred_and_arity(const Sort*);
 
 	std::string to_prolog_term(const DomainElement*);
 	const DomainElement* to_idp_domelem(std::string);
+	const DomainElement* to_idp_domelem(std::string, Sort*);
+	ElementTuple to_idp_elementtuple(std::list<std::string>, const PFSymbol*);
 
 	std::string to_prolog_term(CompType);
 	std::string to_prolog_term(AggFunction);

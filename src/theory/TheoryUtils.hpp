@@ -237,6 +237,7 @@ T splitComparisonChains(T, Vocabulary* voc = NULL);
  *    One cannot always replace terms and atoms of recursively defined symbols with their value if they are 2-valued in the structure
  *    It is possible that this replacemant leads to a different result of the well-foundedness check */
 Theory* graphFuncsAndAggs(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
+Theory* graphFuncsAndAggsForXSB(Theory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 AbstractTheory* graphFuncsAndAggs(AbstractTheory*, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con = Context::POSITIVE);
 
 /** Merge two theories, returns a full clone */
@@ -264,6 +265,18 @@ Theory* eliminateUniversalQuantifications(Theory*);
 
 /** Rewrite A <=> B to (A => B) & (B => A) */
 AbstractTheory* removeEquivalences(AbstractTheory*);
+
+/** Recursively move all function and aggregate terms, except for constructor functions */
+AbstractTheory* unnestForXSB(AbstractTheory*, const Structure* str = NULL);
+
+/** Reduce definitions to a "normal form", where tseitinisation is used to transform definitions into definitions
+that only have rules of one of the following 4 forms:
+ predform(..) <- conjunction of predforms
+ predform(..) <- disjunction of predforms
+ predform(..) <- forall with nested predform
+ predform(..) <- exists with nested predform // TODO: allow a conjunction here instead of a nested predform (for XSB this leads to fewer Tseitins)
+ */
+Theory* definitionsToNormalForm(Theory*);
 
 /** Recursively move all function and aggregate terms */
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory*, const Structure* str = NULL);
@@ -327,6 +340,7 @@ bool isFunc(Term* t);
 bool isDom(Term* t);
 bool isVar(Term* t);
 bool isAggOrFunc(Term* t);
+bool isAggOrNonConstructorFunction(Term* t);
 bool isVarOrDom(Term* t);
 
 bool isCard(Term* term);

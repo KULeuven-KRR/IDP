@@ -64,7 +64,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 		return pf;
 	}
 
-	if ((isAggOrFunc(left) and isAggOrFunc(right)) && threevalleft && threevalright) {
+	if ((wouldGraph(left) and wouldGraph(right)) && threevalleft && threevalright) {
 		auto splitformula = FormulaUtils::unnestFuncsAndAggsNonRecursive(pf, _structure);
 		return splitformula->accept(this);
 	}
@@ -95,7 +95,7 @@ Formula* GraphFuncsAndAggs::visit(PredForm* pf) {
 Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 	bool needsSplit = false;
 	for (auto i = ef->subterms().cbegin(); i < ef->subterms().cend(); ++i) {
-		if (isAggOrFunc(*i)) {
+		if (wouldGraph(*i)) {
 			needsSplit = true;
 			break;
 		}
@@ -106,4 +106,8 @@ Formula* GraphFuncsAndAggs::visit(EqChainForm* ef) {
 	} else {
 		return traverse(ef);
 	}
+}
+
+bool GraphFuncsAndAggs::wouldGraph(Term* t) const {
+	return isAggOrFunc(t);
 }

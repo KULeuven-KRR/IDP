@@ -210,6 +210,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::XSB_SHORT_NAMES, "xsbshortnames", boolvalues, true, PrintBehaviour::DONOTPRINT); // Translation to XSB code does not maintain predicate and atom names, but introduces identifiers to minimize communication overhead with XSB
+		BoolPol::createOption(BoolType::XSB_SUBSUMPTIVE_TABLING, "xsbsubsumptivetabling", boolvalues, false, PrintBehaviour::DONOTPRINT); // Use the XSB setting for "Subsumptive Tabling". Setting this option TRUE is not reccomended, as it might interfere with some of the built-ins used in our xsb_compiler (see XSB's manual for explanation).
 		BoolPol::createOption(BoolType::SHOW_XSB_WARNINGS, "showxsbwarnings", boolvalues, false, PrintBehaviour::DONOTPRINT); // Show XSB warnings
 #ifdef WITHXSB
 		// only set XSB default to true when the options is available.
@@ -229,6 +230,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::SPLIT_DEFS, "splitdefs", boolvalues, true, PrintBehaviour::DONOTPRINT);//Only for internal use for the moment: serves for avoiding loops in bootstrapping
 		BoolPol::createOption(BoolType::JOIN_DEFS_FOR_XSB, "joindefsforxsb", boolvalues, false, PrintBehaviour::DONOTPRINT);//Only for internal use for the moment: serves for avoiding loops in bootstrapping
 		BoolPol::createOption(BoolType::GUARANTEE_NO_REC_NEG, "guaranteenorecursionnegation", boolvalues, false, PrintBehaviour::DONOTPRINT);//Only for internal use for the moment: serves for avoiding loops in bootstrapping
+		BoolPol::createOption(BoolType::GUARANTEE_NO_REC_AGG, "guaranteenorecursiveaggs", boolvalues, false, PrintBehaviour::DONOTPRINT);//Only for internal use for the moment
 
 		BoolPol::createOption(BoolType::RELATIVEPROPAGATIONSTEPS, "relativepropsteps", boolvalues, true, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::GROUNDWITHBOUNDS, "groundwithbounds", boolvalues, true, PrintBehaviour::PRINT);

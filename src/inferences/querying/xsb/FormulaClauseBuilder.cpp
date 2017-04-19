@@ -117,12 +117,17 @@ void FormulaClauseBuilder::visit(const Rule* r) {
 			// must be treated specially
 			DomainTerm* domterm = (DomainTerm*) (*it1);
 			ec->addArgument(createPrologConstant(domterm->value()));
-		} else {
+		} else if ((*it1)->type() == TermType::VAR) {
 			auto varterm = (VarTerm*) (*it1);
 			auto prologvar = createPrologVar(varterm->var());
 			ec->addArgument(prologvar);
 			ec->addVariable(prologvar);
 			_pp->addDomainDeclarationFor(varterm->var()->sort());
+		} else if ((*it1)->type() == TermType::FUNC) {
+			enter(ec);
+			FuncTerm* functerm = (FuncTerm*) (*it1);
+			functerm->accept(this);
+			leave();
 		}
 	}
 	_ruleClauses.push_back(ec);
@@ -224,25 +229,40 @@ void FormulaClauseBuilder::visit(const AggTerm* a) {
 }
 
 void FormulaClauseBuilder::visit(const FuncTerm* f) {
-	_parent->numeric(true); //TODO: what does this do here? Affects printing, but how?
-	if (f->function()->arity() == 0) {
-		// The "function" is a constant and needs to be made into a PrologConstant instead of a PrologTerm
-		auto interpretation = f->function()->interpretation(_pp->structure()); 	// retrieve the interpretation
-		auto elementTuple = *(interpretation->funcTable()->begin());			// extract the first (and only) element from the interpretation
-		auto domelem = elementTuple[0];											// Constants only have one element in their elementTuple
-		_parent->addArgument(createPrologConstant(domelem));
-	} else {
+	if (f->function()->isConstructorFunction()) {
 		auto term = new PrologTerm(_translator->to_prolog_term(f->function()));
-		term->infix(true);
-		term->numeric(true);
+		term->sign(true);
+		term->tabled(false);
+		term->fact(true);
+		term->constructor(true);
 		enter(term);
 		for (auto it = f->subterms().begin(); it != f->subterms().end(); ++it) {
 			(*it)->accept(this);
 		}
 		leave();
+		_parent->addArgument(term);
 		_parent->addVariables(term->variables());
-		auto tmp = set<PrologVariable*>(term->variables().begin(), term->variables().end());
-		_parent->addInputvarsToCheck(tmp);
+	} else {
+		_parent->numeric(true); //TODO: what does this do here? Affects printing, but how?
+		if (f->function()->arity() == 0) {
+			// The "function" is a constant and needs to be made into a PrologConstant instead of a PrologTerm
+			auto interpretation = f->function()->interpretation(_pp->structure()); 	// retrieve the interpretation
+			auto elementTuple = *(interpretation->funcTable()->begin());			// extract the first (and only) element from the interpretation
+			auto domelem = elementTuple[0];											// Constants only have one element in their elementTuple
+			_parent->addArgument(createPrologConstant(domelem));
+		} else {
+			auto term = new PrologTerm(_translator->to_prolog_term(f->function()));
+			term->infix(true);
+			term->numeric(true);
+			enter(term);
+			for (auto it = f->subterms().begin(); it != f->subterms().end(); ++it) {
+				(*it)->accept(this);
+			}
+			leave();
+			_parent->addVariables(term->variables());
+			auto tmp = set<PrologVariable*>(term->variables().begin(), term->variables().end());
+			_parent->addInputvarsToCheck(tmp);
+		}
 	}
 }
 

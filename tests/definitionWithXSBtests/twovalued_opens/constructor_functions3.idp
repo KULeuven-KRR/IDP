@@ -1,0 +1,28 @@
+vocabulary V {
+	type t isa int
+	type s constructed from {wrap(t)}
+	p(t)
+	p2(t)
+	q(s)
+	f(t):t
+	f2(s):t
+}
+
+theory T : V {
+	{
+		f(x) = x.
+	}
+	{
+		! t[t] : p(t) <- q(wrap(f(t))).
+	}
+	{
+		! t[t] : p2(t) <- q(wrap(f(f2(wrap(t))))).
+	}
+
+}
+
+structure S : V {
+	t = {0..1}
+	q = { wrap(0)}
+	f2 = {wrap(0)->1; wrap(1)->0}
+}

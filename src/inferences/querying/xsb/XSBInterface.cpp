@@ -82,6 +82,9 @@ XSBInterface::XSBInterface() {
 	_translator = new XSBToIDPTranslator();
 	stringstream ss;
 	ss << getInstallDirectoryPath() << XSB_INSTALL_URL << " -n --quietload";
+	if (getOption(BoolType::XSB_SUBSUMPTIVE_TABLING)) {
+		ss << " -S";
+	}
 	auto checkvalue = xsb_init_string(const_cast<char*>(ss.str().c_str()));
 	handleResult(checkvalue);
 	commandCall("[basics].");
@@ -100,8 +103,8 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	auto cloned_definition = d->clone();
 	auto theory = new Theory("", _structure->vocabulary(), ParseInfo());
 	theory->add(cloned_definition);
-	FormulaUtils::unnestFuncsAndAggs(theory, _structure);
-	FormulaUtils::graphFuncsAndAggs(theory, _structure, cloned_definition->defsymbols(), true, false);
+	FormulaUtils::unnestForXSB(theory, _structure);
+	FormulaUtils::graphFuncsAndAggsForXSB(theory, _structure, cloned_definition->defsymbols(), true, false);
 	FormulaUtils::removeEquivalences(theory);
 	FormulaUtils::pushNegations(theory);
 	FormulaUtils::flatten(theory);
@@ -130,7 +133,7 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 	// In this way, the table declarations are joined into one file
 	stringstream ss;
 	ss << compiler << "\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3;
-	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 7) {
 		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << "\n";
 	}
 	startclock = clock();
@@ -141,14 +144,27 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 }
 
 void XSBInterface::sendToXSB(string str) {
-	auto name = GlobalData::instance()->getTempFileName();
+	char* filename;
+#ifdef DEBUG
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
+		stringstream filess;
+		filess << ".xsb" << getGlobal()->getNewID() << ".P";
+		filename = new char[filess.str().size() + 1];
+		strcpy(filename, filess.str().c_str());
+		clog << "The resulting XSB program can be found in the file\t" << filename << endl;
+	} else {
+#endif
+		filename = GlobalData::instance()->getTempFileName();
+#ifdef DEBUG
+	}
+#endif
 	try {
 		ofstream tmp;
-		tmp.open(name);
+		tmp.open(filename);
 		tmp << str;
 		tmp.close();
 		stringstream ss;
-		ss << "load_dyn('" << name << "').\n";
+		ss << "load_dyn('" << filename << "').\n";
 		commandCall(ss.str());
 	} catch (const Exception& ex) {
 		stringstream ss;
@@ -156,7 +172,9 @@ void XSBInterface::sendToXSB(string str) {
 		Error::error(ss.str());
 		clog.flush();
 	}
-	GlobalData::instance()->removeTempFile(name);
+#ifndef DEBUG
+	GlobalData::instance()->removeTempFile(filename); // Quick delete of the file (instead of when IDP terminates)
+#endif
 }
 
 void XSBInterface::reset() {
@@ -188,27 +206,35 @@ SortedElementTable XSBInterface::queryDefinition(PFSymbol* s, TruthValue tv) {
 	ss << "call_tv(" << *term << "," << _translator->to_xsb_truth_type(tv) << ").";
 	auto query = new char[ss.str().size() + 1];
 	strcpy(query, ss.str().c_str());
-	auto startclock = clock();
 	char* delimiter = new char [strlen(" ") + 1];
 	strcpy(delimiter," ");
+	auto startclock = clock();
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		clog << "Quering XSB with: " <<  query << "... ";
+	}
 	auto rc = xsb_query_string_string(query, &buff, delimiter);
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		std::stringstream ss;
-		ss << "Quering XSB with: " <<  query << " took ";
+		ss << "\ttook ";
 		logActionAndTimeSince(ss.str(),startclock);
 	}
 	handleResult(rc);
 
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		startclock = clock();
+		clog << "> Translating the answers back to IDP values... ";
+	}
 	while (rc == XSB_SUCCESS) {
 		std::list<string> answer = split(buff.string);
-		ElementTuple tuple;
-		for (auto it = answer.begin(); it != answer.end(); ++it) {
-			tuple.push_back(_translator->to_idp_domelem(*it));
-		}
-		result.insert(tuple);
+		result.insert(_translator->to_idp_elementtuple(answer,s));
 
 		rc = xsb_next_string(&buff, delimiter);
 		handleResult(rc);
+	}
+	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
+		std::stringstream ss;
+		ss << "\ttook ";
+		logActionAndTimeSince(ss.str(),startclock);
 	}
 	XSB_StrDestroy(&buff);
 

@@ -40,6 +40,7 @@
 #include "transformations/ReplaceDefinitionsWithCompletion.hpp"
 #include "transformations/AddIfCompletion.hpp"
 #include "transformations/GraphFuncsAndAggs.hpp"
+#include "transformations/GraphFuncsAndAggsForXSB.hpp"
 #include "transformations/RemoveEquivalences.hpp"
 #include "transformations/PushQuantifications.hpp"
 #include "transformations/PullQuantifications.hpp"
@@ -48,6 +49,8 @@
 #include "transformations/SubstituteTerm.hpp"
 #include "transformations/SplitDefinitions.hpp"
 #include "transformations/SubstituteVarWithDom.hpp"
+#include "transformations/DefinitionsToNormalForm.hpp"
+#include "transformations/UnnestForXSB.hpp"
 #include "transformations/UnnestFuncsAndAggs.hpp"
 #include "transformations/UnnestFuncsAndAggsNonRecursive.hpp"
 #include "transformations/UnnestPartialTerms.hpp"
@@ -96,6 +99,17 @@ bool isVar(Term* t) {
 
 bool isAggOrFunc(Term* t) {
 	return isAgg(t) || isFunc(t);
+}
+
+bool isAggOrNonConstructorFunction(Term* t) {
+	if (isAgg(t)) {
+		return true;
+	}
+	if (t->type() == TermType::FUNC) {
+		FuncTerm* f = dynamic_cast<FuncTerm*>(t);
+		return not f->function()->isConstructorFunction();
+	}
+	return false;
 }
 
 bool isVarOrDom(Term* t) {
@@ -539,6 +553,7 @@ Theory* replacePredByFunctions(Theory* newTheory, Predicate* pred, bool addinout
 	return transform<ReplacePredByFunctions, Theory*>(newTheory, newTheory->vocabulary(), pred, addinoutputdef, domainindices, codomainsindices, partialfunctions);
 }
 
+
 Formula* unnestFuncsAndAggs(Formula* f, const Structure* str) {
 	return transform<UnnestFuncsAndAggs, Formula*>(f, str);
 }
@@ -609,6 +624,10 @@ AbstractTheory* graphFuncsAndAggs(AbstractTheory* t, const Structure* str, const
 	return transform<GraphFuncsAndAggs, AbstractTheory*>(t, str, definedsymbols, unnestall, cpsupport, con);
 }
 
+Theory* graphFuncsAndAggsForXSB(Theory* t, const Structure* str, const std::set<PFSymbol*>& definedsymbols, bool unnestall, bool cpsupport, Context con) {
+	return transform<GraphFuncsAndAggsForXSB, Theory*>(t, str, definedsymbols, unnestall, cpsupport, con);
+}
+
 template<class T>
 T simplify(T t, const Structure* s) {
 	return transform<Simplify, T>(t,s);
@@ -670,6 +689,14 @@ Theory* eliminateUniversalQuantifications(Theory* t) {
 
 AbstractTheory* removeEquivalences(AbstractTheory* t) {
 	return transform<RemoveEquivalences, AbstractTheory*>(t);
+}
+
+Theory* definitionsToNormalForm(Theory* t) {
+	return transform<DefinitionsToNormalForm, Theory*>(t);
+}
+
+AbstractTheory* unnestForXSB(AbstractTheory* t, const Structure* str) {
+	return transform<UnnestForXSB, AbstractTheory*>(t, str);
 }
 
 AbstractTheory* unnestFuncsAndAggs(AbstractTheory* t, const Structure* str) {

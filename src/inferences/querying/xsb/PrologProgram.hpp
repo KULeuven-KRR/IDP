@@ -18,6 +18,7 @@
 class Structure;
 class Definition;
 class PFSymbol;
+class Function;
 class Sort;
 class PrologClause;
 class XSBToIDPTranslator;
@@ -38,8 +39,15 @@ private:
 	set<string> _loaded;
 	set<string> _all_predicates;
 	XSBToIDPTranslator* _translator;
+	void printSort(const Sort*, std::ostream&);
+	void printOpenSymbol(PFSymbol*, std::ostream&);
 	void printAsFacts(std::string, PFSymbol*, std::ostream&);
+	void print3valFacts(std::string, PFSymbol*, std::ostream&);
+	void print2valFacts(std::string, PFSymbol*, std::ostream&);
 	void printTuple(const ElementTuple&, std::ostream&);
+	void printDomainElement(const DomainElement*, std::ostream&);
+	void printConstructedTypesRules(const Sort*, std::ostream&);
+	void printConstructorRules(const Sort*, Function*, std::ostream&);
 
 public:
 	PrologProgram(Structure* structure, XSBToIDPTranslator* translator)

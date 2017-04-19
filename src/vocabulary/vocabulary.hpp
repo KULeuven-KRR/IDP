@@ -679,6 +679,7 @@ CompType getComparisonType(const PFSymbol* symbol);
 bool isIntPredicate(const PFSymbol*, const Vocabulary*);
 bool isIntComparisonPredicate(const PFSymbol*, const Vocabulary*);
 bool isNumeric(Sort*); //!< returns true iff the given sort is a subsort of float
+bool isConstructorFunction(const PFSymbol*);
 
 bool isSubVocabulary(Vocabulary* child, Vocabulary* parent);
 bool containsSymbol(std::string name,int arity,Vocabulary::Symbol sym, const Vocabulary* voc);
