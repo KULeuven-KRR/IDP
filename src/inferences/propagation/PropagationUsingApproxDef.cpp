@@ -53,7 +53,7 @@ void PropagationUsingApproxDef::processApproxDef(Structure* structure, Approxima
 	auto def_to_calculate = DefinitionUtils::makeDefinitionCalculable(approxdef->approximatingDefinition(),approxdef_structure);
 
 	auto defCalculatedResult = CalculateDefinitions::doCalculateDefinition(
-			def_to_calculate, approxdef_structure, false, approxdef->getSymbolsToQuery());
+			def_to_calculate, approxdef_structure, approxdef->getSymbolsToQuery(), false);
         
 	Assert(defCalculatedResult._hasModel);
 	if( approxdef->isConsistent(defCalculatedResult._calculated_model)) {
