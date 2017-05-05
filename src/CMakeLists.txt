@@ -30,7 +30,7 @@ include_directories (
 	"${PROJECT_SOURCE_DIR}/lib/interactiveShell/"
 	"${PROJECT_SOURCE_DIR}/lib/tinythread/"
 )
-addToCXX("-Wall -pedantic -Wno-overloaded-virtual -std=c++0x")
+addToCXX("-Wall -pedantic -Wno-overloaded-virtual -Werror=conversion-null -std=c++0x")
 if(CMAKE_COMPILER_IS_GNUCXX)
 	addToCXX("-Wextra")
 endif()
