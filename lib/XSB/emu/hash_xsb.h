@@ -96,7 +96,8 @@ extern Hash_Table string_table;
 
 UInteger next_prime(UInteger some_integer);
 //size_t  next_prime(UInteger some_integer);
-UInteger hash(const char *atom_name, byte arity, UInteger hash_table_size);
+//UInteger hash(const char *atom_name, byte arity, UInteger hash_table_size);
+UInteger hash(const char *atom_name, int arity, UInteger hash_table_size);
 void  expand_symbol_table();
 void  expand_string_table();
 void  symbol_table_stats();

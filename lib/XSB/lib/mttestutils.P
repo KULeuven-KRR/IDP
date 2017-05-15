@@ -2,7 +2,7 @@
 
 #include "thread_defs_xsb.h"
 
-:- export random_pause/1, mt_random/3, mt_random/1, mt_srand/0, for/3.
+:- export random_pause/1, /*mt_random/3,*/ mt_random/1, mt_srand/0, for/3.
 
 :- import mt_random_request/3 from machine.
 

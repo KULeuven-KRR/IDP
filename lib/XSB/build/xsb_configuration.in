@@ -5,7 +5,7 @@
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1998
+** Copyright (C) The Research Foundation of SUNY, 1998-2016
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -21,7 +21,6 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: xsb_configuration.in,v 1.32 2011-08-05 19:39:54 kifer Exp $
 ** 
 */
 
@@ -197,4 +196,3 @@ xsb_configuration(user_config_libdir, UserConfigLibdir) :-
      fmt_write_string(UserConfigLibdir,
 		      '%s%s.xsb%sconfig%s%s',
 		      f(UserHome,Slash,Slash,Slash,Config)).
-

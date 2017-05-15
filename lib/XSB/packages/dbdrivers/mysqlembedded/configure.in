@@ -132,7 +132,7 @@ fi
 
 if test "$mysqlembedded_error" = "yes"; then
 echo ""
-AC_MSG_WARN([ ****Your system is missing mysql.h or mysql_com.h, which are required for MySQL Embedded Server support
+AC_MSG_WARN([ ****Your system is missing mysqld or mysql.h, which are required for MySQL Embedded Server support
 ****MySQL Embedded Server driver will be disabled])
 echo ""
 

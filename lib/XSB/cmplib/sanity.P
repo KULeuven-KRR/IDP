@@ -24,7 +24,7 @@
 
 
 
-dump_module(SpecFile, module(SymTab,_DC,CL,QR)) :-
+dump_module(SpecFile, module(SymTab,_DC,CL,QR,_Pars)) :-
 	open(SpecFile,write,SStr),
 	write_envs(SStr,SymTab), write_queries(SStr,QR), write_preds(SStr,CL),
 	close(SStr).

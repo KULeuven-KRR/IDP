@@ -25,6 +25,10 @@
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
+#ifdef WIN_NT
+#include <windows.h>
+#include <io.h>
+#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -199,7 +203,7 @@ DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, size_t B
   }
   */
 
-  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
+  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", 2, 
 					pair_psc(insert_module(0,"standard")), 
 					&isnew));
   hreg_start = hreg;
@@ -299,7 +303,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 	    ctrace_ctr++);
   }
 
-  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
+  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", 2, 
 					pair_psc(insert_module(0,"standard")), 
 					&isnew));
   hreg_start = hreg;
@@ -1421,10 +1425,14 @@ DllExport void call_conv error_xsb (char *description)
 DllExport void call_conv xsb_log(char *description, ...)
 {
   va_list args;
+  char filenamestr[50];
 
   if (flags[LOG_ALL_FILES_USED]) {
     if (!logfile_opened) {
-      logfile = fopen("XSB_LOGFILE.txt","w");
+      if (flags[LOG_ALL_FILES_USED] > 1) {
+	sprintf(filenamestr,"XSB_LOGFILE_%d.txt",(int)(flags[LOG_ALL_FILES_USED]));
+	logfile = fopen(filenamestr,"w");
+      } else logfile = fopen("XSB_LOGFILE.txt","w");
       logfile_opened = 1;
     }
     va_start(args, description);
@@ -1624,6 +1632,42 @@ inline void  CHECK_TRIE_ROOT(CTXTdeclc CPtr CurBreg) {
 // TLS: global to handle memory errors w.o. worrying abt stack space.
 char abort_file_gl[2*MAXPATHLEN];
 
+// New version.
+// old version - below. Uses tempname (unsafe) and annoyingly pollutes the
+// XSB/etc directory.
+void print_incomplete_tables_on_abort(CTXTdecl) {
+  FILE * abort_stream;
+  char * template = "scc_dump_XXXXXX";
+  char tempname[30];  // 30 > size of the above template
+
+  strcpy(tempname,template);  // because mktemp requires non-constant string
+
+  if (openreg < COMPLSTACKBOTTOM && flags[EXCEPTION_PRE_ACTION]  ) {
+#ifdef WIN_NT
+    errno_t result = _mktemp_s(tempname,sizeof(tempname));
+    if (result == 0) {
+      GetTempPath(2*MAXPATHLEN,abort_file_gl);
+      strcat(abort_file_gl,tempname);
+      abort_stream = fopen(abort_file_gl,"w");
+    } else
+      abort_stream = NULL;
+#else
+    //strcpy(abort_file_gl,"");
+    strcpy(abort_file_gl,"/tmp/");
+    strcat(abort_file_gl,tempname);
+    // in unix, this creates a temp file name and then opens it
+    abort_stream = fdopen(mkstemp(abort_file_gl),"w");
+#endif
+    if (abort_stream != NULL) {
+      print_completion_stack(CTXTc abort_stream);
+      fflush(abort_stream);
+      fclose(abort_stream);
+    } else 
+      xsb_warn(CTXTc "[table dump]: cannot create the dump file, %s", abort_file_gl);
+  }
+}
+
+/*
 void print_incomplete_tables_on_abort(CTXTdecl) {
   FILE * abort_stream;
   char etcdir[MAXPATHLEN];
@@ -1641,6 +1685,7 @@ void print_incomplete_tables_on_abort(CTXTdecl) {
     fclose(abort_stream);
   }
 }
+*/
 
 int unwind_stack(CTXTdecl)
 {

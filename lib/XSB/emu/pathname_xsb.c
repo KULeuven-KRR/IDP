@@ -75,11 +75,13 @@ void fix_cygwin_pathname(char *);
 xsbBool is_absolute_filename(char *filename) {
 
 #if defined(WIN_NT) 
-  /*  If the file name begins with a "\" or with an "X:", where X is some
-   *  character, then the file name is absolute.
-   *  We also assume if it starts with a // or /cygdrive/, it's absolute */
+  // THE WINDOWS BRANCH NO LONGER USED!!
+  /*  If the file name begins with a "\" or with an "X:\", where X is some
+   *  letter, then the file name is absolute.
+   *  We also assume if it starts with a / or /cygdrive/, it's absolute */
   if ( (filename[0] == SLASH) || 
-       (isalpha(filename[0]) && filename[1] == ':') ||
+       (isalpha(filename[0]) && filename[1] == ':' && filename[2] == SLASH) ||
+       (isalpha(filename[0]) && filename[1] == ':' && filename[2] == '/') ||
        (filename[0] == '/')
        )
     return TRUE;
@@ -127,7 +129,17 @@ static void normalize_file_slashes(char *path) {
 char *tilde_expand_filename_norectify(char *filename, char *expanded) {
   
 #if defined(WIN_NT)
-  strcpy(expanded, filename);
+  // THE WINDOZE BRANCH IS NO LONGER USED
+  char cwd[MAXPATHLEN], *dummy = getcwd(cwd,MAXPATHLEN-1);
+
+  if (filename[0] == '\\' || filename[0] == '/') {
+    // if filename is absolute, but has no letter drive - add it
+    expanded[0] = cwd[0];
+    expanded[1] = cwd[1];
+    strcpy(expanded+2,filename);
+  } else
+    strcpy(expanded, filename);
+
   transform_cygwin_pathname(expanded);
   normalize_file_slashes(expanded);
   return expanded;
@@ -188,7 +200,11 @@ char *tilde_expand_filename(char *filename) {
   char aux_filename[MAXPATHLEN];
   char absolute_filename[MAXPATHLEN]; /* abs filename composed here */
 
+#ifdef WIN_NT
+  strcpy(aux_filename,filename);
+#else
   tilde_expand_filename_norectify(filename, aux_filename);
+#endif
   return string_find(rectify_pathname(aux_filename, absolute_filename),1);
 }
 
@@ -198,27 +214,31 @@ char *tilde_expand_filename(char *filename) {
  *  This is called from cinterf and may be called before XSB is initialized,
  *  so to make thread-safe, malloc space to return value (leaky)
  */
-
-char *expand_filename(char *filename) {
-  char aux_filename[MAXPATHLEN],
-   aux_filename2[MAXPATHLEN];
-  char *absolute_filename = mem_alloc(MAXPATHLEN,OTHER_SPACE); // since xsb may not be initialized
+char *expand_filename(char *filename)
+{
+#ifndef WIN_NT
+  char aux_filename[MAXPATHLEN], aux_filename2[MAXPATHLEN];
+#endif
+  // since xsb may not be initialized
+  char *absolute_filename = mem_alloc(MAXPATHLEN,OTHER_SPACE);
   char *dummy; /* to squash warnings */
 
+#ifdef WIN_NT
+    dummy = _fullpath(absolute_filename,filename,MAXPATHLEN);
+    return absolute_filename;
+#else
   if (is_absolute_filename(filename)) {
     return rectify_pathname(filename, absolute_filename);
-#ifndef WIN_NT
   } else if (filename[0] == '~') {
     tilde_expand_filename_norectify(filename, aux_filename);
     return rectify_pathname(aux_filename, absolute_filename);
-#endif
   } else {
     dummy = getcwd(aux_filename2, MAXPATHLEN-1);
-    snprintf(aux_filename,MAXPATHLEN, "%s%c%s", aux_filename2,
-	    SLASH, filename);
+    snprintf(aux_filename,MAXPATHLEN, "%s%c%s", aux_filename2, SLASH, filename);
     return rectify_pathname(aux_filename, absolute_filename);
   }
   SQUASH_LINUX_COMPILER_WARN(dummy) ; 
+#endif
 }
 
 /* strip names from the back of path 
@@ -236,7 +256,7 @@ char *expand_filename(char *filename) {
    This function copies the result into a large buffer, so we can add more
    stuff to it. These buffers stay forever, but we call this func only a couple
    of times, so it's ok. */
-DllExport char * call_conv strip_names_from_path(char* path, int how_many)
+DllExport char *call_conv strip_names_from_path(char* path, int how_many)
 {
 	int i, abort_flag=FALSE;
 	char *cutoff_ptr;
@@ -645,5 +665,56 @@ xsbBool almost_search_module(CTXTdeclc char *filename)
   }
   return TRUE;
 }
+
+
+/*
+  Reads a symbolic link and returns the real path.
+  Identiity on windows.
+  Probably not very useful - see file_realpath() below, which does proper
+  conversion of all symbolic parts of any file that contains symlinks inside.
+*/
+char *file_readlink(char *filename)
+{
+  char *buf =  mem_alloc(MAXPATHLEN,OTHER_SPACE);
+  memset(buf, 0, MAXPATHLEN);
+#ifdef WIN_NT
+  strncpy(buf,filename,MAXPATHLEN);
+  return buf;
+#else
+  ssize_t retcode = readlink(filename,buf,MAXPATHLEN);
+  if (retcode >= 0)
+    return buf;
+  else {
+    mem_dealloc(buf,MAXPATHLEN,OTHER_SPACE); // to avoid memory leak
+    return NULL;
+  }
+#endif
+}
+
+
+/*
+  Used to standardize path names by converting symbolic links
+  into non-symlink path names.
+  On Windows -- for now -- just copies to output 
+  If a file is not a symlink, returns NULL, but in file_io.P we then
+  make it into identity for non-symlink.
+*/
+char *file_realpath(char *filename)
+{
+  char *buf =  mem_alloc(MAXPATHLEN,OTHER_SPACE);
+#ifdef WIN_NT
+  strncpy(buf,filename,MAXPATHLEN);
+  return buf;
+#else
+  char *result = realpath(filename,buf);
+  if (result != NULL)
+    return buf;
+  else {
+    mem_dealloc(buf,MAXPATHLEN,OTHER_SPACE); // to avoid memory leak
+    return NULL;
+  }
+#endif
+}
+
 
 /*=========================================================================*/

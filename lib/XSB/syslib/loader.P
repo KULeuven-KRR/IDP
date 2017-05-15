@@ -87,11 +87,59 @@ local_newerthan(File1,File2) :-
 	sys_system(STAT_FILE_TIME,File2,Time2,_,_,_,_),
 	Time1 @>= Time2.
 
-sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_) :-
-	sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_).
+sys_system(Code,Arg1,Arg2, _,_,_,_) :-
+	sys_system(Code,Arg1,Arg2, _,_,_,_).
 
 local_append([],L,L).
 local_append([X|L1],L2,[X|L3]) :- local_append(L1,L2,L3).
+
+local_member(X,[X|_]).
+local_member(X,[_|L]) :- local_member(X,L).
+
+%% PModName is full module parameterized name as an atom.  e.g., could be
+%%  'mymod(amod,bmod)' or
+%%  'usermod(filename)' or
+%%  'usermod(load_cmd(filename,...))' or
+%%  'usermod(module:load_cmd(filename,...)'
+unstructure_modname(PModName,ModName,ModPars) :-
+	%%(atom(PModName) -> local_fmt_write(STDMSG,"unstructure string: %s\n",arg(PModName)) ; true),
+	(possibly_structured(PModName) % check so early loads dont need to load string.
+	 ->	(atom_to_term(PModName,ModTerm)
+		 ->	(ModTerm = usermod(FileName)
+			 ->	(compound(FileName)
+				 ->	(FileName = _:Call
+					 ->	Call =.. [_,ModName|_]
+					 ;	FileName =.. [_,ModName|_]
+					)
+				 ;	ModName = FileName
+				),
+				ModPars = error % unused
+			 ;	ModTerm =.. [ModName|StrModPars],
+				atomize_pars(StrModPars,AtomModPars),
+				ModPars =.. [ModName|AtomModPars]
+			)
+		 ;	ModName = PModName,
+			ModPars = PModName
+		)
+	 ;	ModName = PModName,
+		ModPars = PModName
+	).
+
+possibly_structured(Atom) :-
+	atom(Atom),
+	(str_match(')',Atom,forward,_,_)
+	 ->	true
+	 ;	str_match('''',Atom,forward,_,_)
+	 ->	true
+	).
+
+atomize_pars([],[]).
+atomize_pars([Term|Terms],[Atom|Atoms]) :-
+	(atom(Term)
+	 ->	Atom = Term
+	 ;	term_to_atom(Term,Atom,[quoted(true)])
+	),
+	atomize_pars(Terms,Atoms).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -306,9 +354,6 @@ load_pred0(PSC) :-
 	stat_set_flag(HITRACE, Hitrace).  % resume hitrace status if successful
 
 load_pred1(PSC) :-
-%%	'_$savecp'(B),
-%%	psc_name(PSC, Name),
-%%	psc_arity(PSC, Arity),
 	psc_env(PSC, Env), 
 	( Env =:= T_UNLOADED
 	->  % is "imported"
@@ -316,26 +361,31 @@ load_pred1(PSC) :-
 	    psc_name(ModPSC, ModName),
 	    psc_type(ModPSC, ModType), 
 	    (ModType =:= T_MODU
-	     ->	    true   % module loaded
-	     ;	    load(ModName),	% might abort here 
-	     %%% TES: adding the assert so that ensure_loaded will recognize when 
-	     %%% a file was loaded lazily.  This would only happen if an unloaded predicate were 
-	     %%% called via explict module qualification -- e.g., via bar:pred(A,B)
-	            search_module(ModName, _Dir, _Mod, _SExt, _Base, Obj),
-		    expand_filename(Obj,ExpObj),
-		    assert(consult_file_loaded(ExpObj))
+            ->	(ModName == usermod, psc_data(PSC,FileName),atom(FileName)
+                ->	    load(FileName)
+                ;	    true
+                )
+            ;	load(ModName), % might abort here 
+                %% TES: adding the record_file_consultloaded so that
+                %% ensure_loaded will recognize when 
+                %% a file was loaded lazily.  This would only happen if
+                %% an unloaded predicate were called via explict module
+                %% qualification -- e.g., via bar:pred(A,B)
+                unstructure_modname(ModName,HModName,_ModPars),
+                search_module(HModName, _Dir, _Mod, _SExt, _Base, Obj),
+                %% record_file_consultloaded also expands file names
+                record_file_consultloaded(Obj)
 	    ),
 	    (	psc_type(PSC, NType),
 		(   NType =:= T_PRED; NType =:= T_FORN; NType =:= T_DYNA ), 
-		%% module loaded, and pred/foreign-pred is there
-		%% '_$cutto'(B)
 		!
 		;
-		conset('_$load_pred_action',1)
+	     %%psc_type(PSC,NType),local_fmt_write(STDMSG, "error psc: %d, type: %d, modname: %S\n", arg(PSC,NType,ModName)),
+	     conset('_$load_pred_action',1)
 %	        handle_undefined_pred(ModName,Name,Arity)
 	    )
-	;
-    	    conset('_$load_pred_action',1)
+	;	
+	 conset('_$load_pred_action',1)
 %	    handle_undefined_pred('usermod',Name,Arity)
 	).
 
@@ -349,11 +399,16 @@ wcs_undefined(Term):- not_exists(wcs_undefined(Term)).
 handle_undefined_pred(PSC,Term) :-
         psc_name(PSC,Name),psc_arity(PSC,Arity),
 	psc_env(PSC, Env), 
-	( Env =:= T_UNLOADED
-	->  % is "imported"
-	    psc_mod(PSC, ModPSC),
-	    psc_name(ModPSC, ModName)
-	  ; ModName = usermod ),
+	(Env =:= T_UNLOADED
+	 ->	% is "imported"
+		psc_mod(PSC, ModPSC),
+		psc_name(ModPSC, ModName)
+	 ;	psc_data(PSC,ModPscOrFile),
+		(ModPscOrFile =:= 0
+		 ->	ModName = usermod
+		 ;	psc_name(ModPscOrFile,ModName)
+		)
+	),
 	current_prolog_flag(unknown,Action),
 	(Action == fail 
 	 ->	fail
@@ -420,94 +475,100 @@ not_handling_undef_pred :- conget('_$_$_undefhook',0).
  *  Loads and executes the directives of a module.  The file(s) containing
  *  the module is constructed using search_file/3, below.
  */
-load(ModName) :-
+load(PModName) :-
 	stat_flag(DEBUG_ON, Debug_on),
-	(Debug_on =:= 1
-	 ->	local_fmt_write(STDMSG, "[ load module %s ]\n", arg(ModName))
+	(Debug_on =:= 1, atom(PModName)
+	 ->	local_fmt_write(STDMSG, "[ load module %S ]\n", arg(PModName))
 	 ;	true
 	),
-	(search_file(ModName, [FileName_O,FileName_P,FileName_PL,FileName_PROLOG,FileName_H,FileName_C,FileName_CPP],
-		     [XSB_OBJ_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,'.pl','.prolog',XSB_HDR_EXTENSION_ATOM,'.c','.cpp']),
-	 (local_file_exists(FileName_O),ObjExists=1 ; local_file_exists(FileName_P),ObjExists=0,Type='P' ;
-	  local_file_exists(FileName_PL),ObjExists=0,Type=pl ;
-	  local_file_exists(FileName_PROLOG),ObjExists=0,Type=prolog ;
-	  local_file_exists(FileName_C),ObjExists=0,Type=c ; local_file_exists(FileName_CPP),ObjExists=0,Type=cpp)
-	 ->	(ObjExists =:= 1
-		 ->	(system_mod(FileName_O)	% DONT CHECK TIME but load byte-code regardless if in XSB system 
-			 ->	load_object_file(FileName_O) % (allows self recompile, could just exempt cmplib and syslib)
-			 ;	check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_PROLOG,FileName_H,FileName_C,FileName_CPP,ModName)
-			)
-		 ;	(Type=='P'
-			 ->	compile_and_load(FileName_P,ModName) % no byte-code file, compile sourcefile
-			 ; Type==pl
-			 ->	compile_and_load(FileName_PL,ModName) % no byte-code file, compile sourcefile
-			 ; Type==prolog
-			 ->	compile_and_load(FileName_PROLOG,ModName) % no byte-code file, compile sourcefile
-			 ; Type == c
-			 ->	compile_and_load(FileName_C,ModName) % no byte-code, compile C sourcefile
-			 ; Type == cpp
-			 ->	compile_and_load(FileName_CPP,ModName) % no byte-code, compile C++ sourcefile
-			)
-		)
+	unstructure_modname(PModName,ModName,ModPars),
+
+	(search_file(ModName, [FileName_O,FileName_H|SourceFileNames],
+		     [XSB_OBJ_EXTENSION_ATOM,XSB_HDR_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,'.pl','.prolog','.c',
+		      '.cpp']),
+	 (local_file_exists(FileName_O),
+	  %% byte-code file exists
+	  (system_mod(FileName_O)	% Always load byte-code file from system
+	   ->	  load_object_file(FileName_O,ModPars) % (allows self recompile, could just exempt cmplib and syslib)
+	   ;	  check_times_and_load(FileName_O,FileName_H,SourceFileNames,PModName,ModPars)
+	  )
+	  ;
+	  %% no byte-code file, compile sourcefile
+	  local_member(FileName_X,SourceFileNames),
+	  local_file_exists(FileName_X),
+	  compile_and_load(FileName_X,PModName)
+	 )
+	 ->	true
+	 ; (PModName = usermod(_),
+	    search_file(ModName, [FileName], ['']),
+	    local_is_directory(FileName)
+	   )
+	 ->	compile_and_load(FileName,PModName)
 	 ;	tilde_expand_filename(ModName,ExpandedModName), % file not found
 		existence_error(module,ExpandedModName,load,1)
 	).
 
-check_times_and_load(FileName_O,FileName_P,FileName_PL,FileName_PROLOG,FileName_H,FileName_C,FileName_CPP,ModName) :-
-	(local_file_exists(FileName_P)
-	 ->	(local_newerthan(FileName_P,FileName_O) % check if source is newer
-		 ->	compile_and_load(FileName_P,ModName)
-		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
-		 ->	compile_and_load(FileName_P,ModName)
-		 ;	load_object_file(FileName_O) % load byte-code, it's newest
+check_times_and_load(FileName_O,FileName_H,SourceFileNames,PModName,ModPars) :-
+	(local_member(FileName_X,SourceFileNames),
+	 local_file_exists(FileName_X)
+	 ->	(local_newerthan(FileName_X,FileName_O) % check if source is newer
+		 ->	compile_and_load(FileName_X,PModName)
+		 ;	(local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
+		 ->	compile_and_load(FileName_X,PModName)
+		 ;	load_object_file(FileName_O,ModPars) % load byte-code, it's newest
 		)
-	 ; local_file_exists(FileName_PL)
-	 ->	(local_newerthan(FileName_PL,FileName_O) % check if source is newer
-		 ->	compile_and_load(FileName_PL,ModName)
-		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
-		 ->	compile_and_load(FileName_P,ModName)
-		 ;	load_object_file(FileName_O) % load byte-code, it's newest
-		)
-	 ; local_file_exists(FileName_PROLOG)
-	 ->	(local_newerthan(FileName_PROLOG,FileName_O) % check if source is newer
-		 ->	compile_and_load(FileName_PROLOG,ModName)
-		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
-		 ->	compile_and_load(FileName_PROLOG,ModName)
-		 ;	load_object_file(FileName_O) % load byte-code, it's newest
-		)
-	 ; local_file_exists(FileName_C)
-	 ->	(local_newerthan(FileName_C,FileName_O) % check if source is newer
-		 ->	compile_and_load(FileName_C,ModName)
-		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
-		 ->	compile_and_load(FileName_C,ModName)
-		 ;	load_object_file(FileName_O) % load byte-code, it's newest
-		)
-	 ; local_file_exists(FileName_CPP)
-	 ->	(local_newerthan(FileName_CPP,FileName_O) % check if source is newer
-		 ->	compile_and_load(FileName_CPP,ModName)
-		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
-		 ->	compile_and_load(FileName_CPP,ModName)
-		 ;	load_object_file(FileName_O) % load byte-code, it's newest
-		)
-	 ;	load_object_file(FileName_O) % load byte-code, no source-file
+	 ;	load_object_file(FileName_O,ModPars) % load byte-code, no source-file
 	).
 
-% actually load the byte-code file
 load_object_file(FileName_O) :-
-	code_load(FileName_O, Init, 0), % use the C loader
+	load_object_file(FileName_O,dummypars).
+
+% actually load the byte-code file
+load_object_file(FileName_O,ModPars) :-
+	%local_fmt_write(STDMSG, "Loading: %S\n", arg(FileName_O)),
+	code_load(FileName_O, Init, 0, ModPars), % use the C loader
 	(Init =\= 0		% load succeeded
 	 ->	(Init =\= 4 % prolog byte-code succeeded
-		 ->	ll_code_call(Init, true, 2), % call '_$main'
+		 ->	(FileName_O = [Dir,_,_]
+			 ->	local_cwd(CurDir),
+				local_cd(Dir),
+				%local_fmt_write(STDMSG, "calling main for: %S\n", arg(FileName_O)),
+				(system_mod(FileName_O) % cant use catch during system startup
+				 ->	ll_code_call(Init, true, 2) % '_$main'
+				 ;	catch(
+					      ll_code_call(Init, true, 2), % '_$main'
+					      Ball,
+					      local_cd_throw(CurDir,Ball)
+					     )
+				),
+				%local_fmt_write(STDMSG, "returned from main for: %S\n", arg(FileName_O)),
+				local_cd(CurDir)
+			 ;	ll_code_call(Init, true, 2) % call '_$main'
+			),
 			unload_seg(Init) % delete code for '_$main'
 		 ;	true	% load foreign obj code succeeded
 		)
 	).
 
-% compile the source file, and then reload the module
-compile_and_load(FileNameList,ModName) :-
-	str_cat_list(FileNameList,FileName_P),
-	compile(FileName_P),
-	load(ModName).
+local_cwd(Name) :- local_sys_syscall(SYS_cwd, Res, Name, _), Res =:= 0.
+
+local_cd(Dir) :- local_sys_syscall(SYS_chdir, Res, Dir, _), Res =:= 0.
+
+local_cd_throw(Dir,Ball) :-
+	local_fmt_write(STDMSG, "Caught: %s, %S\n", arg(Dir,Ball)),
+	local_cd(Dir),
+	throw(Ball).
+
+local_is_directory(File) :- sys_system(IS_DIRECTORY, File,_,_,_,_,_).
+
+%% compile the source file, and then reload the module
+compile_and_load(FileNameList,PModName) :-
+	(atom_to_term(PModName,usermod(LoadFile)), compound(LoadFile)
+	 ->	call_c(LoadFile)
+	 ;	str_cat_list(FileNameList,FileName_P),
+		compile(FileName_P),
+		load(PModName)
+	).
 
 str_cat_list([Seg],Seg) :- !.
 str_cat_list([Seg|Segs],AllSegs) :-
@@ -526,6 +587,8 @@ ll_code_call(A,B,C) :- code_call(A,B,C).
  *  list of absolute filename (STRING) each with Extension from Extensions
  *  (e.g., [XSB_SRC_EXTENSION_ATOM, XSB_OBJ_EXTENSION_ATOM] added to it.
  *  The extension should NOT already be a part of the incoming ModName.
+ *  For relative names, succeeds once for each directory in library_directory
+ *  or in system directories.
  */
 
 search_file(ModName0, AbsFileNames, Extensions) :-

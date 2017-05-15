@@ -1,0 +1,30 @@
+view(dfile,file,'./dfile.P','',
+     [],[],
+     nocmd
+    ).
+
+view(efile,file,'./efile.P','',
+     [],[],
+     nocmd
+    ).
+
+view(aview,file,'./aview.P','./stdout_aview.txt',
+     [bview,fview],[],
+     'xsb -e "load_dyn(''$INP1$''),load_dyn(''$INP2$''),tell(''$OUT$''),(do_all b(X,Y),f(Y),writeq(a(X,Y)),writeln(.)),told,halt."'
+    ).
+
+view(bview,file,'./bview.P','./stdout_bview.txt',
+     [cview,efile],[],
+     'xsb -e "load_dyn(''$INP1$''),load_dyn(''$INP2$''),tell(''$OUT$''),(do_all c(X,Z),e(Z,Y),writeq(b(X,Y)),writeln(.)),told,halt."'
+    ).
+
+view(cview,file,'./cview.P','./stdout_cview.txt',
+     [dfile],[],
+     'xsb -e "load_dyn(''$INP1$''),tell(''$OUT$''),(do_all d(X,Y),Y < 10,writeq(c(X,Y)),writeln(.)),told,halt."'
+    ).
+
+view(fview,file,'./fview.P','./stdout_fview.txt',
+     [dfile],[],
+     'xsb -e "load_dyn(''$INP1$''),tell(''$OUT$''),sleep(3),(do_all d(X,_),writeq(f(X)),writeln(.)),told,halt."'
+    ).
+

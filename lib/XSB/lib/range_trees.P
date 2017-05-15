@@ -1,0 +1,406 @@
+/* XSB predicates to support indexing that provide efficient answers
+to range queries.  They use a balanced sort tree, similar to a B-Tree
+in that all leaf nodes are equidistant from the root, and nodes are at
+least half full. (Deletion of key-value pairs is supported, but trees
+are not rebalanced on delete, so significant use of delete can
+seriously degrade performance.)  Range trees are stored in dynamic
+predicates in the Prolog database and are identified by user-provided
+handles.
+
+The user defines a predicate range_tree_compare/2 that defines the
+comparison operation (=<) that is used for the range ordering.  If no
+such predicate is defined in usermod, Prolog's @=< is used.  If the
+user defines range_tree_compare/2, she must also define facts
+range_tree_min_value/1 and range_tree_max_value/1, giving minimum and
+maximum values that can ever appear in a range.
+
+The basic routines are:
+
+init_range_tree: RT -> true
+get_from_range_tree: RT X Keys X Keys -> Keys X Values
+add_to_range_tree: RT X Keys X Values -> true
+delete_from_range_tree: RT X Keys -> true
+delete_range_tree: RT -> true
+delete_all_range_trees: []
+print_rt: RT -> true
+
+They are used to implement a primitive indexing for dynamic predicates
+that supports range querying.  The predicates to support this are:
+
+index_rt: PredSpec X ArgNos -> true
+assert_rt: Atom -> true
+*/
+
+:- export init_range_tree/1, get_from_range_tree/5, add_to_range_tree/3,
+	delete_from_range_tree/2, delete_range_tree/1,
+	delete_all_range_trees/0, print_rt/1.
+:- export index_rt/2, assert_rt/1.
+
+:- import length/2, member/2 from basics.
+:- import conset/2, coninc/2 from gensym.
+:- import predicate_defined/1 from assert.
+
+%rt(TreeId,NodeID,Leaf,LO,HI,NodePtr): Leaf = 0 if int, 1 if leaf
+%rtval(TreeId,NodeID,Key,Val).
+:- dynamic rt/6, rtval/4.
+:- index(rt/6,trie).
+:- index(rtval/4,trie).
+
+max_node_size(7).  % seems best size, for trie
+
+?- conset('_rt_ptr',5).
+mygensym(Num) :- coninc('_rt_ptr',Num).
+
+:- import range_tree_compare/2, range_tree_min_value/1, range_tree_max_value/1 from usermod.
+
+define_range_tree_compare_if_necessary :-
+	(predicate_defined(range_tree_compare(_,_))
+	 ->	true
+	 ;	assert((range_tree_compare(X,Y) :- X @=< Y)),
+		assert(range_tree_min_value(-1.0e60)),
+		assert(range_tree_max_value(zzzz(zzzz,zzzz,zzzz,zzzz)))
+	).
+
+?- define_range_tree_compare_if_necessary.
+
+
+:- comment(init_range_tree/1,"init_range_tree(+TreeId): to
+initialize a named tree which will provide access to key-value pairs
+through range queries on the keys.  TreeId is an arbitrary
+user-supplied term that the user will use to identify the particular
+tree.").
+
+init_range_tree(TreeId) :-
+	retractall(rt(TreeId,_,_,_,_,_)),
+	retractall(rtval(TreeId,_,_,_)),
+	range_tree_min_value(MinValue), %get from user
+	range_tree_max_value(MaxValue), %get from user
+	assert(rt(TreeId,0,1,MinValue,MaxValue,[1])).
+
+:- comment(get_from_range_tree/5,
+"get_from_range_tree(+TreeId,+Lo,+Hi,?Key,-Val): get a range of Keys
+(and their associated values) between Lo and Hi (inclusive), using the
+ordering defined by range_tree_compare/2.  TreeId is a user-provided
+tree identifier.  Key is the value of a key in the tree in the Lo-Hi
+range, and Val is its associated value.").
+
+get_from_range_tree(TreeId,Lo0,Hi0,Key,Val) :-
+	range_tree_compare(Lo0,Hi0),
+	(ground(Key)
+	 ->	range_tree_compare(Lo0,Key),
+		range_tree_compare(Key,Hi0),
+		Lo = Key, Hi = Key
+	 ;	Lo = Lo0, Hi = Hi0
+	),
+	get_from_range_tree_vals(TreeId,0,Lo,Hi,Key,Vals),
+	%%writeln(userout,got_from_range_tree(Vals,Key,Lo,Hi)),
+	member(Val,Vals).
+
+get_from_range_tree_vals(TreeId,Id,Lo,Hi,Key,Vals) :-
+	rt(TreeId,Id,Leaf,LO,HI,Ptr),
+	%writeln(ret_rt(TreeId,Leaf,Id,LO,HI,Ptr)),
+	range_tree_compare(LO,Hi), range_tree_compare(Lo,HI),
+	(range_tree_compare(LO,Lo), range_tree_compare(Hi,HI), Hi \== HI
+	 ->	!		% only from this one node
+	 ;	true
+	),
+	(Leaf =:= 0
+	 ->	get_from_range_tree_vals(TreeId,Ptr,Lo,Hi,Key,Vals)
+	 ;	rtval(TreeId,Ptr,Key,Vals),
+		%%writeln(ret_rtval(TreeId,Ptr,Key,Vals)),
+		range_tree_compare(Lo,Key),
+		range_tree_compare(Key,Hi)
+	).
+
+:- comment(add_to_range_tree/3,"add_to_range_tree(+TreeId,+Key,+Val)
+adds a key-value pair to a range tree.").
+
+add_to_range_tree(TreeId,Key,Val) :-
+	add_to_range_tree(TreeId,0,[],Key,Val).
+
+add_to_range_tree(TreeId,Id,Path,Key,Val) :-
+	rt(TreeId,Id,Leaf,LO,HI,Ptr),
+	range_tree_compare(LO,Key),
+	range_tree_compare(Key,HI),
+	Key \== HI,
+	!,
+	(Leaf =:= 0
+	 ->	add_to_range_tree(TreeId,Ptr,[Id|Path],Key,Val)
+	 ;	(rtval(TreeId,Ptr,Key,Vals)
+		 ->	(member(Val,Vals)
+			 ->	true
+			 ;	retractall(rtval(TreeId,Ptr,Key,_)),
+				asserta(rtval(TreeId,Ptr,Key,[Val|Vals]))
+			)
+		 ;	asserta(rtval(TreeId,Ptr,Key,[Val])),  % could delay and avoid having to perhaps change it
+			findall(FKey-FVal,rtval(TreeId,Ptr,FKey,FVal),KVals),
+			length(KVals,NumVals),
+			max_node_size(Max),
+			(NumVals =< Max
+			 ->	true
+			 ;	split_leaves(TreeId,Ptr,KVals,NumVals,LO,Id,Path)
+			)
+		)
+	).
+
+split_leaves(TreeId,Ptr,KeyVals,NumVals,LoKey,ParID,Path) :-
+	sort(KeyVals,SKeyVals),
+	Mid is NumVals // 2,
+	split_n(Mid,SKeyVals,FirstKeyVals,LastKeyVals),
+	(member(K-V,FirstKeyVals), retract(rtval(TreeId,Ptr,K,V)), fail ; true),
+	mygensym(NewPtr),
+	(member(K-V,FirstKeyVals), asserta(rtval(TreeId,NewPtr,K,V)), fail ; true),
+	LastKeyVals = [MidKey-_|_],
+	update_parent(TreeId,LoKey,MidKey,ParID,NewPtr,Path).
+
+update_parent(TreeId,Lo,Mid,ID,NewPtr,Path) :-
+	rt(TreeId,ID,Leaf,OldLo,OldHi,Ptr),
+	range_tree_compare(OldLo,Lo), range_tree_compare(Mid,OldHi),
+	retract(rt(TreeId,ID,Leaf,OldLo,OldHi,Ptr)),
+	!,
+	asserta(rt(TreeId,ID,Leaf,Mid,OldHi,Ptr)),
+	asserta(rt(TreeId,ID,Leaf,Lo,Mid,NewPtr)),
+	findall(p(LO,HI,CPtr),rt(TreeId,ID,_,LO,HI,CPtr),Nodes),
+	length(Nodes,NumVals),
+	max_node_size(Max),
+	(NumVals =< Max
+	 ->	true
+	 ;	split_tree(TreeId,Leaf,ID,Nodes,NumVals,Path)
+	).
+
+split_tree(TreeId,Leaf,ID,Nodes,NumVals,Path) :-
+	sort(Nodes,SNodes),
+	Mid is NumVals // 2,
+	split_n(Mid,SNodes,FirstNodes,LastNodes),
+	(Path == []		% at root
+	 ->	(member(p(L,H,Ptr),SNodes), retract(rt(TreeId,ID,Leaf,L,H,Ptr)), fail ; true),
+		mygensym(NewID1),
+		mygensym(NewID2),
+		(member(p(L,H,Ptr),FirstNodes), asserta(rt(TreeId,NewID1,Leaf,L,H,Ptr)), fail ; true),
+		(member(p(L,H,Ptr),LastNodes), asserta(rt(TreeId,NewID2,Leaf,L,H,Ptr)), fail ; true),
+		FirstNodes = [p(NewLo,_,_)|_],
+		LastNodes = [p(NewMid,_,_)|_],
+		last(LastNodes,p(_,NewHi,_)),
+		asserta(rt(TreeId,0,0,NewLo,NewMid,NewID1)),
+		asserta(rt(TreeId,0,0,NewMid,NewHi,NewID2))
+	 ;	(member(p(L,H,Ptr),FirstNodes), retract(rt(TreeId,ID,Leaf,L,H,Ptr)), fail ; true),
+		mygensym(NewID),
+		(member(p(L,H,Ptr),FirstNodes), asserta(rt(TreeId,NewID,Leaf,L,H,Ptr)), fail ; true),
+		SNodes = [p(LoKey,_,_)|_],
+		LastNodes = [p(MidKey,_,_)|_],
+		Path = [ParID|RestPath],
+		update_parent(TreeId,LoKey,MidKey,ParID,NewID,RestPath)
+	).
+
+split_n(0,R,[],R) :- !.
+split_n(K,[X|L],[X|R],F) :- K1 is K-1, split_n(K1,L,R,F).	
+
+last([N],N) :- !.
+last([_|L],N) :- last(L,N).
+
+:- comment(delete_from_range_tree/2,
+"delete_from_range_tree(+TreeId,+Key) deletes all key-value pairs with
+the given key from the range tree.  It does not re-balance the range
+tree, so after many deletes it may give bad performance.").
+
+delete_from_range_tree(TreeId,Key) :-
+	delete_from_range_tree(TreeId,0,Key).
+
+delete_from_range_tree(TreeId,Id,Key) :-
+	rt(TreeId,Id,Leaf,LO,HI,Ptr),
+	range_tree_compare(LO,Key),
+	range_tree_compare(Key,HI),
+	Key \== HI,
+	(Leaf =:= 0
+	 ->	delete_from_range_tree(TreeId,Ptr,Key)
+	 ;	retractall(rtval(TreeId,Ptr,Key,_))
+	).
+
+:- comment(delete_range_tree/1, "delete_range_tree(+TreeId) deletes
+everything from the named tree (i.e., deletes the tree.").
+
+delete_range_tree(TreeId) :-
+	retractall(rt(TreeId,_,_,_,_,_)),
+	retractall(rtval(TreeId,_,_,_)).
+
+:- comment(delete_all_range_trees/0, "delete_all_range_trees deletes
+all range trees, reinitializing everything.").
+
+delete_all_range_trees :-
+	retractall(rt(_,_,_,_,_,_)),
+	retractall(rtval(_,_,_,_)).
+
+
+
+:- comment(print_rt/1, "print_re(+TreeId) prints out the range tree
+with ID TreeId, in indented format.  Mainly for debugging.").
+
+print_rt(Tree) :- print_rt(Tree,0,0).
+print_rt(Tree,Id,Indent) :-
+	findall(Lo-rt(Tree,Id,Leaf,Lo,Hi,Ptr),rt(Tree,Id,Leaf,Lo,Hi,Ptr),All),
+	All \== [],
+	sort(All,SAll),
+	NewIndent is Indent+2,
+	member(_-rt(Tree,Id,Leaf,Lo,Hi,Ptr),SAll),
+	tab(Indent),
+	write_canonical(Lo),write('-'),write_canonical(Hi),nl,
+	(Leaf =:= 0
+	 ->	print_rt(Tree,Ptr,NewIndent),
+		fail
+	 ;	findall(Key:Val,rtval(Tree,Ptr,Key,Val),KVs),
+		sort(KVs,SKVs),
+		member(Key:Val,SKVs),
+		tab(NewIndent),
+		write_canonical(Key),write(':'),writeln(Val),
+		fail
+	).
+print_rt(_).
+
+:- comment(index_rt/2, "index_rt(+PredSpec,+ArgNos) declares the
+dynamic predicate indicated by PredSpec (Pred/Arity or Pred-Skeleton)
+to be range-indexed on arguments indicated by number in ArgNos, which
+is an integer or a list of integers.").
+
+:- dynamic rt_pred/3.
+
+%% declare a sort-tree index, may have multiple (but only one can be used in a single call)
+index_rt(Pred,ArgNos) :-
+	(Pred = P/A
+	 ->	functor(Skel,P,A)
+	 ;	Skel = Pred
+	),
+	((integer(ArgNos)
+	  ->	 ArgNo = ArgNos
+	  ;	 member(ArgNo,ArgNos)
+	 ),
+	 (rt_pred(Skel,ArgNo,Tree)
+	  ->	 true
+	  ;	 mygensym(Tree),
+		 assert(rt_pred(Skel,ArgNo,Tree))
+	 ),
+	 init_range_tree(Tree),
+	 Skel =.. [P|Args],
+	 delete_ith(ArgNo,Args,NIArgs),
+	 RSkel =.. [P|NIArgs],
+	 (clause(Skel,(arg(ArgNo,_,_),_))
+	  ->	 true
+	  ;	 assert((Skel :- get_rt_spec(Skel,ArgNo,Var,Lo,Hi),!,
+			 get_from_range_tree(Tree,Lo,Hi,Var,RSkel)))
+	 ),
+	 fail
+	 ;
+	 true
+	).
+
+% would like to use one of them if there are no range arguments provided...
+get_rt_spec(Skel,ArgNo,Var,Lo,Hi) :-
+	arg(ArgNo,Skel,Var:[Lo,Hi]),
+	nonvar(Lo).
+
+
+:- comment(assert_rt/1, "assert_rt(+Atom) causes Atom to be asserted
+into the database, so that retrieval can be range indexed as declared.
+The predicate symbol of Atom must have been declared as range indexed
+with an index_rt/2 command.  Calls to the predicate may include
+arguments (those declared as range indexed) of the form: X:[Lo,Hi],
+where X is a variable and Lo and Hi are values.  Such a call will
+return facts from the database with values in this argument between Lo
+and Hi (inclusive) binding X to the database value. ").
+
+assert_rt(Pred) :-
+	(rt_pred(Pred,ArgNo,Tree),
+	 arg(ArgNo,Pred,Key),
+	 Pred =.. [P|Args],
+	 delete_ith(ArgNo,Args,NIArgs),
+	 RSkel =.. [P|NIArgs],
+	 add_to_range_tree(Tree,Key,RSkel),
+	 fail
+	 ;
+	 true
+	).
+
+delete_ith(1,[_|L],L) :- !.
+delete_ith(N,[X|L],[X|R]) :- N1 is N-1, delete_ith(N1,L,R).
+
+end_of_file.
+/**************************testing**********************/
+:- export test/3.
+
+:- import ith/3, for/3 from basics.
+
+%test(1,100000,6).
+test(Tree,Size,K) :-
+	Max is Size*2,
+	init_range_tree(Tree),
+	cputime(T00),
+	gen_rt(Tree,Size,K),
+	cputime(T0),
+	TimeB is T0-T00,
+	writeln(tree_built(TimeB)),
+	ret_rt2(Tree,Size,K),  % each range of 3
+	cputime(T1),
+	Time is T1-T0,
+	writeln(every_item_retrieved(Time)).
+
+gen_rt(Tree,Size,K) :-
+	Max is Size*2,
+	init_range_tree(Tree),
+	Size1 is Size // K,
+	(for(J,1,K),
+	 for(I,0,Size1),
+	 I1 is I*K+J-1,
+	 add_to_range_tree(Tree,I1,I1),
+	 fail
+	 ;	
+	 true
+	).
+
+ret_rt(Tree,Size,K) :-
+	Size1 is Size // K,
+	(for(J,1,K),
+	 for(I,0,Size1),
+	 I1 is I*K+J-1,
+	 (get_from_range_tree(Tree,I1,I1,Key,Val)
+	  ->	 (Key==I1,Val==I1
+		  ->	 true
+		  ;	 writeln(error1(I1))
+		 )
+	  ;	 writeln(error2(I1))
+	 ),
+	 fail
+	 ;	
+	 true
+	).
+	
+ret_rt2(Tree,Size,K) :-
+	Size1 is Size // K,
+	(for(J,1,K),
+	 for(I,0,Size1),
+	 I1 is I*K+J-1,
+	 I11 is I1+1,
+	 I12 is I1+2,
+	 findall(Key-Val,get_from_range_tree(Tree,I1,I12,Key,Val),KeyVals),
+	 sort(KeyVals,SKeyVals),
+	 (SKeyVals == [I1-I1,I11-I11,I12-I12]
+	  ->	 true
+	  ; I1 =:= Size, SKeyVals == [I1-I1,I11-I11]
+	  ->	 true
+	  ; I1 =:= Size+1, SKeyVals == [I1-I1]
+	  ->	 true
+	  ;	 writeln(error1(I1,Size,SKeyVals))
+	 ),
+	 fail
+	 ;	
+	 true
+	).
+	
+:- export test2/0.
+test2 :-
+	init_range_tree(1),
+	(for(J,1,10),
+	 for(I,1,100),
+	 add_to_range_tree(1,I,J),
+	 fail
+	 ;
+	 true
+	).

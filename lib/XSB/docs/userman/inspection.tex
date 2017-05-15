@@ -1,0 +1,1505 @@
+%-----------------------------------------------------------------------------
+
+\section{Inspecting a Tabled Derivation} \label{sec:suspend-analyze}
+
+As described in the previous section, Forest Logging is a powerful
+technique for understanding the operational aspects of a tabled
+derivation, and is based on the idea that a derivation is itself a
+mathematical entity that can be represented and analyzed.  This basis
+allows Forest Logging to support various types of analysis including
+profiling the derivation, and understanding its termination
+properties~\cite{LiaK13,LiaK13a}.  At the same time, Forest Logging
+may not always be convenient to use.  Since it is a trace-based
+analysis a (sometimes very large) trace file must be created and
+loaded before being analyzed.
+
+An alternate approach is to use {\em inspection predicates} -- a term
+that loosely refers to predicates useful for understanding a tabled
+derivation.  Most of these predicates can be used in two ways.  First,
+they can inspect an on-going derivation that has been suspended
+through various means.  Alternately, they may be used to retroatively
+inspect a derivation that has completed.  In this section, we first
+describe two important sets of interactive inspection predicates.
+First we describe the {\tt table\_dump} library which provides a
+flexible approch to inspecting tables
+(Section~\ref{sec:table-dump}).\footnote{Other predicates for table
+  inspection that are generally lower-level are described in
+  Section~\ref{sec:TablingPredicates}.}  Next we discuss a set of
+predicates for inspecting various dependency graphs of a computation
+(Section~\ref{sec:dep-graph}.  We then discuss how {\em tripwires} can
+automatically suspend a derivation for inspection at a point where the
+derivation begins to use too many resources, and so might be
+inefficient (Section~\ref{sec:tripwire}).
+
+\subsection{Inspecting Tables with {\tt table\_dump}} \label{sec:table-dump}
+
+\begin{description}
+\ourrepeatmoditem{table\_dump(+Term,+OptionList)}{table\_dump/2}{dump\_table}
+%
+\ourmoditem{table\_dump(+Stream,\#Term,+OptionList)}{table\_dump/3}{dump\_table}
+%
+{\tt table\_dump/[2,3]} provides an easy method to view subgoals and
+answers that are present in a table.  Given an input {\tt Term}, {\tt
+  table\_dump/[2,3]} provides information about all tabled subgoals
+that are subsumed by {\tt Term}; if {\tt Term} is a variable,
+information is provided about all tables.
+
+The information can be provided at three levels of aggregation, and
+the form of the information is determined by the options in {\tt
+  OptionsList}.
+%
+\begin{itemize}
+\item If the option {\tt summary(true)} is set, the aggregate sum
+  of subgoals and answers that are subsumed by {\tt Term} is
+  collected, along with the aggregate sum of calls {\it to} these
+  subgoals.  If {\tt Term} is a variable this information is broken
+  down by tabled predicates.
+%
+\begin{itemize}
+\item If {\tt details(answers)} is set, a list is collected of every
+  tabled subgoal $S$ such that $S$ is subsumed by {\tt Term} along
+  with the number of answers for each $S$ along with a list of those
+  answers and the truth value of each answer ({\tt t} if true and {\tt
+    u} if undefined).  If {\tt Term} is a variable this information is
+  broken down by tabled predicates.
+%
+\item If {\tt details(subgoals)} is set, a list is collected of all
+  subgoals $S$ such that $S$ is subsumed by {\tt Term} along with the
+  number of answers for each $S$.  However, unlike the action for {\tt
+    details(answers)} the actual list of answers for $S$ is not
+  returned.  If {\tt Term} is a variable this information is broken
+  down by tabled predicates.
+%
+\item If {\tt details(false)} is set, no detail information is
+  provided for the actual subgoals or their answers.
+\end{itemize}
+%
+\item If {\tt OptionsList} contains the option {\tt results(X)} for
+  some variable {\tt X}, {\tt X} will be instantiated upon
+  backtracking to all infomation collected about the tables.
+%
+\item If the option {\tt output(true)} is set, the information is
+  written to {\tt Stream} or to {\tt userout} in Prolog-readable form.
+\end{itemize}
+%
+If not otherwise specified the default options are {\tt
+  summary(true)}, {\tt details(false)}, {\tt output(true)}.
+
+{\bf Example}  Consider the program:
+\begin{verbatim}
+:- table p/2.
+p(1,a).
+p(1,b) :- p(2,b).
+p(2,b) :- p(1,a).
+p(3,X) :- q(X).
+
+:- table q/1.
+q(1).              q(2).
+
+:- table r/1.
+r(a).
+
+:- table s/2.
+s(1,a).            s(2,b).           s(1,a1).            s(2,b1).
+\end{verbatim}
+and suppose the top-level query {\tt ?- p(X,Y)} has been made.  Then
+{\tt table\_dump/2} provides the following information {\bf
+ (reformatted for readability)}:
+%
+{\small
+\begin{verbatim}
+| ?- table_dump(_X,[summary(true)]).
+
+summary = p(A,B) - subgoals(3) - total_times_called(4) - total_answers(7)
+
+X = p(_h243,_h244);
+
+summary = q(A) - subgoals(1) - total_times_called(1) - total_answers(2).
+
+X = q(_h228)
+
+yes
+| ?- table_dump(_X,[details(answers)]).
+
+summary = p(A,B) - subgoals(3) - total_times_called(4) - total_answers(7).
+details = p(A,B) - subgoals(3) - details([
+    p(C,D) - times_called(1) - answers(5) - [p(3,1)-t,p(3,2)-t,p(2,b)-t,
+                                             p(1,b)-t,p(1,a)-t]          - completed,
+    p(1,a) - times_called(2) - answers(1) - [p(1,a)-t]                   - completed,
+    p(2,b) - times_called(1) - answers(1) - [p(2,b)-t]                   - completed]).
+
+X = p(_h232,_h233);
+
+summary = q(A) - subgoals(1) - total_times_called(1) - total_answers(2).
+details = q(A) - subgoals(1) - details([
+     q(B) - times_called(1) - answers(2) - [q(2)-t,q(1)-t] - completed]).
+
+X = q(_h232)
+
+yes
+\end{verbatim}
+}
+
+As the above example shows, each line of the summary has the form:
+
+\begin{tabbing}
+fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+%
+{\em   summary = } \\
+\> {\em Pred/Goal  - subgoals($N_{subgoals}$) - total\_times\_called($N_{called}$) - total\_answers($N_{answers}$)}
+%
+\end{tabbing}
+where 
+\bi
+\item $Pred/Goal$ is either a term indicator, if the {\tt Term}
+  argument of {\tt table\_dump/[2,3]} was a variable (to indicate there
+  should be no filtering of tabled calls); or {\tt Term} itself.
+%
+\item $N_{subgoals}$ are the total number tabled subgoals that are
+  subsumed by $Pred/Goal$ (perhaps including $Pred/Goal$ itself).
+%
+\item $N_{called}$ is the total number of times all subgoals subsumed
+  by $Pred/Goal$ have been called.
+%
+\item $N_{answers}$ is the total number of answers currently derived
+  by all subgoals subsumed by $Pred/Goal$.
+\ei
+
+Each line of details has the form:
+
+\begin{tabbing}
+fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+%
+{\em   Details = } \\
+\> {\em Pred/Goal  - subgoals($N_{subgoals}$) - details(List)}
+%
+\end{tabbing}
+%
+where {\em Pred/Goal} and $N_{subgoals}$ are as above.  If {\tt
+  details(answers)} was an input option
+%
+\begin{tabbing}
+fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+%
+{\em List = }\\
+\>  {\em Subgoal - times\_called($N_{called}$) - answers($N_{answers}$) - List\_of\_Answers - Status}
+%
+\end{tabbing}
+%
+for each $Subgoal$ in the table subsumed by $Pred/Goal$.  $N_{called}$
+and $N_{answers}$ are as above, while {\em List\_of\_Answers} contains
+$A-TV$ for each answer $A$ with truth value $TV$ that is currently
+derived for $Subgoal$.  On the other hand, if {\tt details(subgoals)}
+was an input option
+\begin{tabbing}
+fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+%
+{\em List = }\\
+\>  {\em Subgoal - times\_called($N_{called}$) - answers($N_{answers}$) - Status}
+%
+\end{tabbing}
+%
+where all elements are as before.  Finally $Status$ is
+%
+\bi
+\item {\tt completed} if $Subgoal$ has been completed; and
+%
+\item {\tt scc($N_{SCC}$}) if $Subgoal$ is incomplete.  $N_{SCC}$ is
+  relative: if $N_{SCC}$ is greater than $M_{SCC}$ then $N_{SCC}$ is a
+  descendent of $M_{SCC}$: i.e., subgoals in SCC $M_{SCC}$ depend on
+  subgoals in SCC $N_{SCC}$.  However, these numbers should only be
+  used relatively: at a given state in the computation there may be
+  fewer than $M_{SCC}$ Sccs.\footnote{XSB keeps track of SCCs through
+    an algorithm similar to depth-first search: the numbers associated
+    with subgoals are the depth-first numbers of the minimal
+    back-dependency of a subgoal (cf.~\cite{SaSw98})}
+\ei
+
+
+{\bf Error Cases}
+\bi
+\item {\tt OptionList} is a variable, or contains a variable as an element
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt OptionList} is not a list
+\bi
+\item {\tt type\_error(list,OptionList)}
+\ei
+\item {\tt OptionList} contains an element, {\tt O}, that is not a
+  valid {\tt table\_dump\_option}.
+\bi
+\item {\tt domain\_error(table\_dump\_option,O)}
+\ei
+\ei
+\end{description}
+
+\subsection{Inspection Predicates for Dependency Graphs} \label{sec:dep-graph}
+
+Recall that Forest Logging is based on a representation of the tabling
+operations of an entire SLG evaluation, even those for completed
+tables.  Maintaining such information within XSB's engine would be
+prohibitively expensive, which is why Forest Logging needs a trace.
+Nonetheless, XSB's engine does maintain certain information that
+indicates critical aspects of a tabled derivation.  As discussed in
+the previous section, the tables themselves can be viewed and can
+offer useful information.  However, the tables don't provide
+information about how the different subgoals depend on one another, an
+aspect that is often central to optimizing a derivation.  
+
+However, such dependency information is available in some cases.  For
+incremental tables, dependencies among subgoals may be obtained
+through the Incremental Dependency Graph (IDG).  In addition, XSB
+maintains information about the dependencies among incomplete
+subgoals, and this information can be viewed through the Subgoal
+Dependency Graph (SDG).\footnote{Maintenance of the Subgoal Dependency
+  Graph is in fact necessary to ensure that all appropriate answers
+  are returned to each incomplete subgoal.}  As an separate matter, it
+can be difficult to understand why certain atoms are undefined from
+looking directly at the tables.  For this, the Residual Dependency
+Graph (RDG) can be inspected.
+
+In this section we first present an adjacency list format for
+representing dependency graphs in Prolog.  We then consider predicates
+for obtaining information about each type of dependency graph.  As
+dependency graphs may be too large for humans to productively read, we
+also present predicates that allow filtering, manipulation and summary
+of these graphs.
+
+\subsubsection{A Prolog Format for Dependency Graphs} \label{sec:adjacency-lists}
+
+Several of the inspection predicates produce a dependency graph in Prolog
+in the format of adjacency lists.  This format also annotates
+information about each subgoal.  Specifically, an adjacency list as
+used here is a list of terms of the form:
+
+{\small
+\noindent
+{\tt subgoal(Vertex,SCCKey,SubgoalKey,CallsTo,Answers,PosEdges,NegEdges)} 
+}
+such that:
+
+\bi
+\item {\tt Vertex} is a vertex in the current state of a dependency
+  graph.  For the Subgoal Dependency Graph (SDG) and Incremental
+  Dependency Graph (IDG), {\tt Vertex} is a subgoal; for the Residual
+  Dependency Graph (RDG) it is a subgoal/atom pair.
+\item {\tt SCCKey} is a key of the SCC to which the vertex
+  belongs.\footnote{In general, no information can be inferred from
+    the ordering of the returned SCC keys.}
+%For local evaluation, if $SCCIndex_1 < SCCIndex_2$, then
+%  subgoals in $SCCIndxex_2$ affect subgoals in $SCCIndex_1$ (although
+%  the affects relation may not be direct).
+\item {\tt VertexKey} is a key that uniquely identifies {\tt Vertex}
+  and is either 
+%
+\bi
+  \item An integer value that represents the handle to the table
+    entry; or 
+  \item An atom that represents a unique generated key for the vertex of
+    the dependency graph, if a morphism has been applied to the
+    dependency graph.  \ei
+\item {\tt CallsTo} For the SDG and IDG the number of calls that have
+  been made to the subgoal so far; for the RDG this value is set to 0.
+\item {\tt Answers} For the SDG and IDG the number of distinct answers
+  that the subgoal has so far;~\footnote{If the same answer was
+    derived more than once, it is counted only one time.} for the RDG
+  this value is set to 0.
+\item {\tt PosEdges} is a list of keys for those vertices that {\tt Vertex}
+  positively directly affects.  In the case of dependency graphs that
+  do not have signed edges, all edge information is kept in this
+  argument.
+\item {\tt NegEdges} is a list of keys for those vertices that {\tt
+  Vertex} negatively directly affects.  In the case of dependency
+  graphs that do not have signed edges, no edge information is kept in
+  this argument.  \ei
+
+\subsubsection{Predicates to Access the Subgoal Dependency Graph} \label{sec:sdg-preds}
+
+The Subgoal Dependency Graph (SDG) has as vertices those tabled
+subgoals that are incomplete in the state of a suspended derivation.
+A {\em depends} edge exists from $S_1$ to $S_2$ iff a call is made to
+$S_2$ while computing answers for $S_1$, and if there are no
+intervening tabled subgoals between $S_1$ and $S_2$.  An {\em affects}
+edge is the inverse of a depends edge.  Edges in the SDG are signed
+indicating positve or negative dependence.  A subgoal and its incident
+edges are removed from the SDG when the subgoal is completed.
+
+The main predicate for accessing information about the SDG is {\tt
+  get\_sdg\_info/1}.  Because it accesses the SDG, {\tt
+  get\_sdg\_info/1} returns information concerning incomplete subgoals
+{\em only}.
+
+\begin{description}
+\ourmoditem{get\_sdg\_info(-SDG)}{get\_sdg\_info/1}{tables}
+%
+For a suspended derivation, returns information about the {\em
+  Subgoal Dependency Graph} (SDG) as an adjacency list whose form is
+described in Section~\ref{sec:adjacency-lists}.
+%
+If there are no incomplete tables in the current state, an empty list
+is returned.
+
+This predicate has no error conditions.
+
+\begin{example} \rm \label{ex:get-sdg}
+Consider the goal {\tt ?- q(3,3)} to the program:
+
+\begin{verbatim}
+:- import get_sdg_info/1 from tables.
+:- import between/3 from basics.
+
+:- table q/2 as incremental.
+q(M,N):- between(1,N,X),
+         (M = N,N = X -> break ; q(X,N)).
+\end{verbatim}
+Execution of this query creates a number of tabled subgoals, but
+breaks before the initial goal is completely evaluated.  The SDG at
+the time of the break is shown in Figure~\ref{fig:sdg-break-1}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.4\textwidth]{sdg-q-2}
+%%\mbox{
+%%{\epsfig{file=slg-forest-local,width=.99\textwidth}}}
+\caption{{\em SDG for {\tt ?- q(3,3)} when the derivation is suspended by
+  {\tt break/0}}c} \label{fig:sdg-break-1}
+\end{figure}
+%
+This SDG can be produced as follows:
+\begin{small}
+\begin{verbatim}
+| ?- q(3,3).
+[ Break (level 1) ]
+
+1: ?- get_sdg_info(F).
+
+F = [subgoal(q(2,3),1,140253373671912,3,0,
+             [140253373671672,140253373671792,140253373671912],[]),
+     subgoal(q(1,3),1,140253373671792,3,0,
+             [140253373671792,140253373671672,140253373671912],[]),
+     subgoal(q(3,3),1,140253373671672,3,0,
+             [140253373671912,140253373671792],[])]
+\end{verbatim}
+\end{small}
+
+\end{example}
+
+\ourmoditem{get\_sdg\_subgoal\_info(-SDG)}{get\_sdg\_subgoal\_info/1}{tables}
+%
+Note that the size of the SDG, which includes dependency edges, may be
+quadratic in the number of incomplete subgoals.  When only summary
+information about the subgoals in the subgoal dependency graph {\tt
+  get\_sdg\_subgoal\_info/1} can be used, rather than {\tt
+  get\_sdg\_info/1}.  As with the previous predicate, a list of terms of the form, 
+%
+
+{\small
+\noindent
+{\tt subgoal(Vertex,SCCKey,\_SubgoalKey,CallsTo,Answers,\_PosEdges,\_NegEdges)} }
+%
+
+\noindent
+is returned, but {\tt \_SubgoalKey} is set to the atom {\tt null}, and
+{\tt \_PosEdges} and {\tt \_NegEdges} are both set to the empty list.
+
+This predicate has no error conditions.
+
+\end{description}
+
+\subsubsection{Predicates to Access the Incremental Dependency Graph} \label{sec:idg-preds}
+
+The Incremental Dependency Graph (IDG) is used by XSB's incremental
+tabling subsystem to ensure that tables that depend on dynamic facts
+or rules are properly updated when the underlying dynamic code
+changes.
+
+The Incremental Dependency Graph (IDG) has as vertices those subgoals
+whose predicate symbols are incrementally tabled, along with calls to
+dynamic predicates that are declared as incremental.  A {\em depends}
+edge exists from $S_1$ to $S_2$ iff a call is made to $S_2$ while
+computing answers for $S_1$, and if there are no intervening tabled
+subgoals between $S_1$ and $S_2$.  An {\em affects} edge is the
+inverse of a depends edge.  Edges in the IDG are unsigned.  XSB
+maintains both completed and incomplete subgoals in the IDG. (As long
+as the tables for these subgoals are not abolished.)
+
+The main predicates for inspecting the IDG as a dependency graph are,
+desribed below.  Additionally, Section~\ref{sec:incr-preds1} contains
+predicates for examining dependencies among individual subgoals, as
+well as returning information about whether a subgoal in the IDG needs
+to be updated or not.
+
+\begin{description}
+\ourrepeatmoditem{get\_idg\_info(+SubgoalList,-SDG)}{get\_idg\_info/2}{tables}
+\ourmoditem{get\_idg\_info(-SDG)}{get\_idg\_info/1}{tables}
+%
+
+{\bf {\em Warning: this predicate is not yet implemented}}
+
+Returns information about the {\em Incremental Dependency Graph} (IDG)
+as an adjacency list whose form is described in Section~\ref{sec:adjacency-lists}.
+%
+If there is an empty IDG in the current state, an empty list
+is returned.
+
+Recall from the previous section that if the SDG is accessed,
+information is returned about all completed subgoals.  The IDG however
+may be both very large and disconnected.  Accordingly, {\tt
+  get\_idg\_info/2} allows a list of subgoals to be specified, and
+returns information about all of the IDG that is connected to any
+subgoal in the list; note that the resulting dependency graph may also
+be disconnected.  If {\tt get\_idg\_info/1} is called, information is
+returned about the entire dependency graph.
+
+{\bf Error Cases}
+\bi
+\item {\tt SubgoalList} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item {\tt SubgoalList} is not a list
+\bi
+\item 	{\tt type\_error}
+\ei
+\item {\tt SubgoalList} contains a predicate that is not tabled
+\bi
+\item 	{\tt permission\_error}
+\ei
+\ei
+\end{description}
+
+\subsubsection{Predicates to Access the Residual Dependency Graph} \label{sec:rdg-preds}
+
+As discussed in Section~\ref{sec:non-strat}, answers that are
+undefined in the well-founded semantics are stored in XSB along with
+their delay lists, forming a residual program.  The residual program
+can also be represented as a Residual Dependency Graph (RDG).  Using
+the RDG, a user may be able to determine why an answer $A$ to a
+subgoal $S$ was unexpectedly undefined either because that answer was
+involved in or depended on a loop through negation; or because the
+answer depended on some other answer that was undefined because of the
+use of bounded rationality (Section~\ref{sec:tabling-termination}) or
+because of floundering and the use of {\tt u\_not/1}.
+
+The representation of the RDG is slightly different from that of the
+other dependency graphs.  The following example illustrates the
+reasons for this.
+
+\begin{example}\label{ex:rdg} \rm 
+Consider the program 
+% 
+{\tt 
+\begin{tabbing}
+fooo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+ \>  :- table p/2. \\
+\>           p(1,2). \\
+\>           p(1,3):- tnot(p(2,3)).  \\
+\>           p(2,3):- tnot(p(1,3)). \> p(2,3):- r(a).\\
+\>           r(a):- tnot(r(b)) \\
+\>           r(b):- tnot(r(a)).   
+\end{tabbing}
+}
+%
+to which the query {?- p(1,X)} was made, generating the tables:
+\begin{center}
+\begin{tabular}{||l|l||}   \hline
+     {\em Subgoal}                 & {\em Answers} \\ \hline \hline
+     p(1,X)                     & p(1,2) \\ 
+                                & p(1,3):- tnot(p(2,3))| \\ \hline
+     p(1,3)                     & p(1,3):- tnot(p(2,3))| \\ \hline
+     p(2,3)                     & p(2,3):- tnot(p(1,3))| \\ \hline
+                                & p(2,3):- tnot(r(a))| \\ \hline
+     r(a)                       & r(a):- tnot(r(b))| \\ \hline
+     r(b)                       & r(b):- tnot(r(a))| \\ \hline
+\end{tabular}
+\end{center}
+
+The residual dependency graph for this program and query would have a
+node for each subgoal/answer combination with an undefined truth
+value, and a dependency edge for nodes $S_1/A_1$ and $S_2/A_2$ if
+$A_2$ occurs in a literal in the delay list for $S_1/A_1$, and the
+original subgoal for $A_2$ was $S_2$ in the subcomputation for $S_1$.
+The edge also has a sign indicating whether $A_2$ occurs positively or
+negatively in the delay list for $A_1$.  In this example, the residual
+dependency graph could be conceptually represented as 
+%
+\begin{verbatim}
+     depends_on(p(1,X)/p(1,3),p(2,3)/p(2,3),-).
+     depends_on(p(1,3)/p(1,3),p(2,3)/p(2,3),-).
+     depends_on(p(2,3)/p(2,3),p(1,3)/p(1,3),-).
+     depends_on(p(2,3)/p(2,3),r(a)/r(a),+).
+     depends_on(r(a)/r(a),r(b)/r(b),-).
+     depends_on(r(b)/r(b),r(a)/r(a),-).
+\end{verbatim}
+\end{example}
+
+Thus, vertices of the RDG are subgoal/atom pairs, unlike in the other
+dependency graphs where they are simply subgoals.  Summarizing, the
+RDG which has as vertices those pairs of subgoals and answer atoms,
+such that the truth value of the answer atom for that subgoal is {\em
+  undefined} in the state of a suspended computation.  A {\em depends}
+edge exists from $V_1$ to $v_2$ iff $V_2$ is a delay literal in a
+conditional answer for $V_1$.  An {\em affects} edge is the inverse of
+a depends edge.  Edges in the RDG are signed indicating positve or
+negative dependence.\footnote{An alternative definition of the RDG has
+  tabled subgoals as vertices, where subgoal $S_1$ depends on subgoal
+  $S_2$ if some answer for $S_1$ depends on some answer for $S_2$.
+  Such a representation can be obtained from {\tt
+    get\_rdg\_info/[1,2]} below by applying a morphism, as described
+  in Section~\ref{sec:dependency-graph-manipulation}.}
+%
+  A pair $(S,A)$ and its incident edges are removed from the RDG when
+  the truth value of $A$ changes, and of course when $S$ is
+  abolished.\footnote{The truth value of an atom for a given subgoal may
+    change when a suspended state is further evaluated, so that depending when
+  a computation is suspended, it is possible though rare that a given
+  atom may have a definite truth value when associated with one
+  subgoal, but the truth value may not have been propiaged to another
+  subgoal.  Note that the truth value of atoms may also change for
+  completed subgoals when the {\sc answer completion} operation is
+  lazily performed.}
+
+Information about specific vertices and edges of the RDG can be
+obtained through predicates such as {\tt get\_residual/2} and {\tt
+  variant\_get\_residual/2}.
+
+\begin{description}
+\index{residual program}
+\predref{get\_residual/2}
+\predref{variant\_get\_residual/2}
+\index{Incremental Dependency Graph (IDG)}
+\index{residual dependency graph}
+\ourrepeatmoditem{get\_rdg\_info(+PairList,-SDG)}{get\_rdg\_info/2}{tables}
+\ourmoditem{get\_rdg\_info(-SDG)}{get\_rdg\_info/1}{tables}
+%
+
+{\bf {\em Warning: this predicate is not yet implemented}}
+
+Returns information about the {\em Residual Dependency Graph} (RDG) as
+an adjacency list whose form is described in Section~\ref{sec:adjacency-lists}.
+%
+If there is an empty RDG in the current state, an empty list
+is returned.
+
+Recall from the previous section that if the SDG is accessed,
+information is returned about all completed subgoals.  The RDG however
+may be both very large and disconnected.  Accordingly, {\tt
+  get\_rdg\_info/2} allows a list of subgoal/atom pairs to be
+specified, and returns information about all of the RDG that is
+connected to any subgoal in the list; note that the resulting
+dependency graph may also be disconnected.  If {\tt get\_rdg\_info/1}
+is called, information is returned about the entire dependency graph.
+
+{\bf Error Cases}
+\bi
+\item {\tt PairList} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item {\tt PairList} is not a list
+\bi
+\item 	{\tt type\_error}
+\ei
+\item {\tt PairList} contains a predicate that is not tabled
+\bi
+\item 	{\tt permission\_error}
+\ei
+\ei
+
+\ourrepeatmoditem{get\_residual\_sccs(+Subgoal,+Answer,-SCCList)}{get\_residual\_sccs/3}{tables}
+\ourmoditem{get\_residual\_sccs(+Subgoal,+Answer,-SCCList,-DepList,-SignList)}{get\_residual\_sccs/5}{tables}
+%
+%At times it can be useful to view the residual program as a directed
+%graph, for instance in order to understand why a given answer might be
+%undefined.  In a manner somewhat analogous to the incremental
+%dependency graph (Section ~\ref{sec:incremental_tabling}) the {\em
+%  residual dependency graph} is a directed graph whose nodes are
+%subgoal/atom pairs and whose edges are labelled with: 1) a sign
+%indicating whether the edge is positive or negative; and 2) the label
+%{\em depends on} or {\em affects}.
+
+\index{termination!radial restraint} 
+\predref{u\_not/1}
+%
+{\bf {\em Warning: these predicates may be obsolescent.}}
+
+The residual dependency graph can be constructed in a straightforward
+way from {\tt variant\_get\_residual/2}.  However {\tt
+  get\_residual\_sccs/[3,5]} provides an alternate view that is
+higher-level and much faster.  Given a subgoal/answer pair as
+input, each of these predicates constructs SCC-based information about
+the residual dependency graph via structures of the form:
+%
+\begin{center}
+{\tt ret(Subgoal,Answer,SCCKey)}.
+\end{center}
+%
+where {\tt SCCKey} is a generated key for the SCC to which the
+Subgoal/Answer pair belongs. Two subgoal/answer pairs are in the same
+SCC iff they have the same {\tt SCCKey}; however no other dependency
+information can be otherwise directly inferred from the
+index~\footnote{The actual number used for each SCC key depends on how
+  RDG happens to be traversed; as a result it is best to rely on the
+  key only as a ``generated'' name for each SCC.}.
+
+To obtain dependency information, {\tt get\_residual\_sccs/5} also
+returns a list indicating the direct dependencies among the SCCs,
+along with a list indicating whether each SCC contains a negative
+edge.  For Example~\ref{ex:rdg}, the SCC information would have a form
+such as:
+\begin{verbatim}
+[ ret(p(1,X),p(1,3),1), ret(p(1,3),p(1,3),2), ret(p(2,3),p(2,3),2),
+  ret(r(a),r(a),3), ret(r(b),r(b),3) ]
+\end{verbatim}
+%
+The dependency list would have a form such as:
+\begin{verbatim}
+[ depends(1,2), depends(2,3) ]
+\end{verbatim}
+while the sign list would have a form such as:
+\begin{verbatim}
+[ sign(1,no_neg), sign(2,neg), sign(3,neg) ]
+\end{verbatim}
+If it is necessary to know which subgoal(s) in {\tt SCC1} directly
+depends on which subgoal(s) in {\tt SCC2}, the information can be
+easily reconstructed from the output of {\tt
+  get\_residual\_sccs/[4,5]} using {\tt variant\_get\_residual/2}.  A
+similar approach can be used to determine the actual edges within a
+given SCC.
+
+SCC detection is implemented using Tarjan's algorithm~\cite{Tarj72} in
+C working directly on XSB's data structures.  The algorithm is
+$\cO(|V| + |E|)$ where $|V|$ is the number of vertices and $|E|$ the
+number of edges in the dependency graph.  As a result, {\tt
+  get\_residual\_sccs/3} provides an efficient means to materialize
+the high-level topography of the dependency graph~\footnote{Currently,
+  the materialization of dependency information between SCCs is
+  implemented in a naive manner, so that {\tt get\_residual\_sccs/6}
+  is $\cO(|V|^2)$.}.
+
+%These predicates implement Tarjan's algorithm~\cite{Tarj72} in C
+%working directly on XSB's data structures.  The algorithm is $\cO(|V|
+%+ |E|)$ where $|V|$ is the number of vertices and $|E|$ the number of
+%edges in the dependency graph.  As a result, these predicates provide
+%an efficient means to materialize the dependency graph, even if SCC
+%information per se is not required
+  
+\index{restraint!radial}
+\index{termination!radial restraint}
+\predref{u\_not/1}
+\predref{get\_residual\_sccs/5}
+\ourrepeatmoditem{explain\_u\_val(+Subgoal,+Answer,-Reason)}{explain\_u\_val/3}{tables}	
+\ourmoditem{explain\_u\_val(+Subgoal,+Answer,-Sccs,-Deps,-Signs,-Reason)}{explain\_u\_val/6}{tables}	
+%
+The XSB predicate
+%
+{\tt explain\_u\_val(+Subgoal,+Answer,?Reason)}
+\noindent
+can be used to query why {\tt Answer} is undefined when derived in an
+evaluation of {\tt Subgoal}.  {\tt Reason} may be
+\begin{itemize}
+\item {\tt negative\_loops(cycle)} if the derivation of {\tt Answer} involves a
+  loop through though negation that includes {\tt Answer} itself.
+%
+\item {\tt negative\_loops(dependent)} if the derivation of {\tt
+  Answer} depends on an atom that is involved in a loop through though
+  negation.
+%
+\item {\tt unsafe\_negation} if the derivation of {\tt Answer} depends
+  on a negative subgoal that is non-ground (XSB does not automatically
+  perform subgoal reordering).  The action of making a non-ground
+  subgoal undefined is performed by {\tt u\_not/1}.
+%
+\item {\tt bounded\_rationality} if the derivation of answer depends
+  on bounded rationality based on radial restraint~\cite{GroS13}.
+\end{itemize}
+%
+These reasons are not exclusive, and complex derivations may well
+involve several of the above reasons.
+
+{\tt explain\_u\_val/[3,6]} is based on the structures returned by
+{\tt get\_residual\_sccs/[3,5]}.  While {\tt
+  get\_residual\_sccs/[3,5]} is reasonably fast, it can take a
+peceptable time to analyze large residual programs containing many
+thousands of SCCs.  Accordingly, {\tt explain\_u\_val/6} can reuse
+dependency structures returned by {\tt get\_residual\_sccs/[3,5]},
+which can be useful for justification systems and other applciations.
+
+\begin{example} \rm
+After executing the query {\tt p} to the program
+%
+\begin{verbatim}
+:- table p/0, q/0, r/0, s/1.
+p:- q,tnot p.                 p:- s(f(f(f(f(0))))).
+
+q:- tnot r.                   r:- tnot q.
+
+s(f(X)):- s(X).               s(0).
+\end{verbatim}
+%
+where the bounded rationality size has been set to 3.  The query {\tt
+  explain\_u\_val(p,P,Reason)} will bind {\tt Reason} to {\tt
+  negative\_loops(cycle)}, to {\tt negative\_loops(dependent)}, and
+to {\tt bounded\_rationality} (this ordering is not guaranteed).
+\end{example}
+\end{description}
+
+\subsubsection{Filtering, Manipulating, and Summarizing Dependency Graphs} \label{sec:dependency-graph-manipulation}
+
+\begin{description}
+\ourmoditem{morph\_dep\_graph(+DG\_In,+Morph,-DG\_Out)}{morph\_dep\_graph/3}{tables}
+%
+This predicate takes as input {\tt DG\_In}, a dependency graph in
+adjacency list format and returns its image, {\tt DG\_Out}, under the
+graph homomorphism {\tt Morph}.  {\tt Morph} is a predicate symbol
+that identifies a 2-ary predicate, {\tt Morph(+In,-Out)} that is
+functional on {\tt In} and that maps the Herbrand Base of the current
+program into itself.  The syntax of {\tt DG\_In} and {\tt DG\_Out} is
+described at the beginning of Section~\ref{sec:adjacency-lists}.
+
+To recall the definition of a graph homomorphism (cf. e.g.,
+~\cite{Hara69}) a functional notation is used for {\tt Morph/2}.  {\tt
+  DG\_Out} is a graph such that the vertices of {\tt DG\_Out},
+$vertices({\tt DG\_Out})$ is the set:
+\[
+\{ morph(V) | V \in vertices({\tt DG\_In}) \}
+\]
+while the edges of {\tt DG\_Out}, $edges({\tt DG\_Out})$ are the sets
+\[
+\{ \langle morph(V_1),morph(V_2) \rangle | \langle V_1,V_2 \rangle \in edges({\tt DG\_In}) \}
+\]
+We adapt this definition to signed dependency graphs by mapping all
+positive adjacenct edges into a positive set, and negative adjacent
+edges into a negative set.
+
+The power of {\tt morph\_dep\_graph/3} arises when the numbers of
+vertices and edges of {\tt DG\_In} is large, and {\tt morph/2} ensures
+that numbers for {\tt DG\_Out} are much smaller -- thus allowing
+recognizable patterns to emerge.
+
+For efficiency reasons, a special condition, ${\cal C}_1$, is assumed
+  about {\tt morph/2}: that if two elements of its range unify, then
+  they must be identical.  For instance, a morphism $M_1$ that reduced
+  the maximum depth of each non-variable argument of a term by 1 would
+  not fit this condition, since $M_1(f(a,g(h(b)))) = f(X_1,g(h(X_2)))$
+  while $M_1(f(a,g(b))) = f(X_1,g(X_2))$, which unify.  On the other
+  hand, a morphism that abstracts each argument to have a maximal
+  fixed depth would fulfill the condition.  In any case, as long as
+  ${\cal C}_1$ is observed, {\tt morph/2} may instantiated by an
+  abstraction function as used elsewhere in this manual: i.e., a
+  function such that $morph(Term)$ subsumes $Term$.  However, other
+  morphisms may also be useful as demonstrated in
+  Example~\ref{ex:morph-sdg} below.
+
+While the syntax of {\tt SDG\_Out} is the same as that of {\tt SDG\_In},
+the meaning of the arguments differs slightly.  {\tt SDG\_Out} is a
+list of terms of the form:
+
+{\tt subgoal(MorphSubg,null,Key,CallsTo,Answers,PosKeyList,NegKeyList)} 
+
+such that 
+
+\bi
+\item {\tt MorphVert} is $morph({\tt Vertex})$ for one or more
+  subgoals that are vertices of {\tt DG\_In}
+\item The second argument, which represents SCC information in the
+  original dependency graph, is the atom {\tt null} when a morphism is
+  applied, since SCC information is not preserved in general.
+\item {\tt Key} is an atom identifying {\tt MorphVert}.  Note that
+  while each subgoal in {\tt DG\_In} corresponds to e.g., a tabled
+  subgoal, a given subgoal image in {\tt DG\_Out} may not correspond to
+  a tabled subgoal in the current state.  Thus a table entry handle
+  may not be available, so generated keys are used in {\tt DG\_Out}.
+\item {\tt CallsTo} If {\tt DG\_In} originated from an SDG or IDG, {\tt
+  CallsTo} is the sum of the number of calls to every subgoal $S \in$
+  {\tt DG\_In} such that $morph(S) = {\tt MorphVert}$.  Otherwise, {\tt
+    CallsTo} is 0.
+\item {\tt Answers} If {\tt DG\_In} originated from an SDG or IDG, {\tt
+  Answers} is the sum of the number of answers for every subgoal $S
+  \in$ {\tt DG\_In} such that $morph(S) = {\tt MorphVert}$.  Otherwise,
+     {\tt Answers} is 0.
+\item {\tt PosKeyList} is a list of the keys to those vertices adjacent
+  to {\tt MorphSubg} with positive sign as described above.
+\item {\tt NegKeyList} is a list of the keys to those vertices adjacent
+  to {\tt MorphSubg} with negative sign as described above.
+\ei
+
+\begin{example} \rm \label{ex:morph-sdg}
+Continuing Example~\ref{ex:get-sdg}, let {\tt mymorph} identify the
+predicate
+
+\begin{verbatim}
+mymorph(Term,NewTerm):-
+        Term =.. [F,A1,A2],
+        map_arg_1(A1,NewA1),
+        NewTerm =.. [F,NewA1,A2].
+
+map_arg_1(2,1):- !.
+map_arg_1(X,X).
+\end{verbatim}
+Thus {\tt mymorph/2} maps {\tt q(2,1)} to {\tt q(1,1)} and maps
+both {\tt q(1,1)} and {\tt q(3,1)} to themselves.  Then if {\tt DG\_In}
+is instantiated to the SDG produced in Example~\ref{ex:get-sdg}, the
+goal {\tt ?- morph\_dep\_graph(DG\_In,mymorph,DG\_Out)} would produce:
+
+\begin{verbatim}
+SDG\_Out = [subgoal(morph80,q(1,3),6,0,[morph80,morph81],[]),
+          subgoal(morph81,q(3,3),3,0,[morph80],[])
+\end{verbatim}
+\end{example}
+
+{\bf Error Cases} 
+\bi
+\item 	{\tt Morph} is not an atom
+\bi
+\item 	{\tt type\_error}
+\ei
+%
+\item 	{\tt DG\_Out} is not a variable
+\bi
+\item 	{\tt type\_error}
+\ei
+%
+\item 	{\tt DG\_In} is not an adjacency list as described above
+\bi
+\item 	{\tt misc\_error}
+\ei
+\ei
+%
+\ourmoditem{dep\_graph\_scc\_info(+SDG,-ListOut)}{dep\_graph\_scc\_info/2}{tables}
+%
+Given an SDG representation in the adjacency list format described
+above, this predicate returns information about the SCCs that are
+currently under evaluation.  Upon success {\tt ListOut} will contain a
+term
+
+{\tt scc(SCCIndex,NumSubgoals,NumAnswers,NumPosEdges,NumNegEdges)}
+
+for each SCC under evaluation, such that:
+
+\bi
+\item {\tt SCCIndex} is the index of the SCC
+\item {\tt NumSubgoals} is the number of subgoals in the SCC
+\item {\tt NumAnswers} is the total number of answers for all subgoals in the SCC
+\item {\tt NumPosEdges} is the total number of positive edges within the SCC.
+\item {\tt NumNegEdges} is the total number of negative edges within the SCC.
+  \ei
+
+\ourmoditem{print\_sdg\_info}{print\_sdg\_info/0}{tables}
+%
+Prints the current SDG to {\tt stdout} in a readable
+manner.\footnote{This predicate, along with {\tt
+    print\_sdg\_subgoal\_info/0} replaces the predicate {\tt
+    print\_incomplete\_tables/0}, which was included in previous
+  releases.}
+
+\ourmoditem{print\_sdg\_subgoal\_info}{print\_sdg\_subgoal\_info/0}{tables}
+%
+Prints summary subgoal information about the current SDG to {\tt stdout} in a
+readable manner.
+
+\ourmoditem{print\_dep\_graph(+DG)}{print\_dep\_graph/1}{tables}
+%
+Prints a dependency graph {\tt DG} (whether its an SDG, IDG, or RDG)
+to {\tt stdout} in a simple, but readable manner.
+%
+\begin{example}
+Continuing from Example~\ref{ex:morph-sdg}, if 
+
+\begin{verbatim}
+SDG = [subgoal(morph80,q(1,3),6,0,[morph80,morph81],[]),
+          subgoal(morph81,q(3,3),3,0,[morph80],[])
+\end{verbatim}
+
+then {\tt print\_dep\_graph(SDG)} would output
+
+\begin{verbatim}
+Subgoal: q(1,3)
+        Number of calls to this subgoal 6; Number of answers 0
+        Affects positively q(1,3) ; q(3,3)
+Subgoal: q(3,3)
+        Number of calls to this subgoal 3; Number of answers 0
+        Affects positively q(1,3) 
+\end{verbatim}
+\end{example}
+
+\end{description}
+
+\subsection{Summary: Inspection Predicates}
+
+XSB provides a number of ways to inspect a tabled derivation,
+including directly through the tables, or through one of the
+dependency graphs: the IDG, RDG or SDG.  Specifically, some useful
+inspection predicates available in XSB are:
+
+\begin{itemize} 
+\item {\tt statistics/[0,1,2]} (Section~\ref{environmental}) is a
+  highly useful general-purpose predicate that provides an important
+  summary of how memory is used by the XSB process or thread, the
+  amount of time used by the process or thread, along with various
+  counts of tabling operations and measures of table space.
+
+\item {\tt table\_dump/[2,3]} (Section~\ref{sec:table-dump}) allows
+  directed and iterative inspection of the current set of tabled
+  subgoals and their answers, at various levels of summary
+  aggregation.
+
+\index{Incremental Dependency Graph (IDG)} 
+\index{residual program}
+\index{residual dependency graph}
+\item Inspection of the Incremental Dependency Graph can be made via
+  the predicate {\tt get\_idg\_info/[1,2]}
+\footnote{These predicates
+    are not yet implemented: although {\tt tt get\_incr\_sccs/[1,2]},
+    and {\tt get\_incr\_sccs\_with\_deps/[2,3]} have been.} together
+  with predicates for dependency graph manipulation such as {\tt
+    morph\_dep\_graph/3} and {\tt dep\_graph\_scc\_info/3}
+  (cf. Section~\ref{sec:dependency-graph-manipulation}).
+%
+ More targeted inspection of specific edges and dependencies of the
+ Incremental Dependency Graph is supported through {\tt
+   incr\_directly\_depends/2} and {\tt incr\_trans\_depends/2}
+ (cf. Section~\ref{sec:incr-preds1}).
+
+\item Inspection of the Subgoal Dependency Graph can be obtained
+  through the predicate {\tt get\_sdg\_info/1}, and its information
+  analyzed through predicates for dependency graph manipulation such
+  as {\tt morph\_dep\_graph/3}, and {\tt dep\_graph\_scc\_info/2}
+  (cf. Section~\ref{sec:dependency-graph-manipulation}).  Note that
+  {\tt get\_sdg\_info/1} returns information concerning incomplete 
+  subgoals {\em only}.
+
+\item Inspection of the Residual Dependency Graph can be made via the
+  predicate {\tt get\_rdg\_info/[1,2]},\footnote{This predicate is not
+    yet implemented: although {\tt tt get\_residual\_sccs/[1,2]} has
+    been.} together with dependency graph manipulation predicates such
+  as {\tt morph\_dep\_graph/3} and {\tt dep\_graph\_scc\_info/3}.
+  (cf. Section~\ref{sec:dependency-graph-manipulation}).  The
+  predicates {\tt get\_residual/2} and {\tt variant\_get\_residual/2}
+  allow the residual program to be viewed as sets of clauses.
+  Finally, {\tt explain\_u\_val/3} can be used to indicate why a given
+  atom has the truth value {\em undefined} rather than {\em true} or
+  {\em false} (cf. Section~\ref{sec:table-inspection}).
+\end{itemize}
+
+All of these predicates, except for {\tt get\_sdg\_info/1}, can be
+used to retrospecitively analyze any completed derivation, as long as
+the derivations tables have not been abolished.  In addition, all of
+the predicates can be used to analyze an onoging derivation by
+suspending the derivation and then examining the computation from a
+subsidiary command-line interpreter.  This can be especially important
+for long-running computaiotions or those that take a lot of space.
+
+In XSB, a computation can be suspended in several ways, depending a
+user's tastes in and needs for debugging:
+
+\bi 
+\item By a call to {\tt break/0}.  This is usually best done by
+  calling {\tt break/0} as part of a handler for {\tt timed\_call/2},
+  but {\tt break/0} can also be called explicitly from a program.
+%
+\item By hitting ctrl-C if XSB is running in stand-alone mode
+
+\item By setting a {\em tripwire} as introduced below
+  (Section~\ref{sec:tripwire}).  
+%
+\ei
+
+\index{tripwires}
+\subsection{Setting Tripwires on Tabled Derivations} \label{sec:tripwire}
+%
+A tripwire represents an unexpected property of a derivation: such as
+an excessive use of time or memory; an unexpected number or complexity
+of tabled subgoals or answers; or an unexpected number of mutually
+dependent tabled subgoals.  Depending both on the class of a tripwire
+and on how XSB's flags are set, a tripwire may have different effects.
+Any tripwire may be treated as an error so that it throws an exception
+just as any other error.  {\em Inspectable} tripwires may additionally
+be considered as inspection points, and when hit may suspend the
+derivation and create a break point.\footnote{Note that such a
+  suspension makes available for inspection the state of the
+  derivation at the point the tripwire was activated.  If inspection
+  points were implemented using ISO errors, state could only be made
+  available at the point where the error was {\em caught}, whose state
+  may differ greatly from the point where the error occurred (i.e.,
+  where the tripwire was hit).}
+%
+In such a case, a short explanation will be made of how a tripwire was
+encountered, along with suggestions about how to further inspect the
+suspended derivation.\footnote{
+  %% 
+  This is the default behavior for XSB:
+  handling of tripwires can be overridden by the user,
+  as explained later in this section.
+}
+%%
+{\em Correctable} tripwires are a subset of
+inspectable tripwires for which an automatic action may be taken to
+remedy the situation, such as rewriting a subgoal or an answer whose
+size is greater than a given limit, by using subgoal abstraction or
+answer restraint.
+
+Tripwires may be set in various ways: most can be set and viewed at a
+session level using Prolog flags, others can also be set at the
+predicate level via the {\tt table/1} declaration, while still others
+can only be set by explicit programming.  Tripwires thus represent a
+coordinated set of tools for understanding bounds on a tabled
+derivation, rather than a unified API.
+
+For a tripwire {\tt T} that can be set and viewed as a Prolog flag,
+the flag name has the form {\tt tripwire(T)}, and this flag has two or
+more values.  An {\em action}, designated {\tt action(A)}, indicating
+the action to take such as {\tt error}, {\tt suspend}, or other
+actions; and one or more parameters, designated {\tt limit(P)}.
+For example, if a user wants to be able to suspend and inspect a
+computation whenever it has an active recursive component (SCC) with
+over 100 subgoals, she can execute the following directives:
+
+{\tt ?- set\_prolog\_flag(tripwire(max\_scc\_subgoals),limit(100)).}
+
+{\tt ?- set\_prolog\_flag(tripwire(max\_scc\_subgoals),action(suspend)).}
+
+We discuss various types of tripwires in turn, and provide informal
+guidelines for inspecting a derivation when a given tripwire has been
+hit.
+
+\subsubsection{Tripwires Based on Resource Limits}
+%
+Hitting a resource tripwire reflects the fact that a derivation is
+taking more time or using more memory than expected.  A resource
+tripwire is a user-imposed limit, rather than an external limit
+imposed by the platform or operating system, and thus differs from an
+ISO resource error.
+
+\index{tripwires!timed call} 
+\predref{timed\_call/2}
+\predref{timed\_call\_modify/1}
+%
+Time-based resource tripwires can easily
+be programmed using a handler to {\tt timed\_call/2}.  Time-based
+tripwires are inspectable, so such a handler might throw an error
+after a derivation has taken a certain amount of CPU time, or call
+{\tt break/0} to implement periodic inspection points, or implement
+other periodic analytics or monitoring.  The parameters for timed call
+can be changed whenever the timed call is suspended by {\tt
+  timed\_call\_modify/1}.  See Section~\ref{sec:timed-call} for more
+details.
+
+\index{tripwires!max\_memory} An inspectable memory-based resource
+tripwire can be set via the Prolog flag {\tt tripwire(max\_memory)},
+so that the tripwire will be hit whenever XSB uses more than a given
+total amount of memory.  This amount can be set either as an integer,
+representing an absolute number of kilobytes or as a floating point
+number indicating a percentate of the RAM of the platform upon which
+XSB is executing.  Currently, a memory-based tripwire can only throw
+an error.
+
+\paragraph{Guidelines for Analysis of Resource-based Tripwires}  \ \\
+
+{\bf {\em Note that the numbers and sizes below are for example
+    purposes only.  If memory limits are set to, say, a gigabyte or
+    more of memory, and time limits are set to several seconds, the
+    numbers and sizes may be several orders of magnitude more than
+    those shown below.}}
+
+If a resource tripwire is hit, the best course of analysis usually
+starts with viewing the output of {\tt statistics/[0,1]}.  
+\bi
+\item {\em Check that there are a large number of incomplete tables}
+  This can be determined, for instance, using the output of {\tt
+    statistics/0}, by a line near the end of the memory
+  table.~\footnote{This line is not printed out if there are no
+    incomplete tables.}  E.g.:
+%
+{\small \begin{verbatim}
+        (501227 incomplete table(s) in 89 SCCs)
+\end{verbatim} }
+
+\bi
+\item If there are a large number of incomplete tables, XSB's stask
+ space is likely to be high also, since an incomplete table $T$ needs
+ to maintain many details of its derivation state to ensure all
+ answers for $T$ are returned to all calls to $T$.  In this case, the
+ predicates for analyzing the Subgoal Dependency Graph of the
+ suspended derivation can be used (Section~\ref{sec:sdg-preds}).  {\em
+ Note that, here and below, when there are a large number of
+ incomplete tables, information returned by {\tt get\_sdg\_info/1}, as
+ well as by {\tt get\_idg\_info/1} and {\tt get\_rdg\_info/1} may need
+ to be filtered or manipulated using the predicates in
+ Section~\ref{sec:dependency-graph-manipulation}.}
+\ei
+
+\item {\em Otherwise, Check whether there are a large number of
+ completed subgoals.} If there are not many incomplete
+ tables but the table space seems large, {\tt statistics/[0,1,2]}
+ indicates both the total number of tabled subgoals and the total
+ number of answers.  In this case.  For instance, the beginning of the
+ summary of tabling operations might contain information such as:
+
+%
+{\small 
+\begin{verbatim}
+ Tabling Operations
+  12 subsumptive call check/insert ops: 9 producers, 3 variants,
+  0 properly subsumed (0 table entries), 0 used completed table.
+  0 relevant answer ident ops.  0 consumptions via answer list.
+  1065417 variant call check/insert ops: 938125 producers, 127292 variants.
+  46210 answer check/insert ops: 46210 unique inserts, 0 redundant.
+\end{verbatim} } 
+
+This indicates that there are 1,065,417 subgoals (complete or
+ incomplete) tabled with call variance, and 12 subgoals tabled with
+ call subsumption.  Among all subgoals there are 46,210 ansewrs.  
+%
+\bi
+\item To understand details of overall table space usage, {\tt
+  table\_dump/[2,3]} can be called to provide further information
+  (Section~\ref{sec:table-dump}).  
+\ei
+%
+\item {\em Check whether the IDG is large.}  In addition to simply
+  having a large number of subgoals (incomplete or complete) and
+  answers, the use of incremental dependency, which maintains an IDG,
+  has an effect on memory.  {\tt statistics/[0,1]} indicates when
+  incremental tabling is being used heavily, by a line towards the
+  bottom of the output, such as:
+%Total number of incremental subgoals created: 50
+{\small \begin{verbatim}
+Currently 501688 incremental subgoals, 781432 dependency edges
+\end{verbatim} }
+%
+\bi
+\item When there are large numbers of incrementally tabled subgoals
+  and dependency edges, {\tt get\_idg\_info/1}
+  (Section~\ref{sec:idg-preds}) can be used to obtain a global view of
+  the IDG.  Note that incremental tabling does require more memory for
+  completed tables than non-incremental tabling, due to the need to
+  retain the IDG so that tables can be updated when dynamic code
+  changes.
+%
+\ei
+\item {\em Check whether there are a large number of answers whose
+  truth value is {\em undefined}}.  This is indicated, for instance,
+  by lines at the end of the summary of tabling operations in {\tt
+    statistics/0}.~\footnote{These lines are not printed out if there are no
+    incomplete tables.}  E.g.:
+{\small \begin{verbatim}
+   80005 DEs in the tables (space: 3932480 bytes allocated, 3840560 in use)
+   40005 DLs in the tables (space: 983200 bytes allocated, 960280 in use)
+\end{verbatim} }
+%
+\bi
+If there is indication that there are a large number of answers with
+ truth value {\em undefined}{\tt get\_rdg\_info/[1]} and/or {\tt
+ explain\_u\_val/2} can be used to understand the dependencies among
+ these answers.  
+\ei
+\ei
+
+\subsubsection{Tripwires Based on Properties of a Tabled Derivation}
+%
+Theoretically speaking, in a pure logic program if a tabled derivation
+ is not terminating it is because there are an unbounded number of SLG
+ trees, or because one or more of the SLG trees is of unbounded size.
+  The former case indicates that a computation has an unbounded number
+ of subgoals, while the latter indicates that one or more subgoals has
+ an unbounded number of answers.  In a similar manner, terminating but
+ expensive derivations also may have too many subgoals, too many
+ answers, or too many dependencies among incomplete subgoals.  We
+ consider these cases in turn.
+
+\bi
+\item {\em There are too many tabled subgoals} 
+\bi
+\item {\em There are a potentially unbounded number of tabled subgoals
+ in a pure program.}\/ In this case, there must be a potentially
+ unbounded number of {\em distinct} tabled subgoals in the derivation.
+  If this happens using ca`v`vll variance, this situation can
+ sometimes be addressed by using call subsumption instead.  However
+ termination can {\em always} be ensured by using subgoal abstraction,
+ as long as a derivation produces only a finite number of answers
+ (cf. Section~\ref{sec:tabling-termination} and \cite{RigS14}).  XSB
+ allows subgoal abstraction to be applied based on term size either
+ globally through the tripwire {\tt max\_table\_subgoal\_size}, or on
+ a predicate-by-predicate basis through tabling directives.  In other
+ words, when a tabled subgoal, $S_{big}$, is called whose size is
+ greater then the limit specified for its predicate, a tripwire is
+ activated, and various actions can be specified.  In many -- perhaps
+ most -- cases, the best action is simply to abstract $S_{big}$.
+  However it is also possible to suspend and inspect the derivation so
+ that the causes that led to $S_{big}$ can be analyzed.  As a final
+ alternative, an error can be thrown, which is the default action.
+
+\item {\em There are a potentially infinite number of subgoals in a
+ program with arithmetic.}.  Due to the manner in which numbers are
+ represented in XSB, XSB's size metric would permit a potentially
+ infinite number of subgoals if numbers occurred within these
+ subgoals.  The tripwire {\tt max\_incomplete\_subgoals} allows a
+ limit to be set on the maximal number of incomplete subgoals.  If a
+ derivation exceeds that limit, the computation may be suspended, or
+ an error thrown.
+
+\item {\em There are a finite but large number of tabled subgoals.}\/
+ A separate problem from those above can happen as follows.  If a
+ program is written over a language that has a finite but large number
+ of constant symbols, then a program that generates subgoals of the
+ form
+\[
+   p(c_i,c_j,c_k,X)
+\]
+  will theoretically terminate, but may be too inefficient for
+ practical purposes.  This problem can be addressed by the tripwrite
+ {\tt max\_incomplete\_subgoals} just discussed, but it is often
+ helpful to have a different size limit for cases where there are a
+ large number of subgoals within the {\em same} SCC.
+
+ The tripwire {\tt max\_scc\_subgoals} allows such a limit to be set
+ on the maximal number of incomplete subgoals in any recursive
+ component.  If a derivation exceeds that limit, the computation may
+ be suspended, or an error thrown.  This situation is similar to that
+ of simply having too many incomplete subgoals, but may suggest a
+ different focus when analyzing a suspended computation.  In addition,
+ the number of dependencies can rise quadratically with the absolute
+ size of an SCC.  As a result, it often makes sense to have different
+ limit for the size of a single (incomplete) SCC and for the number of
+ incomplete subgoals overall.
+%
+
+{\em Guidelines for Analysis} If the computation is producing too many
+ tabled subgoals the suspension may have been triggered by one of the
+ tripwires: {\tt max\_table\_subgoal\_size}, {\tt
+ max\_incomplete\_subgoals} or {\tt max\_scc\_size}.  In any of these
+ cases, the suspension or error message will indicate the tripwire
+ that has been hit.  The number of incomplete subgoals can be seen
+ from the output of {\tt statistics/0}.  The inspection predicates of
+ Section~\ref{sec:dep-graph} can be used to examine these subgoals and
+ their dependencies.
+%
+\ei
+\ei 
+
+\bi
+
+\item {\em There are too many tabled answers.} The approaches to this
+  situation are similar in spirit to the cases of too many subgoals.
+%
+\bi
+\item {\em One or more subgoals has an unbounded number of answers.}
+  In this case, termination can be ensured by using radial restraint,
+ which abstracts answers in a manner that is sound with respect to the
+ well-founded semantics and can ensure that a derivation will produce
+ only a finite number of answers
+ (cf. Section~\ref{sec:tabling-termination} and\cite{GroS13}), XSB
+ allows radial restraint to be applied based on term size in two ways.
+  First, restraint can be applied globally through the tripwire {\tt
+ max\_table\_answer\_size}.  Second, XSB allows restraint to be
+ declared at a predicate-by-predicate basis.  In other words, when an
+ answer, $A_{big}$, is to be added to a table, and its size is greater
+ then the limit specified for its predicate, a tripwire is activated,
+ and various actions can be specified.  In many cases, the best action
+ is simply to abstract $A_{big}$, which gives it the truth value {\em
+ undefined} for that answer. However it is also possible for the
+ derivation to be suspended so that the causes that led to $A_{big}$
+ can be analyzed.  As a final alternative an error can be thrown; this
+ is the default action for XSB.
+
+\item {\em There are a finite but large number of tabled answers.}\ As
+  with subgoals, checking for the depth of an answer may not catch
+  certain causes of inefficency. If a program is written over a
+  language that has a large number of constant symbols, then a program
+  that generates answers of the form
+\[
+   p(c_i,c_j,c_k,c_l)
+\]
+  will theoretically terminate, but may be too inefficient for
+  practical purposes.  
+
+ To address such situations, XSB has the tripwire {\tt
+ max\_answers\_for\_subgoal} which is hit if any subgoal has more than
+ the specified number of answers.  If a derivation exceeds that limit,
+ the subgoal may be eagerly completed while maintaining soundness, the
+ the computation may be suspended, or an error thrown
+ (cf. Section~\ref{sec:answer-count-restraint} for a discussion of how
+ a subgoal may be completed early while preserving soundness).
+%
+ \ei {\em Guidelines for Analysis} If the computation is producing too
+ many tabled answers, a suspension may be triggered by one of the
+ tripwires: {\tt max\_table\_answer\_size}, or {\tt
+ max\_answers\_for\_subgoal}.  In any of these cases, the suspension
+ (or error message) will indicate the subgoal whose number of answers
+ hit the tripwire.  The number and shape of answers for that subgoal
+ and others can be viewed through the {\tt table\_dump} library
+ (Section~\ref{sec:table-dump}).  If some answers are undefined, the
+ predicates {\tt get\_rdg\_info/1} and {\tt explain\_u\_val/2} can be
+ used to explore dependencies among the answers.  In addition,
+ dependency graph analysis based on the predicates {\tt
+ get\_sdg\_info/1} and {\tt get\_idg\_info/1} can help locate areas of
+ code that caused the profusion of answers.
+
+ \ei
+
+\subsubsection{The Suspend Action for Flag-Based Tripwires}
+
+If the action {\tt suspend} is specified for a given flag-based
+ tripwire $T$, (i.e., a tripwire other than one based on {\tt
+ timed\_call/2}), then hitting $T$ causes XSB to take a given action.
+  By default, this action is to enter a break level from which the
+ computation can be inspected. (This default action for {\tt suspend}
+ can be overridden.)  A preamble to the break level is also presented
+ that describes certian values pertaining to the state of the
+ computation, along with an attempt to summarize what the situation
+ means.  The preamble for the tripwire {\tt max\_incomplete\_subgoals}
+ appears as follows.
+
+%----------------------------------------------------------------------------------------
+\begin{small}
+\begin{verbatim}
+There are currently 11 incomplete tabled subgoals, which exceeds the limit set by the 
+flag 'max_incomplete_subgoals'.  These subgoals are in 11 separate recursive components.
+
+The number of incomplete recursive components is close to the number of incomplete 
+subgoals, and furthermore, nearly all of these recursive components are trivial.
+
+This information indicates a likelihood that the program is performing some sort of 
+structural recursion using tabling (i.e., recursing through a list, performing numeric 
+iteration, etc.)
+
+To remedy, check that the recursion is well-founded.  If so, consider executing the 
+recursion using a non-tabled predicate, or consider using hash-cons tabling to reduce 
+the space required for tables, then increase the value of the flag.
+
+  * To continue, reset the flag and then type Ctrl-d
+  * To abort the suspended derivation, enter the command 'abort/0'
+  * To inspect the incomplete tabled subgoals, enter the command 'print_sdg_info/0'
+\end{verbatim}
+\end{small}
+%----------------------------------------------------------------------------------------
+
+From within a break level thrown by a tripwire, a user can perform
+ most queries and commands with two important exceptions.
+
+\begin{itemize}
+\item No tabled goals or subgoals may be executed.  Of course once the
+ break is exited, the original comptuation can be continued, and
+ tabled subgoals can be executed as usual.
+\item Reconsulting a file containing code upon which the original
+ query depends may throw an error.
+\end{itemize}
+
+There are situations where the action of breaking to allow a user can
+ inspect a query isn't suitable -- if XSB is embedded into a process,
+ for instance, or is part of some other application.  In such a case,
+ the user can override XSB's default behavior by asserting into the
+ {\tt user} module a {\em tripwire handler}, which will be executed
+ when a given tripwire is hit.  For instance, the tripwire {\tt
+ max\_table\_subgoal\_size} would use the tripwire {\tt
+ max\_table\_subgoal\_size\_user\_handler/0}.  Subject to the
+ constraints above, the handler may perform any actions desired,
+ including increasing the tripwire limit, adjusting its action,
+ changing runtime tabling properties, or simply writing to a
+ log.\footnote{As a further example, when XSB supports the language
+ Ergo the tripwire may set on forest logging to support termination
+ analysis via the Terminyzer tool.}
+
+A handler that is called when a tripwire is hit has some resemblences
+ to a handler called when an error is caught, but there are important
+ differences.  A condition triggering a tripwire might or might not
+ reflect an error in a program.  So the handler is invoked when the
+ tripwire is hit, rather than after exiting portions of that
+ derivation as is the case when an error is caught.  If the user wants
+ to exit some or all of a derivation when a tripwire is hit, it is
+ simple to change the tripwire's action to error, and arrange to catch
+ the error with a suitable handler.
+
+\subsubsection{Summary of Flag-Based Tripwires}
+%
+Each of the tripwires described below can be queried and set via
+ prolog flags.  For instance the query
+
+\begin{verbatim}
+| ?- current_prolog_flag(tripwire(max_table_subgoal_size),Property).
+
+Property = limit(12)
+Property = action(error);
+\end{verbatim}
+indicates the current values of this tripwire.  (Also see the
+ description of Prolog flags in Section~\ref{State}.)
+
+%\paragraph*{Tripwire Description
+\begin{itemize}
+
+\index{tripwires!max\_table\_subgoal\_size} 
+\item {\tt max\_table\_subgoal\_size}. 
+\bi  
+\item {\em Limit:} The maximum size of a given argument in a subgoal
+ (cf. Section~\ref{sec:size-metric}).  A limit of {\tt 0} means that
+ this tripwire is disabled.
+\item{\em  Possible actions:} {\tt abstract}, {\tt suspend} or {\tt error}.
+\item {\em Default.} Limit: {\tt 0}; Action: {\tt error}.
+\item {\em User handler for suspend}: {\tt max\_table\_subgoal\_size\_handler}.
+\ei
+
+\index{tripwires!max\_incomplete\_subgoals} 
+\item {\tt max\_incomplete\_subgoals}
+\bi  
+\item {\em Limit:} The maximum number of subgoals that are
+ incomplete at any given time.  A limit of {\tt 0} means that
+ this tripwire is disabled.
+\item{\em  Possible actions:} {\tt suspend}, {\tt error} or {\tt warning}.
+\item {\em Default.} Limit: {\tt 0}; Action: {\tt error}.
+\item {\em User handler for suspend}: {\tt max\_incomplete\_subgoals\_user\_handler}.
+\ei
+
+\index{tripwires!max\_scc\_subgoals} 
+\item {\tt max\_scc\_subgoals}
+\bi  
+\item {\em Limit:} The maximum number of subgoals that are incomplete,
+ and are in the same SCC at any given time.  A limit of {\tt 0} means
+ that this tripwire is disabled.
+\item{\em  Possible actions:} {\tt suspend}, {\tt error} or {\tt warning}.
+\item {\em Default.} Limit: {\tt 0}; Action: {\tt error}.
+\item {\em User handler for suspend}: {\tt max\_scc\_subgoals\_user\_handler}.
+\ei
+
+\index{tripwires!max\_table\_answer\_size} 
+\item {\tt max\_table\_answer\_size}
+\bi  
+\item {\em Limit:} The maximum size of a given argument of an answer
+ (cf. Section~\ref{sec:size-metric}).  A limit of {\tt 0} means that
+ this tripwire is disabled.
+\item{\em  Possible actions:} {\tt abstract}, {\tt suspend}, or {\tt error}.
+\item {\em Default.} Limit: {\tt 0}; Action: {\tt error}.
+\item {\em User handler for suspend}: {\tt max\_table\_answer\_size\_user\_handler}.
+\ei
+
+\index{tripwires!max\_answers\_for\_subgoal} 
+\item {\tt max\_answers\_for\_subgoal}
+\bi  
+\item {\em Limit:} The maximum number of answers for any single tabled
+ subgoal.  A limit of {\tt 0} means that
+ this tripwire is disabled.
+\item{\em Possible actions:} {\tt suspend}, {\tt error}, {\tt warning}
+ or {\tt complete\_soundly}.
+\item {\em Default.} Limit: {\tt 0}; Action: {\tt error}.
+\item {\em User handler for suspend}: {\tt max\_answers\_for\_subgoal\_user\_handler}.
+\ei
+
+\item {\tt max\_memory}
+\bi  
+\item {\em Limit:} If an integer, the limit is the maximum
+ amount of memory allowed for a computation, in kilobytes.  If a
+ floating-point number, the limit is the proportion of RAM for the
+ machine on which XSB is running.  A limit of {\tt 0} means that
+ this tripwire is disabled.
+\item{\em Possible actions:} {\tt suspend} or {\tt error}. 
+\item {\em Default.} Limit: {\tt 0}; Action: {\tt error}.
+\item {\em User handler for suspend}: {\tt max\_memory\_user\_handler}.
+\ei
+
+\end{itemize}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 

@@ -1,0 +1,89 @@
+# $Id: Portfile 24798 2007-05-04 17:37:59Z pipping@macports.org $
+
+PortSystem	1.0
+revision	0
+
+name		xsb
+version 3.5.0
+categories	lang
+maintainers	pmoura@logtalk.org
+
+description	XSB is a Logic Programming and Deductive Database system for Unix and Windows
+
+long_description	\
+		XSB is a Logic Programming and Deductive Database system for Unix and Windows. \
+		It is being developed at the Computer Science Department of the Stony Brook \
+		University, in collaboration with Katholieke Universiteit Leuven, Universidade \
+		Nova de Lisboa, Uppsala Universitet and XSB, Inc.
+
+homepage		http://xsb.sourceforge.net/
+master_sites	sourceforge
+
+checksums       \
+	sha256	8cb811c0a6e0c203b274e96edf74d8e56986bdef \
+	rmd160	bbf614c0450def4164b185b35d0f4b54c397dd0d
+
+depends_build    \
+	port:pcre    \
+	port:libxml2 \
+	port:curl
+
+configure.args	--prefix=${destroot}${prefix}
+
+distname		xsb-${version}
+
+worksrcdir		xsb
+			
+build.dir		${workpath}/${worksrcdir}/build
+
+use_configure	no
+
+build.env		JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home
+
+build			{
+	system "cd ${workpath}/${worksrcdir}/build && ./configure --prefix ${destroot}${prefix}/share --with-xpath-dir=${prefix}/lib --with-curl-libdir=${prefix}/lib --with-curl-incdir=${prefix}/include --with-pcre-libdir=${prefix}/lib --with-pcre-incdir=${prefix}/include && ./makexsb"
+}
+
+destroot {
+	system "cd ${workpath}/${worksrcdir}/build && ./makexsb install"
+}
+
+
+default_variants +st
+
+variant st {
+	configure.args-delete --enable-mt
+	build.cmd-delete --config-tag=mt
+	post-destroot {
+		system "cd ${destroot}${prefix}/bin && ln -sf ../share/${name}-${version}/bin/xsb xsb"
+	}
+}
+
+variant mt {
+	configure.args-append --enable-mt
+	build.cmd-append --config-tag=mt
+	destroot.cmd-append --config-tag=mt
+	post-destroot {
+		system "cd ${destroot}${prefix}/bin && ln -sf ../share/${name}-${version}/bin/xsb-mt xsb"
+	}
+}
+
+package.flat    no
+
+post-pkg {
+	set resources ${workpath}/${name}-${version}.pkg/Contents/Resources/
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/License.html ${resources}
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/ReadMe.html ${resources}
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/Welcome.html ${resources}
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/postflight ${resources}
+	file delete -force -- ${resources}/Welcome.rtf
+}
+
+post-mpkg {
+	set resources ${workpath}/${name}-${version}.mpkg/Contents/Resources/
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/License.html ${resources}
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/ReadMe.html ${resources}
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/Welcome.html ${resources}
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/postflight ${resources}
+	file delete -force -- ${resources}/Welcome.rtf
+}

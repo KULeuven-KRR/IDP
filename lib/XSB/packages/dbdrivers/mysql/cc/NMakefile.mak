@@ -8,6 +8,8 @@
 # !!!! Dont't put quotes around!
 MySQLLib=C:\Program Files\MySQL\MySQL Server 5.7\lib\mysqlclient.lib
 MySQLIncludeDir=C:\Program Files\MySQL\MySQL Server 5.7\include
+#MySQLLib=C:\Program Files\MariaDB 10.1\lib\mysqlclient.lib
+#MySQLIncludeDir=C:\Program Files\MariaDB 10.1\include\mysql
 
 XSBDIR=..\..\..\..
 MYPROGRAM=mysql_driver

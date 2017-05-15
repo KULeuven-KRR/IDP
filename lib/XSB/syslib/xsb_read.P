@@ -920,6 +920,7 @@ token_type(13, tk_hpunc).	% Added for HiLog to distinguish terms of the
 token_type(14, tk_intfunc).	% Added for terms of the form: integer( ...
 token_type(15, tk_realfunc).	% Added for terms of the form: real( ...
 
+vv(_,_) :- warning('vv/2 is a function symbo and should not be called; noop').
 /* this will go away in the future; its purpose is to make sure that
    sysinitrc.P loads xsb_read.P before users have a chance to load
    their own similarly named module. */

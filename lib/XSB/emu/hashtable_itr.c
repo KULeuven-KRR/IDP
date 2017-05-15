@@ -4,7 +4,7 @@
 #include "xsb_debug.h"
 
 #include <stdlib.h> /* defines NULL */
-
+#include "context.h"
 #include "hashtable.h"
 #include "hashtable_private.h"
 #include "hashtable_itr.h"

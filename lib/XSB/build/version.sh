@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # Do not touch xsb_patch_date! It should be updated by SVN (does not currently)
-xsb_patch_date='$Date: 2016-07-06 13:21:21 -0400 (Wed, 06 Jul 2016) $'
+xsb_patch_date='$Date: 2017-01-04 10:48:26 +0100 (wo, 04 jan 2017) $'
 
 xsb_build_date=`date +"%Y-%m-%d" || status=failed`
 if test -n "$status"; then
@@ -16,7 +16,7 @@ xsb_patch_date=`echo Build date: $xsb_build_date`
 
 xsb_major_version=3
 xsb_minor_version=7
-#xsb_patch_version=1
+xsb_patch_version=0         # must be present; otherwise, an ugly "." at the end
 #xsb_beta_version=pre"
 #xsb_codename="Skol"        # for Version 2.1
 #xsb_codename="Tsingtao"    # for Version 2.2

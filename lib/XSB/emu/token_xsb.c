@@ -318,19 +318,19 @@ int code_page_1252[256] =
 	0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
  /*	x	y	z	{	|	}	~	DEL	*/
 	0x0078, 0x0079, 0x007A, 0x007B, 0x007C, 0x007D, 0x007E, 0x007F,
- /* 	euro	??	qut	£	‘¡è	¥	¦	‘¡ì	*/
+ /* 	euro	??	qut	£	¤	¥	¦	§	*/
 	0x20AC, 0x0081, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 
  /*	¨	©	ª	«	¬	??	®	??	*/
 	0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x008D, 0x017D, 0x008F,
- /*	?? 	‘¡À	²	³	´	µ	¶	•¡±	*/
+ /*	?? 	±	²	³	´	µ	¶	·	*/
 	0x0090, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
  /*	¸	¹	º	»	¼	??	 ¾	¿	*/
 	0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x009D, 0x017E, 0x0178,
- /* 	NBSP	¡	¢	£	‘¡è	¥	¦	‘¡ì	*/
+ /* 	NBSP	¡	¢	£	¤	¥	¦	§	*/
 	0x00A0, 0x00A1, 0x00A2, 0x00A3, 0x00A4, 0x00A5, 0x00A6, 0x00A7,
- /*	‘¡§	©	ª	«	¬	SHY	®	¯	*/
+ /*	¨	©	ª	«	¬	SHY	®	¯	*/
 	0x00A8, 0x00A9, 0x00AA, 0x00AB, 0x00AC, 0x00AD, 0x00AE, 0x00AF,
- /* 	‘¡ã	‘¡À	²	³	´	µ	¶	•¡±	*/
+ /* 	°	±	²	³	´	µ	¶	·	*/
 	0x00B0, 0x00B1, 0x00B2, 0x00B3, 0x00B4, 0x00B5, 0x00B6, 0x00B7,
  /*	¸	¹	º	»	¼	½	¾	¿ 	*/
 	0x00B8, 0x00B9, 0x00BA, 0x00BB, 0x00BC, 0x00BD, 0x00BE, 0x00BF,
@@ -338,17 +338,17 @@ int code_page_1252[256] =
 	0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7,
  /*	È	É	Ê	Ë	Ì	Í	Î	Ï	*/
 	0x00C8, 0x00C9, 0x00CA, 0x00CB, 0x00CC, 0x00CD, 0x00CE, 0x00CF,
- /* 	Ğ	Ñ	Ò	Ó	Ô	Õ	Ö	‘¡Á	*/
+ /* 	Ğ	Ñ	Ò	Ó	Ô	Õ	Ö	×	*/
 	0x00D0, 0x00D1, 0x00D2, 0x00D3, 0x00D4, 0x00D5, 0x00D6, 0x00D7,
  /*	Ø	Ù	Ú	Û	Ü	İ	Ş	ß	*/
 	0x00D8, 0x00D9, 0x00DA, 0x00DB, 0x00DC, 0x00DD, 0x00DE, 0x00DF, 
- /* 	‘¨¤	‘¨¢	â	ã	ä	å	¡	ç	*/
+ /* 	à	á	â	ã	ä	å	¡	ç	*/
 	0x00E0, 0x00E1, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7,
- /*	‘¨¨	‘¨¦	‘¨º	ë	‘¨¬	‘¨ª	î	ï	*/
+ /*	è	é	ê	ë	ì	í	î	ï	*/
 	0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF,
- /* 	ğ	ñ	‘¨°	‘¨®	ô	õ	ö	‘¡Â */
+ /* 	ğ	ñ	ò	ó	ô	õ	ö	÷ */
 	0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7,
- /*	ø	‘¨´	‘¨²	û	‘¨¹	ı	ş	ÿ 	*/
+ /*	ø	ù	ú	û	ü	ı	ş	ÿ 	*/
 	0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF
    };
 
@@ -516,7 +516,9 @@ extern int utf8_GetCode(FILE *, STRFILE *, int);
 int GetCode(int charset, FILE *curr_in, STRFILE *instr) {
   int c;
   c = GetC(curr_in,instr);
-  if (c < 0) return c;  /* if eof, return it */
+  //  printf("GetCode: %d\n",c);
+  if (c == EOF) return c;
+  //  if (c < 0) return c;  /* if eof, return it */
   if (instr) { /* encoding in strings is always utf8 */
     return utf8_GetCode(curr_in, instr, c);
   }
@@ -958,14 +960,20 @@ READ_ERROR:
     "following" character.
  
 */
-static int com0plain(register FILE *card,	/* source file */
+#define EOL_COMMENT_WARN_LENGTH 300
+
+static int com0plain(CTXTdeclc register FILE *card,	/* source file */
        		     register STRFILE *instr,	/* source string, if non-NULL */
 		     register int endeol)	/* The closing character "!" */
 {
     register int c;
+    int cnt = 0;
  
-    while ((c = GetC(card,instr)) >= 0 && c != '\n' && c != endeol) ;
+    while ((c = GetC(card,instr)) >= 0 && c != '\n' && c != endeol && ++cnt) ;
     if (c >= 0) c = GetC(card,instr);
+    if (cnt > EOL_COMMENT_WARN_LENGTH) {
+      xsb_warn(CTXTc "Extra-long comment to end of line. Bad file format?");
+    }
     return c;
 }
  
@@ -1073,8 +1081,9 @@ struct xsb_token_t *GetToken(CTXTdeclc int io_port, int prevch)
 	}
 
 START:
+	//	printf("token: c=%d\n",c);
+	//	if (c == EOF) xsb_abort("Unexpected EOF in tokenizer");
         switch (InType(c)) {
- 
             case DIGIT:
                 /*  The following kinds of numbers exist:
                       (1) unsigned decimal integers: d+
@@ -1327,7 +1336,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
 		    return token;
                 } else
                 if (c == intab.eolcom) {
-                    c = com0plain(card, instr, intab.endeol);
+                    c = com0plain(CTXTc card, instr, intab.endeol);
                     goto START;
                 }
                 *s++ = c, *s = 0;
@@ -1343,7 +1352,7 @@ ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
 		    return token;
                 } else
                 if (c == intab.eolcom) {
-                    c = com0plain(card, instr, intab.endeol);
+                    c = com0plain(CTXTc card, instr, intab.endeol);
                     goto START;
                 }
                 d = GetCode(charset,card,instr);
@@ -1431,10 +1440,11 @@ case deleted ****/
 
             case EOLN:
             case SPACE:
-	      c = GetC(card,instr); // more efficient than GetCode
-                goto START;
+	      //c = GetC(card,instr); // more efficient than GetCode
+	      c = GetCode(charset,card,instr);
+	      goto START;
  
-            case EOFCH:
+	case EOFCH:
 	        if (!instr) {
 		  if (ferror(card) && !(asynint_val & KEYINT_MARK)) 
 		    xsb_warn(CTXTc "[TOKENIZER] I/O error: %s",strerror(errno));

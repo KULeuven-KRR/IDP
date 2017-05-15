@@ -111,7 +111,7 @@ argument(Tail,Tail,_,r).
 
 /*-------------- Build_graph/1 -----------------*/
 
-build_graph(module(_,_,ClList,QrList)) :-
+build_graph(module(_,_,ClList,QrList,_Par)) :-
 	build_call_graph(ClList),
 	cut_check(ClList),
 	cut_check(QrList).

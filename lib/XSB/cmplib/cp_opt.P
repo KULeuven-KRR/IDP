@@ -22,9 +22,10 @@
 ** 
 */
 
+:- import select/3 from basics.
 
-cp_opt(module(Symtab,DcList,ClList,QrList),
-       module(Symtab,DcList,ClList1,QrList)) :-
+cp_opt(module(Symtab,DcList,ClList,QrList,Par),
+       module(Symtab,DcList,ClList1,QrList,Par)) :-
 	cp_opt0(ClList, ClList1, Symtab).
 
 cp_opt0([], [],_Symtab).
@@ -88,18 +89,6 @@ cp_opt_block1(_,pred(Sym,_Pscs,_Oth),pred(Sym1,Pscs1,Oth1),Symtab):-
 	cp_opt_table_body(Sym,Head, NewCall,ClList, Symtab),
 	ClList =[pred(_Sym1,Pscs1,Oth1)|_T].
 
-/*
-cp_opt_block1(_,pred(Sym,_Pscs,_Oth),pred(Sym1,Pscs1,Oth1),Symtab):-
-	sym_name(Sym,Pred,Arity),
-	transform_pred(Pred,Pred1),
-	functor(Head,Pred,Arity),
-	functor(Body,Pred1,Arity),
-	bind_args(Arity,Head,Body),
-	parse_preddef(Body,Head, ClList1, Symtab),
-	ClList1 =[pred(Sym1,_Pscs1,_Oth1)|_T],
-	parse_preddef(Head, Body, ClList, Symtab),
-	ClList =[pred(_Sym1,Pscs1,Oth1)|_T].
-*/
 %:- import console_writeln/1 from standard.
 cp_opt_table_body(Sym,_,_,ClList1, Symtab):-
 	sym_type(Sym,approximation(ApproxSpec)),!,
@@ -121,9 +110,7 @@ cp_opt_table_body(_Sym,Head,NewCall, ClList1, Symtab):-
 get_calling_proc(use_first(N),Breg,early_complete_on_nth(Breg,N)).
 
 transform_pred(Pred,Pred1):-
-	atom_codes(Pred,Predlist),
-	append("_$",Predlist,Predlist1),
-	atom_codes(Pred1,Predlist1).
+	concat_atom([Pred,'_$'],Pred1).
 
 bind_args(0,_,_):-!.
 bind_args(N,Head,Body):-
@@ -193,8 +180,8 @@ perform_tabling_transforms(Mod1,Mod2):-
 	aggregation_transform(Mod1,Mod2).
 %	approximation_transform(Mod2,Mod2).
 
-aggregation_transform(module(Symtab,DcList,ClList,QrList),
-		      module(Symtab,DcList,ClList1,QrList)) :-
+aggregation_transform(module(Symtab,DcList,ClList,QrList,Par),
+		      module(Symtab,DcList,ClList1,QrList,Par)) :-
 	aggr_trans(ClList,ClList1,Symtab).
 
 aggr_trans([],[],_SymTab).
@@ -236,7 +223,9 @@ aggr_trans_pred(Sym,Pscs,Oth,ArgNo,ExistArgList,AggSpec,[pred(Sym1,Pscs,Oth)|ClL
 	!,
 	parse_preddef_closed(NewTerm,true,[pred(Sym1,_,_)],SymTab).
 
-% only for debugging
+
+
+%% only for debugging
 :- export mywriteln/1.
 %mywriteln(Term):- standard:writeln(Term).
 mywriteln(_Term).
@@ -409,19 +398,43 @@ generate_agg_clauses(AggrSpec,Sym,PredTerm,Var1,ExistVarList,Pred1Term,Var,ClLis
 		breg_retskel(Breg,Arity,Skel,Cs),
 		(nonvar(Var) -> instantiation_error(Pred/Arity,Arity,var) ; true),
 		excess_vars(Skel,[Var|ExistVarList],[],Vars),
-		copy_term(t(Vars,Skel,Var),t(Vars,OSkel,OVar)),
-		DefTerm = ifUndef(XX), % if seen undefined
-		XX = 0,
+		copy_term(t(Vars,Skel,Var),t(Vars1,OSkel,OVar)),
+		DefTerm = ifUndef(XX,YY), % if seen undefined
+		XX = 0,			  % undef seen?
+		YY = 0,			  % varibles seen in groupby values?
 		Pred1Term,
 		xwam_state(2,DelayReg),
-		(DelayReg =:= 0, XX =:= 0 % opt for all defined
-		 ->	('_$$get_returns'(Cs,OSkel,Leaf)
-			 ->	OpSpec1,
-				Var \== OVar,
-				Actions
-			 ;	Init
+		(XX =:= 0, DelayReg =:= 0 % opt for all defined
+		 ->	(YY =:= 0, ground(Vars) % opt for all groupby vals ground
+			 ->	(Vars = Vars1,
+				 '_$$get_returns'(Cs,OSkel,Leaf)
+				 ->	OpSpec1,
+					Var \== OVar,
+					Actions
+				 ;	Init
+				)
+			 ;	(YY =:= 0 -> term_set_arg(DefTerm,2,1,1) ; true),
+				findall(t(OVar,Var,Leaf1,Sub,RSub),
+					('_$$get_returns'(Cs,OSkel,Leaf1),
+					 OpSpec1,
+					 (subsumes_chk(Vars1,Vars) -> Sub=1 ; Sub=0),
+					 (subsumes_chk(Vars,Vars1) -> RSub=1 ; RSub=0)
+					),
+					AllRets),
+				('_$member'(t(OVar,Var,Leaf,1,_),AllRets),
+				 Var == OVar
+				 ->	fail % a subsuming answer as good or better
+				 ;	('_$member'(t(OVar,Var,Leaf,_,1),AllRets),
+					 Var \== OVar,
+					 Actions, % delete answer this one is better than
+					 fail
+					 ;
+					 Init % add this answer
+					)
+				)
 			)
 		 ;	term_set_arg(DefTerm,1,1,1), % undef, must handle from now on
+			Vars = Vars1,
 			findall(t(OSkel,Leaf1,TV1,Var),
 				('_$$get_returns_and_tvs'(Cs,OSkel,Leaf1,TV1),
 				 OpSpec1),
@@ -457,8 +470,12 @@ generate_agg_clauses(AggrSpec,Sym,PredTerm,Var1,ExistVarList,Pred1Term,Var,ClLis
 	ensure_imported('_$$get_returns_and_tvs'/4,tables,SymTab),
 	ensure_imported('_$$get_returns'/3,tables,SymTab),
 	ensure_imported(delete_return/2,tables,SymTab),
+	ensure_imported(undefined/0,tables,SymTab),
 	ensure_imported(xwam_state/2,machine,SymTab),
 	ensure_imported('_$member'/2,basics,SymTab),
+	ensure_imported(variant/2,subsumes,SymTab),
+	ensure_imported(subsumes_chk/2,subsumes,SymTab),
+	%%ensure_imported(is_most_general_term/1,standard,SymTab),
 	% TLS: for approximations (whether or not used)
 	ensure_imported(early_complete_on_nth/2,tables,SymTab),
 	ensure_imported(term_set_arg/4,machine,SymTab),
@@ -480,7 +497,7 @@ generate_agg_clauses(_OpSpec,_Sym,PredTerm,_Var1,_ExistVarList,_Pred1Term,_Var,_
 	functor(PredTerm,Pred,Arity),
 	syntax_error(['Improper join specification in tabling declaration for ',Pred,'/',Arity]).
 
-%---
+%%---
 
 get_return_w_tv(Cs,OSkel,Leaf,TV):- 
 	xwam_state(2,DelayReg_start),mywriteln(start(DelayReg_start)),
@@ -574,7 +591,9 @@ get_aggr_spec0(ArgNo,Spec,Arity,ExistArgList,OpArgNo,OpSpec) :-
 		)
 	).
 
-non_cpopt_var(Term):- nonvar(Term),Term \= '$$var'(_).
+non_cpopt_var(Term):-
+	nonvar(Term),
+	\+ (Term = '$$var'(Id), integer(Id)).
 
 ensure_imported(Pred/Arity,Mod,SymTab) :-
 	sym_insert(Mod,0,[module],SymTab,_),
@@ -597,11 +616,23 @@ subsumption_modes_trans_pred(Sym,Pscs,Oth,Modes,[pred(Sym1,Pscs,Oth)|NewClList],
 	transform_pred(Pred,Pred1),
 	build_subs_abs_clause_body(Modes,Pred,Pred1,PArgs,Body),
 	PredCall =.. [Pred|PArgs],
-	%standard:writeln(userout,abs_rule(PredCall,Body)),
+	%%print_rule(abs_rule,PredCall,Body),
 	parse_preddef_closed(PredCall,Body,NewClList,SymTab),
 	NewTerm =.. [Pred1|PArgs],
 	parse_preddef_closed(NewTerm,true,[pred(Sym1,_,_)],SymTab), % add to symtab
 	ensure_imported(table_error/1,error_handler,SymTab).
+
+/*** for when debugging **
+print_rule(Label,Head,Body) :-
+	(do_all
+	 num_vars:numbervars(p(Head,Body)),
+	 standard:write(userout,Label),
+	 standard:writeln(userout,':'),
+	 standard:writeq(userout,Head),standard:writeln(userout,' :-'),
+	 standard:write(userout,'  '),standard:writeq(userout,Body),
+	 standard:writeln(userout,'.')
+	).
+***/
 
 %% Modes must be open tailed...
 build_subs_abs_clause_body(Modes,Pred,Pred1,PArgs,Body) :-
@@ -643,26 +674,191 @@ build_plus_orig_minus_equates([-|Mode],[Var|PArgs],[NV|VListMNew],[Var=NV|Equate
 
 /* generate code for multiple subsumptive tables in different argument
    orders for arbitrary indexing. */
-table_index_trans_pred(Sym,Pscs,Oth,Indexes,[pred(Sym1,Pscs,Oth)|NewClList],SymTab) :-
+table_index_trans_pred(Sym,Pscs,Oth,Indexes,ClList,SymTab) :-
 	sym_name(Sym,Pred,Arity),
-	concat_atom([Pred,'$_base'],BasePredName),
 	collect_orders_from_indexes(Indexes,Arity,OrdSets,IndexOrds),
 	collect_inds_and_perms(OrdSets,IndexOrds,IndPerms0),
-	parsort(IndPerms0,[asc(2)],0,IndPerms),
-	findall(IndPosn,all_indexes(OrdSets,IndPosn),IndPosns0),
-	sort(IndPosns0,IndPosns), 
-	upto_n(1,Arity,StdOrd),  % 1..Arity
-	generate_index_selection_rule(IndPerms,IndPosns,Pred,Arity,StdOrd,(SelHead:-SelBody)),
-	%%standard:writeq(userout,selrule(SelHead,SelBody)),standard:writeln(userout,'.'),
+	parsort(IndPerms0,[asc(2)],0,IndPerms1),
+	simplify_ind_and_perms(IndPerms1,IndPerms),
+
+	gen_sel_clause(Pred,Arity,IndPerms,(SelHead:-SelBody)),
+	ClList = [pred(Sym1,Pscs,Oth)|NewClList],
+	%%print_rule(sel_rule,SelHead,SelBody),
 	parse_preddef_closed(SelHead,SelBody,NewClList,SymTab),
 	tail_var(NewClList,NewClList1),
 
-	findall(IndPosn,in_all_indexes(OrdSets,IndPosn),InAllInds), % posns not to abstract...
-	IndexOrds = [FirstIndOrd|_],
-	functor(BaseHead,BasePredName,Arity),
-	parse_preddef_closed(BaseHead,true,[pred(Sym1,_,_)],SymTab), % add to symtab
-	generate_all_index_rules(IndexOrds,FirstIndOrd,InAllInds,Pred,BasePredName,StdOrd,SymTab,NewClList1),
-	ensure_imported(table_error/1,error_handler,SymTab).
+	IndPerms = [ip(Set1,_,_)|IndPerms2],
+	intersect_ips(IndPerms2,Set1,NonAbsPoss),
+	upto_n(1,Arity,BaseOrdI),
+	(select(BaseOrdI,IndexOrds,IOrds)
+	 ->	BaseOrd = BaseOrdI
+	 ;	IndexOrds = [BaseOrd|IOrds]
+	),
+	concat_atom([Pred,'$'],PredD),
+	concat_atom([PredD,base],'_',OrigPred),
+	functor(OrigHead,OrigPred,Arity),
+	parse_preddef_closed(OrigHead,true,[pred(Sym1,_,_)],SymTab), % add to symtab
+	
+	gen_ind_clause(BaseOrd,BaseOrdI,Pred,Arity,NonAbsPoss,_BasePred,OrigPred,
+		       (BaseCallHead:-BaseCallBody)),
+	functor(BaseCallHead,BPred,Arity),
+	sym_insert(BPred,Arity,[tabled,use_subsumptive_tabling],SymTab,_),
+	%%print_rule(base_rule,BaseCallHead,BaseCallBody),
+	parse_preddef_closed(BaseCallHead,BaseCallBody,NewClList1,SymTab),
+	tail_var(NewClList1,NewClList2),
+
+	concat_atom([PredD|BaseOrd],'_',BOPred),
+	gen_ind_clauses(IOrds,BaseOrd,Pred,Arity,NonAbsPoss,BOPred,NewClList2,SymTab),
+	
+	% generate_rest_index_clauses
+	ensure_imported(table_error/1,error_handler,SymTab),
+	ensure_imported(pred_table_pred/2,tables,SymTab),
+	ensure_imported(assert/1,assert,SymTab),
+	ensure_imported(retractall/1,assert,SymTab).
+
+gen_ind_clauses([],_BaseOrd,_Pred,_Arity,_NonAbsPoss,_OrdPred,_ClList,_SymTab).
+gen_ind_clauses([IOrd|IOrds],BaseOrd,Pred,Arity,NonAbsPoss,OrdPred,ClList,SymTab) :-
+	gen_ind_clause(IOrd,BaseOrd,Pred,Arity,NonAbsPoss,IPred,OrdPred,(Head:-Body)),
+	functor(HeadCopy,IPred,Arity),
+	parse_preddef_closed(HeadCopy,true,_,SymTab), % add to symtab	
+	sym_insert(IPred,Arity,[tabled,use_subsumptive_tabling],SymTab,_),
+	%%print_rule(ind_rule,Head,Body),
+	parse_preddef_closed(Head,Body,ClList,SymTab),
+	tail_var(ClList,ClList1),	
+	gen_ind_clauses(IOrds,BaseOrd,Pred,Arity,NonAbsPoss,OrdPred,ClList1,SymTab).
+
+gen_ind_clause(IOrd,BaseOrd,Pred,Arity,NonAbsPoss,IPred,OrdPred,
+	       (Head:-(AbsVarTests->BaseCall;AbsGoal,EquateAbsVars))) :-
+	concat_atom([Pred,'$'],PredD),
+	concat_atom([PredD|IOrd],'_',IPred),
+	functor(Head,IPred,Arity),
+	Head =.. [IPred|HeadVars],
+
+	compl(1,Arity,NonAbsPoss,AbsPoss),
+	select_indir_vars(AbsPoss,IOrd,HeadVars,AbsVars),
+	build_var_test(AbsVars,AbsVarTests),
+
+	select_indir_vars(BaseOrd,IOrd,HeadVars,OrdVars),
+	BaseCall =.. [OrdPred|OrdVars],
+
+	functor(AbsGoal,IPred,Arity),
+	AbsGoal =.. [IPred|AbsGoalVars],
+	equate_vars(NonAbsPoss,IOrd,AbsGoalVars,HeadVars),
+	build_equates_as_nec(AbsGoalVars,HeadVars,EquateAbsVars).
+
+intersect_ips([],IntSet,IntSet).
+intersect_ips([ip(Set,_,_)|IPSets],IntSet0,IntSet) :-
+	intersect_set(Set,IntSet0,IntSet1),
+	intersect_ips(IPSets,IntSet1,IntSet).
+
+intersect_set(_,[],[]) :- !.
+intersect_set([],_,[]).
+intersect_set(S1,S2,Intersect) :-
+	S1 = [E1|R1],
+	S2 = [E2|R2],
+	(E1 < E2
+	 ->	intersect_set(R1,S2,Intersect)
+	 ; E2 < E1
+	 ->	intersect_set(S1,R2,Intersect)
+	 ;	Intersect = [E1|Int1],
+		intersect_set(R1,R2,Int1)
+	).
+gen_sel_clause(Pred,Arity,IndPerms,(Head:-Body)) :-
+	functor(Head,Pred,Arity),
+	Head =.. [Pred|HeadArgs],
+	gen_tests(IndPerms,Pred,HeadArgs,Body).
+
+gen_tests([IndPerm],Pred,HeadArgs,Condition) :- !,
+	gen_test_call(IndPerm,Pred,HeadArgs,Test,Call),
+	(fail,Test == true
+	 ->	Condition = Call
+	 ;	length(HeadArgs,Arity),
+		concat_atom(['Illegal Mode in call to ',Pred,'/',Arity],Msg),
+		Condition = (Test->Call;table_error(Msg))
+	).
+gen_tests([IndPerm|IndPerms],Pred,HeadArgs,(Test->Call;Clause)) :-
+	gen_test_call(IndPerm,Pred,HeadArgs,Test,Call),
+	gen_tests(IndPerms,Pred,HeadArgs,Clause).
+
+simplify_ind_and_perms([],[]).
+simplify_ind_and_perms([IP],[IP]) :- !.
+simplify_ind_and_perms([IP1|IPs0],IPs) :-
+	(IP1 = ip(Set1,_,Ord),
+	 IPs0 = [ip(Set2,_,Ord)|_],
+	 subset(Set2,Set1)
+	 ->	simplify_ind_and_perms(IPs0,IPs)
+	 ;	IPs = [IP1|IPs1],
+		simplify_ind_and_perms(IPs0,IPs1)
+	).
+
+equate_vars([],_,_,_).
+equate_vars([Pos|Poss],OPoss,VarsA,VarsB) :-
+	ith(NPos,OPoss,Pos),
+	ith(NPos,VarsA,Var),
+	ith(NPos,VarsB,Var),
+	equate_vars(Poss,OPoss,VarsA,VarsB).
+	
+build_equates_as_nec([],[],true) :- !.
+build_equates_as_nec([Var1|Vars1],[Var2|Vars2],Equates) :-
+	(Vars1 == []
+	 ->	(Var1 == Var2
+		 ->	Equates = true
+		 ;	Equates = (Var1=Var2)
+		)
+	 ;	(Var1 == Var2
+		 ->	Equates = Equates1
+		 ;	Equates = ((Var1=Var2),Equates1)
+		),
+		build_equates_as_nec(Vars1,Vars2,Equates1)
+	).
+
+select_indir_vars([],_,_,[]).
+select_indir_vars([Pos|Poss],Ord,HeadVars,[Var|AbsVars]) :-
+	ith(Ind,Ord,Pos),
+	ith(Ind,HeadVars,Var),
+	select_indir_vars(Poss,Ord,HeadVars,AbsVars).
+
+build_var_test([],true) :- !.
+build_var_test([Var],var(Var)) :- !.
+build_var_test([Var|Vars],(var(Var),VarTests)) :-
+	       build_var_test(Vars,VarTests).
+
+compl(I,Arity,_,[]) :- I > Arity.
+compl(I,Arity,List,Compl) :-
+	I =< Arity,
+	(member(I,List)
+	 ->	Compl1 = Compl
+	 ;	Compl = [I|Compl1]
+	),
+	I1 is I+1,
+	compl(I1,Arity,List,Compl1).
+
+gen_test_call(ip(IndPos,_,OrdPos),Pred,HeadArgs,NonVarTest,Call) :-
+	gen_sel_nonvars(1,IndPos,HeadArgs,NonVarTest),
+	concat_atom([Pred,'$'],PredD),
+	concat_atom([PredD|OrdPos],'_',OrdPredName),
+	select_vars(OrdPos,HeadArgs,OrdVars),
+	Call =.. [OrdPredName|OrdVars].
+
+select_vars([],_,[]).
+select_vars([Pos|Poss],HeadVars,[Var|AbsVars]) :-
+	ith(Pos,HeadVars,Var),
+	select_vars(Poss,HeadVars,AbsVars).
+
+gen_sel_nonvars(_,[],_,true) :- !.
+gen_sel_nonvars(I,Poss,[Arg|RemArgs],NonVars) :-
+	Poss = [P|Ps],
+	I1 is I + 1,
+	(I =:= P
+	 ->	(Ps == []
+		 ->	NonVars = nonvar(Arg)
+		 ;	NonVars = (nonvar(Arg),VarTest),
+			gen_sel_nonvars(I1,Ps,RemArgs,VarTest)
+		)
+	 ;	gen_sel_nonvars(I1,Poss,RemArgs,NonVars)
+	).
+
+
 
 collect_orders_from_indexes(Indexes,Arity,OrdSets,IndexOrds) :-
 	find_orders(Indexes,OrdSets),
@@ -671,76 +867,7 @@ collect_orders_from_indexes(Indexes,Arity,OrdSets,IndexOrds) :-
 tail_var(L,Tail) :- var(L), !, Tail = L.
 tail_var([_|L],Tail) :- tail_var(L,Tail).
 
-all_indexes(OrdSets,IndPosn) :-
-	member(OrdSet,OrdSets),
-	member(set(_,_,Inds),OrdSet),
-	member(IndPosn,Inds).
-
-generate_index_selection_rule(IndPerms,IndPosns,Pred,Arity,StdOrd,(Head:-Body)) :-
-	length(HeadVars,Arity),
-	Head =.. [Pred|HeadVars],
-	IndPerms = [ip(_,_,FirstOrd)|_],
-	gen_cond(IndPerms,IndPosns,FirstOrd,Pred,StdOrd,HeadVars,Body).
-
-gen_cond([],_ILeft,_FirstOrd,P,StdOrd,_HeadVars,Call) :-
-	!,		    % no index, just take first (give error??)
-	%% or maybe return "default" and replace with other branch above?
-	%%gen_pred_call(P,StdOrd,FirstOrd,HeadVars,Call).
-	length(StdOrd,Arity),
-	concat_atom(['Illegal Mode in call to ',P,'/',Arity],Message),
-	Call = table_error(Message).
-gen_cond([ip([],_,Perm)|_],_,_,P,StdOrd,HeadVars,Call) :-
-	!,			% Got one, take it
-	gen_pred_call(P,StdOrd,Perm,HeadVars,Call).
-gen_cond(Lists,[Ind|IndPosns],FirstOrd,P,StdOrd,HeadVars,Cond) :-
-	split_intsets(Lists,Ind,InSets,OutSets),
-	gen_cond(InSets,IndPosns,FirstOrd,P,StdOrd,HeadVars,KICond),
-	gen_cond(OutSets,IndPosns,FirstOrd,P,StdOrd,HeadVars,KOCond),
-	(KICond == KOCond
-	 ->	Cond = KICond
-	 ;	ith(Ind,HeadVars,Var),
-		Cond = (nonvar(Var)->KICond;KOCond)
-	).
-
-split_intsets([],_,[],[]).
-split_intsets([ip(IndSet,I,Perm)|Sets],Ind,InSets,OutSets) :-
-	(IndSet = [Ind|Inds]
-	 ->	InSets = [ip(Inds,I,Perm)|InSets1],
-		split_intsets(Sets,Ind,InSets1,OutSets)
-	 ;	OutSets = [ip(IndSet,I,Perm)|OutSets1],
-		split_intsets(Sets,Ind,InSets,OutSets1)
-	).
-
-gen_pred_call(Pred,HeadOrd,BodyOrd,HeadVars,Call) :-
-	corresponding_vars(HeadOrd,BodyOrd,HeadVars,CallArgs),
-	concat_atom([Pred,'$'],PredD),
-	concat_atom([PredD|BodyOrd],'_',CallPred),
-	Call =.. [CallPred|CallArgs].
-
-generate_all_index_rules([],_FirstIndOrd,_InAllInds,_Pred,_BasePredName,_StdOrd,_SymTab,_ClList).
-generate_all_index_rules([IndexOrder|IndexOrds],FirstIndOrd,InAllInds,Pred,BasePredName,StdOrd,SymTab,ClList) :-
-	concat_atom([Pred,'$'],PredD),
-	concat_atom([PredD|IndexOrder],'_',PredName),
-	corresponding_vars(IndexOrder,StdOrd,HeadVars,BodyVars),
-	Head =.. [PredName|HeadVars],
-	(IndexOrder == FirstIndOrd
-	 ->	BodyGoal =.. [BasePredName|BodyVars]
-	 ;	concat_atom([PredD|FirstIndOrd],'_',FirstPredName),
-		BodyGoal =.. [FirstPredName|BodyVars]
-	),
-	parse_preddef_closed(Head,BodyGoal,[pred(Sym,Pscs,Oth)],SymTab), % just update symtab
-	build_mode(IndexOrder,InAllInds,Mode),
-	subsumption_modes_trans_pred(Sym,Pscs,Oth,[Mode|_],ClList,SymTab),
-	tail_var(ClList,ClList1),
-	generate_all_index_rules(IndexOrds,FirstIndOrd,InAllInds,Pred,BasePredName,StdOrd,SymTab,ClList1).
-
-build_mode([],_All,[]).
-build_mode([I|Is],All,[M|Ms]) :-
-	(member(I,All)
-	 ->	M = (+)
-	 ;	M = (-)
-	),
-	build_mode(Is,All,Ms).
+:- import parsort/4 from machine.
 
 collect_inds_and_perms([],[],[]).
 collect_inds_and_perms([OrderSet|OrdSets],[IndexOrder|IndexOrds],IndPerms) :-
@@ -768,10 +895,11 @@ collect_arg_pos([set(_,_,List)|Sets],PList,ArgPoses0,ArgPoses) :-
 	append(ArgPoses0,NewArgPoses,ArgPoses1),
 	collect_arg_pos(Sets,List,ArgPoses1,ArgPoses).
 
-%% find_orders(+Indexes,-OrdSets) takes a list of indexes and
-%% returns a list of lists, one for each required argument order.
-%% Such a list is a list of terms set(Len,OrdArgPosList), where Len is
-%% the length of OrdArgPosList, OrdArgPosList is a list of indexed
+%% find_orders(+Indexes,-OrdSets) takes a list of indexes and returns
+%% a list of lists, one for each required argument order.  Such a list
+%% is a list of terms set(Len,I,OrdArgPosList), where Len is the
+%% length of OrdArgPosList, I is the position of this index in the
+%% sequence of indexes, and OrdArgPosList is a list of indexed
 %% argument positions, and each OrdArgPosList in such a list is a
 %% (proper) subset of the following one.
 find_orders(Indexes,OrdSets) :-
@@ -863,32 +991,6 @@ diff_list([I|Is],[J|Js],Rest) :-
 	 ;	diff_list(Is,Js,Rest)
 	).
 
-corresponding_vars(IList1,IList2,VarList1,VarList2) :-
-	length(IList1,Len),
-	length(IList2,Len),
-	length(VarList1,Len),
-	length(VarList2,Len),
-	equate_corresponding_vars(IList1,1,IList2,VarList1,VarList2).
-
-equate_corresponding_vars([],_,_,_,_).
-equate_corresponding_vars([I|Is],K,Js,IVarList,JVarList) :-
-	ith(K,IVarList,Var),
-	ith(J,Js,I),
-	ith(J,JVarList,Var),
-	K1 is K+1,
-	equate_corresponding_vars(Is,K1,Js,IVarList,JVarList).
-
-in_all_indexes([],_).
-in_all_indexes([OrdSet|OrdSets],Ind) :-
-	in_all_ordSet(OrdSet,Ind),
-	in_all_indexes(OrdSets,Ind).
-
-in_all_ordSet([],_).
-in_all_ordSet([set(_,Inds)|OrdSets],Ind) :-
-	member(Ind,Inds),
-	in_all_ordSet(OrdSets,Ind).
-
-
 parse_preddef_closed(Head,Body,PredList,SymTab) :-
 	functor(Head, Pred, Arity),
 	sym_insert(Pred, Arity, [defined], SymTab, PredSym),
@@ -903,8 +1005,8 @@ add_tail(Clause,[_|Clauses]) :- add_tail(Clause,Clauses).
 
 end_of_file.
 
-approximation_transform(module(Symtab,DcList,ClList,QrList),
-		      module(Symtab,DcList,ClList,QrList)):-
+approximation_transform(module(Symtab,DcList,ClList,QrList,Par),
+		      module(Symtab,DcList,ClList,QrList,Par)):-
 	approx_transform(ClList,Symtab).
 
 approx_transform([],_Symtab).

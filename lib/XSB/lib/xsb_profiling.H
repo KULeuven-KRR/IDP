@@ -44,7 +44,6 @@
 :- import writeln/1 from standard.
 :- import catch/3 from standard.
 :- import throw/1 from standard.
-:- import ground_term/1 from standard.
 :- import call_c/1, (index)/2, arg/3, writeln/2, write/2 from standard.
 :- import functor/3 from standard.
 :- import warning/1 from standard.

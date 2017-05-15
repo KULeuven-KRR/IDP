@@ -88,7 +88,8 @@ UInteger next_prime(UInteger some_int) {
  *  Return a bucket number in the range [0 .. (hash_table_size - 1)].
  */
 
-UInteger hash(const char *obj_name, byte arity, UInteger hash_table_size) {
+//UInteger hash(const char *obj_name, byte arity, UInteger hash_table_size) {
+UInteger hash(const char *obj_name, int arity, UInteger hash_table_size) {
 
   UInteger hashval, temp;
   int i, j, k;

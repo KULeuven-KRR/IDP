@@ -56,7 +56,7 @@ struct driverODBC_connectionInfo* odbcHandles[MAX_CONNECTIONS];
 struct driverODBC_queryInfo* odbcQueries[MAX_QUERIES];
 int numHandles, numQueries;
 static SQLCHAR* errorMesg;
-SQLHENV henv;
+SQLHENV global_henv;
 
 DllExport int call_conv driverODBC_initialise()
 {
@@ -74,15 +74,17 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
 
   odbcHandle = (struct driverODBC_connectionInfo *)malloc(sizeof(struct driverODBC_connectionInfo));
 
-  val = SQLAllocEnv(&henv);
+  //val = SQLAllocHandle(SQL_HANDLE_ENV,SQL_NULL_HANDLE,&global_henv);
+  val = SQLAllocEnv(&global_henv);
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     errorMesg = (SQLCHAR *) "HENV allocation error\n";
     return FAILURE;
   }
 
-  val = SQLAllocConnect(henv, &(odbcHandle->hdbc));
+  //val = SQLAllocHandle(SQL_HANDLE_DBC, global_henv, &(odbcHandle->hdbc));
+  val = SQLAllocConnect(global_henv, &(odbcHandle->hdbc));
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-    driverODBC_error(SQL_HANDLE_ENV, henv);
+    driverODBC_error(SQL_HANDLE_ENV, global_henv);
     free(odbcHandle);
     return FAILURE;
   }
@@ -142,7 +144,7 @@ int driverODBC_disconnect(struct xsb_connectionHandle* handle)
 }
 
 
-struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
+struct xsb_data** driverODBC_query(struct xsb_queryHandle* query_handle)
 {
   struct driverODBC_queryInfo* query;
   SQLHDBC hdbc;
@@ -151,30 +153,31 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 
   query = NULL;
   hdbc = NULL;
-  if (handle->state == QUERY_RETRIEVE) {
+  if (query_handle->state == QUERY_RETRIEVE) {
     for (i = 0 ; i < numQueries ; i++) {
-      if (!strcmp(odbcQueries[i]->handle, handle->handle)) {
+      if (!strcmp(odbcQueries[i]->handle, query_handle->handle)) {
 	query = odbcQueries[i];
 	break;
       }
     }
   }
-  else if (handle->state == QUERY_BEGIN) {
+  else if (query_handle->state == QUERY_BEGIN) {
     for (i = 0 ; i < numHandles ; i++) {
-      if (!strcmp(odbcHandles[i]->handle, handle->connHandle->handle)) {
+      if (!strcmp(odbcHandles[i]->handle, query_handle->connHandle->handle)) {
 	hdbc = odbcHandles[i]->hdbc;
 	break;
       }
     }
 	  
     query = (struct driverODBC_queryInfo *)malloc(sizeof(struct driverODBC_queryInfo));
-    query->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
-    strcpy(query->handle, handle->handle);
-    query->query = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
-    strcpy(query->query, handle->query);
+    query->handle = (char *)malloc((strlen(query_handle->handle) + 1) * sizeof(char));
+    strcpy(query->handle, query_handle->handle);
+    query->query = (char *)malloc((strlen(query_handle->query) + 1) * sizeof(char));
+    strcpy(query->query, query_handle->query);
     query->resultmeta = NULL;
     query->parammeta = NULL;
 
+    //val = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &(query->hstmt));
     val = SQLAllocStmt(hdbc, &(query->hstmt));
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_DBC, hdbc);
@@ -182,7 +185,7 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
       return NULL;
     }
 		  
-    val = SQLExecDirect(query->hstmt, (SQLCHAR *) handle->query, SQL_NTS);
+    val = SQLExecDirect(query->hstmt, (SQLCHAR *) query_handle->query, SQL_NTS);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       freeQueryInfo(query); 
@@ -197,7 +200,7 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
       freeQueryInfo(query); 
       return NULL;
     }
-    handle->numResultCols = query->resultmeta->numCols;
+    query_handle->numResultCols = query->resultmeta->numCols;
     if (query->resultmeta->numCols == 0) {
       odbcQueries[numQueries++] = query; 
       return NULL;
@@ -222,7 +225,7 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
       }
     }
 	  
-    handle->state = QUERY_RETRIEVE;
+    query_handle->state = QUERY_RETRIEVE;
     odbcQueries[numQueries++] = query;
   }
   return driverODBC_getNextRow(query, 1);

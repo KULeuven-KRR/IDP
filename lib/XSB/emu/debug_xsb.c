@@ -63,6 +63,56 @@
 void print_subgoal(CTXTdeclc FILE *, VariantSF);
 #define virtual_buffer (fl_buf->fl_buffer)
 
+/* @@
+STACKS
+print_completion_stack()
+
+print_deltf_chain()
+print_delcf_chain()
+
+print_registers()
+print_callRegs()
+
+SUBGOALS
+Print a subgoal starting from...
+
+A subgoal frame
+void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
+
+a callnode_leaf: 
+void print_subgoal_callnode_leaf(CTXTdeclc FILE *fp, callnodeptr cn)
+
+ANSWERS: 
+
+printAnswerList()
+
+printTriePath()
+
+Print an answer starting from its template.
+void sprint_answer_template(CTXTdeclc forestLogBuffer fl_buf, CPtr pAnsTmplt, int template_size,long depth) 
+
+Delay_lists
+
+... in the heap
+print_delay_list(CTXTc stddbg, dlist);
+
+print_delay_element()
+
+Works for answers, maybe subgoials
+void print_pdes(PNDE firstPNDE) 
+
+TRIES
+print_trie_atom
+
+INCREMENTAL
+print_call_stack()
+
+print_inedges
+
+print_outedges
+*/
+
+
 /*=============================================================================*/
 /*  The first section of predicates are used for tracing as well as by XSB     */
 /*  developers during debugging.  They should always be defined		       */
@@ -307,6 +357,9 @@ CTptr_2 cycle_trail_2;
 void mark_cyclic(CTXTdeclc Cell Term) {
   Cell preTerm, visited_string;
 
+  // Need to do this because string gc sometimes reclaims this interned string.
+  cyclic_string = (char *) string_find("<cyclic>",1);
+
   cycle_trail_top = -1;
 
   XSB_Deref(Term);
@@ -453,6 +506,7 @@ static int sprint_term(forestLogBuffer fl_buf, int insize, Cell term, byte car, 
     sprintf(virtual_buffer+size, ")");size++;
     return size;
   case XSB_STRING:
+    //    printf("svt %s\n",string_val(term));
     return sprint_quotedname(virtual_buffer, size, string_val(term));
   case XSB_INT: {
     //    int width = get_int_print_width((Integer)int_val(term));
@@ -758,7 +812,7 @@ void debug_call(CTXTdeclc Psc psc)
 }
 
 /*=============================================================================*/
-/*  The second section of predicates I (TLS) use when debugging with gdb.      */
+/*  The second section of predicates I (TES) use when debugging with gdb.      */
 /*  Please ensure they stay defined whenever we compile with -dbg option.      */
 /*=============================================================================*/
 
@@ -1345,7 +1399,21 @@ void print_completion_stack(CTXTdeclc FILE *fptr)
 
 /*----------------------------------------------------------------------*/
 
-void print_delay_element(CTXTdeclc FILE *fp, Cell del_elem)
+void print_delay_element_from_table(CTXTdeclc DE delay_element) {
+  printf("Delay element: subgoal ");print_subgoal(CTXTc stddbg,de_subgoal(delay_element)); printf(" next: %p\n",de_next(delay_element));
+}
+
+void print_delay_list_from_table(CTXTdeclc DL delay_list) {
+  int i = 0;
+  DE delay_elt = dl_de_list(delay_list);
+  while (delay_elt) {
+    printf("   Delay element: %d subgoal ",i++);print_subgoal(CTXTc stddbg,de_subgoal(delay_elt));printf(" next: %p\n",de_next(delay_elt));
+    delay_elt = de_next(delay_elt);
+  }
+}
+/*----------------------------------------------------------------------*/
+
+void print_delay_element_heap(CTXTdeclc FILE *fp, Cell del_elem)
 {
   Psc  psc = 0;
   CPtr cptr;
@@ -1385,19 +1453,17 @@ void print_delay_element(CTXTdeclc FILE *fp, Cell del_elem)
     fprintf(fp, ")");
   }
   else {
-    xsb_abort("Unknown delay list element in print_delay_element()");
+    xsb_abort("Unknown delay list element in print_delay_element_heap()");
   }
 }
 
 /* This does a more thorough job of printing out delay elements than
-   print_delay_element(), which I haven't updated */
+   print_delay_element_heap(), which I haven't updated */
 int sprint_delay_element(CTXTdeclc forestLogBuffer fl_buf, int ctr ,Cell del_elem) {
   Psc  psc = 0;
   CPtr cptr;
   Cell tmp_cell;
   //  int arity, i;  char *name;
-
-  //  print_delay_element(CTXTc stdout, del_elem);printf("\n");
 
   if ((psc = get_str_psc(del_elem)) == delay_psc) {
     cptr = (CPtr)cs_val(del_elem);
@@ -1448,7 +1514,7 @@ int sprint_delay_element(CTXTdeclc forestLogBuffer fl_buf, int ctr ,Cell del_ele
     return ctr;
   }
   else {
-    xsb_abort("Unknown delay list element in print_delay_element()");
+    xsb_abort("Unknown delay list element in sprint_delay_element_heap()");
     return 0; // quiet compiler.
   }
 }
@@ -1466,7 +1532,7 @@ void print_delay_list(CTXTdeclc FILE *fp, CPtr dlist)
       fprintf(fp, "["); cptr = dlist;
       while (islist(cptr)) {
 	cptr = clref_val(cptr);
-	print_delay_element(CTXTc fp, cell(cptr));
+	print_delay_element_heap(CTXTc fp, cell(cptr));
 	cptr = (CPtr)cell(cptr+1);
 	if (islist(cptr)) fprintf(fp, ", ");
       }
@@ -2641,7 +2707,7 @@ static void debug_interact(CTXTdecl)
     skip_to_nl();
     sym = insert_module(0, mod);
     sym = insert(name, num, sym->psc_ptr, &num);
-    set_spy(sym->psc_ptr, 0x80);
+    psc_set_spy(sym->psc_ptr, 0x80);
     goto again;
   case 'B':
     scanf("%d", &num);
@@ -2779,7 +2845,7 @@ static void debug_interact(CTXTdecl)
     skip_to_nl();
     sym = insert_module(0, mod);
     sym = insert(name, num, sym->psc_ptr, &num);
-    set_spy(sym->psc_ptr, 0x00);
+    psc_set_spy(sym->psc_ptr, 0x00);
     goto again;
   case 'v':
     scanf("%d", &num);

@@ -114,6 +114,18 @@ extern void gdb_dummy(void);
 #define Cellfmt "lu"
 #endif
 
+/* DSW - 2/7/2016 Windows stat() stopped working on files larger than
+31-bits in size.  Have to use stat64.  Changed in open, lots of other
+uses not changed.  Thought is to change on demand when something is
+noticed and needed. */
+#if defined(WIN_NT)
+#define stat_buff_type __stat64
+#define stat_function _stat64
+#else
+#define stat_buff_type stat
+#define stat_function stat
+#endif
+
 #define CALL_ABSTRACTION 1
 //#define DEBUG_ABSTRACTION 
 

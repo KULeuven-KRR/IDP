@@ -9,7 +9,7 @@
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1998-2011
+** Copyright (C) The Research Foundation of SUNY, 1998-2016
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -52,7 +52,11 @@ xsb_configuration(compiler, 'cl.exe').
 xsb_configuration(compiler_flags, '').
 xsb_configuration(loader_flags, '').
 
-%% Change these to yes, if these libs are available
+xsb_configuration(build_date, '2017-05-15').
+
+/* Packages */
+
+%% Change these to yes, if these libs become available
 xsb_configuration(regmatch_support, 'no').
 xsb_configuration(wildmatch_support, 'no').
 
@@ -87,9 +91,9 @@ xsb_configuration(word_size, '64').
 
 xsb_configuration(major_version, '3').
 xsb_configuration(minor_version, '7').
-xsb_configuration(patch_version, '').
+xsb_configuration(patch_version, '0').
 xsb_configuration(beta_version, '').
-xsb_configuration(version, '3.7.').
+xsb_configuration(version, '3.7.0').
 
 xsb_configuration(codename, 'Clan MacGregor').
 xsb_configuration(release_date,

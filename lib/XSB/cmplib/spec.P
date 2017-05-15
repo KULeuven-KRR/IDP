@@ -45,7 +45,7 @@
 /*	the DeclarationList (DL) are not yet taken into account.	*/
 /*======================================================================*/
 
-spec(module(SymTab,DL,CL,QR), module(SymTab,DL,CL1,QR)) :-
+spec(module(SymTab,DL,CL,QR,Pars), module(SymTab,DL,CL1,QR,Pars)) :-
 	initialise,
 	collect_pi_calls(CL, DL, PI_Calls),
 	interesting_calls(PI_Calls, CL, InterestingCalls),

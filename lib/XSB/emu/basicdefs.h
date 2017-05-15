@@ -46,6 +46,8 @@
 #define SLASH '/'
 #endif
 
+#define MAX_ARITY	65535
+
 #ifndef MAXPATHLEN
 #define MAXPATHLEN   1024  /* SYSV */
 #endif

@@ -37,7 +37,7 @@ clauses in DB1 and DB2.
 
 intersect_fact_db(+DB1,+DB2,-DB3) where DB3 contains the intersection
 of the sets of facts in DB1 and DB2.  DB1 and DB2 must contain only
-ground facts.
+ground facts!
 
 Notes:
 
@@ -110,13 +110,18 @@ call_in_db0(\+(G),DB) :- !, \+ call_in_db0(G,DB).
 call_in_db0((C->A;B),DB) :- !,
 	(call_in_db0(C,DB) -> call_in_db0(A,DB) ; call_in_db0(B,DB)).
 call_in_db0((A;B),DB) :- !, (call_in_db0(A,DB) ; call_in_db0(B,DB)).
+call_in_db0(table(Goal),DB) :- !, db_table_call(DB,Goal).
 call_in_db0(G,_DB) :- functor(G,F,A), std_xsb:standard_symbol(F,A,_), !,
 	standard:call_c(G).
 call_in_db0(G,DB) :-
 	clause_in_db0(G,B,DB),
 	call_in_db0(B,DB).
 
-% union of DBs
+:- table db_table_call/2.  % as intern.
+db_table_call(DB,Goal) :-
+	call_in_db0(Goal,DB).
+
+%% union of DBs
 union_db(DB1,DB2,DB) :-
 	valid_db(DB1,'union_db/3'),
 	valid_db(DB2,'union_db/3'),

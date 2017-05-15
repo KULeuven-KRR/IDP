@@ -1,5 +1,5 @@
 /* File:      machine.P
-** Author(s): Jiyang Xu, Kostis Sagonas, Terrance Swift, David S. Warren,
+** Author(s): Jiyang Xu, Kostis Sagonas, Theresa Swift, David S. Warren,
 **    	      Ernie Johnson 
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -61,7 +61,7 @@ psc_name(PSC, String) :- psc_name(PSC, String).
 psc_arity(PSC, Arity) :- psc_arity(PSC, Arity).
 psc_type(PSC, Type) :- psc_type(PSC, Type).
 psc_prop(PSC, Term) :- psc_prop(PSC, Term).
-psc_mod(PSC, Term) :- psc_mod(PSC, Term).
+psc_mod(PSC, ModPSC) :- psc_mod(PSC, ModPSC).
 psc_set_type(PSC, Type) :- psc_set_type(PSC, Type).
 psc_set_prop(PSC, Term) :- psc_set_prop(PSC, Term).
 psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).
@@ -70,10 +70,8 @@ psc_set_ep(PSC, Term) :- psc_set_ep(PSC, Term).
 psc_data(PSC, Data) :- psc_data(PSC, Data).
 psc_init_info(_PSC) :- '_$builtin'(PSC_INIT_INFO).
 
-:- export psc_immutable/2.
 psc_immutable(Psc,Immutable):- 
 	table_inspection_function(PSC_IMMUTABLE,Psc,Immutable,_Three,_Four).
-
 
 psc_set_shared(PSC, Bool) :-
 	psc_get_env(PSC, Det, T_SHARED_DET),
@@ -89,9 +87,11 @@ psc_shared(PSC, Bool) :- psc_get_env(PSC, Bool, T_SHARED).
 psc_set_private(PSC, IBool) :- RBool is \(IBool), psc_set_shared(PSC, RBool).
 psc_set_tabled(PSC, Bool) :-
 	psc_get_set_env_byte(PSC,255,0,Res),
-	(Res =:= 0 %% Do only if not yet set
+	((Bool =:= 0 ; Res =:= T_UNLOADED ; Res =:= 0) 
 	 ->	psc_set_env(PSC, Bool, T_TABLED)
-	 ;	true
+	 ; (Res =:= T_TABLED ; Res =:= T_TABLED+T_UNLOADED)
+	 ->	true		% already set OK
+	 ;	fail
 	).
 
 % TLS: changed to return values (including variant or subsumptive).
@@ -108,17 +108,27 @@ psc_get_set_env_byte(_PSC, _And, _Or, _Res) :- '_$builtin'(PSC_GET_SET_ENV_BYTE)
 
 psc_set_incr(PSC, CODE):-
 	incr_eval_builtin(PSC_SET_INCR, PSC, CODE).
-
 psc_get_incr(PSC, CODE):-
 	incr_eval_builtin(PSC_GET_INCR, PSC, CODE).
 
 psc_set_intern(PSC, CODE):-
 	incr_eval_builtin(PSC_SET_INTERN, PSC, CODE).
-
 psc_get_intern(PSC, CODE):-
 	incr_eval_builtin(PSC_GET_INTERN, PSC, CODE).
 
-term_new_mod(Mod, Term, NewTerm) :- term_new_mod(Mod, Term, NewTerm).
+psc_set_alt_semantics(PSC, CODE):-
+	incr_eval_builtin(PSC_SET_ALT_SEMANTICS, PSC, CODE).
+psc_get_alt_semantics(PSC, CODE):-
+	incr_eval_builtin(PSC_GET_ALT_SEMANTICS, PSC, CODE).
+
+term_new_mod(Mod, Term, NewTerm) :-
+	(atom(Mod)
+	 ->	PMod = Mod
+	 ;	term_to_atom(Mod,PMod,[quoted(true)]) % if atom, must handle quotes
+	),
+	term_new_mod_inline(PMod, Term, NewTerm).
+term_new_mod_inline(Mod,Term,NewTerm) :- term_new_mod_inline(Mod, Term, NewTerm).
+
 term_psc(Term, PSC) :- term_psc(Term, PSC).
 term_type(Term, Type) :- term_type(Term, Type).
 term_compare(Term1, Term2, Res) :- term_compare(Term1, Term2, Res).
@@ -168,8 +178,8 @@ stat_sta(X) :- stat_sta(X).
 stat_cputime(X) :- stat_cputime(X).
 stat_walltime(X) :- stat_walltime(X).
 xwam_state(_Code,_Val) :- '_$builtin'(XWAM_STATE).  /* maybe make it inline for some values?*/
-code_load(ByteCodeFileName, InitAddr, Exp) :-
-	code_load(ByteCodeFileName, InitAddr, Exp).
+code_load(ByteCodeFileName, InitAddr, Exp, ModParList) :-  % ModParList is atomized mod term
+	code_load(ByteCodeFileName, InitAddr, Exp, ModParList).
 buff_set_var(Buff, Disp, BuffSize, Var) :-
 	buff_set_var(Buff, Disp, BuffSize, Var).
 buff_dealloc(Buff, OldSize, NewSize) :- buff_dealloc(Buff, OldSize, NewSize).
@@ -184,10 +194,17 @@ str_match(Sub,Str,Direction,Beg,End) :- str_match(Sub,Str,Direction,Beg,End).
 dirname_canonic(File, Canonic) :- dirname_canonic(File, Canonic).
 /* for efficiency reasons, the following predicates are also implemented */
 psc_insert(Name, Arity, PSC, MName) :- psc_insert(Name, Arity, PSC, MName).
+psc_find(_Name,_Arity,_MName,_PSC) :- '_$builtin'(PSC_FIND).
 psc_import(Pname, Arity, MName) :- psc_import(Pname, Arity, MName).
 psc_import_as(Psc1, Psc2) :- psc_import_as(Psc1, Psc2).
 
-psc_insertmod(ModName, Def, PSC) :- psc_insertmod(ModName, Def, PSC).
+psc_insertmod_inline(ModName, Def, PSC) :- psc_insertmod_inline(ModName, Def, PSC).
+psc_insertmod(ModName,Def,PSC) :-
+	(atom(ModName)
+	 ->	PMod = ModName
+	 ;	term_to_atom(ModName,PMod,[quoted(true)]) % if atom, must handle quotes
+	),
+	psc_insertmod_inline(PMod,Def,PSC).
 
 file_gettoken(File, PrevCh, Type, Value, NextCh) :-
 	file_gettoken(File, PrevCh, Type, Value, NextCh).
@@ -223,8 +240,10 @@ tilde_expand_filename(FileName, ExpandedFileName) :-
 is_absolute_filename(FileName) :- is_absolute_filename(FileName).
 parse_filename(FileName, Dir, Basename, Extension) :-
 	parse_filename(FileName, Dir, Basename, Extension).
+
 almost_search_module(FileName, Dir, ModName, Extension, BaseName) :-
 	almost_search_module(FileName, Dir, ModName, Extension, BaseName).
+
 existing_file_extension(FileName, Extension) :-
 	existing_file_extension(FileName, Extension).
 

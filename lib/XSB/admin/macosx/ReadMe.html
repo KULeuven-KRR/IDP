@@ -1,0 +1,245 @@
+<h1>About XSB</h1>
+
+<p><strong>XSB</strong> is a Logic Programming and Deductive Database
+system for Unix and Windows. It is being developed at the <a
+href="http://www.cs.stonybrook.edu/" >Computer Science Department</a>
+of the <a href="http://www.stonybrook.edu/" >Stony Brook
+University</a>, in collaboration with <a
+href="http://www.kuleuven.ac.be/" >Katholieke Universiteit Leuven</a>,
+<a href="http://www.unl.pt" >Universidade Nova de Lisboa</a>, <a
+href="http://www.uu.se/" >Uppsala Universitet</a> and <a
+href="http://www.xsb.com/" >XSB, Inc</a>.</p>
+
+<h2>XSB Technical Summary</h2>
+
+<h3>Tabled Resolution</h3>
+<p>
+Tabled resolution is useful for recursive query computation, allowing
+programs to terminate correctly in many cases where Prolog does
+not. Users interested in Parsing, Program Analysis, Model-checking,
+Data Mining, Diagnosis and Temporal Reasoning may benefit from XSB.
+</p>
+<p>XSB's Tabling implementation:</p>
+<ul>
+  <li>
+  Evaluates at the engine level programs with stratified and non-stratified
+  negation, and programs with stratified aggregation.
+  </li>
+  
+  <li>
+  Allows full Prolog functionality in tabled code including cuts, (subject
+  to weak semantic restrictions), in meta-logical predicates, in second-order
+  predicates, etc.
+  </li>
+
+  <li>
+  Allows for declaration of tabled predicates either automatically by the
+  system or manually by the user. Furthermore, tabling can be automatically
+  performed for termination, for efficiency, or for both.
+  </li>
+
+  <li>
+  Provides standard tabling predicates which can be used to program a number
+  of applications in Non-Monotonic reasoning and Knowledge
+  representation.
+  </li>
+
+  <li>
+  Dynamically compiles tables into trie-based SLG-WAM code. which is indexed
+  dynamically and for which full memory management is provided.
+  </li>
+
+  <li>
+  Has a default a tabling strategy called
+  <i>Local Evaluation</i> which is efficient for returning all answers
+  to a query, and is useful for applications such as program analysis
+  and non-monotonic reasoning.  As a configuration alternative, <i>
+  Batched Evaluation </i> is a Prolog-like tabling strategy that
+  efficiently returns the first answer to a query.
+  </li>
+
+  <li> Has a default stack management
+  configuration the SLG-WAM configuration, for which a choice of three
+  heap garbage collectors are available.
+  </li>
+</ul>
+
+<h3>
+Support for Multi-Threading
+</h3>
+<p>
+Beginning with Version 3.0, XSB supports a configuration that allows
+multiple threads of computation within a single process under the
+Posix model.
+
+<ul>
+<li>
+All threads within the multi-threaded engine share the same static
+code and I/O streams.  
+</li>
+
+<li>
+For dynamic code or tables, predicates may be declared
+thread-<i>private</i> or thread-<i>shared</i>.  Private predicates
+are visible only to a given thread, and the space for private
+predicates is reclaimed upon a thread's exit.  Thread-shared
+predicates are visible to all threads.  
+</li>
+
+<li>
+Within default local evaluation, concurrency for shared tables is
+supported by an optimistic concurrency control called <i>shared
+completed tables</i> which adds little overhead to computation.
+Within batched evaluation, non-completed tables are visible to
+multiple threads as well (this is experimental in version 3.0).
+</li>
+
+<li>
+Posix-style operations are supported for XSB threads, including
+joining and detaching threads, thread cancellation, etc.
+</li>
+
+</ul>
+
+<h3>Indexing and Dynamic Code</h3>
+
+<p>
+XSB contains a variety of features to support in-memory data-oriented
+applications.  Using these features, knowledge bases with millions of clauses 
+can be quickly loaded and efficiently indexed.
+</p>
+
+<ul>
+  <li>
+  Indexes can be created on alternate or joint arguments of dynamic
+  code. Furthermore this indexing can be hash-based, or trie-based if
+  it is necessary to perform indexing deep within alternate arguments
+  of a term.
+  </li>
+
+  <li>
+  XSB provides a variety of read and assert mechanisms for quickly
+  loading dynamic predicates, especially if these predicates are unit
+  clauses.
+  </li>
+
+  <li>
+  XSB provides mechanisms for backtrackable asserts: asserts whose
+  effects become undone upon backtracking.
+  </li> 
+
+  <li>
+  For static code XSB provides <i>unification factoring</i> which
+  extends clause indexing by factoring common unifications out of
+  clause heads, and can be used to optimize many Prolog programs.
+  </li>
+</ul>
+
+<h3>Interfaces</h3>
+<p>
+XSB supports a variety of interfaces.  All source code is available so
+that the interfaces can be tuned as needed or ported to other Prologs. (as some
+have been!)
+</p>
+
+<ul>
+  <li>
+  Interfaces under UNIX and Cygwin, to call C functions or to be called by them.
+  </li>
+
+  <li>
+  An ODBC interface, to call data stored in a database accessable by an
+  ODBC driver.  This interface translates Datalog clauses into SQL
+  automatically.
+  </li>
+  
+  <li>
+    An alternate interface that supports access to multiple drivers,
+    including mySQL drivers.
+  </li>
+  
+  <li>
+  Java interfaces provided through <a
+  href="http://www.declarativa.com/interprolog">InterProlog</a> and 
+  <a href="http://www-db.stanford.edu/~stefan/rdf/yajxb/">
+  YAJXB</a>
+  </li>
+
+  <li> An interface to Perl, and especially to its pattern-matching
+  facilities.
+  </li>
+  
+  <li>
+  Interfaces to libwww routines and various pattern-matching utilities,
+  all of which are useful for Web applications.
+  </li>
+
+  <li>
+  An interface to the stable model generator 
+  <a href="http://www.tcs.hut.fi/Software/smodels"> 
+  SModels</a> via the new <em>XASP</em> package.
+  </li>
+
+</ul>
+
+<h3>HiLog Compilation</h3>
+<p>
+HiLog supports a type of higher-order programming in which predicate
+symbols can be variable or structured. This allows unification to be
+performed on the predicate symbols themselves in addition to the
+arguments of the predicates.
+</p>
+<p>
+XSB's HiLog implementation:
+</p>
+
+<ul>
+  <li>
+  Includes compiled HiLog. Higher-order predicates execute at
+  essentially the same speed as compiled first-order predicates.
+  </li>
+
+  <li>
+  Includes a fully integrated HiLog preprocessor. HiLog terms can be
+  used anywhere in XSB, including the interpreter level.
+  </li>
+
+  <li>
+  Provides a number of meta-logical standard predicates for HiLog
+  terms.
+  </li>
+</ul>
+
+<h3>Packages</h3>
+<p>
+In addition to those mentioned above, several important packages are maintained 
+on top of XSB, inlcuding
+<ul>
+  <li>Flora: a highly sophisticated and efficient implementation of
+             F-logic
+  </li>
+  <li>
+    XJ: a system that allows XSB programs to create graphical sser
+    interfaces based on Java's Swing package.
+  </li>
+  <li>XMC: a temporal-logic model checker for verifying properties of
+           concurrent programs. and containing a graphical user
+           interface.
+  </li>
+  <li>xsbdoc: a mechanism for generating manuals for XSB libraries and
+             applications using principles of literate programming.
+             Manuals can be generated in a variety of formats, including
+             html, pdf, ps, and even ASCII text.
+  </li>
+</ul>
+</p>
+<p>
+XSB has been tested on over a dozen hardware and operating system
+platforms under Microsoft Windows 95/98, Windows NT, Windows 2000 and
+various versions of 32-bit UNIX. XSB also has also been ported to 64-bit
+architectures and has been tested on 64-bit SGI machines. Various
+versions of XSB have been used to construct large-scale commercial
+systems for the U.S. Customs Service, the U.S. Defense Logistics
+Agency, the National Security Agency, Medicine Rules, Inc, MdLogix
+Inc., and many others.
+</p>

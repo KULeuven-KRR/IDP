@@ -35,10 +35,11 @@
 :- import component_table_int/3 from usermod.
 :- import caching_cdf/1 from usermod.
 
-:- import pretty_print/1 from newpp.
+%%:- import pretty_print/1 from newpp.
 :- import newIntRule/3,newDLRule/3,newDLTableFact/2,
-	 newExtTermBatch/2,transform_intensional_rules/4,
-	 abolish_cdf_tables/0, cdf_id_fields/4, cdf_root/1 from cdf_init_cdf.
+	newExtTermBatch/2,transform_intensional_rules/4,newExtTerm/1,
+	retractallExtTerm/1,
+	abolish_cdf_tables/0, cdf_id_fields/4, cdf_root/1 from cdf_init_cdf.
 
 :- import  get_intensional_mfile_expansion/2 from cdf_comps_share.
 
@@ -139,6 +140,7 @@ cdf_ext_inst(minAttr_ext(_,_,_,_)).
 cdf_ext_inst(maxAttr_ext(_,_,_,_)).
 
 dump_extensional_facts_2:- 
+	set_cdf_save_time,
 	cdf_ext_inst(Term),
 	findall(Term,Term,Set),
 	(Term = classHasAttr_ext(_,_,_)
@@ -147,6 +149,20 @@ dump_extensional_facts_2:-
 	),
 	fail.
 dump_extensional_facts_2.
+
+:- import datime/1 from standard.
+set_cdf_save_time :-
+	(classHasAttr_ext(cid('CDF Classes',cdf),crid('Time Last Saved',cdf),cid(_,cdfpt))
+	 ->	retractallExtTerm(classHasAttr_ext(cid('CDF Classes',cdf),crid('Time Last Saved',cdf),cid(_,cdfpt)))
+	 ;	(isa(crid('Time Last Saved',cdf),crid('CDF Class-Object Relations',cdf))
+		 ->	true
+		 ;	newExtTerm(isa_ext(crid('Time Last Saved',cdf),crid('CDF Class-Object Relations',cdf)))
+		)		
+	),
+	datime(Time),
+	newExtTerm(classHasAttr_ext(cid('CDF Classes',cdf),crid('Time Last Saved',cdf),cid(Time,cdfpt))).
+			       
+
 %-----------------------------------------------------------------
 
 /* TLS: Some documentation is probably worthwhile here.  When an
@@ -225,7 +241,11 @@ write_component_intensional_1(Comp,Call,Head,SrcArg):-
 	Call =..[_|L],
 	NewHead =.. [Head|L],
 	\+ is_dl_rule(Comp,NewHead,Body),
-	pretty_print(clause(NewHead,Body)).
+	%% pretty_print calls write_term, which currently writes (most)
+	%%   operators with enclosing parens, which all reads choke on...
+	%%pretty_print(clause(NewHead,Body)).
+	%% so replace it with the following...
+	writeq((NewHead:-Body)), writeln('.').
 
 
 is_dl_rule(Comp,Head,Body):- 
@@ -375,12 +395,12 @@ read_till_slash_1([H|R],[H|R1]):-
 
 merge_intensional_rules(Dir) :-
 	extract_file_name(Dir,Name),
-	writeln(userout,merging_intensional_rules(Dir,Name)),
+	%%writeln(userout,merging_intensional_rules(Dir,Name)),
 	merge_intensional_rules(Dir,Name).
 
 %TLS: dont know if permission error is right here.	   :	
 load_intensional_rules(Path,Name):- 
-	writeln(userout,loading_intensional_rules(Path,Name)),
+	%%writeln(userout,loading_intensional_rules(Path,Name)),
 	retract_intensional_rules(Name),
 	merge_intensional_rules(Path,Name).
 
@@ -481,6 +501,7 @@ dump_extensional_isa_component_with_backup(IDList,CDFDir,Opts) :-
 dump_extensional_isa_component(IDList,CDFDir,Opts) :-
 	abolish_table_pred(ancestor(_,_,_)),
 	abolish_table_pred(descendent(_,_,_)),
+	abolish_table_pred(target_ancestors_for(_,_,_)),
 	concat_atom([CDFDir,'/cdf_extensional.P'],CDFFile),
 	open(CDFFile,write,OStr),
 	findall(isa_ext(Sub,Sup),isa_anc_desc(IDList,Sub,Sup),Isas0),
@@ -492,9 +513,7 @@ dump_extensional_isa_component(IDList,CDFDir,Opts) :-
 		sort(AllIsas0,AllIsas)
 	 ;	AllIsas = PrimaryIsas
 	),
-	writeln(userout,call_write_cdf_list_All),
 	write_cdf_list(OStr,AllIsas),
-	writeln(userout,call_dump_attrs),
 	dump_attrs(PrimaryIsas,OStr),
 	close(OStr).
 
@@ -525,15 +544,24 @@ isa_anc_desc(IDList,Sub,Sup) :-
 	 descendent(ID,Sub,Sup)
 	).
 
+:- table target_ancestors_for/3.
 target_ancestors_for(IsaList,Sub,Sup) :-
 	classes_from_isas(IsaList,IDList),
 	member(ID,IDList),
-	cdf_attr_ext_inst(AttrTerm,ID,Rid,Tid),
-	call_c(AttrTerm),
-	(ancestor(Rid,Sub,Sup)
-	 ;
-	 cids_in_partype(Cid,Tid),
-	 ancestor(Cid,Sub,Sup)   
+	(ID = cid(PType,Cmp),  % too explosive! find cheaper hack (or table)
+	 compound(PType),
+	 functor(PType,PFun,PAri),
+	 functor(OPType,PFun,PAri),
+	 cids_in_partype(Cid,cid(OPType,Cmp)),
+	 ancestor(Cid,Sub,Sup)
+	 ;	
+	 cdf_attr_ext_inst(AttrTerm,ID,Rid,Tid),
+	 call_c(AttrTerm),
+	 (ancestor(Rid,Sub,Sup)
+	  ;	 
+	  cids_in_partype(Cid,Tid),
+	  ancestor(Cid,Sub,Sup)   
+	 )
 	).
 
 :- table ancestor/3.

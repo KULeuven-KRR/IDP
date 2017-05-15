@@ -92,8 +92,8 @@ comp_stmt([par(S1,S2), _Pos],
 	!,
 	%% compile subprocesses
 	get_state_var(Exit, XVars),
-	comp_stmt(S1,ProcName,VarNames,_,end(XVars), ... Start1, Code1),
-	comp_stmt(S2,ProcName,VarNames,_,end(XVars), ... Start2, Code2),
+	comp_stmt(S1,ProcName,VarNames,_,end(XVars), ..., Start1, Code1),
+	comp_stmt(S2,ProcName,VarNames,_,end(XVars), ..., Start2, Code2),
 
 	%% link together
 	append(Code1, Code2, StartCode).

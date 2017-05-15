@@ -1,0 +1,563 @@
+% attempt to re-document the XSB module system
+
+\section{The Module System of XSB} \label{Modules}
+
+XSB has been designed as a module-oriented Prolog system.  Modules
+provide a step towards {\em logic programming ``in the large''} that
+facilitates the construction of large programs or projects from
+components that are developed, compiled and tested separately.  Also,
+module systems support the principle of information hiding and can
+provide a basis for data abstraction.  And modules form the basis for
+XSB's implementation of its standard predicates.
+
+The module system of XSB is {\em file based} -- one module per file --
+and {\em flat} -- modules cannot be nested.  In addition, XSB's module
+system is essentially {\em atom-based} (or {\em
+  structure-symbol-based}), where any symbol in a module can be
+imported, exported or be a local symbol, as opposed to a {\em
+  predicate-based} one where this can be done only for predicate
+symbols~\footnote{Operator symbols can be exported as any other
+  symbols, but their precedence must be redeclared in the importing
+  module.}.  Every structure symbol (and thus structured term) is
+associated with a module, and structure symbols with the same name but
+in different modules are different symbols and thus do not unify.  As
+we will discuss, this leads to certain differences of XSB's module
+system from those of some other Prologs, and to certain
+incompatibilities with the (proposed) ISO standard for modules (which
+is not supported by most Prologs).  At the same time, XSB's module
+system has enough commonalities with those of other Prologs to be able
+to support the Prolog Commons libraries.
+
+In XSB (as in all Prolog systems) predicate definitions (aka Clauses)
+are associated with structure symbols.  A predicate is a structure
+symbol with an associated definition.  Predicates are either static or
+dynamic.  Static predicates get their definitions from source code
+files that are compiled and loaded into memory.  Dynamic predicates
+get their definitions from the execution of the builtin meta-predicate
+{\tt assert/1} (and friends).
+
+In XSB every structure symbol is associated with a module.  A term is
+said to be in the module of its main structure symbol.  Terms in
+different modules are different terms and do {\bf not} unify.  So two
+terms whose main structure symbols (or any structure symbols) have the
+same name but different modules, are different terms and do not unify.
+So, for example, terms printed as {\tt p(a,b)} and {\tt p(a,b)} would
+not unify if the first structure symbol named {\tt p/2} is in a
+different module from the second structure symbol named {\tt p/2}.
+
+The ``default'' module is named {\tt usermod}.  Whenever a term is
+constructed, and a module is not explicitly provided, {\tt usermod} is
+the module used.  For example, when {\tt functor/3} (or {\tt univ/2})
+is used to construct a term, that term is put in {\tt usermod}.  Any
+term that is read from a file (or at the top-level prompt) is put in
+{\tt usermod}.  All (usual) XSB source files, when compiled and
+loaded, define predicates in {\tt usermod}.
+
+So how are terms that are not in usermod constructed?  The most
+important use of modules by far is to organize predicates (and thus
+their definitions.)  So a module is associated with a set of predicate
+definitions, which in XSB is a Prolog source file, a file with {\tt
+  .P} extension.  In XSB, a source file is compiled (to a {\tt .xwam}
+file) and then loaded into memory to provide definitions for the
+predicates with clauses in that file.  For ``usual'' XSB source files,
+all the defined predicates are in {\tt usermod}.  However when a
+source file includes an export directive, such as:
+
+\demo{:- export $Pred/Arity$.}
+
+\noindent the definitions in that source file will be interpreted as
+defining predicates in a module.  The name of the module is the name
+of the XSB source file (without the extension {\tt .P}).  Predicates
+that have definitions in such a file will all be put in the module of
+that name.  A predicate that is exported must be defined in the
+source file and will be made available for use in other source files,
+when imported.  An import directive, such as:
+
+\demo{:- import $Pred/Arity$ from $Module$.}
+
+\noindent in another source file allows its definitions to use that
+exported predicate.  For example, the file:
+\begin{verbatim}
+%% file: mod1.P
+:- export p/2.
+
+p(a,b).
+p(X,Y) :- q(X,Y).
+
+q(b,c).
+\end{verbatim}
+when compiled and loaded, defines a predicate {\tt p/2} in {\tt mod1}
+(i.e., {\tt p/2} terms that define the facts have their main structure
+symbols put in module {\tt mod1}, and the code implementing those
+clauses are associated with that structure symbol in that module.)  It
+also defines a predicate {\tt q/2} in the same module.  (And, of
+course, the call to {\tt q(X,Y)} in the body of the rule for {\tt p/2}
+is also put in that same module.)  The predicate {\tt p/2} is exported
+and is thus available for use by other code.
+
+For example, we can create another file (not a module in this case),
+which uses the definition of {\tt p/2} above:
+\begin{verbatim}
+%% file: my_code.P
+:- import p/2 from mod1.
+
+q(X,Y) :- p(X,Y).
+\end{verbatim}
+\noindent Here there is no {\tt export} directive, so all definitions
+in this file will go into module {\tt usermod}.  The clause here
+defines {\tt q/2} in {\tt usermod}, which is a different predicate
+from the {\tt q/2} defined above in the module {\tt mod1}.  The {\tt
+  import} of {\tt p/2} in this file causes the {\tt p(X,Y)} term in
+the body of the rule for {\tt q/2} to be interpreted as being in
+module {\tt mod1}.  Thus, when this file is compiled and loaded, {\tt
+  q/2} is defined in {\tt usermod} and its code calls {\tt p/2} in
+module {\tt mod1}.
+
+A module source file may want to access a predicate defined in {\tt
+  usermod}, which can be done by explicitly importing the predicate
+from {\tt usermod}.
+
+There are situations in which a programmer wants to explicitly provide
+a module name to ``override'' the module associated with a term.  For
+example, one might want to call the goal {\tt p(X,Y)} to invoke the
+code associated with {\tt p/2} in module {\tt mod1} at the top level,
+regardless of what module the {\tt p/2} structure symol is associated
+with.  In this case, one can write:
+
+\demo{| ?- call(mod1:p(X,Y)).}
+
+\noindent Here {\tt call} will construct the term {\tt p(X,Y)} with
+structure {\tt p/2} in module {\tt mod1} (ignoring the module associated
+with the {\tt p/2} structure symbol) and then call that term, which
+accesses the code of {\tt p/2} in module {\tt mod1}.  In this
+particular case the original term {\tt mod1:p(X,Y)} had the {\tt p/2}
+structure in {\tt usermod}, since that's where the top-level read puts
+it.  But {\tt call/1} interprets this term (with main structure symbol
+{\tt :/2}) as a coercion of the term {\tt p(X,Y)} into the module {\tt
+  mod1}.  In XSB, in most contexts in which a term is interpreted as a
+goal, the syntax of {\tt Mod:Goal} is interpreted as a coercion of
+term {\tt Goal} into the module {\tt Mod}.  And in fact, the top-level
+goal:
+
+\demo{| ?- mod1:p(X,Y).}
+
+\noindent is equivalent to the goal above.
+
+And instead of:
+\begin{verbatim}
+:- import pr/2 from mod3.
+...
+q(X,Y) :- ... pr(X,Z), ....
+\end{verbatim}
+one can directly write:
+\begin{verbatim}
+q(X,Y) :- ... mod3:pr(X,Z), ....
+\end{verbatim}
+
+In general, the use of {\tt import} is recommended, even though it may
+sometimes be more verbose.  The use of {\tt imort} allows for better
+visibility and easier analysis of module dependencies.
+
+In XSB, the declaration:
+
+\demo{:- module($filename$,[$sym_1$, \ldots, $sym_l$.]).}
+
+\noindent
+is syntactic sugar for:
+
+\demo{:- export $sym_1$, \ldots, $sym_l$. }
+
+\noindent
+as long as the $filename$ is the same as the name of the file in which
+it was contained.  Similarly,
+
+\demo{:- use\_module($module$,[$sym_1$, \ldots, $sym_l$.]).}
+
+\noindent
+is treated as semantically equivalent to 
+
+\demo{:- import $sym_1$, \ldots, $sym_n$ from $module$. }
+
+\noindent
+Accordingly, {\tt use\_module/2} and {\tt module/1} can be used
+interchangibly with {\tt import/2} and {\tt export/1}.  However the
+declaration
+
+\demo{:- use\_module($module$).}
+
+\noindent
+which is often used in other Prolog systems, is {\em not} equivalent
+to an XSB import statement, as each XSB import statement must
+explicitly declare a list of predicates that are used from each
+module.  Such a declaration will raise a compilation error.
+
+The declaration 
+
+\demo{:- import $sym$ from $module$ as $sym'$. }
+
+\noindent
+allows a predicate to be imported from a module, but renamed as $sym'$
+within the importing module.  In this case the structure symbol $sym'$
+is placed in the current module and its code pointer is identified
+with that of the structure symbol $sym$ in module $module$.  Such a
+feature is useful when porting a library written for another Prolog
+(e.g. a constraint library) to XSB.  It is also useful when one wants
+to import two predicates with the same name from different modules.
+In that case (at least) one of the names needs to be changed on
+import.
+
+For modules, the base file name is stored in its byte code ({\tt
+  .swam} file, so that renaming a byte-code file for a mule may cause
+problems, as the renaming will not affect the information within the
+byte-code file.  However, byte code files generated for non-modules
+can be safely renamed.
+
+\subsection{How the Compiler Determines the Module of a Term}
+
+When XSB compiles a source code file, it must determine the module for
+every term it encounters.  For non-module source files (i.e., those
+with an {\tt export} directive), all terms are associated with {\tt
+  usermod} except for those whose structure symbols are imported.  Any
+occurrence of an imported structure symbol is associated with the
+module from which it is imported.
+
+For module source code files, i.e., those containing at least one {\tt
+  export} directive, the process of determining the module of a
+structure symbol is more complicated.  The idea is that all terms in
+the source file that refer to predicates are placed in the module of
+the file, and all terms that are record structures are by default
+placed in {\tt usermod}.  All occurrences of the same structure symbol
+in a file are normally associated with the same module\footnote{but
+  see {\tt import .. as ..} for an exception.}  So if a structure
+symbol appears both as a predicate symbol (e.g., as a subgoal in the
+body of a rule) and as a record structure (perhaps to be passed to
+some other predicate to later be called), both occurrences will be
+associated with the current module.  Of course, imported structure
+symbols are associated with the module from which they are imported.
+
+The compiler recognizes as predicate symbols any symbol that:
+\begin{enumerate}
+\item appears as the main structure symbol in the head of a rule,
+
+\item appears as a subgoal in the body of a rule,
+
+\item appears as the main structure symbol of terms passed to known
+  meta-predicates, such as {\tt assert/1} and {\tt retract},
+
+\item is declared as {\tt dynamic}.
+\end{enumerate}
+
+Otherwise a structure symbol is associated with {\tt usermod}.
+
+Note that these rules imply that all structure symbols used just for
+record structures are placed by default in {\tt usermod}.  This is
+usually what a user wants.  But there are times a user might want a
+record structure to be associated with the current module.  This can
+be used to provide a measure of information hiding: Since no other
+module (or usermod) will construct a term associated with this module,
+another module can't use unification to look at the subfields inside
+such a term.  So in this way, a module can return to a caller a
+complex term, and the caller can pass it around and back to the module
+in a later call, and only the module code can manipulate that data
+structure.\footnote{The hiding is only partial, since other code can
+  use {\tt functor/3} or {\tt univ/2} to look inside such terms.  Also
+  the very low-level builtin {\tt term\_new\_mod/3} can be used to
+  explicitly coerce a term into an arbitrary module.}  The programmer
+can tell the compiler to place a particular structure symbol in the
+current module by using the {\tt local} directive:
+
+\demo{:- local $Sym/Arity$.}
+
+\noindent which will force all uses of the indicated structure symbol
+to be associated with the current module.
+
+An XSB programmer can also export a structure symbol (that is not used
+as a predicate), and others can import and use it as a structure
+symbol.
+
+Standard predicates (those defined in the XSB environment) are
+actually defined in system modules and the compiler implicitly
+provides the necessary imports to allow the programmer to use them.
+Standard predicates are described in Section \ref{sec:standard}.
+
+For clarity, we state a few consequences of these rules.
+\begin{itemize}
+\item The module for a particular symbol appearing in a module must be
+  uniquely determined.  As a consequence, a symbol of a specific
+  $functor/arity$ {\em cannot} be declared as both exported and local,
+  or both exported and imported from another module, or declared to be
+  imported from more than one module, etc.  These types of environment
+  conflicts are detected at compile-time and abort the compilation.
+%
+\item In \version{}, a module {\em cannot} export a predicate symbol
+  that is directly imported from another module, since this would
+  require that symbol to be in two modules.  But one can import
+  $symbol_1$ from a module {\tt as} $symbol_2$ and then export
+  $symbol_2$.  (And $symbol_1$ and $symbol_2$ are allowed to be the
+  same symbol.)
+%
+% Perhaps discuss symbols, if that isn't too confusing.
+\index{Prolog flags!{\tt unknown}}
+\item If a module {\tt m1} imports a predicate {\tt p/n} from a module
+  {\tt m2}, but {\tt m2} does not export {\tt p/n}, nothing is
+  detected at the time of compilation.  If {\tt p/n} is defined in
+  {\tt m2}, a runtime warning about an environment conflict will be
+  issued.  However, if {\tt p/n} is not defined in {\tt m2}, a runtime
+  existence error will be thrown~\footnote{This behavior can be
+    altered through the Prolog flag {\tt unknown}.}.
+\end{itemize}
+
+\subsection{Atoms and 0-Ary Structure Symbols}
+
+XSB uses different internal representations for {\bf atoms} and for
+{\bf 0-ary structure symbols}.  Atoms cannot have definitions
+associated with them (i.e., cannot be predicates) and are not
+associated with modules.  But 0-ary predicates can and are.  The
+system automatically coerces atoms to 0-ary structure symbols and vice
+versa as necessary.  But when coercing an atom to a 0-ary structure
+symbol, it {\bf always} associates the generated structure symbol with
+{\tt usermod}.  This can sometimes lead to unexpected results.  As
+long as the programmer explicitly exports and imports atoms (or 0-ary
+predicate symbols), all works as expected.  But passing an atom as an
+argument, and then calling it will always call it in {\tt usermod}.
+
+\subsection{Dynamic Loading and How XSB Finds Code Files} 
+
+When {\tt export} and {\tt import} directives are used, XSB
+dynamically (compiles if necessary and) loads the code on demand.
+When an imported predicate is called, if the code of the module has
+not been loaded into memory, the system finds the code file, compiles
+it if necessary, and loads the {\tt .xwam} file into memory.  Then it
+invokes the imported predicate.  See Section~\ref{LibPath} for the
+details of how the system finds and processes the appropriate XSB
+source files.
+
+\subsection{Consulting a Module}
+Normally all access to predicates defined in a module is by means of
+import declarations.  However, to debug a module it is often
+convenient just to consult it at the top-level and then call the
+exported predicates with test parameters, which is how non-modules are
+handled.  However, note that the predicate to be called after a module
+is loaded is in that loaded module, and {\bf not} in {\tt usermod}.  To
+allow the programmer to call a predicate exported from the consulted
+module without having to explicitly provide the module name, when a
+module is consulted, all exported predicates are also defined in {\tt
+  usermod} with their same definitions.  (In effect, for exported {\tt
+  p/2}, XSB implements {\tt :- import p/2 from $module$ as p/2.} in
+{\tt usermod} to provide direct access to {\tt p/2}'s code in $module$
+from the {\tt p/2} predicate in {\tt usermod}.)
+
+It is bad form to use this property and consult a module in an
+executing program to get access to its exported predicates through
+{\tt usermod}.  One should always explicitly import the predicates one
+wants to use and let the dynamic loader automatically load the module
+code on demand.
+
+\subsection{Usage Inference and the Module System}
+The import and export statements of a module $M$ are used by the
+compiler for inferring usage of predicates.  At compilation time, if a
+predicate $P/N$ occurs as callable in the body of a clause defined in
+$M$, but $P$ is neither defined in $M$ nor imported into $M$ from some
+other module, a warning is issued that $P/N$ is undefined.  Here
+``occurs as callable'' means that $P/N$ is found as a literal in the
+body of a clause, or within a system meta-predicate, such as {\tt
+assert/1}, {\tt findall/3}, etc.  Currently, occurrences of a term
+inside user-defined meta-predicates are not considered as callable by
+XSB's usage inference algorithm.  Alternatively, if $P/N$ is defined in
+$M$, it is {\em used} if $P/N$ is exported by $M$, or if $P/N$ occurs
+as callable in a clause for a predicate that is used in $M$.  The
+compiler issues warnings about all unused predicates in a module.  On
+the other hand, since all modules are compiled separately, the usage
+inference algorithm has no way of checking whether a predicate
+imported from a given module is actually exported by that module.
+
+\index{xsbdoc}
+\index{declarations!\texttt{document\_export/1}}
+\index{declarations!\texttt{document\_import/1}}
+Usage inference can be highly useful during code development for
+ensuring that all predicates are defined within a set of files, for
+eliminating dead code, etc.  In addition, import and export
+declarations are used by the {\tt xsbdoc} documentation system to
+generate manuals for code.\footnote{Further information on {\tt
+xsbdoc} can be found in {\tt \$XSB\_DIR/packages/xsbdoc}.}  For these
+reasons, it is sometimes the case that usage inference is desired even
+in situations where a given file is not ready to be made into a
+module, or it is not appropriate for the file to be a module for some
+other reason.  In such a case the directives {\tt document\_export/1}
+and {\tt document\_import/1} can be used, and have the same syntax as 
+{\tt export/1} and {\tt import/1}, respectively.  These directives
+affect only usage inference and {\tt xsbdoc}.  A file is treated as a
+module if and only if it includes an {\tt export/1} statement, and
+only {\tt import/1} statements affect dynamic loading and name
+resolution for predicates.
+
+\subsection{Using Import to Load Usermod Source Files}
+
+When the module system is used to import predicates, code files for
+modules are automatically found and dynamically (compiled and) loaded
+on first access.  But normally non-module source files must be
+explicitly consulted or ensure\_load-ed by some executing program.  To
+provide the convenience of dynamic loading to usermod source files,
+XSB supports a directive of the form:
+
+\demo{:- import $Pred/Arity$ from usermod($File$).}
+
+\noindent Here $File$ must be the name of a file that contains XSB
+source code and is {\bf not} a module, i.e., defines its predicates in
+{\tt usermod}.  It must define the predicate $Pred/Arity$.  In this
+case, when a goal to $Pred/Arity$ is called and does not yet have a
+definition, the file $File$ is (compiled and) loaded, and the goal is
+called.  If the predicate already has a definition, that one is
+used.\footnote{If the existing definition can be determined to have
+  come from a different file, a warning is generated.}
+
+So this facility allows code in non-module files to be treated
+somewhat like module files.  But it is the user's responsibility to
+ensure that different imported non-module files do not define the same
+predicate.  This facility, when carefully used, can eliminate the need
+for runtime {\tt consult/1} and {\tt ensure\_loaded/1} commands.  The
+form {\tt usermod($File$)} is called a pseudo-module reference, and
+can be used in place of module references in import statements.
+
+XSB currently treats:
+
+\demo{:- document\_import $Pred/Arity$ from $File$.}
+
+\noindent as
+
+\demo{:- import $Pred/Arity$ from usermod($File$).}
+  
+\noindent and a warning is issued if $File$ is {\tt usermod}, since
+that should never be a file name.
+
+\subsection{Parameterized Modules in XSB}
+
+The XSB module system now supports parameterized modules: A module can
+be parameterized by other modules.  A parameterized module is declared
+by including a directive of the form:
+
+\demo{:- module\_parameters($atom_1$, \ldots, $atom_n$).}
+
+\noindent in the module code file.  The atoms, $atom_1$, \ldots,
+$atom_n$, are formal module parameters; when the module is loaded,
+those module names will be replaced by actual module names passed to
+the load operation.  Therefore, module names are now specified by
+ground terms: the main structure symbol specifies the base name of the
+file containing the module code (as before); the fields of the module
+term indicate the names of (the other modules that are) the actual
+parameters to the (parameterized) module defined in this file.  Note
+that the parameters to modules {\em must} be other modules, and cannot
+be constants or any XSB term.  Parameterized modules are a
+conservative extension of the former unparameterized module system.
+
+Parameterized modules support a form of higher-order programming which
+makes it possible to program some tasks more declaratively.  As a
+simple example, consider a module that takes a graph, an initial node
+in the graph, and a set of final nodes in the graph, and returns all
+final nodes reachable through the graph from the initial node.  A
+parameterized module for this task, named {\tt search}, is:
+\begin{verbatim}
+%% file: search.P
+
+:- module_parameter(example_mod).
+:- export reachable_final/1.
+:- import initial/1, move/2, final/1 from example_mod.
+
+reachable_final(F) :- reachable(F), final(F).
+
+:- table reachable/1.
+reachable(N) :- initial(N).
+reachable(N) :- reachable(P), move(P,N).
+\end{verbatim}
+This search module is parameterized by another module that defines and
+exports (at least) 3 predicates: {\tt initial/1}, {\tt move/2}, and
+{\tt final/1}.  When this module is loaded, a particular such module
+exporting those predicates, must be provided to the loader, and the
+formal parameter {\tt example\_mod} will be replaced by that module and
+the predicates imported from that module will be used here in the
+definitions of {\tt reachable\_final/1} and {\tt reachable/1}.  So
+assuming a (non-parameterized) module named {\tt simple\_ex} exports
+those 3 predicates, both:
+\begin{verbatim}
+| ?- import reachable_final/1 from search(simple_ex).
+| ?- reachable_final(ReachableFinalState).
+\end{verbatim}
+and:
+\begin{verbatim}
+| ?- search(simple_ex):reachable_final(ReachableFinalState).
+\end{verbatim}
+will return the reachable final states for the problem defined by
+{\tt simple\_ex}.
+
+This is second-order in the sense that a module parameter represents a
+set of predicates.  Note that this example is (in some sense) fully
+declarative, in that there is no explicit procedural code necessary to
+load the code for a particular example.  All loading is handled by
+XSB's existing dynamic loader.  And this same search module can be
+run with many different examples.
+
+Parameterized modules are implemented in XSB as follows.  When a
+parameterized module is to be loaded into memory, the formal
+parameters are replaced by the actual parameters and that code is
+loaded.  (This is actually done by renaming symbols as they are
+loaded, so there is minimal effect on loading time.)  This
+implementation has two consequences: 1) the performance of code in
+parameterized modules is {\em exactly} the same as if the user had
+explicitly written the module with the actual parameter modules, and
+2) every instance of a parameterized module has its own version of the
+module code.  So loading a thousand different instances of a
+parameterized module will take a thousand times the space of a single
+instance.  In most uses (that I know of so far) this is not a
+significant problem, but it should be kept in mind.
+
+One could load another instance of the above module to test the search
+algorithm with a different example by:
+\begin{verbatim}
+| ?- search(hard_ex):reachable_final(ReachableFinalState).
+\end{verbatim}
+This would load another instance of the search module, named
+search(hard\_ex).  Both would be in memory and usable by the user and
+by other programs and modules.
+
+So modules in XSB's runtime system are now identified by module names
+that are terms, not simply constants.  So anywhere a module name is
+required, a parameterized module name, i.e., a module term, can be
+used.  The module name must be ground at the time it is required for
+use to load specific code, and all structure symbols and atoms in the
+structured module name must identify actual files that contain the
+appropriate module's code, and those files must be able to be found by
+the XSB loader.
+
+To write well-structured and maintainable code, I strongly recommend
+that all uses of parameterized modules be done through {\tt import}
+directives explicitly appearing in XSB code, and the explicit form of
+using the ':' operator to give a module name at runtime be avoided.
+(The sole exception is when the user types in such a goal on the
+top-level command line.) Using only explicit import directives allows
+compile-time analysis of module dependencies which can be critical in
+maintaining large XSB code bases. This also requires that the contents
+of the {\tt library\_directory/1} predicate can be known at compile
+time, which implies programmer discipline in changing that predicate
+as well.\footnote{As may be obvious, this has been learned through
+  much painful experience. -dsw}.
+
+While parameterized modules can be used in many ways, I think the most
+important is in the construction of so-call ``view systems.''  A view
+(in the traditional relational database sense) is a relational
+operator that takes a set of input relations and views, and produces
+an output relation.  By composing views one can build large and
+complex systems of data transformations in a completely declarative
+way.  With such systems, one often receives base (i.e., input) data
+from a source, and then wants to apply a view system to that data,
+generating the derived views for use in other applications.  One can
+do this declaratively by using parameterized modules.  Each module is
+a view definition, exporting the view it defines, and importing the
+base and view relations it depends on.  These input relations can be
+defined in base modules, and a view module is parameterized by the
+base modules it depends on.  Then the same view module can be applied
+to the particular input tables obtained from a particular source.
+
+[-dsw: Provide a simple example of a view system...]
+
+
+

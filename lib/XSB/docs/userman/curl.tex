@@ -1,0 +1,226 @@
+
+\chapter{{\tt curl}: The XSB Internet Access Package}
+
+\begin{center}
+  {\Large {\bf By Aneesh Ali}}
+\end{center}
+
+
+
+\section{Introduction}
+
+The {\tt curl} package is an interface to the {\tt libcurl}  library,
+which provides access to most of the standard Web protocols.
+The supported protocols include
+FTP, FTPS, HTTP, HTTPS, SCP, SFTP, TFTP, TELNET, DICT, LDAP, LDAPS, FILE, IMAP, SMTP, POP3 and RTSP. Libcurl supports SSL certificates, HTTP POST, HTTP PUT, FTP uploading, HTTP form based upload, proxies, cookies, user+password authentication (Basic, Digest, NTLM, Negotiate, Kerberos4), file transfer resume, http proxy tunneling etc. 
+
+
+The {\tt curl} package accepts input in the form of URLs and Prolog
+atoms. To load the {\tt curl} package, the user should type
+%%
+\begin{verbatim}
+ ?- [curl].  
+\end{verbatim}
+%%
+The {\tt curl} package is integrated with file I/O of XSB in a transparent
+fashion and for many purposes Web pages can be treated just as yet another
+kind of a file. We first explain how Web pages can be accessed
+using the standard file I/O feature and then describe other predicates,
+which provide a lower-level interface.
+
+\section{Integration with File I/O}
+
+The {\tt curl} package is integrated with XSB File I/O so that a web page
+can be opened as any other file.Once a Web page is opened, it can be read
+or written just like the a normal file.
+
+
+\subsection{Opening a Web Document}
+
+Web documents are opened by the usual predicates {\bf see/1}, {\bf open/3},
+{\bf open/4}.
+
+\begin{description}
+
+  \index{\texttt{see/1}}
+\item[see({\it url}({\it +Url}))]\mbox{}
+  \index{\texttt{see/1}}
+\item[see({\it url}({\it +Url,Options}))]\mbox{}
+  \index{\texttt{open/3}}
+\item[open({\it url}({\it +Url}), {\it +Mode}, {\it -Stream})]\mbox{}
+  \index{\texttt{open/4}}
+\item[open({\it url}({\it +Url}), {\it +Mode}, {\it -Stream}, {\it +Options})]\mbox{}
+  \\
+
+{\it Url} is an atom that specifies a URL.
+\emph{Stream} is the file stream of the open file.
+{\it Mode} can be
+\paragraph{read} to create an input stream or
+{\bf write},  to create an output stream.
+For reading, the contents of the Web page are cached in a temporary file.
+For writing, a temporary empty file is created. This file is posted to the
+corresponding URL at closing.
+
+The {\it Options} parameter is a list that controls loading. Members of that list can be of the following form:
+
+  \begin{description}
+  \item[{\bf redirect}{\bf (}{\it Bool}{\bf )}]\mbox{}
+    \\
+    Specifies the redirection option. The supported values are true and
+    false. If true, any number of redirects is allowed. If false,
+    redirections are ignored.
+    The default is true.
+
+  \item[{\bf secure}{\bf (}{\it CrtName}{\bf
+    )}]\mbox{}
+    \\
+    Specifies the secure connections (https) option. \emph{CrtName} is the name of the file holding one or more certificates to verify the peer with. 
+
+  \item[{\bf auth}{\bf (}{\it UserName, \it Password}{\bf )}]\mbox{}\\Sets the username and password basic authentication.
+
+  \item[{\bf timeout}{\bf (}{\it Seconds}{\bf )}]\mbox{}\\Sets the maximum time in seconds that is allowed for the transfer operation.
+
+  \item[{\bf user\_agent}{\bf (}{\it Agent}{\bf )}]\mbox{}\\Sets the User-Agent: header in the http request sent to the remote server.
+
+  \end{description}
+
+
+\end{description}
+
+\subsection{Closing a Web Document}
+
+Web documents opened by the predicates {\bf see/1}, {\bf open/3}, and {\bf
+  open/4} above must be closed by the predicates {\bf close/2} or {\bf
+  close/3}. The data written to the stream is first posted to the URL.
+If that succeeds, the stream is closed. ???? And if it does not suceed????
+
+\begin{description}
+
+  \index{\texttt{close/3}}
+\item[close({\it +Stream, +Source})]\mbox{}
+  \index{\texttt{close/4}}
+\item[close({\it +Stream, +Source, +Options})]\mbox{}
+  \\
+{\it Source} can be of the form {\tt url({\it {url}})}. Stream is a file stream. {\it Options} is a list of options supported normally for close.
+
+\end{description}
+
+
+\section{Low Level Predicates}
+
+This section describes additional predicates provided by the {\tt
+  curl} packages, which extend the functionality provided by the file I/O
+integration.
+
+\subsection{Loading web documents}
+
+Web documents are loaded by the predicate {\bf load\_page/5}, which has
+many options. The parameters of this predicate are described below.
+
+
+\begin{description}
+  \index{\texttt{load\_page/5}}
+\item[load\_page({\it +Source, +Options, -Properties, -Content, -Warn})]\mbox{}
+  \\
+  {\it Source} can be of the form {\tt url({\it {url}})} or an atom
+  \emph{url} (check!!!). 
+  The document is returned in {\it Content}.
+  {\it Warn} is bound to a (possibly empty) list of warnings generated during the process.
+
+  {\it Properties} is bound to a list of properties of the document. They
+  include {\it Directory name}, {\it File name}, {\it File suffix}, {\it
+    Page size}, and {\it Page time}.
+  The {\tt load\_page/5}  predicate caches a copy of the Web page that it
+  fetched from the Web in a local file, which is specified by the above
+  properties \emph{Directory name}, \emph{File name}, and \emph{File
+    suffix}. The remaining two parameters indicate the size and the last
+  modification time of the fetched Web page.
+  The directory and the file name 
+  The \emph{Options} parameter is the same as in the URL opening
+  predicates. 
+
+\end{description}
+
+\subsection{Retrieve the properties of a web document}
+
+The properties of a web document are loaded by the predicates {\bf
+  url\_properties/3} and {\bf url\_properties/2}. 
+
+\begin{description}
+  \index{\texttt{url\_properties/3}}
+\item[url\_properties({\it +Url, +Options, -Properties})]\mbox{}
+  \\
+  The {\it Options} and {\it Properties} are same as in {\bf load\_page/5}.
+  \index{\texttt{url\_properties/2}}
+\item[url\_properties({\it +Url, -Properties})]\mbox{}
+  \\
+  What are the default options???
+
+\end{description}
+
+\subsection{Encode Url}
+
+Sometimes it is necessary to convert a URL string into something that can
+be used, for example, as a file name. This is done by the following
+predicate.
+
+\begin{description}
+  \index{\texttt{encode\_url/2}}
+\item[encode\_url({\it +Source, -Result})]\mbox{}
+  \\
+{\it Source} has the form {\it url(url)} or an atom \emph{url}, where
+\emph{url} is an atom.   (check!!!)
+{\it Properties} is bound to a list of properties of the URL:
+the encoded {\it Directory Name}, the encoded {\it File Name}, and the {\it
+  Extension} of the URL.
+
+\end{description}
+
+\subsection{Obtaining the Redirection URL}
+
+If the originally specified URL was redirected, the URL of the page that
+was actually fetched by {\tt load\_page/5} can be found with the help of
+the following predicate: 
+
+\begin{description}
+  \index{\texttt{get\_redir\_url/2}}
+\item[get\_redir\_url({\it +Source, -UrlNew})]\mbox{}
+  \\
+  {\it Source} can be of the form {\tt url({\it {url}})}, {\tt file({\it {filename}})} or a string.
+
+\end{description}
+
+\section{Installation and configuration}
+
+The {\tt curl} package of XSB requires that the {\tt libcurl} package is
+installed.  For Windows, the {\tt libcurl} library files are included with
+the installation. For Linux and Mac, the {\tt libcurl} and {\tt
+  libcurl-dev} packages need to be installed using the distribution's
+package manager. In some Linux distributions, {\tt libcurl-dev} might be
+called {\tt libcurl-gnutls-dev} or {\tt libcurl-openssl-dev}.  In addition,
+the release number might be attached. For instance, {\tt libcurl4} and {\tt
+  libcurl4-openssl-dev}.
+
+If a particular Linux distribution does not include the above packages and
+for other Unix variants, the {\tt libcurl} package must be downloaded and
+built manually. See
+%% 
+\begin{quote}
+  \url{http://curl.haxx.se/download.html} 
+\end{quote}
+%% 
+To configure {\tt curl} on Linux, Mac, or on some other Unix variant,
+switch to the {\tt XSB/build} directory and type
+
+%%
+\begin{verbatim}
+    cd XSB/packages/curl
+    ./configure
+    ./makexsb
+\end{verbatim}
+%%
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 

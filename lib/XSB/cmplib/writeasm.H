@@ -24,7 +24,7 @@
 */
 
 
-:- export write_asmheader/4, write_asm_instructions/2.
+:- export write_asmheader/5, write_asm_instructions/2.
 
 :- import member/2 from basics.
 :- import asm_inst/4 from asm_inst.

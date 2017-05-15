@@ -1,5 +1,5 @@
 /* File:      loader_xsb.c
-** Author(s): David S. Warren, Jiyang Xu, Terrance Swift, Kostis Sagonas
+** Author(s): David S. Warren, Jiyang Xu, Teri Swift, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -41,6 +41,7 @@
 
 #ifdef WIN_NT
 #include <direct.h>
+#include <ctype.h>
 #else
 #include <unistd.h>
 #endif
@@ -71,6 +72,8 @@
 
 #include "debug_xsb.h"
 #include "cinterf.h"
+#include "deref.h"
+#include "ptoc_tag_xsb_i.h"
 
 #include "wind2unix.h"
  
@@ -622,8 +625,8 @@ void env_type_set(CTXTdeclc Psc psc, byte t_env, byte t_type, xsbBool is_new) {
 int env; byte type;
 
   if (is_new) {
-    set_env(psc, env_check[T_NEW][t_env]);
-    set_type(psc, t_type);
+    psc_set_env(psc, env_check[T_NEW][t_env]);
+    psc_set_type(psc, t_type);
   } else {
     env = env_check[get_env(psc)][t_env];
     if (env < 0) {
@@ -638,7 +641,7 @@ int env; byte type;
 	  /* by another module that imported (mistakenly) this symbol.  */
 	  xsb_warn(CTXTc "Environment conflict in the use of %s/%d !", 
 		    get_name(psc), get_arity(psc));
-	  set_env(psc, T_LOCAL);	
+	  psc_set_env(psc, T_LOCAL);	
 	}
 	else {/* We are trying to load a module
 		that imports sth not exported. */
@@ -653,14 +656,14 @@ int env; byte type;
 	}
       }
     }
-    else set_env(psc, env);
+    else psc_set_env(psc, env);
     type = get_type(psc);
     if (t_type && type && t_type != type) {
       if (t_type==T_UDEF && (type==T_PRED || type==T_DYNA || type==T_FORN)) ;
-      else if (t_type==T_FORN && type==T_UDEF) set_type(psc, T_FORN);
+      else if (t_type==T_FORN && type==T_UDEF) psc_set_type(psc, T_FORN);
       else xsb_error("incompatible types in the use of %s/%d (%x with %x)",
 		     get_name(psc), get_arity(psc), type, t_type);
-    } else set_type(psc, type | t_type);  
+    } else psc_set_type(psc, type | t_type);  
   }
 }
 
@@ -704,14 +707,162 @@ inline static void get_obj_atom(FILE *fd, VarString *atom)
 
 /*----------------------------------------------------------------------*/
 
-static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
+/* contents of string name is changed; it MUST be large enough to hold any expansion */
+/* if whole thing is quoted string, unquote it.*/
+void replace_form_by_act(char *name, prolog_term modformals, prolog_term modactuals) {
+  char *formalstr, *actualstr, *loc;
+  int i, arity;
+  size_t namelen, formallen, actuallen;
+
+  if (isinteger(modactuals) || isinteger(modformals)) return;
+  if (isstring(modactuals) || isstring(modformals)) {
+    size_t name_len = strlen(name);
+    if (name[0] == '\'' && name[name_len-1] == '\'') {
+      /* cheat for now, at some point remove one on internal double single quotes */
+      memmove(name,name+1,name_len-2);
+      name[name_len-2] = '\0';
+    }
+    return;
+  }
+
+  arity = get_arity(get_str_psc(modformals));
+
+  //printf("starting repl loop: %s\n",name);
+  for (i = 1; i <= arity; i++) {
+    formalstr = string_val(get_str_arg(modformals,i));
+    actualstr = string_val(get_str_arg(modactuals,i));
+    actuallen = strlen(actualstr);
+    
+    if (strcmp(name,formalstr) == 0) {
+      memmove(name,actualstr,actuallen);
+      *(name+actuallen) = '\0';
+    } else {
+      loc = name;
+      //printf("try to find: %s in %s\n",formalstr,name);
+      while (loc != NULL) {
+	loc = strstr(loc,formalstr);
+	if (loc != NULL) {
+	  //printf("found match of %s from %s\n",formalstr,name);
+	  formallen = strlen(formalstr);
+	  if ((*(loc-1) == '(' || *(loc-1) == ',') &&
+	      (*(loc+formallen) == ')' || *(loc+formallen) == ',')) {
+	    namelen = strlen(name);
+	    actuallen = strlen(actualstr);
+	    memmove(loc+actuallen,loc+formallen,
+		    namelen-((loc-name)+formallen)+1);
+	    memmove(loc,actualstr,actuallen);
+	    //printf("after repl: %s\n",name);
+	    loc = loc + actuallen; // no recursive rewriting...
+	  } else loc++;
+	}
+      }
+    }
+  }
+}
+
+/* --------------------------------------------------------------------	*/
+
+#if defined(WIN_NT) || defined(CYGWIN)
+#define file_strcmp(fn1,fn2) strcasecmp(fn1,fn2)
+#define isslash(c) ((c) == '/' || (c) == '\\')
+int file_strncmp(char *fn1, char *fn2, size_t len) {
+  size_t i;
+  for (i = 0; i < len; i++) {
+    if (!(isslash(fn1[i]) && isslash(fn2[i])) &&
+	(toupper(fn1[i]) != toupper(fn2[i])))
+	return 1;
+  }
+  return 0;
+}
+#else
+#define file_strcmp(fn1,fn2) strcmp(fn1,fn2)
+#define file_strncmp(fn1,fn2,len) strncmp(fn1,fn2,len)
+#endif
+
+/* compare forms: either may be full_path.xwam or usermod(modname) or modname.
+   If first is full modname, then the second must also be.
+   If both full then if different ret true else ret false.
+   Otherwise, find both base locations, and compare */
+
+int nec_different_xwam_files(char *datafilename, char *currfilename) {
+  size_t dlen, clen, dlen_wo_ext, clen_wo_ext;
+  size_t ddisp, cdisp;
+  size_t dmlen = 0, cmlen = 0;
+  //  printf("nec_diff: %s, %s\n",datafilename, currfilename);
+  if (file_strcmp(datafilename,currfilename) == 0) return FALSE;
+  dlen = strlen(datafilename);
+  dlen_wo_ext = dlen - XSB_OBJ_EXTENSION_LENGTH;
+  clen = strlen(currfilename);
+  clen_wo_ext = clen - XSB_OBJ_EXTENSION_LENGTH;
+  if (file_strcmp(datafilename+dlen_wo_ext,XSB_OBJ_EXTENSION_STRING) == 0 &&
+      file_strcmp(currfilename+clen_wo_ext,XSB_OBJ_EXTENSION_STRING) == 0)
+    // both full names and different
+    return TRUE;
+  // at least one is a module or usermod().
+  if (file_strcmp(datafilename+dlen_wo_ext,XSB_OBJ_EXTENSION_STRING) != 0) {
+    if (file_strncmp(datafilename,"usermod(",sizeof("usermod(")-1) == 0) {
+      if (datafilename[sizeof("usermof(")-1] == '\'') {
+	ddisp = sizeof("usermod('")-1;  //9
+	dmlen = dlen - (sizeof("usermod('')")-1);  //11;
+      } else {
+	ddisp = sizeof("usermod(")-1; //8;
+	dmlen = dlen - (sizeof("usermod()")-1);  //9;
+      }
+    } else {
+      ddisp = 0;
+      dmlen = dlen;
+    }
+  } else {
+    ddisp = -1;
+    dmlen = 0;
+  }
+  
+  if (file_strcmp(currfilename+clen_wo_ext,XSB_OBJ_EXTENSION_STRING) != 0) {
+    if (file_strncmp(currfilename,"usermod(",8) == 0) {
+      if (currfilename[8] == '\'') {
+	cdisp = sizeof("usermod('")-1; //9;
+	cmlen = clen - (sizeof("usermod('')")-1); //11;
+      } else {
+	cdisp = sizeof("usermod(")-1; //8;
+	cmlen = clen - (sizeof("usermod()")-1);  //9;
+      }
+    } else {
+      cdisp = 0;
+      cmlen = clen;
+    }
+  } else {
+    cdisp = -1;
+    cmlen = 0;
+  }
+  
+  if (dmlen == 0) dmlen = cmlen; // one or other must be nonzero
+  if (dmlen != cmlen) return TRUE;
+  if ((ddisp == -1) &&
+      strncmp(datafilename+dlen-dmlen-XSB_OBJ_EXTENSION_LENGTH,
+		   currfilename+cdisp,dmlen) == 0)
+    return FALSE;
+  if ((cdisp == -1) &&
+      file_strncmp(datafilename+ddisp,
+		   currfilename+clen-cmlen-XSB_OBJ_EXTENSION_LENGTH,dmlen) == 0)
+    return FALSE;
+  if (file_strncmp(datafilename+ddisp,currfilename+cdisp,dmlen) == 0)
+    return FALSE;
+  return TRUE;
+}
+
+  /*----------------------------------------------------------------------*/
+
+static xsbBool load_one_sym(CTXTdeclc FILE *fd, char *filename, Psc cur_mod, int count, int exp,
+			    prolog_term modformals, prolog_term modpars) // add act and form parlists
 {
   static XSB_StrDefine(str);
   int  is_new, def_is_new;
+  int import_from_usermod = FALSE;
   byte t_arity, t_type, t_env, t_defined, t_definedas;
   Pair temp_pair, usermod_pair, defas_pair = NULL;
   Psc  mod;
   Integer dummy; /* used to squash warnings */
+  char modname[MAXFILENAME+1];
 
   dummy = get_obj_byte(&t_env);
   /* this simple check can avoid worse situations in case of compiler bugs */
@@ -724,18 +875,24 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
   t_definedas = t_type & T_DEFA; t_type = t_type & ~T_DEFA;  /* next check if its a defined-as */
   dummy = get_obj_byte(&t_arity);
   get_obj_atom(fd, &str);
-  if (t_type == T_MODU)
+  if (t_type == T_MODU) {
+    replace_form_by_act(str.string,modformals,modpars);
     temp_pair = insert_module(0, str.string);
-  else {  
+  } else {  
     if ((t_env&0x7) == T_IMPORTED || t_definedas) {
       byte t_modlen;
-      char modname[MAXFILENAME+1];
 
       dummy = get_obj_byte(&t_modlen);
       dummy = get_obj_string(modname, t_modlen);
       modname[t_modlen] = '\0';
-      temp_pair = insert_module(0, modname);
-      mod = temp_pair->psc_ptr;
+      replace_form_by_act(modname,modformals,modpars);
+      if (strncmp(modname,"usermod(",strlen("usermod(")) == 0) {
+	import_from_usermod = TRUE;
+	mod = global_mod;
+      } else {
+	temp_pair = insert_module(0, modname);
+	mod = temp_pair->psc_ptr;
+      }
       if (t_definedas) {
 	byte t_defaslen;
 	char defasname[MAXFILENAME+1];
@@ -744,24 +901,22 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
 	defasname[t_defaslen] = '\0';
 	defas_pair = insert(defasname, t_arity, mod, &def_is_new);
 	if (def_is_new) {
-	  set_data(defas_pair->psc_ptr, mod);
-	  set_env(defas_pair->psc_ptr, T_UNLOADED);
-	  set_type(defas_pair->psc_ptr, T_ORDI);
+	  psc_set_data(defas_pair->psc_ptr, mod);
+	  psc_set_env(defas_pair->psc_ptr, T_UNLOADED);
+	  psc_set_type(defas_pair->psc_ptr, T_ORDI);
 	}
 	mod = cur_mod;  /* mod of this symbol is cur_mod */
       }
-    }  /* ((t_env&0x7) == T_IMPORTED || t_definedas) */
-    else if ((t_env&0x7) == T_GLOBAL) 
+    } else if ((t_env&0x7) == T_GLOBAL) 
       mod = global_mod;
-    else 
-      mod = cur_mod;
+    else mod = cur_mod;
+
     temp_pair = insert(str.string, t_arity, mod, &is_new);
 
     if (t_definedas) {
       set_psc_ep_to_psc(CTXTc temp_pair->psc_ptr,defas_pair->psc_ptr);
       t_type = T_PRED;
     }
-   
 
     /* make sure all data fields of predicates PSCs point to 
        their corresponding module */
@@ -769,7 +924,7 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
 	(get_type(temp_pair->psc_ptr) == T_ORDI &&
 	 (t_type == T_DYNA || t_type == T_PRED || t_type == T_UDEF) &&
 	 get_data(temp_pair->psc_ptr) == NULL)) {
-      set_data(temp_pair->psc_ptr, mod);
+      psc_set_data(temp_pair->psc_ptr, mod);
     }
     env_type_set(CTXTc temp_pair->psc_ptr, (byte)(t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
 
@@ -780,7 +935,7 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
       else {   /* 1 (for emacs scoping) */
 	if (flags[PRIVSHAR_DEFAULT] == DEFAULT_PRIVATE) {
 	  if (t_env&T_SHARED_DET) 
-	    set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+	    psc_set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
 	}
 	else { /* 2 (for emacs scoping) */
 	  /* Default shared: if the compiled code has a thead_xxx
@@ -791,25 +946,25 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
 	     the || get_shared were not part of the condition above --
 	     so perhaps this code should be refactored. */
 	  if (t_env&T_SHARED_DET) {
-	    set_shared(temp_pair->psc_ptr, (t_env&(T_SHARED|T_SHARED_DET)));
+	    psc_set_shared(temp_pair->psc_ptr, (t_env&(T_SHARED|T_SHARED_DET)));
 	  }
 	  else if (!(((temp_pair->psc_ptr)->env)&T_SHARED_DET)) {
-	    set_shared(temp_pair->psc_ptr, (T_SHARED));
+	    psc_set_shared(temp_pair->psc_ptr, (T_SHARED));
 	  }
 	}
       } 
     } /* is_new || !get_shared(temp_pair->psc_ptr) */
 
     if (t_env&T_TABLED_SUB_LOADFILE) 
-      set_tabled(temp_pair->psc_ptr,((t_env&T_TABLED_VAR) | T_TABLED_SUB));
+      psc_set_tabled(temp_pair->psc_ptr,((t_env&T_TABLED_VAR) | T_TABLED_SUB));
     else if (is_new || t_defined)
-      set_tabled(temp_pair->psc_ptr,(t_env&T_TABLED_VAR));
+      psc_set_tabled(temp_pair->psc_ptr,(t_env&T_TABLED_VAR));
     //    printf("sym loaded: %s/%d, tabled=%x, t_env=%x, t_type=%x, t_defined=%x\n",get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr),get_tabled(temp_pair->psc_ptr),t_env,t_type,t_defined);
     /* dsw added following, maybe wrongly */
     if (exp && (t_env&0x7) == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
       if (is_new) 
-	set_data(temp_pair->psc_ptr, mod);
+	psc_set_data(temp_pair->psc_ptr, mod);
       if ((usermod_pair = search_in_usermod(get_arity(temp_pair->psc_ptr),get_name(temp_pair->psc_ptr)))) {
 	/* if existing usermod rec without ep, set its ep to that of new one */
 	if (get_ep(usermod_pair->psc_ptr) == (byte *)&((usermod_pair->psc_ptr)->load_inst)) {
@@ -822,6 +977,24 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
 
   if (!temp_pair) return FALSE;
   
+  if (import_from_usermod) {
+    Psc tpsc = pair_psc(temp_pair);
+    if (get_data(tpsc) != global_mod && isstring(get_data(tpsc)) &&
+	nec_different_xwam_files(string_val(get_data(tpsc)),modname)) { // dsw diff order?
+      xsb_warn(CTXTc "Ignoring import of usermod:%s/%d from %s in %s; already imported from %s\n",
+	       get_name(tpsc),get_arity(tpsc),modname,filename,string_val(get_data(tpsc)));
+    } else if (!isstring(get_data(tpsc)) && get_data(tpsc) != NULL && get_data(tpsc) != global_mod) {
+      xsb_error("Importing symbol %s/%d from usermod, but was defined in module %s\n",
+		get_name(tpsc),get_arity(tpsc),get_name(get_data(tpsc)) );
+    } else {
+      //    set_data(tpsc, (struct psc_rec *)makestring(string_find(usermodfile,1)));
+      psc_set_data(tpsc, (struct psc_rec *)makestring(string_find(modname,1)));
+      psc_set_env(tpsc,T_UNLOADED);
+      if (get_type(tpsc) == 0)
+	psc_set_type(tpsc,T_UDEF);
+    }
+  }
+
   reloc_table[count] = (pw)temp_pair;
   SQUASH_LINUX_COMPILER_WARN(dummy) ; 
   return TRUE;
@@ -847,7 +1020,8 @@ static xsbBool load_one_sym(CTXTdeclc FILE *fd, Psc cur_mod, int count, int exp)
 *                                                                       *
 ************************************************************************/
 
-static xsbBool load_syms(CTXTdeclc FILE *fd, int psc_count, int count, Psc cur_mod, int exp)
+static xsbBool load_syms(CTXTdeclc FILE *fd, char *filename, int psc_count, int count, Psc cur_mod, int exp,
+			 prolog_term modformals, prolog_term modpars) // add act and form parlists
 {
   int i;
   
@@ -855,8 +1029,8 @@ static xsbBool load_syms(CTXTdeclc FILE *fd, int psc_count, int count, Psc cur_m
   reloc_table_size = psc_count*sizeof(pw);
   /* xsb_dbgmsg(("reloc_table %x,psc_count %d",reloc_table,psc_count)); */
 
-  for (i = count; i < psc_count; i++) {
-    if (!load_one_sym(CTXTc fd, cur_mod, i, exp)) return FALSE;
+  for (i = count; i < psc_count; i++) { // add act and form parlists
+    if (!load_one_sym(CTXTc fd, filename, cur_mod, i, exp, modformals, modpars)) return FALSE;
   }
   return TRUE;
 }
@@ -880,6 +1054,12 @@ static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
   tdispblk->method = DISPATCH_BLOCK;
   tdispblk->MaxThread = max_threads_glc;
   *instr_ptr = (TIFptr)tdispblk;
+
+  if (get_tabled(psc)==T_TABLED) {					
+    if ((TabledEvalMethod)pflags[TABLING_METHOD] == VARIANT_EVAL_METHOD)			
+       psc_set_tabled( psc,T_TABLED_VAR);					
+     else psc_set_tabled(psc,T_TABLED_SUB);				
+   }									
 
   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 
@@ -939,9 +1119,9 @@ int has_generated_prefix(char *name) {
   return 1;
 }
 
-
 /************************************************************************/
-static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
+static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp, int immutable,
+		     prolog_term modpars)  // add arg of actual par list
 {
   char name[FOREIGN_NAMELEN], arity;
   byte name_len;
@@ -953,6 +1133,7 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
   Pair ptr;
   TIFptr *instruct_tip;
   Integer dummy; /* used to squash warnings */
+  prolog_term modformals = (prolog_term) NULL;
  
   seg_count = 0; first_inst = 0;
   dummy = get_obj_byte(&name_len);
@@ -969,21 +1150,49 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
     }
   }
   else {
+    //printf("C loading module: %s\n",name);
+    if (name[0] == '\'' || strstr(name,")") != NULL) {
+    // parse and build formal par list
+      STRFILE strfile;
+      strfile.strcnt = strlen((char *)name);
+      strfile.strptr = strfile.strbase = (byte *)name;
+      iostrs[0] = &strfile;
+      bld_ref(reg+5,hreg);  // where read returns answer with code=3
+      new_heap_free(hreg);
+      read_canonical_term(CTXTc iostrdecode(0),3); // 3 gets answer in r5
+      modformals = ptoc_tag(CTXTc 5);
+      if (isstring(modformals) && !isstring(modpars)) {
+	xsb_error("Module %s is not parameterized, but %d actual parameters provided",
+		  name,get_arity(get_str_psc(modpars)));
+		  }
+      if (!((isstring(modformals) && isstring(modpars)) ||
+	    (isstr(modformals) && isstr(modpars) &&
+	     get_arity(get_str_psc(modformals)) == get_arity(get_str_psc(modpars))))) {
+	xsb_error("Module %s, inconsistent number of formal and actual parameters",name);
+	}
+      replace_form_by_act(name,modformals,modpars);  // formal pars by actual pars in name to name
+    } else {
+      if (!isinteger(modpars) && !isstring(modpars)) {
+	xsb_error("Module %s is not parameterized, but %d actual parameters provided",
+		  name,get_arity(get_str_psc(modpars)));
+		  }
+      modformals = modpars;
+    }
     ptr = insert_module(T_MODU, name);
     if (immutable) {
       if (get_ep(ptr->psc_ptr) == 0) {
 	if (pflags[VERBOSENESS_LEVEL]) { printf("Immutable: first load of module: %s\n",name);}
-	set_immutable(ptr->psc_ptr,1);
+	psc_set_immutable(ptr->psc_ptr,1);
       } else { 
 	if (pflags[VERBOSENESS_LEVEL]) { printf("Immutable: re-load of module prohibited: %s\n",name);}
 	return(NULL); 
       }
     }
     cur_mod = ptr->psc_ptr;
-    set_ep(ptr->psc_ptr,(byte *)makestring(filename)); //!!!DSWDSW filename for module goes here?
+    psc_set_ep(ptr->psc_ptr,(byte *)makestring(filename)); // psc->filename for module.
   }
   get_obj_word_bb(&psc_count);
-  if (!load_syms(CTXTc fd, (int)psc_count, 0, cur_mod, exp)) 
+  if (!load_syms(CTXTc fd, filename, (int)psc_count, 0, cur_mod, exp, modformals, modpars ))
     return FALSE;
   /*	xsb_dbgmsg(("symbol table of module %s loaded", name));	*/
   do {
@@ -1018,14 +1227,14 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
     case T_ORDI:
     case T_UDEF:
       if (strcmp(name, "_$main")!=0) {
-	set_type(ptr->psc_ptr, T_PRED);
-	set_ep(ptr->psc_ptr, (pb)seg_first_inst);
+	psc_set_type(ptr->psc_ptr, T_PRED);
+	psc_set_ep(ptr->psc_ptr, (pb)seg_first_inst);
 	if (xsb_profiling_enabled) {
 	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, /*text_bytes*/ seg_size(seg_first_inst)-SIZE_SEG_HDR);
 	}
       }
-      if (get_data(ptr->psc_ptr) == global_mod) {
-	set_data(ptr->psc_ptr,(struct psc_rec *)makestring(filename)); // filename already interned
+      if (get_data(ptr->psc_ptr) == global_mod || isstring(get_data(ptr->psc_ptr))) {
+	psc_set_data(ptr->psc_ptr,(struct psc_rec *)makestring(filename)); // filename already interned
       }
       instruct_tip = get_tip_or_tdisp(ptr->psc_ptr);
       if (instruct_tip != NULL) {
@@ -1036,7 +1245,7 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
 #endif
 	  *instruct_tip = New_TIF(CTXTc (ptr->psc_ptr));
       }
-      //printf("table: %s/%d, psc_tabled: %x\n",get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),get_tabled(ptr->psc_ptr));
+      //      printf("table: %s/%d, psc_tabled: %x\n",get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),get_tabled(ptr->psc_ptr));
       break;
     case T_PRED:
       if (strcmp(name, "_$main")!=0) {
@@ -1051,18 +1260,14 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
 	}
 	if (isstring(get_data(ptr->psc_ptr)) && 
 	    !has_generated_prefix(name) &&
-#if defined(WIN_NT) || defined(CYGWIN)
-	    strcasecmp(string_val(get_data(ptr->psc_ptr)),filename)) {
-#else
-	    strcmp(string_val(get_data(ptr->psc_ptr)),filename)) {
-#endif
+	    nec_different_xwam_files(filename,string_val(get_data(ptr->psc_ptr)))) {
 	  xsb_warn(CTXTc "Redefining: %s/%d from file %s; Previously defined from file %s",
 		   get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),
 		   filename, string_val(get_data(ptr->psc_ptr)));
-	  set_data(ptr->psc_ptr,(struct psc_rec *)makestring(string_find(filename,1)));
+	  psc_set_data(ptr->psc_ptr,(struct psc_rec *)makestring(filename)); // already intern
 	}
 	unload_seg((pseg)get_ep(ptr->psc_ptr));
-	set_ep(ptr->psc_ptr, (pb)seg_first_inst);
+	psc_set_ep(ptr->psc_ptr, (pb)seg_first_inst);
 	if (xsb_profiling_enabled) {
 	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, /*text_bytes*/ seg_size(seg_first_inst)-SIZE_SEG_HDR);
 	}
@@ -1078,7 +1283,7 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp,int immutable)
       }
       /* set data to point to module's psc, if not */
       if (!isstring(get_data(ptr->psc_ptr))) {
-	set_data(ptr->psc_ptr, cur_mod);
+	psc_set_data(ptr->psc_ptr, cur_mod);
       }
       break;
     case T_DYNA: {
@@ -1137,7 +1342,7 @@ static byte *loader_foreign(CTXTdeclc char *filename, FILE *fd, int exp,int immu
   if (immutable) {
     if (get_immutable(ptr->psc_ptr) == 0) {
       if (pflags[VERBOSENESS_LEVEL]) {printf("DEBUG Immutable: Immutable foreign file: first load\n");}
-      set_immutable(ptr->psc_ptr,1);
+      psc_set_immutable(ptr->psc_ptr,1);
     } else { 
       if (pflags[VERBOSENESS_LEVEL]) {printf("DeBUG Immutable foreign file: re-load prohibited\n");}
       return(NULL);
@@ -1145,7 +1350,7 @@ static byte *loader_foreign(CTXTdeclc char *filename, FILE *fd, int exp,int immu
   }
   cur_mod = ptr->psc_ptr;
   get_obj_word_bb(&psc_count);
-  if (!load_syms(CTXTc fd, (int)psc_count, 0, cur_mod, exp)) return FALSE;
+  if (!load_syms(CTXTc fd, filename, (int)psc_count, 0, cur_mod, exp, makenil, makenil)) return FALSE;
   instr = load_obj(CTXTc filename, cur_mod, ldoption.string);
 
   SQUASH_LINUX_COMPILER_WARN(dummy) ; 
@@ -1166,7 +1371,7 @@ static byte *loader_foreign(CTXTdeclc char *filename, FILE *fd, int exp,int immu
 static int warned_old_obj = 0;	/* warned the user about old object files ? */
 
 /* See description of magic numbers in foreign.P -- Is ...5 obsolete? */
-byte *loader(CTXTdeclc char *file, int exp)
+byte *loader(CTXTdeclc char *file, int exp, prolog_term modpars) // add arg of actual parameter list (prolog list of atoms)
 {
   FILE *fd;	      /* file descriptor */
   unsigned int magic_num;
@@ -1219,7 +1424,7 @@ byte *loader(CTXTdeclc char *file, int exp)
     char *efilename = expand_filename(file);
     char *filename = string_find(efilename,1);
     mem_dealloc(efilename,MAXPATHLEN,OTHER_SPACE);
-    first_inst = loader1(CTXTc fd,filename,exp,is_immutable);
+    first_inst = loader1(CTXTc fd,filename,exp,is_immutable,modpars);  // pass actual par list as arg
   } else if (magic_num == 0x11121308 || magic_num == 0x11121309 || magic_num == 0x1112130b || magic_num == 0x1112130c) {
 #ifdef FOREIGN
       //      printf("foreign magic num 0x%x\n",magic_num);
@@ -1228,8 +1433,8 @@ byte *loader(CTXTdeclc char *file, int exp)
     xsb_abort("Loading a foreign file: %s prohibited in this configuration", file);
 #endif
   } else {
-    xsb_abort("File: %s does not have proper byte code format...\n%s",
-	      file, "\t Please remove it and then recompile");
+    xsb_abort("File: %s does not have proper byte code format...(%x)\n%s",
+	      file, magic_num, "\t Please remove it and then recompile");
     first_inst = NULL;
   }
 

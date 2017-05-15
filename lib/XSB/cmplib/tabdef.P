@@ -28,7 +28,7 @@
 /*	Tables every predicate defined in the module.			*/
 /*======================================================================*/
 
-perform_table_all(module(_,_,Preds,_)) :- table_all_predicates(Preds).
+perform_table_all(module(_,_,Preds,_,_)) :- table_all_predicates(Preds).
 
 :- mode table_all_predicates(+).
 
@@ -46,7 +46,7 @@ table_all_predicates([pred(Sym,_,_)|Preds]) :-
 /*	predicates are handled separately.				*/
 /*======================================================================*/
 
-perform_auto_table(module(SymTab,_,CL0,_)) :-
+perform_auto_table(module(SymTab,_,CL0,_,_)) :-
 	table_preds_in_tabling_meta_preds(SymTab, CL0, CL1),
 	table_immediate_recursions(CL1, CL2),
 	table_to_break_all_loops(CL2).

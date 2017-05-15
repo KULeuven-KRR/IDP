@@ -95,9 +95,9 @@ eval_exp(structure(Sym,Args),R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 	; EPN = e(PredSym,NC),
 	  sym_name(PredSym, P, A),
 	  error(('Unknown function ', Op, /, Arity,
-		 ' in an arithmetic expression')),
-	  message(('         involving is/2 or =:=/2 in clause #', NC,
-		   ' of predicate ', P, /, A))
+		 ' in an arithmetic expression',
+		 ' involving is/2 or =:=/2 (in clause #', NC,
+		 ' of predicate ', P, /, A,')'))
 	).
 % TLS: added this clause for pi, e and other constants we might like.
 eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
@@ -105,16 +105,14 @@ eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 	eval_constant(SymName,Val),
 %	console_writeln(eval_exp(Val,R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC))),
 	eval_exp(Val,R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)).
-eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
+eval_exp(constant(Sym),_R,_,_Pil,_,_Tin,_Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A), sym_name(Sym, Const, _),
-	error(('non-numeric constant ', Const, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,/,A)),
-	Inst = fail, Tin = Tout, R = 0.
-eval_exp(string(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
+	error(('non-numeric constant ', Const, ' in a numeric expression',
+	       ' (in clause #', NC, ' of predicate ', P,/,A,')')).
+eval_exp(string(Sym),_R,_Pilr,_Pil,_,_Tin,_Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error(('non-numeric string ', Sym, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,/,A)),
-	Inst = fail, Tin = Tout, R = 0.
+	error(('non-numeric string ', Sym, ' in a numeric expression',
+	       ' (in clause #', NC, ' of predicate ', P,/,A,')')).
 
 eval_constant(pi,real(V)):- eval(pi,V). 
 eval_constant(e,real(V)):- eval(e,V).
@@ -178,9 +176,8 @@ eval_var(Prag,R,Pil,Pilr,Tin,Tout,EPN) :-
 	 ->	eval_numgetinst(Prag,R,Pil,Pilr,Tmid,Tout)
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
-		error('Unbound variable in an arithmetic expression'),
-		message(('         (in clause #', NC, ' of predicate ', P, /, A, ')')),
-		Pil = [fail|Pilr], R = 0, Tmid = Tout
+		error(('Unbound variable in an arithmetic expression',
+		       ' (in clause #', NC, ' of predicate ', P, /, A, ')'))
 	).
 
 
@@ -212,15 +209,15 @@ geninline_isindeed(LHS,constant(Sym),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
 	sym_name(Sym,Const,_),
 	eval_constant(Const,real(Val)),
 	isindeed_real(LHS,Val,HoldR,Pil,Pilr,Tin,Tout,EPN).
-geninline_isindeed(_LHS,constant(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC)) :-
+geninline_isindeed(_LHS,constant(Sym),_HoldR,_Pilr,_Pil,_Tin0,_Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	sym_name(Sym,Const,_),
-	error(('non-numeric string ', Const, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,/,A)).
-geninline_isindeed(_LHS,string(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC)) :-
+	error(('non-numeric string ', Const, ' in a numeric expression',
+	       ' (in clause #', NC, ' of predicate ', P,/,A,')')).
+geninline_isindeed(_LHS,string(Sym),_HoldR,_Pilr,_Pil,_Tin0,_Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error(('non-numeric string ', Sym, ' in a numeric expression')),
-	message(('         in clause #', NC, ' of predicate ', P,/,A)).
+	error(('non-numeric string ', Sym, ' in a numeric expression',
+	       ' (in clause #', NC, ' of predicate ', P,/,A.')')).
 
 /***isindeed_var(varocc(LVid,LPrag),RPrag,HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	eval_var(RPrag,R,Pil,Pilm,Tin,Tout1,EPN),
@@ -245,11 +242,11 @@ isindeed_var(real(Real),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	getreg(Tin, R1), hold(R1, Tout1, Tout2),
 	Pilm = [putdfloat(R1,Real)|Pilr],
 	release(R1,Tout2,Tout3), release(R,Tout3,Tout).
-isindeed_var(_,_,_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC),_RVid) :-
+isindeed_var(_,_,_HoldR,_Pilr,_Pil,_Tin0,_Tin,e(PredSym,NC),_RVid) :-
 	sym_name(PredSym, P, A),
-	error('Incorrect type in second argument'),
-	message(('         involving is/2 or =:=/2 in clause #', NC,
-		 ' of predicate ', P, /, A)).
+	error(('Incorrect type in first argument',
+	       ' involving is/2 or =:=/2 (in clause #', NC,
+	       ' of predicate ', P, /, A,')')).
 
 isindeed_int(varocc(Vid,Prag),N,HoldR,Pil,Pilr,Tin,Tout,_EPN) :- !,
 	getreg(Tin,R), hold(R,Tin,Tmid),
@@ -278,9 +275,9 @@ isindeed_struct(Sym,Args,HoldR,Pil,Pilr,Tin,Tout,EPN,LHS) :-
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
 		Pil = [fail|Pilr], Tout = Tin,
-		error(('Unknown function ', Op, /, Arity,' in an arithmetic expression')),
-		message(('         involving is/2 or =:=/2 in clause #', NC,
-			 ' of predicate ', P, /, A))
+		error(('Unknown function ', Op, /, Arity,' in an arithmetic expression',
+		       ' involving is/2 or =:=/2 (in clause #', NC,
+		       ' of predicate ', P, /, A,')'))
 	).
 
 
@@ -326,16 +323,10 @@ isindeed_binary(real(Real),Op,E1,E2,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	Pil1 = [putdfloat(R1,Real),subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
 	getreg(Tmid, R1), %%hold(R1, Tmid, Tmid2),release(R1,Tmid2,Tmid3),
 	release(R,Tmid,Tout).
-isindeed_binary(_LHS,_Op,_E1,_E2,_HoldR,[fail|Pilr],Pilr,Tout,Tout,e(PredSym,NC)) :- !,
+isindeed_binary(_LHS,_Op,_E1,_E2,_HoldR,_Pil,_Pilr,_Tin,_Tout,e(PredSym,NC)) :- !,
 	sym_name(PredSym, P, A),
-	error('variable or numerical constant expected as 1st arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,/,A)).
-
-/**isindeed_unary(LHS,Op,E,_HoldR,_Pil,_Pilr,_Tin,_Tout,_EPN) :-
-	get_basic_type(LHS,TypLHS),
-	get_basic_type(E,TypE),
-	writeln(userout,un(TypLHS,TypE,Op)),
-	fail.**/
+	error(('variable or numerical constant expected as 1st arg of is/2',
+	       ' (in clause #', NC, ' of predicate ', P,/,A,')')).
 isindeed_unary(varocc(Vid,Prag),Op,E,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	eval_uniop(Op,E,R,Pil,Pilm,HoldR,Tin,Tmid,EPN),
 	release_if_done(Vid,R,Prag,HoldR,Tmid,Tmid2),
@@ -350,10 +341,10 @@ isindeed_unary(real(Real),Op,E,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	getreg(Tmid, R1), hold(R1, Tmid, Tmid2),
 	Pil1 = [putdfloat(R1,Real),subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
 	release(R1,Tmid2,Tmid3),release(R,Tmid3,Tout).
-isindeed_unary(_LHS,_Op,_E,_HoldR,[fail|Pilr],Pilr,Tout,Tout,e(PredSym,NC)) :-
+isindeed_unary(_LHS,_Op,_E,_HoldR,_Pilr,_Pil,_Tin,_Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error('variable or numerical constant expected as 1st arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,/,A)).
+	error(('variable or numerical constant expected as 1st arg of is/2',
+	       ' (in clause #', NC, ' of predicate ', P,/,A,')')).
 
 eval_binop(Op,E1,E2,R1,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 	eval_binop(Op), !,
@@ -376,10 +367,10 @@ eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 		 mulreg(R1,R0),subreg(R0,R)|Pilr],
 	release_if_done0(E1,R0,HoldR,Tmid1,Tmid2),
 	release_if_done0(E2,R1,HoldR,Tmid2,Tout).
-eval_binop(Op,_,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
+eval_binop(Op,_,_,_,_Pilr,_Pil,_,_Tin,_Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error(('Unknown function ', Op, '/2 in an arithmetic expression')),
-	message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
+	error(('Unknown function ', Op, '/2 in an arithmetic expression',
+	       ' using is/2 (in clause #', NC, ' of predicate ', P,/,A,')')).
 
 eval_uniop(+,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :- !, /* unary plus */
 	eval_exp_vc(E,R,Pil,Pilr,HoldR,Tin,Tout,EPN).
@@ -395,10 +386,10 @@ eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-   /* others */
 	builtin_function(Op, 1, Num),
 	!,
 	eval_exp_vc(E,R,Pil,[unifunc(Num,R)|Pilr],HoldR,Tin,Tout,EPN).
-eval_uniop(Op,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
+eval_uniop(Op,_,_,_Pilr,_Pil,_,_Tin,_Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error(('Unknown function ', Op, '/1 in an arithmetic expression')),
-	message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
+	error(('Unknown function ', Op, '/1 in an arithmetic expression',
+	       ' using is/2 (in clause #', NC, ' of predicate ', P,/,A.')')).
 
 eval_exp_vc(varocc(_,Prag),R,Pil,Pilr,_,Tin,Tout,EPN) :-
 	eval_var(Prag,R,Pil,Pilr,Tin,Tout,EPN).
@@ -415,10 +406,10 @@ eval_exp_vc(constant(C),R,Pil1,Pil2,HoldR,Tin,Tout,EPN) :-
 	sym_name(C,Const,_),
 	eval_constant(Const,Val),
 	eval_exp_vc(Val,R,Pil1,Pil2,HoldR,Tin,Tout,EPN).
-eval_exp_vc(_,0,[fail|Pilr],Pilr,_HoldR,Tout,Tout,e(PredSym,NC)) :-
+eval_exp_vc(_,0,_Pilr,_Pil,_HoldR,_Tin,_Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error('variable or numerical constant expected in 2nd arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,/,A )).
+	error(('variable or numerical constant expected in 2nd arg of is/2',
+	       ' (in clause #', NC, ' of predicate ', P,/,A,')' )).
 
 eval_var_source(Varocc,Loc,Type0,HoldR,Tin,Tout,EPN) :-
 	Varocc = varocc(Vid,Prag),
@@ -434,9 +425,8 @@ eval_var_source(Varocc,Loc,Type0,HoldR,Tin,Tout,EPN) :-
 		)
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
-		error('Unbound variable in an arithmetic expression'),
-		message(('         (in clause #', NC, ' of predicate ', P, /, A, ')')),
-		Loc = 0, Tout = Tmid
+		error(('Unbound variable in an arithmetic expression',
+		       ' (in clause #', NC, ' of predicate ', P, /, A, ')'))
 	).
 
 eval_var_target(Prag,Loc,Type0,UniAsgn,Tin,Tout,_EPN) :-
@@ -475,10 +465,10 @@ eval_binop(mod,E1,E2,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 			  mulreg(R1,R0),subreg(R0,R)|Pilr],
     release_if_done0(E1,R0,HoldR,Tmid1,Tmid2),
     release_if_done0(E2,R1,HoldR,Tmid2,Tout).
-eval_binop(Op,_,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
+eval_binop(Op,_,_,_,_Pilr,_Pil,_,_Tin,_Tout,e(PredSym,NC)) :-
     sym_name(PredSym, P, A),
-    error(('Unknown function ', Op, '/2 in an arithmetic expression')),
-    message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
+    error(('Unknown function ', Op, '/2 in an arithmetic expression',
+	   ' using is/2 (in clause #', NC, ' of predicate ', P,/,A,')')).
 
 eval_uniop(+,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :- !, /* unary plus */
     eval_exp(E,R,Pil,Pilr,HoldR,Tin,Tout,EPN).
@@ -494,8 +484,8 @@ eval_uniop(Op,E,R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-   /* others */
     builtin_function(Op, 1, Num),
     !,
     eval_exp(E,R,Pil,[unifunc(Num,R)|Pilr],HoldR,Tin,Tout,EPN).
-eval_uniop(Op,_,_,Pil,Pil,_,Tin,Tin,e(PredSym,NC)) :-
+eval_uniop(Op,_,_,_Pil,_Pilr,_,_Tin,_Tout,e(PredSym,NC)) :-
     sym_name(PredSym, P, A),
-    error(('Unknown function ', Op, '/1 in an arithmetic expression')),
-    message(('         using is/2 in clause #', NC, ' of predicate ', P,/,A)).
+    error(('Unknown function ', Op, '/1 in an arithmetic expression',
+	   ' using is/2 (in clause #', NC, ' of predicate ', P,/,A,')')).
 

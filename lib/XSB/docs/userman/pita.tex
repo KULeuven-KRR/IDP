@@ -1,0 +1,145 @@
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 
+\chapter{ PITA: Probabilistic  Inference}
+\label{package:pita} 
+
+  \begin{center}
+    {\Large {\bf By Fabrizio Riguzzi}}
+  \end{center}
+
+\index{PITA}
+\index{Logic Programs with Annotated Disjunction}
+\index{CP-logic}
+\index{LPADs}
+\index{PRISM}
+\index{Probabilistic Logic Programming}
+\index{Possibilistic Logic Programming}
+
+%\input{pita}
+
+%\ifnum\pdfoutput>0 % pdflatex compilation
+
+
+``Probabilistic  Inference with Tabling and Answer subsumption'' (PITA) \cite{RigSwi10-ICLP10-IC} is a package for uncertain reasoning. In particular, it allowsvarious forms of Probabilistic Logic Programming and Possibilistic Logic Programming. It accepts the language of Logic Programs with Annotated Disjunctions (LPADs)\cite{VenVer03-TR,VenVer04-ICLP04-IC} and CP-logic programs \cite{VenDenBru-JELIA06,DBLP:journals/tplp/VennekensDB09}.
+
+An example of LPAD/CP-logic program is 
+\begin{eqnarray*}
+(heads(Coin):0.5)\vee (tails(Coin):0.5)&\leftarrow&
+toss(Coin),\neg biased(Coin).\\
+(heads(Coin):0.6)\vee (tails(Coin):0.4)&\leftarrow&
+toss(Coin), biased(Coin).\\
+(fair(Coin):0.9) \vee (biased(Coin):0.1).&&\\
+toss(Coin).&&
+\end{eqnarray*}
+The first clause states that if we toss a coin that is not biased it has equal probability of landing heads and tails. The second states that if the coin is biased it has a slightly higher probability of landing heads. The third states that the coin is fair with probability 0.9 and biased with probability 0.1 and the last clause states that we toss a coin with certainty.
+
+PITA computes the probability of queries by tranforming the input program into a normal logic program and then calling a modified version of the query on the transformed programs.
+
+\subsection{Installation}
+PITA uses \href{http://www.gtk.org/}{GLib 2.0} and  \href{http://vlsi.colorado.edu/~fabio/CUDD/}{CUDD}.
+GLib is a standard GNU package 
+so it is easy to install it using the package management software of your Linux 
+distribution.
+
+To install CUDD, follow the instructions at  \url{http://vlsi.colorado.edu/~fabio/CUDD/} to get the package (or get directly from \url{ftp://vlsi.colorado.edu/pub/cudd-2.4.2.tar.gz}), for example \texttt{cudd-2.4.2.tar.gz}.
+After decompressing, you will have a direcory \texttt{cudd-2.4.2} with various subdirectories.
+Compile CUDD following the included instructions.
+
+To install PITA with XSB, run XSB \texttt{configure} in the \texttt{build} directory with option \texttt{--with-pita=DIR} where \texttt{DIR} is the folder where CUDD is.
+
+
+\subsubsection{Syntax}
+
+Disjunction in the head is represented with a semicolon and atoms in the head are separated from probabilities by a colon. For the rest, the usual syntax of Prolog is used.
+For example, the  CP-logic clause
+$$h_1:p_1\vee \ldots \vee h_n:p_n\leftarrow b_1,\dots,b_m ,\neg c_1,\ldots,\neg c_l$$
+is represented by
+\begin{verbatim}
+h1:p1 ; ... ; hn:pn :- b1,...,bm,\+ c1,....,\+ cl
+\end{verbatim}
+ No parentheses are necessary. The \texttt{pi} are numeric expressions. It is up to the user to ensure that the numeric expressions are legal, i.e. that they sum up to less than one.
+
+If the clause has an empty body, it can be represented like this
+\begin{verbatim}
+h1:p1 ; ... ;hn:pn.
+\end{verbatim}
+If the clause has a single head with probability 1, the annotation can be omitted and the clause takes the form of a normal prolog clause, i.e. 
+\begin{verbatim}
+h1:- b1,...,bm,\+ c1,...,\+ cl.
+\end{verbatim}
+stands for 
+\begin{verbatim}
+h1:1 :- b1,...,bm,\+ c1,...,\+ cl.
+\end{verbatim}
+
+
+
+The body of clauses can contain a number of built-in predicates including:
+\begin{verbatim}
+is/2 >/2 </2 >=/2 =</2 =:=/2 =\=/2 true/0 false/0
+=/2 ==/2 \=/2 \==/2 length/2 member/2
+\end{verbatim}
+The coin example above thus is represented as (see file \texttt{coin.cpl} in subdirecoty \texttt{examples})
+\begin{verbatim}
+heads(Coin):1/2 ; tails(Coin):1/2:- 
+     toss(Coin),\+biased(Coin).
+heads(Coin):0.6 ; tails(Coin):0.4:- 
+     toss(Coin),biased(Coin).
+fair(Coin):0.9 ; biased(Coin):0.1.
+toss(coin).
+\end{verbatim}
+
+Subdirectory \texttt{examples} contains other example programs.
+
+\subsection{Use}
+\subsubsection{Probabilistic Logic Programming}
+First write your program in a file with extension \texttt{.cpl}.
+If you want to use inference on LPADs load PITA in XSB with
+\begin{verbatim}
+:- [pita].
+\end{verbatim}
+load you program, say \texttt{coin.cpl}, with 
+\begin{verbatim}
+:- load(coin).
+\end{verbatim}
+and compute the probability of query atom \texttt{heads(coin)} by
+\begin{verbatim}
+:- prob(heads(coin),P).
+\end{verbatim} 
+%
+\texttt{load(file)} reads \texttt{file.cpl}, translates it into a normal  program, writes the result in \texttt{file.P} and loads \texttt{file.P}.
+
+PITA offers also the predicate \texttt{parse(infile,outfile)} which translates the LPAD in \texttt{infile} into a normal progam and writes it to  \texttt{outfile}.
+
+Moreove, you can use \texttt{prob(goal,P,CPUTime,WallTime)} that returns the probability of goal \texttt{P} together with the CPU and wall time used.
+
+In case the modeling assumptions of PRISM hold, i.e.:
+ \begin{itemize}
+  \item the probability of a conjunction $(A,B)$ is
+computed as the product of the probabilities of A and B (independence assumption),
+\item
+the probability of a disjunction $(A;B)$ is computed as the sum of
+the probabilities of A and B
+(exclusiveness assumption),
+  \end{itemize}
+you can perform faster inference with an optimized version of PITA in package \texttt{pitaindexc.P}. It accepts the same commands of \texttt{pita.P}.  \texttt{pitaindexc.P} simulates PRISM and does not need CUDD and GLib.
+
+
+If you want to compute the Viterbi path and probability of a query (the Viterbi path is the explanation with the highest probability) as with the predicate \texttt{viterbif/3} of PRISM, you can use package \texttt{pitavitind.P}.
+
+The package \texttt{pitacount.P} can be used to count the explanations for a query, provided that the independence assumption holds. To count the number of explanations for a query use
+\begin{verbatim}
+:- count(heads(coin),C).
+\end{verbatim}
+\texttt{pitacount.P} does not need CUDD and GLib.
+
+\subsubsection{Possibilistic Logic Programming}
+PITA can be used also for answering queries to possibilistic logic program \cite{DBLP:conf/iclp/DuboisLP91}, a form of logic progamming based on possibilistic logic \cite{DubLanPra-poss-94}. The package \texttt{pitaposs.P} provides possibilistic inference. 
+You have to write the possibilistic program as an LPAD in which the rules have a single head whose annotation is the lower bound on the  necessity of the clauses. To compute the highest  lower bound on the necessity of a query
+use
+\begin{verbatim}
+:- poss(heads(coin),P).
+\end{verbatim}
+\texttt{pitaposs.P} does not need CUDD and GLib.

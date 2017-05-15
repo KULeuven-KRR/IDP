@@ -37,6 +37,7 @@
 #include "cinterf_defs.h"
 #include "incr_xsb_defs.h"
 #include "token_defs_xsb.h"
+#include "basicdefs.h"
 
 /* ===== current_atom/1 ====================================== */
 
@@ -328,7 +329,7 @@ check_current_predicate_argument(Term) :-
 	(	var(Term) ->
 		true
 	;	Term = Module:Functor/Arity ->
-		(	nonvar(Module), \+ atom(Module) ->
+		(	nonvar(Module), \+ atom(Module), \+ structure(Module) ->
 			type_error(predicate_indicator,Term,current_predicate/1,1)
 		;	nonvar(Functor), \+ atom(Functor) ->
 			type_error(predicate_indicator,Term,current_predicate/1,1)
@@ -371,8 +372,8 @@ current_predicate_global(Functor,N):-
 current_predicate_module(Module,Functor,N) :-
 	get_first_psc_pair(PSC_Pair),
 	module_scan(PSC_Pair, ModuleName, ModulePSC),
-	ModuleName = Module,
-	psc_prop(ModulePSC, First_PSC_Pair),	% get the first psc_pair 
+	atom_to_term(ModuleName,Module),
+	psc_prop(ModulePSC, First_PSC_Pair), % get the first psc_pair 
 						% of this module
 	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
 		current_predicate(Functor/N)
@@ -469,7 +470,7 @@ current_predicate(Name, Term_Indicator) :-
 current_module(Module) :- 
 	get_first_psc_pair(PSC_Pair),
 	scan_modules(PSC_Pair, ModuleName),
-	Module = ModuleName.
+	atom_to_term(ModuleName,Module).
 
 scan_modules(PSC_Pair, _) :-
 	PSC_Pair =:= 0,		% PSC_Pair == NULL
@@ -493,7 +494,7 @@ scan_modules(PSC_Pair, NextModuleName) :-
 
 current_module(Module, ObjectFile) :- 
 	current_module(Module),
-	module_file(Module, ObjectFile).
+	module_file(Module,ObjectFile).
 
 module_file('xsbrc', File) :-
 	!,
@@ -504,15 +505,23 @@ module_file('xsbrc', File) :-
 	fmt_write_string(FileName, '%s%s.xsb%sxsbrc.%s',
 			 arg(HomeDir, Slash, Slash,XSB_OBJ_EXTENSION_ATOM)),
 	FileName = File.
-module_file(ModuleName, File) :-
+module_file(Module, File) :-
+	psc_insertmod(Module,0,ModPsc),
+	ModPsc \== 0,
+	psc_ep(ModPsc,File),
+	atom(File),		% has been loaded
+	!.
+module_file(Module, File) :-
+	functor(Module,ModuleName,_),
 	str_cat(ModuleName, XSB_OBJ_EXTENSION_ATOM, OFile),
-	libpath(Lib),
-	str_cat(Lib, OFile, FileName),
-	machine_file_exists(FileName),
-	!,	% This cut is needed so that we get only one filename
-		% as an answer (exactly the one that corresponds to the
-		% file that would be consulted when using the loader).
-	FileName = File.
+	once((libpath(Lib),
+	      str_cat(Lib, OFile, FileName),
+	      machine_file_exists(FileName)
+		% This once is needed so that we get only one filename
+		% as an answer, exactly the one that corresponds to the
+		% file that would be consulted when using the loader (ATBE).
+	     )),
+	FileName = File.  % maybe standardize filename?
 
 
 /* ===== predicate_property/2 ========================================= */
@@ -674,7 +683,7 @@ current_prolog_flag(Flag, Value) :-
   	           xsb_flag(FA,A)
   	         ; Value = limit(P),
   	           xsb_flag(F,P) )
-         ;      atom(Flag),\+ compound(Value),xsb_flag(Flag,Value)
+         ;      \+compound(Flag),\+ compound(Value),xsb_flag(Flag,Value)
   	 ;	prolog_commons_flag(Flag,Value)
 	).
 
@@ -742,7 +751,8 @@ iso_flag(max_integer,Maxint):-
 %'
 %%iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint - 1.
 iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint.
-iso_flag(max_arity,255).
+%iso_flag(max_arity,255).
+iso_flag(max_arity,MAX_ARITY).
 iso_flag(integer_rounding_function,toward_zero).
 iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
 iso_flag(unknown, State) :- settable_prolog_flag(unknown, State).
@@ -986,8 +996,9 @@ xsb_flag(max_answers_for_subgoal, Max) :-
 	(M =:= Maxint -> Max = 0; M = Max).
 xsb_flag(max_answers_for_subgoal_action, Action) :-
 	stat_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION,A),
-	(A == XSB_ERROR -> Action = error 
-	; (A == XSB_SUSPEND -> Action = suspend) ).
+	(A == XSB_ABSTRACT -> Action = complete_soundly
+	; (A == XSB_ERROR -> Action = error 
+		; (A == XSB_SUSPEND -> Action = suspend) ) ).
 xsb_flag(unify_with_occurs_check, Mode) :-
 	stat_flag(UNIFY_WITH_OCCURS_CHECK_FLAG, Flag),
 	( Flag =:= 0 -> Mode = off ; Mode = on ).
@@ -1013,8 +1024,9 @@ xsb_flag(exception_action, Mode) :-
 xsb_flag(ctrace,Mode):- 
 	stat_flag(CTRACE_CALLS, Flag),
 	( Flag =:= 0 -> Mode = off
-          ; (Flag =:= 1 -> Mode = partial
-             ; Mode = full) ).
+          ; (Flag =:= 1 -> Mode = calls_only 
+           ; (Flag =:= 2 -> Mode = partial
+             ; Mode = full) ) ).
 xsb_flag(character_set,Mode):- 
 	stat_flag(CHARACTER_SET, Flag),
 	(Flag =:= LATIN_1
@@ -1022,6 +1034,16 @@ xsb_flag(character_set,Mode):-
 	 ; Flag =:= CP1252
 	 ->	Mode = cp1252
 	 ;	Mode = utf_8
+	).
+xsb_flag(alt_semantics,Mode):- 
+	stat_flag(ALTERNATE_SEMANTICS, Flag),
+	(Flag =:= NAF_CS
+	 ->	Mode = cs
+	 ; Flag =:= WEAK_CS
+	 ->	Mode = weak_cs
+	 ; Flag =:= GFP_SEMANTICS  % Not yet supported.
+	 ->	Mode = gfp
+         ;      Mode = off
 	).
 xsb_flag(errors_with_position,Mode):- 
 	stat_flag(ERRORS_WITH_POSITION, Flag),
@@ -1246,12 +1268,14 @@ set_xsb_flag_1(max_answers_for_subgoal, Max) :-!,
 	  stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL, MaxInt)
 	; stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL, Max) ).
 set_xsb_flag_1(max_answers_for_subgoal_action, Action) :-!,
-	(Action == error -> 
-	    stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_ERROR)
-          ; (Action == suspend ->  
-	    stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_SUSPEND)
-            ; domain_error([error,', ',suspend],
-                        Action,set_prolog_flag/2,2,'max_answers_for_subgoal_action clause') ) ).
+	(Action == complete_soundly -> 
+	    stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_ABSTRACT)
+	; (Action == error -> 				  
+	       stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_ERROR)
+             ; (Action == suspend ->  
+	          stat_set_flag(MAX_ANSWERS_FOR_SUBGOAL_ACTION, XSB_SUSPEND)
+                ; domain_error([error,', ',suspend,', ',complete_soundly],
+                               Action,set_prolog_flag/2,2,'max_answers_for_subgoal_action clause') ) ) ).
 set_xsb_flag_1(max_memory,Max):-!,
 	(integer(Max),Max >= 0 -> 
 	     stat_set_flag(MAX_MEMORY,Max)
@@ -1261,19 +1285,30 @@ set_xsb_flag_1(max_memory,Max):-!,
 	     Ram is floor(Ram1/1024),
 	     stat_set_flag(MAX_MEMORY,Ram)
 	 ;  domain_error(positive_number,Max,set_prolog_flag/2,2,max_memory_clause) ).
-% TES: Placeholder for now.
 set_xsb_flag_1(max_memory_action, Action) :-!,
 	(Action == error -> 
 	    stat_set_flag(MAX_MEMORY_ACTION, XSB_ERROR) ; 
 	 (Action == suspend -> 
 	    stat_set_flag(MAX_MEMORY_ACTION, XSB_SUSPEND)
           ; domain_error([error,suspend],Action,set_prolog_flag/2,2,'max_memory_action clause') ) ).
-
+set_xsb_flag_1(alt_semantics,Mode):- 
+        (Mode == cs -> 
+   	    stat_set_flag(ALTERNATE_SEMANTICS, NAF_CS) ; 
+        (Mode == weak_cs -> 
+   	    stat_set_flag(ALTERNATE_SEMANTICS, NAF_CS),
+            set_prolog_flag(unknown,undefined) ; 
+        (Mode == gfp -> 
+   	    stat_set_flag(ALTERNATE_SEMANTICS, GFP_SEMANTICS) ; 
+        (Mode == off -> 
+   	    stat_set_flag(ALTERNATE_SEMANTICS, WFS_SEMANTICS),
+            set_prolog_flag(unknown,error) ; 
+          domain_error([cs,weak_cs,gfp,off],Mode,set_prolog_flag/2,2,'alt_semantics clause') ) ) ) ).
 
 set_xsb_flag_1(ctrace, OnOff) :-!,
-	((OnOff == on ; OnOff == full) -> stat_set_flag(CTRACE_CALLS, 2)
-     ; 	OnOff == partial -> stat_set_flag(CTRACE_CALLS, 1)
-     ;  stat_set_flag(CTRACE_CALLS, 0)).
+	((OnOff == on ; OnOff == full) -> stat_set_flag(CTRACE_CALLS, 3)
+         ; (OnOff == partial -> stat_set_flag(CTRACE_CALLS, 2)
+            ; (OnOff == calls_only -> stat_set_flag(CTRACE_CALLS, 1)
+               ;  stat_set_flag(CTRACE_CALLS, 0) ) ) ).
 set_xsb_flag_1(unify_with_occurs_check, OnOff) :-!,
 	(OnOff == on -> 
 	    stat_set_flag(UNIFY_WITH_OCCURS_CHECK_FLAG, 1)

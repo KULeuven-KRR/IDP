@@ -1,0 +1,2853 @@
+\chapter{Library Utilities} \label{library_utilities}
+%====================================================
+
+In this chapter we introduce libraries of some useful predicates that
+are supplied with XSB.  Interfaces and more elaborate packages are
+documented in later chapters.  These predicates are available only
+when imported them from (or explicitly consult) the corresponding
+modules.
+
+
+\section{List Processing}
+%========================
+The XSB library contains various list utilities, some of which 
+are listed below.  These predicates should be explicitly imported from
+the module specified after the skeletal specification of each predicate.
+There are a lot more useful list processing predicates in various modules
+of the XSB system, and the interested user can find them by 
+looking at the sources.
+
+\begin{description}
+\ourmoditem{append(?List1, ?List2, ?List3)}{append/3}{basics}
+    Succeeds if list {\tt List3} is the concatenation of lists 
+    {\tt List1} and {\tt List2}.
+
+\ourmoditem{member(?Element, ?List)}{member/2}{basics}
+    Checks whether {\tt Element} unifies with any element of list 
+    {\tt List}, succeeding more than once if there are multiple 
+    such elements.
+
+\ourmoditem{memberchk(?Element, ?List)}{memberchk/2}{basics}
+    Similar to {\tt member}/2, except that {\tt memberchk}/2 is
+    deterministic, i.e.\ does not succeed more than once for any call.
+
+\ourmoditem{ith(?Index, ?List, ?Element)}{ith/3}{basics}
+    Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List} 
+    unifies with {\tt Element}.  Fails if {\tt Index} is not a positive
+    integer or greater than the length of {\tt List}.
+    Either {\tt Index} and {\tt List}, or {\tt List} and {\tt Element}, 
+    should be instantiated (but not necessarily ground) at the time of 
+    the call.
+
+\ourmoditem{delete\_ith(+Index, +List, ?Element, ?RestList)}{delete\_ith/4}{listutil}
+    Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List}
+    unifies with {\tt Element}, and {\tt RestList} is {\tt List} with
+    {\tt Element} removed.  Fails if {\tt Index} is not a positive
+    integer or greater than the length of {\tt List}.
+
+\ourmoditem{log\_ith(?Index, ?Tree, ?Element)}{log\_ith/3}{basics}
+    Succeeds if the ${\tt Index^{th}}$ element of the Tree {\tt Tree}
+    unifies with {\tt Element}.  Fails if {\tt Index} is not a
+    positive integer or greater than the number of elements that can
+    be in {\tt Tree}.  Either {\tt Index} and {\tt Tree}, or {\tt
+    Tree} and {\tt Element}, should be instantiated (but not
+    necessarily ground) at the time of the call.  Tree is a list of
+    full binary trees, the first being of depth 0, and each one being
+    of depth one greater than its predecessor.  So {\tt log\_ith/3} is
+    very similar to {\tt ith/3} except it uses a tree instead of a
+    list to obtain log-time access to its elements.
+
+\ourmoditem{log\_ith\_bound(?Index, ?Tree, ?Element)}{log\_ith\_bound/3}{basics}
+    is like {\tt log\_ith/3}, but only if the ${\tt Index^{th}}$ element
+    of {\tt Tree} is non-variable and equal to Element.  This predicate
+    can be used in both directions, and is most useful with Index
+    unbound, since it will then bind {\tt Index} and {\tt Element} for
+    each non-variable element in {\tt Tree} (in time proportional to
+    $N*logN$, for $N$ the number of non-variable entries in {\tt
+    Tree}.)
+
+\ourmoditem{log\_ith\_new(?Index, ?Tree, ?Element)}{log\_ith\_new/3}{basics}
+    binds {\tt Element} to the ``end'' of the log\_list {\tt Tree},
+    and unifies {\tt Index} with its corresponding index.  The ``end''
+    of a log\_list is the first element after the one with the largest
+    index that has been added.  This can be used to simulate adding an
+    element to the end of an open-tailed list, but with better
+    complexity.
+
+\ourmoditem{log\_ith\_to\_list(?Tree, ?List)}{log\_ith\_to\_list/2}{basics}
+    constructs the {\tt List} that contains all bound values in the
+    log\_list {\tt Tree}, in the order they appear in {\tt Tree}.
+    
+
+
+\ourmoditem{length(?List, ?Length)}{length/2}{basics}
+    Succeeds if the length of the list {\tt List} is {\tt Length}.
+    This predicate is deterministic if {\tt List} is instantiated 
+    to a list of definite length, but is nondeterministic if 
+    {\tt List} is a variable or has a variable tail.  If {\tt List}
+    is uninstantiated, it is unified with a list of length {\tt Length}
+    that contains variables.
+
+\ourmoditem{same\_length(?List1, ?List2)}{same\_length/2}{basics}
+    Succeeds if list {\tt List1} and {\tt List2} are both lists of
+    the same number of elements.  No relation between the types or
+    values of their elements is implied.  This predicate may be used
+    to generate either list (containing variables as elements) given
+    the other, or to generate two lists of the same length, in which
+    case the arguments will be bound to lists of length $0,1,2,\ldots$.
+
+\ourmoditem{select(?Element, ?L1, ?L2)}{select/3}{basics}
+    {\tt List2} derives from {\tt List1} by selecting (removing) an 
+    {\tt Element} non-deterministically.
+
+\ourmoditem{reverse(+List, ?ReversedList)}{reverse/2}{basics}
+    Succeeds if {\tt ReversedList} is the reverse of list {\tt List}.
+    If {\tt List} is not a proper list, {\tt reverse/2} can succeed
+    arbitrarily many times.  It works only one way.
+
+\ourmoditem{perm(+List, ?Perm)}{perm/2}{basics}
+    Succeeds when {\tt List} and {\tt Perm} are permutations of each
+    other.  The main use of {\tt perm/2} is to generate permutations
+    of a given list.  {\tt List} must be a proper list.
+    {\tt Perm} may be partly instantiated.
+
+\ourmoditem{subseq(?Sequence, ?SubSequence, ?Complement)}{subseq/3}{basics}
+    Succeeds when {\tt SubSequence} and {\tt Complement} are both
+    subsequences of the list {\tt Sequence} (the order of corresponding
+    elements being preserved) and every element of {\tt Sequence} which
+    is not in {\tt SubSequence} is in the {\tt Complement} and vice
+    versa.  That is,
+    \[ length({\tt Sequence}) =
+                length({\tt SubSequence})+length({\tt Complement}) \]
+    for example, {\tt subseq([1,2,3,4], [1,3], [2,4]).}
+    The main use of {\tt subseq/3} is to generate subsets and their
+    complements together, but can also be used to interleave two lists
+    in all possible ways.
+
+\ourmoditem{merge(+List1, +List2, ?List3)}{merge/3}{listutil}
+    Succeeds if {\tt List3} is the list resulting from ``merging'' lists 
+    {\tt List1} and {\tt List2},
+    i.e.\ the elements of {\tt List1} together with any element of 
+    {\tt List2} not occurring in {\tt List1}.
+    If~{\tt List1} or~{\tt List2} contain duplicates, {\tt List3} may 
+    also contain duplicates.
+
+\ourmoditem{absmerge(+List1, +List2, ?List3)}{absmerge/3}{listutil}
+    Predicate {\tt absmerge/3} is similar to {\tt merge/3}, except that 
+    it uses predicate {\tt absmember/2} described below rather than 
+    {\tt member/2}.
+
+\ourmoditem{absmember(+Element, +List)}{absmember/2}{listutil}
+    Similar to {\tt member}/2, except that it checks for identity
+    (through the use of predicate {\tt '=='/2}) rather than unifiability 
+    (through {\tt '='/2}) of {\tt Element} with elements of {\tt List}.
+
+\ourmoditem{member2(?Element, ?List)}{member2/2}{listutil}
+    Checks whether {\tt Element} unifies with any of the actual elements 
+    of {\tt List}.  The only difference between this predicate and 
+    predicate {\tt member/2} is on lists having a variable tail, 
+    e.g.\ \verb'[a, b, c | _ ]': while {\tt member/2} would insert 
+    {\tt Element} at the end of such a list if it did not find it, 
+    Predicate {\tt member2/2} only checks for membership but does not 
+    insert the {\tt Element} into the list if it is not there.
+
+\ourmoditem{closetail(?List)}{closetail/1}{listutil}
+    Predicate {\tt closetail/1} closes the tail of an open-ended list.
+    It succeeds only once.
+
+\end{description}
+
+\subsection{Processing Comma Lists}
+%===========================
+
+It is often useful to process comma lists when meta-interpreting or
+preprocessing.  XSB libraries include the following simple utilities.
+
+\begin{description}
+
+\ourmoditem{comma\_to\_list(+CommaList,-List)}{comma\_to\_list/2}{basics}
+
+%
+Transforms {\tt CommaList} to {\tt List}.
+
+\ourrepeatmoditem{comma\_append(?CL1,?CL2,?CL3)}{comma\_append/3}{basics}
+%
+\ourrepeatmoditem{comma\_length(?CommaList,?Length)}{comma\_length/2}{basics}
+
+%
+\ourrepeatmoditem{comma\_member(?Element,?CommaList)}{comma\_member/2}{basics}
+
+%
+\ourmoditem{comma\_memberchk(?Element,?CommaList)}{comma\_memberchk/2}{basics}
+%
+Analogues for comma lists of {\tt append/3}, {\tt length/3}, {\tt member/2} and {\tt
+memberchk/2}, respectively.
+
+\end{description}
+	
+\section{Attributed Variables} \label{sec:attributed-variables}
+%=============================
+
+\index{Prologs!hProlog}
+\index{Prologs!SWI}
+%
+Attributed variables are a special data type that associates variables
+with arbitrary attributes as well as supports extensible unification.
+Attributed variables have proven to be a flexible and powerful
+mechanism to extend a classic logic programming system with the
+ability of constraint solving.  Our low-level API for constraints
+closely resembles that of hProlog~\cite{hprolog} and
+SWI~\cite{SWI-manual}.
+
+\subsection{Lowlevel Interface}
+%
+Attributes of variables are pairs of attribute module names and
+values.  An attribute module name can be any atom.  A value can be any
+XSB value (term, variable, atom, \ldots). Any variable has at most one
+attribute for a particular attribute module.  Attribute modules are
+distinct from XSB modules: although it is most efficient to keep each
+handlers for each attribute module in their own XSB module.
+c
+Attributes can be manipulated with the following three predicates
+(\texttt{get\_attr/3}, \texttt{put\_attr/3} and \texttt{del\_attr/2})
+defined in the module \texttt{machine}.
+
+\begin{description}
+\ourmoditem{get\_attr(-Var,+Mod, ?Val)}{get\_attr/3}{machine}
+%
+Gets the value of the attribute of \texttt{Var} in attribute module
+\texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
+error. \texttt{Val} will be unified with the value of the attribute,
+if it exists. Otherwise the predicate fails.
+
+\ourmoditem{put\_attr(-Var,+Mod, ?Val)}{put\_attr/3}{machine}
+%
+Sets the value of the attribute of \texttt{Var} in attribute module
+\texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
+error. The previous value of the attribute is overwritten, if it
+exists.
+
+\ourmoditem{del\_attr(-Var,  +Mod)}{del\_attr/2}{machine} 
+%
+Removes the attribute of \texttt{Var} in attribute module
+\texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
+error. The previous value of the attribute is removed, if it exists.
+\end{description}
+
+One has to extend the default unification algorithm for used
+attributes by installing a handler in the following way:
+
+\noindent
+{\tt
+:- install\_verify\_attribute\_handler($+Mod, -AttrValue, -Target, +Handler, +WarningFlag$)}
+\\
+{\tt
+  :- install\_verify\_attribute\_handler($+Mod, -AttrValue, -Target, +Handler$)}
+
+\noindent The
+predicates
+\texttt{install\_verify\_attribute\_handler/5}\index{\texttt  {install\_verify\_attribute\_handler/5}}
+and
+\texttt{install\_verify\_attribute\_handler/4}\index{\texttt  {install\_verify\_attribute\_handler/4}}
+are defined in module \texttt{machine}. $Mod$ is the
+attribute {\tt Module} and $Handler$ is a term with arguments
+$AttrValue$ and $Target$. The $Handler$ term has to correspond to a
+handler predicate that takes the value of the attribute ($AttrValue$)
+and the term that the attributed value is bound to ($Target$) as
+arguments. The argument $WarningFlag$ in the 5-argument version of the
+predicate can be used to suppress the warning issued when replacing the
+{\tt verify\_attribute\_handler} for a module. If the argument is
+{\tt warning\_on} then the warning is issued if a handler for the module
+already exists. Otherwise, the warning is suppressed. 
+The 4-argument version of the predicate does \emph{not} suppress the
+warning. 
+
+To get good efficiency, it is usually best to keep the
+handlers for each attribute module in separate XSB modules.
+The handler is called after the unification of an attributed variable
+with a term or other attributed variable, if the attributed variable
+has an attribute in the corresponding module. The two arguments of the
+unification are already bound at the time the handler is called,
+i.e. the handler is a post-unify handler.
+
+Here, by giving the implementation of a simple finite domain
+constraint solver (see the file \texttt{fd.P} below), we show how
+these lowlevel predicates for attributed variables can be used.  In
+this example, an attribute in the module \texttt{fd} is used and the
+value of this attribute is a list of terms.
+
+\begin{small}
+\begin{verbatim}
+%% File: fd.P
+%%
+%% A simple finite domain constrait solver implemented using the lowlevel 
+%% attributes variables interface.  
+
+:- import put_attr/3, get_attr/3, del_attr/2, 
+   install_verify_attribute_handler/4 from machine.
+:- import member/2 from basics.
+
+:- install_verify_attribute_handler(fd,AttrValue,Target,fd_handler(AttrValue,Target)).
+
+fd_handler(Da, Target) :-
+        (var(Target),                       % Target is an attributed variable
+         get_attr(Target, fd, Db) ->        % has a domain
+           intersection(Da, Db, [E|Es]),    % intersection not empty
+           (Es = [] ->                      % exactly one element
+              Target = E                    % bind Var (and Value) to E
+           ;  put_attr(Target, fd, [E|Es])  % update Var's (and Value's)
+           )
+        ;  member(Target, Da)               % is Target a member of Da?
+        ).
+
+intersection([], _, []).
+intersection([H|T], L2, [H|L3]) :-
+        member(H, L2), !,
+        intersection(T, L2, L3).
+intersection([_|T], L2, L3) :-
+        intersection(T, L2, L3).
+
+domain(X, Dom) :- 
+        var(Dom), !, 
+        get_attr(X, fd, Dom). 
+domain(X, List) :- 
+        List = [El|Els],                     % at least one element 
+        (Els = []                            % exactly one element
+         -> X = El                           % implied binding 
+        ;  put_attr(Fresh, fd, List),        % create a new attributed variable
+           X = Fresh                         % may call verify_attributes/2
+        ).
+
+show_domain(X) :-                            % print out the domain of X
+        var(X),                              % X must be a variable
+        get_attr(X, fd, D),
+        write('Domain of '), write(X),
+        write(' is '), writeln(D).
+
+\end{verbatim}
+\end{small}
+
+When writing or porting a constraint package, it is usually useful to
+adjust the way that correct answer substitutions are shown in the
+command line.  This can be controlled using the following two predicates:
+
+\begin{description}
+
+\ourmoditem{install\_attribute\_portray\_hook(Module,Attribute,Handler)}{install\_attribute\_portray\_hook/3}{machine}
+%
+This hook is called by the command-line interpreter when printing out
+the value of each variable in a top-level query.  When a printing out
+an attributed variable, any appropriate handlers are called to portray
+the constraints represented by the attribute.  As an example, the {\tt
+  bounds} package (cf. Volume II: Constraints Packages) uses a hook to
+print out the bounds of variables:
+%
+\begin{small}
+\begin{verbatim}
+| ?- X in 1..10,Y in 1..10,X + 4 #< Y -3.
+
+X = _h629 { bounds : 1 .. 2 }
+Y = _h673 { bounds : 9 .. 10 }
+\end{verbatim}
+\end{small}
+%
+Writing a handler can be as simple as possible or as elaborate as
+desired.  In the case of {\tt bounds} the handler is simple:
+
+{\small
+{\tt bounds\_attr\_portray\_hook(bounds(L,U,\_)) :- write(L..U).}
+}
+
+The hook is installed when the constraint package is loaded by placing
+in the package loader directive such as:
+
+{\small
+{\tt  :- install\_attribute\_portray\_hook(bounds,Attr,bounds\_attr\_portray\_hook(Attr)).}
+}
+
+Note that the hook will be indexed on the module associated with the
+attribute (in this case {\tt bounds}).  XSB's command-line interpreter
+will unify the second argument of the portray hook with the attribute,
+and then call {\tt Handler}.
+
+\ourmoditem{install\_attribute\_constraint\_hook(Module,Vars,Names,Handler)}{install\_attribute\_constraint\_hook/4}{machine}
+%
+For some constraint packages, it may not be particularly useful to
+associate constraints with variables: instead, the projection of
+global constraints onto the variables of the top-level query may be
+more useful.  This is the case in the CLP(R) package (cf. Volume II
+Constraints Packages), where the command-line interaction may look as
+follows:
+%
+{\small
+\begin{verbatim}
+| ?- {X = 2*Y,Y >= 7},inf(X,F).
+ { X >= 14.0000 }
+ { Y = 0.5000 * X }
+
+X = _h8841
+Y = _h9506
+F = 14.0000
+\end{verbatim}
+}
+%
+In XSB, the (projection of the) global constraints in CLP(R) are
+displayed by the following routines:
+%
+{\small
+\begin{verbatim}
+clpr_portray_varlist(Vars,Names):- 
+	filter_varlist(Vars,Names,V1,N1),
+	dump(V1,N1,Constraints),
+	member(C,Constraints),
+	console_write(' { '), console_write(C),	console_writeln(' } '),
+	fail.
+clpr_portray_varlist(_V,_N).
+
+filter_varlist([],[],[],[]).
+filter_varlist([V1|R1],[N1|R2],[V1|R3],[N1|R4]):- 
+	var(V1),!,
+	filter_varlist(R1,R2,R3,R4).
+filter_varlist([_V1|R1],[_N1|R2],R3,R4):- 
+	filter_varlist(R1,R2,R3,R4).
+\end{verbatim}
+}
+%
+This predicate sets up a call to the CLP(R) library predicate {\tt
+  dump/3}, whose constraints it then writes out to the console.
+Analogous to the portray hook, the console hook is installed using the
+directive:
+%
+{\small
+\begin{verbatim}
+:- install_constraint_portray_hook(clpr,Vars,Names,clpr_portray_varlist(Vars,Names)).
+\end{verbatim}
+}
+%
+If the {\tt clpr} module is loaded, the command line interpreter
+checks any constraint portray hooks upon the first success of a
+top-level goal.  It then unifies the second argument {\tt Vars} with
+the variables of the goal, and {\tt Names} with the names of the
+variables of the goal which are then passed on to {\tt Handler}
+
+\end{description}
+
+\section{{\tt constraintLib}: a library for CLP} \label{constraintLib}
+%====================================================================
+
+XSB supports constraint logic programming through its engine-level
+support of attributed variables
+(Section~\ref{sec:attributed-variables}), and its support for
+constraint handling rules (CHR) (cf. Volume II: Constraint Handling
+Rules).  The {\tt constraintLib} library includes routines for
+delaying and examining bindings that are commonly used to implement
+CHR and other constraint libraries.
+
+When processing constraints, it is often useful to delay a goal based
+on the instantiation level of a term or set of terms.  For instance a
+{\tt 3 > X + Y} should be delayed until both {\tt X} and {\tt Y} are
+instantiated.  However the goal should be reinvoked as soon as
+possible after both are instantiated in order to prune search paths
+that may not be useful to pursue.  The predicate {\tt when/2} provides
+a useful mechanism to delay goals based on instantiation
+patterns~\footnote{Despite the similar name, this method of delaying
+is conceptually different from SLG {\sc delaying} discussed in Volume
+1 of this manual, which is used for resolving cycles of dependencies
+in computing the well-founded semantics, and is not based on the state
+of instantiation of a term.}.
+
+\begin{description}
+\ourmoditem{when(+Condition,Goal)}{when/2}{constraintLib}
+%
+Delays the execution of {\tt Goal} until {\tt Condition} is satisfied,
+whereupon {\tt Goal} will be executed.  Condition can have the form
+\begin{itemize}
+\item {\tt ?=(Term1,Term2)}
+\item {\tt nonvar(Term)}
+\item {\tt ground(Term)}~\footnote{To use {\tt ground/1} in the
+condition, it must be imported into the file where it is used.}
+\item {\tt (Condition,Condition)}
+\item {\tt (Condition ; Condition)}
+\end{itemize}
+
+{\bf Example:} The following session illustrates the use of when/2 to
+delay a goal.
+%
+\begin{small}
+\begin{verbatim}
+|?- when(nonvar(X),writeln(test(1-2,nonvar))),writeln(test(1,nonvar)),X = f(_Y).
+
+test(1,nonvar)
+test(1 - 2,nonvar)
+
+X = f(_h245)
+\end{verbatim}
+\end{small}
+
+\ourmoditem{unifiable(X, Y, -Unifier)}{unifiable/3}{constraintLib}
+%
+If {\tt X} and {\tt Y} can unify, succeeds unifying {\tt Unifier} with
+a list of terms of the form {\tt Var = Value} representing a most
+general unifier of {\tt X} and {\tt Y}.\  {\tt unifiable/3} can handle
+cyclic terms. Attributed variables are handled as normal
+variables. Associated hooks are not executed~\footnote{In \version ,
+  {\tt unifiable/3} is implemented as a Prolog predicate and so is slower
+  than many of the predicates in this section.}.
+
+\ourmoditem{setarg(+Index,+Term,+Value)}{setarg/3}{constraintLib}
+\ourrepeatmoditem{set\_arg(+Index,+Term,+Value)}{set\_arg/3}{machine}
+%
+The predicate {\tt setarg/3} provides an efficient but non-logical way
+to update argument {\tt Index} of a Prolog term {\tt Term} to {\tt
+  Value} via destructive assignment and without the necessity of
+copying {\tt Term}.  {\tt setarg/3} should be used sparingly, to
+ensure both clarity and portability of code.
+
+{\bf Example}
+{\small
+\begin{verbatim}
+|?- X = p(f(1),g(2),r([a])),
+    writeln(zero(X)),
+    (  setarg(2,X,g([b])),
+       writeln(one(X)),
+       fail
+     ; writeln(two(X))).
+zero(p(f(1),g(2),r([a])))
+one(p(f(1),g([b]),r([a])))
+two(p(f(1),g(2),r([a])))
+
+X = p(f(1),g(2),r([a]))
+\end{verbatim}
+}
+
+{\bf Error Cases} 
+\bi
+\item 	{\tt Index} is a variable
+\bi
+\item    {\tt instantiation\_error}
+\ei
+\item 	{\tt Index} neither a variable nor an integer
+\bi
+\item    {\tt type\_error(integer,Index)}
+\ei
+\item 	{\tt Index} is less than 0
+\bi
+\item    {\tt domain\_error(not\_less\_than\_zero,Index)}
+\ei
+\item 	{\tt Term} is a variable
+\bi
+\item    {\tt instantiation\_error}
+\ei
+\item 	{\tt Term} neither a variable nor a compound term
+\bi
+\item    {\tt type\_error(compound,Term)}
+\ei
+\ei
+
+\ourmoditem{term\_variables(+Term,-Variables)}{term\_variables/2}{constraintLib}
+
+% 
+Given any Prolog term {\tt Term} as input, returns a sorted list of
+variables in the term.  
+\end{description}
+
+\section{Formatted Output}
+
+\begin{description}
+\ourrepeatmoditem{format(+String,+Control)}{format/2}{format}
+\ourmoditem{format(+Stream,+String,+Control)}{format/3}{format}
+
+{\tt format/2} and {\tt format/3} act as a Prolog analog to the C {\tt
+stdio} function {\tt printf()}, allowing formatted
+output~\footnote{The {\tt format} family of predicates is due to
+Quintus Prolog, by way of Ciao.}.
+
+Output is formatted according to {\tt String} which can contain either
+a format control sequence, or any other character which will appear
+verbatim in the output. Control sequences act as place-holders for the
+actual terms that will be output.  Thus
+\begin{verbatim}
+        ?- format("Hello ~q!",world).
+\end{verbatim}
+
+\noindent
+will print {\tt Hello world!}.
+
+If there is only one control sequence, the corresponding element may
+be supplied alone in {\tt Control}.  If there are more, {\tt Control}
+must be a list of these elements. If there are none then {\tt Control}
+must be an empty list. There have to be as many elements in {\tt
+Control} as control sequences in {\tt String}.
+
+The character \verb|~| introduces a control sequence. To print 
+        a \verb|~| just repeat it:  
+        \begin{verbatim}
+        ?- format("Hello ~~world!", []).
+        \end{verbatim}
+      \noindent
+        will output  \verb|Hello ~world!|.
+
+%--------------------------------------------------------------------------------------------------
+\comment{
+% TLS: the \\c does not work properly.
+
+A format may be spread over several lines. The control
+        sequence {\tt \\c} followed by a @key{LFD} will translate to the 
+        empty string:  
+        \begin{verbatim}
+        ?- format("Hello \\c
+        world!", []).
+        \end{verbatim}
+        \noindent
+        will result in {\tt Hello world!}.
+}
+%--------------------------------------------------------------------------------------------------
+
+The general format of a control sequence is \verb|~NC|.  The character
+{\tt C} determines the type of the control sequence.  {\tt N} is an
+optional numeric argument.  An alternative form of {\tt N} is {\tt
+*}. {\tt *} implies that the next argument in {\tt Arguments} should
+be used as a numeric argument in the control sequence.  For example:
+
+\begin{verbatim}
+?- format("Hello~4cworld!", [0'x]).
+\end{verbatim}
+
+\noindent
+and
+
+\begin{verbatim}
+?- format("Hello~*cworld!", [4,0'x]).
+\end{verbatim}
+
+\noindent
+both produce
+
+\begin{verbatim}
+Helloxxxxworld!
+\end{verbatim}
+
+The following control sequences are available in XSB.
+
+%TLS: printf-style integers and floats are not currently supported in XSB!
+
+\begin{itemize}
+
+\item \verb|~a|
+The argument is an atom.  The atom is printed without quoting.  
+
+\item \verb|~Nc|
+(Print character.)  The argument is a number that will be interpreted as an
+UTF-8 code. {\tt N} defaults to one and is interpreted as the number of
+times to print the character.  
+
+\item \verb|~f|
+(Print float).  The argument is a float.  The float will be printed out by XSB.
+
+\item \verb|~d|
+(Print integer).  The argument is an integer, and will be printed out by XSB.
+
+%-------------------------------------------------------------------------
+\comment{
+Various shadings don't work -- TLS
+\item \verb|~Ne|
+\item \verb|~NE|
+\item \verb|~Nf|
+\item \verb|~Ng|
+\item \verb|~NG|
+\begin{verbatim}
+printf("%.@var{N}e", @var{Arg})
+printf("%.@var{N}E", @var{Arg})
+printf("%.@var{N}f", @var{Arg})
+printf("%.@var{N}g", @var{Arg})
+printf("%.@var{N}G", @var{Arg})
+\end{verbatim}
+
+If @var{N} is not supplied the action defaults to
+
+\begin{verbatim}
+printf("%e", @var{Arg})
+printf("%E", @var{Arg})
+printf("%f", @var{Arg})
+printf("%g", @var{Arg})
+printf("%G", @var{Arg})
+\end{verbatim}
+
+\item ~@var{N}d
+(Print decimal.) The argument is an integer. @var{N} is interpreted as the
+number of digits after the decimal point.  If @var{N} is 0 or missing, no
+decimal point will be printed.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~1d world!", [42]).
+?- format("Hello ~d world!", [42]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello 4.2 world!
+Hello 42 world!
+\end{verbatim}
+
+\noindent
+respectively.
+
+\item ~@var{N}D
+(Print decimal.) The argument is an integer.  Identical to @tt{~@var{N}d}
+except that @tt{,} will separate groups of three digits to the left of the
+decimal point.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~1D world!", [12345]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello 1,234.5 world!
+\end{verbatim}
+
+\item ~@var{N}r
+(Print radix.) The argument is an integer. @var{N} is interpreted as a radix.
+@var{N} should be >= 2 and <= 36.  If @var{N} is missing the radix defaults to
+8.  The letters @tt{a-z} will denote digits larger than 9.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~2r world!", [15]).
+?- format("Hello ~16r world!", [15]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello 1111 world!
+Hello f world!V
+\end{verbatim}
+
+\noindent
+respectively.
+
+\item ~@var{N}R
+(Print radix.) The argument is an integer.  Identical to @tt{~@var{N}r} except
+that the letters @tt{A-Z} will denote digits larger than 9.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~16R world!", [15]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello F world!
+\end{verbatim}
+
+}
+%-------------------------------------------------------------------------
+
+\item \verb|~Ns|
+(Print string.) The argument is a list of UTF-8 codes.  Exactly {\tt
+N} characters will be printed. {\tt N} defaults to the length of the
+string.  Example:
+
+\begin{verbatim}
+?- format("Hello ~4s ~4s!", ["new","world"]).
+?- format("Hello ~s world!", ["new"]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello new worl!
+Hello new world!
+\end{verbatim}
+
+\noindent
+respectively.
+
+\item \verb|~i|
+(Ignore argument.) The argument may be of any type.  The argument will be
+ignored.  Example:  
+
+\begin{verbatim}
+?- format("Hello ~i~s world!", ["old","new"]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello new world!
+\end{verbatim}
+
+\item \verb|~k|
+(Print canonical.) The argument may be of any type.  The argument will be
+passed to {\tt write\_canonical/2} ).  Example:  
+
+\begin{verbatim}
+?- format("Hello ~k world!", a+b+c).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello +(+(a,b),c) world!
+\end{verbatim}
+
+%------------------------------------------------------------------------------------------
+\comment{
+\item ~p
+(print.) The argument may be of any type.  The argument will be passed to
+{\tt print/2}.  Example:
+
+\noindent
+supposing the user has defined the predicate
+
+\begin{verbatim}
+portray([X|Y]) :- print(cons(X,Y)).
+\end{verbatim}
+
+\noindent
+then
+
+\begin{verbatim}
+?- format("Hello ~p world!", [[a,b,c]]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello cons(a,cons(b,cons(c,[]))) world!
+\end{verbatim}
+}
+%------------------------------------------------------------------------------------------
+
+\item \verb|~q|
+(Print quoted.) The argument may be of any type.  The argument will be
+passed to {\tt writeq/2}.  Example:
+
+\begin{verbatim}
+?- format("Hello ~q world!", [['A','B']]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello ['A','B'] world!
+\end{verbatim}
+
+\item \verb|~w|
+(write.) The argument may be of any type.  The argument will be passed
+to {\tt write/2}.  Example:
+
+\begin{verbatim}
+?- format("Hello ~w world!", [['A','B']]).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello [A,B] world!
+\end{verbatim}
+
+\item \verb|~Nn|
+(Print newline.) Print {\tt N} newlines. {\tt N} defaults to 1.
+Example:
+
+\begin{verbatim}
+?- format("Hello ~n world!", []).
+\end{verbatim}
+
+\noindent
+will print as
+
+\begin{verbatim}
+Hello
+ world!
+\end{verbatim}
+
+\end{itemize}
+
+%-------------------------------------------------------------------------------------------------------
+\comment{
+\item ~N
+(Fresh line.) Print a newline, if not already at the beginning of a line.
+
+% TLS: dont keep track of line_position.
+The following control sequences are also available for compatibility,
+but do not perform any useful functions.
+
+\begin{itemize}
+\item ~@var{N}|
+(Set tab.) Set a tab stop at position @var{N}, where @var{N} defaults to
+the current position, and advance the current position there.
+
+\item ~@var{N}+
+(Advance tab.) Set a tab stop at @var{N} positions past the current
+position, where @var{N} defaults to 8, and advance the current position
+there.
+
+\item ~@var{N}t
+(Set fill character.) Set the fill character to be used in the next
+position movement to @var{N}, where @var{N} defaults to @key{SPC}.
+\end{itemize}
+}
+\end{description}
+%-------------------------------------------------------------------------------------------------------
+
+%-------------------------------------------------------------------------------------
+\comment{
+
+\section{Lower-Level I/O}
+\label{sec-low-level-io}
+%======================
+
+\begin{description}
+
+
+\ourmoditem{file\_write(+IOport,+Term)}{file\_write/2}{xsb\_writ}
+    Writes the term {\tt Term} to the file (or string) with descriptor {\tt
+    IOport}.
+
+\ourmoditem{file\_read(+IOport,-Term)}{file\_read/2}{xsb\_read}
+    Reads a term from the file (or string) with descriptor {\tt
+    IOport} into {\tt Term}.  Note that the term must be terminated
+    with a period (.) (whether it appears in a file or in a string.)
+
+\ourmoditem{file\_read(+IOport,-Term,-Vars)}{file\_read/3}{xsb\_read}
+    Reads a term from the file (or string) with descriptor {\tt
+    IOport} into {\tt Term}, and returns in {\tt Vars} an open-tailed list of
+    pairs of names of variables and the variables themselves that
+    appear in Term.  For example, reading a term {\tt f(a,X,Y,X)}
+    would result in {\tt term} being bound to {\tt
+    f(a,\_25,\_26,\_25)} (for some internal variables) and {\tt Vars}
+    being bound to {[vv('X',\_25) vv('Y',\_26) $\mid$ \_83]}.  Note that the
+    pairing functor symbol is {\tt vv/2} and it must be imported from
+    {\tt xsb\_read} along with this read predicate.  Also note that 
+    {\tt Vars} is not a proper list, but has a free variable instead 
+    of [] at its end.
+
+\ourmoditem{file\_read\_canonical(+IOport,-Term,-Psc)}{file\_read\_canonical/3}{machine}
+    Reads a term that is in canonical format from the the I/O port
+    indicated by {\tt IOport} (as returned by {\tt file\_open/3} or
+    by {\tt stat\_flag(10,IOport))}, and returns it in {\tt Term}.
+    It also returns (in {\tt Psc}) the psc address of the main functor
+    symbol of the term, if it is the same as that of the previously
+    read term, and the current term is a ground (non 0-ary) fact.
+    (This is used for efficiency in the implementation of {\tt
+    load\_dync/1}).  Otherwise {\tt Psc} is set to 0.  To initialize
+    its previous psc value to zero, this predicate can be called with
+    {\tt IOport} of -1000.
+
+\end{description}
+
+}
+%-------------------------------------------------------------------------------------
+
+%%$ -- so that font-lock-mode works in Emacs
+
+\section{Low-level Atom Manipulation Predicates}
+\label{sec-strings}
+
+XSB has a number of low-level predicates that, despite their names,
+examine properties of atoms.  The functionality of these predicates is
+often a subset of the ISO predicate {\tt sub\_atom/5}, but these
+predicates are faster, as they are more specialized, and have been
+written in C.
+
+These predicates are especially powerful when they are combined with
+pattern-matching facilities provided by the {\tt pcre} package
+described in Volume 2 of this manual).
+
+It is important to note, that not all string manipulation predicates
+have been made thread-safe in \version{}.  In addition, as noted, the
+predicates may or may not properly handle (non-ASCII) UTF-8
+characters.
+
+\begin{description}
+\ourrepeatmoditem{str\_sub(+Sub, +Str, ?Pos)}{str\_sub/3}{string}
+\ourmoditem{str\_sub(+Sub, +Str)}{str\_sub/3}{string}
+
+Succeeds if {\tt Sub} is a substring of {\tt Str}. In that case, {\tt
+  Pos} unifies with the position where the match occurred. Positions
+start from 0. {\tt str\_sub/2} is also available, which is equivalent
+to having {\tt \_} in the third argument of {\tt
+  str\_sub/3}~\footnote{Currently, {\tt str\_sub/2} works properly for
+  UTF-8 characters, but {\tt str\_sub/3} does not.}.
+
+\ourmoditem{str\_match(+Sub, +Str, +Direction, ?Beg, ?End)}{str\_match/5}{string}
+%\index{\texttt{str\_match/5}}
+
+This is an enhanced version of the previous predicate.
+{\tt Direction} can be {\tt forward} or {\tt reverse} (or any abbreviation
+of these). If {\tt forward}, the predicate finds the first match of {\tt
+  Sub} from the beginning of {\tt Str}. If {\tt reverse}, it finds the
+first match from the end of the string ({\it i.e.}, the last match of {\tt
+  Sub} from the beginning of {\tt Str}). {\tt Beg} and {\tt End} must be
+integers or unbound variables. (It is possible that one is bound and
+another is not.)
+{\tt Beg} unifies with the offset of the first character where {\tt Sub}
+matched, and {\tt End} unifies with the offset of the next character to the
+right of {\tt Sub} (such a character might not exist, but the offset is
+still defined). Offsets start from 0.
+
+Both {\tt Beg} and {\tt End} can be bound to negative integers.
+In this case, the value represents the offset from the \emph{second}
+character past the end of {\tt Str}. Thus {\tt -1} represents the character
+next to the end of {\tt Str} and can be used to check where the end of {\tt
+  Sub}  matches in {\tt Str}. In the following examples
+%%
+\begin{verbatim}
+    ?- string_match(Sub,Str,forw,X,-1).  
+    ?- string_match(Sub,Str,rev,X,-1).  
+    ?- string_match(Sub,Str,forw,0,X).  
+\end{verbatim}
+%%
+the first checks if the \emph{first} match of {\tt Sub} from the
+beginning of {\tt Str} is a suffix of {\tt Str} (because {\tt End}
+represents the character next to the last character in {\tt Sub}, so
+{\tt End=-1} means that the last characters of {\tt Sub} and of {\tt
+  Str} occupy the same position). If so, {\tt X} is bound to the
+offset (from the end of {\tt Str}) of the first character of {\tt
+  Sub}. The second example checks if the \emph{last} match of {\tt
+  Sub} in {\tt Str} is a suffix of {\tt Str} and binds {\tt X} to the
+offset of the beginning of that match (counted from the beginning of
+{\tt Str}).  The last example checks if the first match of {\tt Sub}
+is a prefix of {\tt Str}. If so, {\tt X} is bound to the offset (from
+the beginning of {\tt Str}) of the last character of {\tt
+  Sub}~\footnote{Currently, {\tt string\_match/5} does not work
+  properly for UTF-8 characters.}.
+
+%-----------------------------------------------------------------------
+
+%%
+\ourmoditem{substring(+String, +BeginOffset, +EndOffset, -Result)}{substring/4}{string}
+%%
+{\tt String} can be an atom or a list of characters, and the offsets must
+be integers.  If {\tt EndOffset} is negative, endof({\tt String})+{\tt
+  EndOffset}+1 is assumed. Thus, {\tt -1} means end of string.  If {\tt
+  BeginOffset} is less than 0, then 0 is assumed; if it is greater than the
+length of the string, then string end is assumed. If {\tt EndOffset} is
+non-negative, but is less than {\tt BeginOffset}, then empty string is
+returned.
+
+Offsets start from 0.
+
+The result returned in the fourth argument is a string, if {\tt String} is
+an atom, or a list of characters, if so is {\tt String}.
+
+The \verb|substring/4| predicate always succeeds (unless there is an error,
+such as wrong argument type).
+
+Here are some examples: 
+%%
+\begin{verbatim}
+| ?- substring('abcdefg', 3, 5, L).
+
+L = de
+
+| ?- substring("abcdefg", 4, -1, L).
+
+L = [101,102]
+\end{verbatim}
+%%
+({\it i.e.}, L = {\tt ef} represented using ASCII
+codes)~\footnote{Currently, {\tt substring/4} works properly for UTF-8
+  characters.}.
+
+\end{description}
+%%
+%------------------------------------------------------------------------------
+
+\section{Script Writing Utilities}
+%========================
+
+Prolog, (in particular XSB!) can be useful for writing scripts.
+Prolog's simple syntax and declarative semantics make it especially
+suitable for scripts that involve text processing.  There are several
+ways to access script-writing commands from XSB.  The first is to
+execute the command via the predicates {\tt shell/1} or {\tt shell/2}.
+These predicates can execute any command but they do not provide
+streamability across UNIX and Windows commands, and they do not return
+any output of commands to Prolog.  Special predicates are provided to
+handle cross-platform compatibility and to bring output into XSB.
+
+Effort has been made to make the these thread-safe; however in
+\version, calls to the XSB script writing utilities go through a
+single mutex, and may cause contention if many threads seek to
+concurrently use sockets.
+
+\begin{description}
+\ourmoditem{expand\_filename(+FileName,-ExpandedName)}{expand\_filename/2}{machine}
+%
+Expands the file name passed as the first argument and binds the
+variable in the second argument to the expanded name. This includes
+(1) expanding Unix tildes, (2) prepending {\tt FileName} to the
+current directory, and (3) ``rectifying'' the expanded file name.  In
+rectification, the expanded file name is ``rectified'' so that
+multiple repeated slashes are replaced with a single slash, the
+intervening ``./'' are removed, and ``../'' are applied so that the
+preceding item in the path name is deleted. For instance, if the
+current directory is {\tt /home}, then {\tt abc//cde/..///ff/./b} will
+be converted into {\tt /home/abc/ff/b}.
+
+Under Windows, this predicates does rectification as described above,
+(using backslashes when appropriate), but it does not expand the
+tildes.
+
+\ourmoditem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{expand\_filename\_no\_prepend/2}{shell}
+This predicate behaves as {\tt expand\_filename/2}, but only expands
+tildes and does rectification. It does not prepend the current working
+directory to relative file names.
+
+\ourmoditem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{parse\_filename/4}{machine}
+This predicate parses file names by separating the directory part, the base
+name part, and file extension. If file extension is found, it is removed
+from the base name. Also, directory names are rectified and if a directory
+name starts with a tilde (in Unix), then it is expanded. Directory names
+always end with a slash or a backslash, as appropriate for the OS at hand.
+
+For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
+{\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
+{\tt /home/john} is what {\tt $\sim$john} expands into).  
+
+\ourmoditem{sys\_pid(-Pid)}{pid/1}{shell}
+%
+Get Id of the current process.
+
+\ourmoditem{sys\_main\_memory(-RamInBytes)}{sys\_main\_memory/1}{shell}
+%
+Provides a platform-independent way to return the amount of RAM for
+the current machine, in bytes.~\footnote{Based on code by David Robert
+  Nadeau under the Creative Commons license.}
+
+\end{description}
+
+%---------------------------------------------------------------------------------------
+\subsection{Communication with Subprocesses} \label{sec:subprocesses}
+
+In the previous section, we have seen several predicates that allow XSB to
+create other processes. However, these predicates offer only a very limited
+way to communicate with these processes. The predicate
+\verb|spawn_process/5| and friends come to the rescue. It allows a user to spawn
+any process (including multiple copies of XSB) and redirect its
+standard input and output to XSB streams. XSB can then write to the
+process and read from it. The section of socket I/O describes yet
+another mode of interprocess communication.
+
+In addition, the predicate {\tt pipe\_open/2} described in this
+section lets one create any number of pipes (that do not need to be
+connected to the standard I/O stream) and talk to child processes
+through these pipes.
+%
+All predicates in this section, except {\tt pipe\_open/2} and {\tt
+fd2stream/2}, must be imported from module {\tt shell}.  The
+predicates {\tt pipe\_open/2} and {\tt fd2stream/2} must be imported
+from {\tt file\_io}.
+
+\begin{description}
+\ourmoditem{spawn\_process(+CmdSpec,-StreamToProc,-StreamFromProc,-ProcStderrStream,-ProcId)}{spawn\_process/5}{shell}
+Spawn a new process specified by {\tt CmdSpec}. {\tt CmdSpec} must be
+either a single atom or a \emph{list} of atoms.
+If it is an atom, then it must represent a shell command.
+If it is a list, the first member of the list must be the name of the
+program to run and the 
+other elements must be arguments to the program. Program name must be specified
+in such a way as to make sure the OS can find it using the contents of the
+environment variable {\tt PATH}.
+Also note that pipes, I/O redirection and such are not allowed in command
+specification. That is, {\tt CmdSpec} must represent a single command.
+(But read about process plumbing below and about the related predicate
+{\tt shell/5}.)
+
+The next three parameters of \verb|spawn_process| are XSB I/O stream
+identifiers for the process (leading to the subprocess standard
+input), from the process (from its standard output), and a stream
+capturing the subprocess standard error output. The last parameter is
+the system process id.
+\end{description}
+%%
+
+\noindent
+Here is a simple example of how it works.
+
+%%
+\begin{verbatim}
+| ?- import file_flush/2, file_read_line_atom/2 from file_io.
+| ?- import file_nl/1 , file_write/2 from xsb_writ.  
+
+| ?- spawn_process([cat, '-'], To, From, Stderr, Pid),
+     writeln(To,'Hello cat!'), flush_output(To,_), file_read_line_atom(From,Y).
+
+To = 3
+From = 4
+Stderr = 5
+Pid = 14328
+Y = Hello cat!
+
+yes
+\end{verbatim}
+%%
+
+Here we created a new process, which runs the ``{\tt cat}'' program
+with argument ``--''. This forces {\tt cat} to read from standard
+input and write to standard output. The next line writes an atom and
+newline to the XSB stream {\tt To}, which is bound to the standard
+input of the {\tt cat} process (proc id {\tt 14328}). The {\tt cat}
+process then copies the input to its standard output.  Since standard
+output of the cat process is redirected to the XSB stream {\tt From}
+in the parent process, the last line in our program is able to read it
+and return in the variable {\tt Y}.
+%
+Note that in the second line we used {\tt flush\_output/2}. Flushing
+the output is extremely important here, because XSB I/O pipe (file)
+streams are buffered.  Thus, {\tt cat} might not see its input until
+the buffer is filled up, so the above clause might hang. {\tt
+flush\_output/2} makes sure that the input is immediately available to
+the subprocess.
+
+In addition to the above general schema, the user can tell
+\verb|spawn_process/5| not to open one of the communication streams or to
+use one of the existing communication streams.  This is useful when
+you do not expect to write or read to/from the subprocess or when one
+process wants to write to another (see the process plumbing example
+below).
+%
+To tell that a certain stream is not needed, it suffices to bind that
+stream to an atom.  For instance,
+%%
+\begin{verbatim}
+| ?- spawn_process([cat, '-'], To, none, none, _),
+     nl(To), writeln(To,'Hello cat!'), flush_output(To).
+
+
+To = 3,
+Hello cat!
+\end{verbatim}
+%%
+reads from XSB and copies the result to standard output. Likewise,
+%%
+\begin{verbatim}
+| ?- spawn_process('cat library.tex', none, From, none, _),
+     file_read_line_atom(From, S).
+
+From = 4
+S = \chapter{Library Utilities} \label{library_utilities}
+\end{verbatim}
+%%
+In each case, only one of the streams is open. (Note that the shell
+command is specified as an atom rather than a list.) Finally, if both
+streams are suppressed, then \verb|spawn_process| reduces to the usual
+{\tt shell/1} call (in fact, this is how {\tt shell/1} is
+implemented):
+%%
+\begin{verbatim}
+| ?- spawn_process([pwd], none, none).
+
+/usr/local/foo/bar
+\end{verbatim}
+%%
+On the other hand, if any one of the three stream variables in
+\verb|spawn_process| is bound to an already existing file stream, then the
+subprocess will use that stream (see the process plumbing example
+below).
+
+One of the uses of XSB subprocesses is to create XSB servers that spawn
+subprocesses and control them. A spawned subprocess can be another XSB
+process. The following example shows one XSB process spawning another,
+sending it a goal to evaluate and obtaining the result:
+%%
+\begin{verbatim}
+| ?- spawn_process([xsb], To, From,Err,_),
+     write(To,'assert(p(1)).'), flush_output(To,_),
+     write(To,'p(X), writeln(X).'), flush_output(To,_), 
+     file_read_line_atom(From,XX).  
+
+XX = 1
+
+yes
+| ?-
+\end{verbatim}
+%%
+Here the parent XSB process sends ``\verb|assert(p(1)).|'' and then
+``\verb|p(X), writeln(X).|'' to the spawned XSB subprocess. The latter
+evaluates the goal and prints (via ``\verb|writeln(X)|'') to its
+standard output. The main process reads it through the {\tt From}
+stream and binds the variable {\tt XX} to that output.
+
+Finally, we should note that the stream variables in the
+\verb|spawn_process| predicate can be used to do process plumbing, {\it
+  i.e.}, redirect output of one subprocess into the input of another. Here
+is an example:
+%%
+\begin{verbatim}
+| ?- open(test,write,Stream),
+     spawn_process([cat, 'data'], none, FromCat1, none, _),
+     spawn_process([sort], FromCat1,Stream, none, _).  
+\end{verbatim}
+%%
+Here, we first open file {\tt test}. Then \verb|cat data| is spawned.
+This process has the input and standard error stream blocked (as
+indicated by the atom {\tt none}), and its output goes into stream
+{\tt FromCat1}.  Then we spawn another process, {\tt sort}, which
+picks the output from the first process (since it uses the stream {\tt
+FromCat1} as its input) and sends its own output (the sorted version
+of {\tt data}) to its output stream {\tt Stream}.  However, {\tt
+Stream} has already been open for output into the file {\tt
+test}. Thus, the overall result of the above clause is tantamount to
+the following shell command:
+%%
+\begin{verbatim}
+        cat data | sort > test  
+\end{verbatim}
+%%
+
+\paragraph{{\em Important notes about spawned processes\/}:}
+\begin{enumerate}
+\item Asynchronous processes spawned by XSB do not disappear (at least on
+  Unix) when they terminate, \emph{unless} the XSB program executes a
+  \emph{wait} on them (see {\tt process\_control} below). Instead, such
+  processes become defunct \emph{zombies} (in Unix terminology); they do
+  not do anything, but consume resources (such as file descriptors). So,
+  when a subprocess is known to terminate, it must be waited on.
+  
+\item The XSB parent process must know how to terminate the asynchronous
+  subprocesses it spawns. The drastic way is to kill it (see {\tt
+    process\_control} below). Sometimes a subprocess might terminate by
+  itself ({\it e.g.}, having finished reading a file). In other cases, the
+  parent and the child programs must agree on a protocol by which the
+  parent can tell the child to exit. The programs in the XSB subdirectory
+  {\tt examples/subprocess} illustrate this idea. If the child subprocess
+  is another XSB process, then it can be terminated by sending the atom
+  {\tt end\_of\_file} or {\tt halt} to the standard input of the child.
+  (For this to work, the child XSB must waiting at the prompt).
+\item It is very important to not forget to close the streams that the
+  parent uses to communicate with the child. These are the streams
+  that are provided in arguments 2,3,4 of {\tt spawn\_process}. The
+  reason is that the child might terminate, but these streams to the
+  standard input of the child will remain open, since they belong to
+  the parent process. As a result, the parent will own defunct I/O
+  streams and might eventually run out of file descriptors or streams.
+\end{enumerate}
+
+\begin{description}
+  \ourmoditem{process\_status(+Pid,-Status)}{process\_status/2}{shell}
+  This predicate always succeeds. Given a process id, it binds the second
+  argument (which must be an unbound variable) to one of the following
+  atoms: {\tt running}, {\tt stopped}, {\tt exited\_normally}, {\tt
+    exited\_abnormally}, {\tt aborted}, {\tt invalid}, and {\tt unknown}.
+  The {\tt invalid} status is given to processes that never existed or that
+  are not children of the parent XSB process. The {\tt unknown} status is
+  assigned when none of the other statuses can be assigned.
+  
+  Note: process status (other than {\tt running}) is system dependent.
+  Windows does not seem to support {\tt stopped} and {\tt aborted}.  Also,
+  processes killed using the \verb|process_control| predicate (described
+  next) are often marked as {\tt invalid} rather than {\tt exited}, because
+  Windows seems to lose all information about such processes. Process
+  status might be inaccurate in some Unix systems as well, if the process
+  has terminated and {\tt wait()} has been executed on that process.
+
+\ourmoditem{process\_control(+Pid,+Operation)}{process\_control/2}{shell}
+    Perform a process control {\tt operation} on the process with the given
+    {\tt Pid}. 
+    Currently, the only supported operations are {\tt kill} (an atom) and {\tt
+    wait(Code)} (a term).
+    The former causes the process to exit unconditionally, and the latter
+    waits for process completion. When the process exits, {\tt Code} is
+    bound to the process exit code. The code for normal termination is 0.
+
+    This predicate succeeds, if the operation was performed successfully.
+    Otherwise, it fails. The {\tt wait} operation fails if the process
+    specified in {\tt Pid} does not exist or is not a child of the parent
+    XSB process. 
+    
+    The {\tt kill} operation might fail, if the process to be killed does
+    not exist or if the parent XSB process does not have the permission to
+    terminate that process. Unix and Windows have different ideas as to
+    what these permissions are. See \emph{kill(2)} for Unix and
+    \emph{TerminateProcess} for Windows.
+    
+    \emph{Note}: under Windows, the programmer's manual warns of dire
+    consequences if one kills a process that has DLLs attached to it.
+%
+\ourmoditem{get\_process\_table(-ProcessList)}{get\_process\_table/1}{shell}
+    This predicate is imported from module {\tt shell}.
+    It binds {\tt ProcessList} to the list of terms, each describing one of
+    the active XSB subprocesses (created via \verb|spawn_process/5|).
+    Each term has the form:
+    %%
+    \begin{center}
+      \verb|process(Pid,ToStream,FromStream,StderrStream,CommandLine)|. 
+    \end{center}
+    %%
+    The first argument in the term is the process id of the corresponding
+    process, the next three arguments describe the three standard streams
+    of the process, and the last is an atom that shows the command line used
+    to invoke the process.
+    This predicate always succeeds.
+
+\ourmoditem{shell(+CmdSpec,-StreamToProc, -StreamFromProc, -ProcStderr,
+  -ErrorCode)}{shell/5}{shell}
+%
+The arguments of this predicate are similar to those of
+\verb|spawn_process|, except for the following: (1) The first argument
+is an atom or a list of atoms, like in \verb|spawn_process|. However,
+if it is a list of atoms, then the resulting shell command is obtained
+by string concatenation. This is different from \verb|spawn_process|
+where each member of the list must represent an argument to the
+program being invoked (and which must be the first member of that
+list).  (2) The last argument is the error code returned by the shell
+command and not a process id. The code -1 and 127 mean that the shell
+command failed.
+    
+    The {\tt shell/5} predicate is similar to \verb|spawn_process| in
+    that it spawns another process and can capture that process' input
+    and output streams.
+%    
+    The important difference, however, is that XSB will wait until the
+    process spawned by {\tt shell/5} terminates. In contrast, the process
+    spawned by \verb|spawn_process| will run concurrently with XSB.  In
+    this latter case, XSB must explicitly synchronize with the spawned
+    subprocess using the predicate \verb|process_control/2| (using the {\tt
+      wait} operation), as described earlier.
+    
+    The fact that XSB must wait until {\tt shell/5} finishes has a very
+    important implication: the amount of data the can be sent to and from
+    the shell command is limited (1K is probably safe). This is because the
+    shell command communicates with XSB via pipes, which have limited
+    capacity.  So, if the pipe is filled, XSB will hang waiting for {\tt
+      shell/5} to finish and {\tt shell/5} will wait for XSB to consume data
+    from the pipe.  Thus, use \verb|spawn_process/5| for any kind of
+    significant data exchange between external processes and XSB.
+  
+  Another difference between these two forms of spawning subprocesses is
+  that {\tt CmdSpec} in {\tt shell/5} can represent \emph{any} shell
+  statement, including those that have pipes and I/O redirection. In
+  contrast, \verb|spawn_process| only allows command of the form ``program
+  args''. For instance,
+%%
+\begin{verbatim}
+| ?- open(test,write,Stream),
+     shell('cat | sort > data', Stream, none, none, ErrCode)
+\end{verbatim}
+%%
+As seen from this example, the same rules for blocking I/O streams
+apply to {\tt shell/5}. Finally, we should note that the already
+familiar standard predicates {\tt shell/1} and {\tt shell/2}
+(documented in Volume 1) are implemented using {\tt shell/5}, and {\tt
+  shell/5} shares their error cases.
+
+\paragraph{\em Notes:}
+%%
+\begin{enumerate}
+  \item  With {\tt shell/5}, you do not have to worry about terminating
+    child processes: XSB waits until the child exits automatically.
+    However, since communication pipes have limited capacity, this method
+    can be used only for exchanging small amounts of information between
+    parent and child.
+  \item The earlier remark about the need to close I/O streams to the child
+    \emph{does} apply.
+\end{enumerate}
+%%
+
+\ourmoditem{pipe\_open(-ReadPipe, -WritePipe)}{pipe\_open/2}{shell}
+Open a new pipe and return the read end and the write end of that
+pipe.  If the operation fails, both {\tt ReadPipe} and {\tt WritePipe}
+are bound to negative numbers.
+%  
+The pipes returned by the {\tt pipe\_open/2} predicate are small
+integers that represent file descriptors used by the underlying
+OS. They are {\bf not XSB I/O streams}, and they cannot be used for
+I/O directly. To use them, one must convert them to streams using {\tt
+open/3} or {\tt open/4}.~\footnote{
+%% 
+XSB does not convert pipe file descriptors into I/O streams
+automatically.  Because of the way XSB I/O streams are represented,
+they are not inherited by the child process and they do not make sense
+to the child process (especially if the child is not another XSB
+process). Therefore, we must pass the child processes an OS file
+descriptor instead. The child then converts these descriptor into XSB
+I/O streams.  
+%% 
+}
+
+    The best way to illustrate how one can create a new pipe to a child
+    (even if the child has been created earlier) is to show an example.
+    Consider two programs, {\tt parent.P} and {\tt child.P}. The parent
+    copy of XSB consults {\tt parent.P}, which does the following: First, it
+    creates a pipe and spawns a copy of XSB. Then it tells the
+    child copy of XSB to assert the fact {\tt pipe(RP)}, where {\tt RP} is
+    a number representing the read part of the pipe. Next, the parent XSB tells
+    the child XSB to consult the program {\tt child.P}. Finally, it sends
+    the message {\tt Hello!}.
+
+    The {\tt child.P} program gets the pipe from predicate {\tt pipe/1}
+    (note that the parent tells the child XSB to first assert {\tt
+    pipe(RP)} and only then to consult the {\tt child.P} file).
+  After that, the child reads a message from the pipe and prints it to its
+    standard output. Both programs are shown below:
+    %%
+    \begin{verbatim}
+%% parent.P      
+:- import pipe_open/2 from file_io.
+%% Create the pipe and pass it to the child process
+?- pipe_open(RP,WP),
+   %% WF is now the XSB I/O stream bound to the write part of the pipe
+   open(pipe(WP),write,WF),
+   %% ProcInput becomes the XSB stream leading directly to the child's stdin
+   spawn_process(nxsb1, ProcInput, block, block, Process),
+   %% Tell the child where the reading part of the pipe is
+   fmt_write(ProcInput, "assert(pipe(%d)).\n", arg(RP)),
+   fmt_write(ProcInput, "[child].\n", _),
+   flush_output(ProcInput, _),
+   %% Pass a message through the pipe
+   fmt_write(WF, "Hello!\n", _),
+   flush_output(WF, _),
+   fmt_write(ProcInput, "end_of_file.\n",_), % send end_of_file atom to child
+   flush_output(ProcInput, _),
+   %% wait for child (so as to not leave zombies around; 
+   %% zombies quit when the parent finishes, but they consume resources)
+   process_control(Process, wait),
+   %% Close the ports used to commuicate with the process
+   %% Otherwise, the parent might run out of file descriptors 
+   %% (if many processes were spawned)
+   close(ProcInput), close(WF).
+    \end{verbatim}
+    %%
+    %%
+    \begin{verbatim}
+%% child.P
+:- import file_read_line_atom/2 from file_io.
+:- dynamic pipe/1.
+?- pipe(P), open(pipe(P),read,F),
+   %% Acknowledge receipt of the pipe
+   fmt_write("\nPipe %d received\n", arg(P)),
+   %% Get a message from the parent and print it to stdout
+   file_read_line_atom(F, Line), write('Message was: '), writeln(Line).
+    \end{verbatim}
+    %%
+    This produces the following output:
+    %%
+    \begin{verbatim}
+| ?- [parent].                    <- parent XSB consults parent.P
+[parent loaded]
+yes
+| ?- [xsb_configuration loaded]   <- parent.P spawns a child copy of XSB
+[sysinitrc loaded]                   Here we see the startup messages of
+[packaging loaded]                   the child copy
+XSB Version 2.0 (Gouden Carolus) of June 27, 1999
+[i686-pc-linux-gnu; mode: optimal; engine: slg-wam; scheduling: batched]
+| ?- 
+yes
+| ?- [Compiling ./child]          <- The child copy of received the pipe from
+[child compiled, cpu time used: 0.1300 seconds]     the parent and then the
+[child loaded]                                      request to consult child.P
+Pipe 15 received                  <- child.P acknowledges receipt of the pipe
+Message was: Hello!               <- child.P gets the message and prints it
+yes       
+    \end{verbatim}
+    %%
+    
+    Observe that the parent process is very careful about making sure
+    that the child terminates and also about closing the I/O streams
+    after they are no longer needed.
+    
+    Finally, we should note that this mechanism can be used to
+    communicate through pipes with non-XSB processes as well. Indeed,
+    an XSB process can create a pipe using {\tt pipe\_open}
+    (\emph{before} spawning a child process), pass one end of the pipe
+    to a child process (which can be a C program), and use {\tt
+    open/3} to convert the other end of the pipe to an XSB
+    stream. The C program, of course, does not need {\tt open/3},
+    since it can use the pipe file handle directly. Likewise, a C
+    program can spawn off an XSB process and pass it one end of a
+    pipe.  The XSB child-process can then convert this pipe fd to a
+    file using {\tt fd2iostream} and then talk to the parent C program.
+
+\ourmoditem{fd2iostream(+Pipe, -IOstream)}{fd2iostream/2}{shell}
+Take a file descriptor and convert it to an XSB I/O stream. This
+predicate should be used only for user-defined I/O.  Otherwise, use
+{\tt open/\{3,4\}} when possible.
+
+%------------------------------------------------------------------------------------------
+\end{description}
+
+
+
+\section{Socket I/O}
+
+The XSB socket library defines a number of predicates for
+communication over BSD-style sockets. Most are modeled after and are
+interfaces to the socket functions with the same name. For detailed
+information on sockets, the reader is referred to the Unix man pages
+(another good source is \emph{Unix Network Programming}, by W.
+Richard Stevens).  Several examples of the use of the XSB sockets
+interface can be found in the {\tt XSB/examples/} directory in the XSB
+distribution.
+
+XSB supports two modes of communication via sockets:
+\emph{stream-oriented} and \emph{message-oriented}. In turn,
+stream-oriented communication can be \emph{buffered} or
+\emph{character-at-a-time}.
+
+To use \emph{buffered} stream-oriented communication, system socket
+handles must be converted to XSB I/O streams using {\tt
+  fd2iostream/2}.  In these stream-oriented communication, messages
+have no boundaries, and communication appears to the processes as
+reading and writing to a file.  At present, buffered stream-oriented
+communication works under Unix only.
+
+\emph{Character-at-a-time} stream communication is accomplished using
+the primitives {\tt socket\_put/3} and {\tt socket\_get0/3}. These
+correspond to the usual Prolog {\tt put/1} and {\tt get0/1} I/O primitives.
+
+In message-oriented communication, processes exchange messages that have
+well-defined boundaries. The communicating processes use {\tt
+  socket\_send/3} and {\tt socket\_recv/3} to talk to each other.
+XSB messages are represented as strings where the first four bytes
+({\tt sizeof(int)}) is an integer (represented in the binary network format
+--- see the functions {\tt htonl} and {\tt ntohl} in socket documentation)
+and the rest is the body of the message. The integer in the header
+represents the length of the message body.
+
+Effort has been made to make the socket interface thread-safe; however
+in \version, calls to the XSB socket interface go through a single
+mutex, and may cause contention if many threads seek to concurrently
+use sockets.
+
+We now describe the XSB socket interface.  All predicates below must be
+imported from the module {\tt socket}. Note that almost all predicates have
+the last argument that unifies with the error code returned from the
+corresponding socket operation. This argument is explained separately.
+
+\paragraph{General socket calls.}
+These are used to open/close sockets, to establish connections, and set
+special socket options.
+\begin{description}
+\ourmoditem{socket(-Sockfd, ?ErrorCode)}{socket/2}{socket}
+    A socket {\tt Sockfd}  in the AF\_INET domain is created.
+    (The AF\_UNIX domain is not yet implemented). 
+    {\tt Sockfd} is bound to a small integer, called socket descriptor or
+    socket handle.
+
+\ourmoditem{socket\_set\_option(+Sockfd,+OptionName,+Value)}{socket\_set\_option/3}{socket}
+    Set socket option. At present, only the {\tt linger} option is
+    supported. ``Lingering'' is a situation when a socket continues to live
+    after it was shut down by the owner. This is used in order to let the
+    client program that uses the socket to finish reading or writing
+    from/to the socket. {\tt Value} represents the number of seconds to linger.
+    The value -1 means do not linger at all.
+
+\ourmoditem{socket\_close(+Sockfd, ?ErrorCode)}{socket\_close/2}{socket}
+    {\tt Sockfd} is closed. Sockets used in {\tt socket\_connect/2}  should
+    not be closed by {\tt socket\_close/1}  as they will be closed when the
+    corresponding stream is closed.
+
+\ourmoditem{socket\_bind(+Sockfd,+Port, ?ErrorCode)}{socket\_bind/3}{socket}
+   The socket {\tt Sockfd}  is bound to the specified local port number.
+
+\ourmoditem{socket\_connect(+Sockfd,+Port,+Hostname,?ErrorCode)}{socket\_connect/4}{socket}
+    The socket Sockfd is connected to the address ({\tt Hostname}  and
+{\tt Port}). If {\tt socket\_connect/4} terminates abnormally for any reason
+(connection refused, timeout, etc.), then XSb closes the socket {\tt
+    Sockfd} automatically, because such a socket cannot be used according
+    to the BSD semantics. Therefore, it is always a good idea to check to
+    the return code and reopen the socket, if the error code is not
+    {\tt SOCK\_OK}.
+
+\ourmoditem{socket\_listen(+Socket, +Length, ?ErrorCode)}{socket\_listen/3}{socket}
+    The socket {\tt Sockfd}  is defined to have a maximum backlog queue of
+{\tt Length}  pending connections.
+
+\ourmoditem{socket\_accept(+Sockfd,-SockOut, ?ErrorCode)}{socket\_accept/3}{socket}
+    Block the caller until a connection attempt arrives. If the incoming 
+    queue is not empty, the first connection request is accepted, the call
+    succeeds and returns a new socket, {\tt SockOut}, which can be used for
+    this new connection.
+\end{description}
+
+\paragraph{Buffered, message-based communication.}
+These calls are similar to the {\tt recv} and {\tt send} calls in C, except
+that XSB wraps a higher-level message protocol around these low-level
+functions. More precisely, {\tt socket\_send/3} prepends a 4-byte field
+to each message, which indicates the length of the message
+body. When {\tt socket\_recv/3} reads a message, it first reads the 4-byte
+field to determine the length of the message and then reads the remainder
+of the message. 
+
+All this is transparent to the XSB user, but you should know these details
+if you want to use these details to communicate with external processes
+written in C and such. All this means that these external programs must
+implement the same protocol. The subtle point here is that different
+machines represent integers differently, so an integer must first be
+converted into the machine-independent network format using the functions
+{\tt htonl} and {\tt ntohl} provided by the socket library. For instance,
+to send a message to XSB, one must do something like this:
+%%
+\begin{verbatim}
+char *message, *msg_body;
+unsigned int msg_body_len, network_encoded_len;
+
+  msg_body_len = strlen(msg_body);
+  network_encoded_len = (unsigned int) htonl((unsigned long int) msg_body_len);
+  memcpy((void *) message, (void *) &network_encoded_len, 4);
+  strcpy(message+4, msg_body);
+\end{verbatim}
+%%
+To read a message sent by XSB, one can do as follows:
+%%
+\begin{verbatim}
+int actual_len;
+char lenbuf[4], msg_buff;
+unsigned int msglen, net_encoded_len;  
+
+  actual_len = (long)recvfrom(sock_handle, lenbuf, 4, 0, NULL, 0);
+  memcpy((void *) &net_encoded_len, (void *) lenbuf, 4);
+  msglen = ntohl(net_encoded_len);
+
+  msg_buff = calloc(msglen+1, sizeof(char))); // check if this suceeded!!!
+  recvfrom(sock_handle, msg_buff, msglen, 0, NULL, 0);
+\end{verbatim}
+%%
+If making the external processes follow the XSB protocol is not practical
+(because you did not write these programs), then you should use the
+character-at-a-time interface or, better, the buffered
+stream-based interface both of which are described in this section.
+At present, however, the buffered stream-based interface does not work on
+Windows.
+%%
+\begin{description}
+\ourmoditem{socket\_recv(+Sockfd,-Message, ?ErrorCode)}{socket\_recv/3}{socket}
+    Receives a message from the connection identified by the socket descriptor
+    {\tt Sockfd}. Binds {\tt Message} to the message. {\tt socket\_recv/3}
+    provides a message-oriented interface. It understands message
+    boundaries set by {\tt socket\_send/3}.
+
+\ourmoditem{socket\_send(+Sockfd,+Message, ?ErrorCode)}{socket\_send/3}{socket}
+    Takes a message (which must be an atom) and sends it through the
+    connection specified by {\tt Sockfd}. {\tt socket\_send/3} provides
+    message-oriented communication. It prepends a 4-byte header to the
+    message, which tells {\tt socket\_recv/3} the length of the message body.
+
+\end{description}
+
+\paragraph{Stream-oriented, character-at-a-time interface.}
+Internally, this interface uses the same {\tt sendto} and {\tt recvfrom}
+socket calls, but they are executed for each character separately.
+This interface is appropriate when the message format is not known or when
+message boundaries are determined using special delimiters.
+
+{\tt socket\_get0/3} creates the end-of-file condition when it receives the
+end-of-file character {\tt CH\_EOF\_P} (a.k.a. 255) defined in {\tt
+  char\_defs.h} (which must be included in the XSB program). C programs
+that need to send an end-of-file character should send {\tt (char)-1}.
+%%
+\begin{description}
+\ourmoditem{socket\_get0(+Sockfd, -Char, ?ErrorCode)}{socket\_get0/3}{socket}
+The equivalent of {\tt get0} for sockets.
+
+\ourmoditem{socket\_put(+Sockfd, +Char, ?ErrorCode)}{socket\_put/3}{socket}
+Similar to put/1, but works on sockets.
+\end{description}
+%%
+
+\paragraph{Socket-probing.}
+With the help of the predicate {\tt socket\_select/6} one can establish a
+group of asynchronous or synchronous socket connections. In the synchronous
+mode, this call is blocked until one of the sockets in the group becomes
+available for reading or writing, as described below.  In the asynchronous
+mode, this call is used to probe the sockets periodically, to find out
+which sockets have data available for reading or which sockets have room in
+the buffer to write to.
+
+The directory {\tt XSB/examples/socket/select/} has a number of examples of
+the use of the socket-probing calls.
+%%
+\begin{description}
+  \ourmoditem{socket\_select(+SymConName,+Timeout,-ReadSockL,-WriteSockL,-ErrSockL,?ErrorCode)}{socket\_select/6}{socket}
+  {\tt SymConName} must be an atom that
+  denotes an existing connection group, which must be previously created with
+  {\tt socket\_set\_select/4} (described below). {\tt ReadSockL}, {\tt
+    WriteSockL}, {\tt ErrSockL} are lists of socket handles (as returned by
+  {\tt socket/2}) that specify the available sockets that are available for
+  reading, writing, or on which exception conditions occurred.  {\tt
+    Timeout} must be an integer that specifies the timeout in seconds (0
+  means probe and exit immediately). If {\tt Timeout} is a variable, then
+  wait indefinitely until one of the sockets becomes available.
+
+\ourmoditem{socket\_set\_select(+SymConName,+ReadSockFdLst,+WriteSockFdLst,+ErrorSockFdLst)}{socket\_set\_select/4}{socket}
+Creates a connection group with the symbolic name {\tt SymConName}
+(an atom) for subsequent use by {\tt socket\_select/6}.
+{\tt ReadSockFdLst}, {\tt WriteSockFdLst}, and {\tt ErrorSockFdLst} are
+lists of sockets for which {\tt socket\_select/6} will be used to monitor read,
+write, or exception conditions.
+
+\ourmoditem{socket\_select\_destroy(+SymConName)}{socket\_select\_destroy/1}{socket}
+Destroys the specified connection group.
+
+\end{description}
+
+
+\paragraph{Error codes.}
+The error code argument unifies with the error code returned by the
+corresponding socket commands. The error code -2 signifies
+\emph{timeout} for timeout-enabled primitives (see below). The error code
+of zero signifies normal termination. Positive error codes denote specific
+failures, as defined in BSD sockets. When such a failure occurs, an error
+message is printed, but the predicate succeeds anyway. The specific error
+codes are part of the socket documentation. Unfortunately, the symbolic
+names and error numbers of these failures are different between Unix
+compilers and Visual C++. Thus, there is no portable, reliable way to refer
+to these error codes. The only reliably portable error codes that can be 
+used in XSB programs defined through these symbolic constants:
+%%
+\begin{verbatim}
+#include "socket_defs_xsb.h"  
+
+#define SOCK_OK       0      /* indicates sucessful return from socket      */
+#define SOCK_EOF     -1      /* end of file in socket_recv, socket_get0     */
+
+#include "timer_defs_xsb.h"
+
+#define TIMEOUT_ERR -2                 /* Timeout error code */
+\end{verbatim}
+%%
+
+\paragraph{Timeouts.}
+XSB socket interface allows the programer to specify timeouts for certain
+operations. If the operations does not finish within the specified period
+of time, the operation is aborted and the corresponding predicate succeeds
+with the {\tt TIMEOUT\_ERR} error code. The following primitives are
+timeout-enabled: {\tt socket\_connect/4}, {\tt socket\_accept/3}, {\tt
+  socket\_recv/3}, {\tt socket\_send/3}, {\tt socket\_get0/3}, and {\tt
+  socket\_put/3}.  To set a timeout value for any of the above primitives,
+the user should execute {\tt set\_timer/1} right before the subgoal to be
+timed. Note that timeouts are disabled after the corresponding timeout-enabled
+call completes or times out. Therefore, one must use {\tt set\_timer/1}
+before each call that needs to be controlled by a timeout mechanism.
+
+The most common use of timeouts is to either abort or retry the operation
+that times out. For the latter, XSB provides the {\tt sleep/1} primitive,
+which allows the program to wait for a few seconds before retrying.
+
+The {\tt set\_timer/1} and {\tt sleep/1} primitives are described below.
+They are standard predicates and do not need to be explicitly imported.
+%%
+\begin{description}
+\ourstandarditem{set\_timer(+Seconds)}{set\_timer/1}
+Set timeout value. If a timer-enabled goal executes after this value is
+set, the clock begins ticking. If the goal does not finish in time, it
+succeeds with the error code set to {\tt TIMEOUT\_ERR}. The timer is turned
+off after the goal executes (whether timed out or not and whether it
+succeeds or fails). This goal always succeeds.
+
+Note that if the timer is not set, the timer-enabled goals execute
+``normally,'' without timeouts. In particular, they might block (say, on
+{\tt socket\_recv}, if data is not available).
+
+\ourstandarditem{sleep(+Seconds)}{sleep/1}
+Put XSB to sleep for the specified number of seconds. Execution resumes
+after the {\tt Seconds} number of seconds. This goal always succeeds.
+\end{description}
+%%
+Here is an example of the use of the timer:
+%%
+\begin{samepage}
+\begin{verbatim}
+:- compiler_options([xpp_on]).
+#include "timer_defs_xsb.h"
+
+?- set_timer(3),  % wait for 3 secs
+   socket_recv(Sockfd, Msg, ErrorCode),
+   (ErrorCode == TIMEOUT_ERR
+   -> writeln('Socket read timed out, retrying'),
+      try_again(Sockfd)
+   ;  write('Data received: '), writeln(Msg)
+   ).
+\end{verbatim}
+\end{samepage}
+%%
+
+\noindent
+Apart from the above timer-enabled primitives, a timeout value can be given
+to {\tt socket\_select/6} directly, as an argument.
+
+
+\paragraph{Buffered, stream-oriented communication.}
+In Unix, socket descriptors can be ``promoted'' to file streams and the
+regular read/write commands can be used with such streams. In XSB, such
+promotion can be done using the following predicate:
+%%
+\begin{description}
+\ourmoditem{fd2ioport(+Pipe, -IOport)}{fd2ioport/2}{shell} Take a
+socket descriptor and convert it to an XSB I/O port that can be used
+for regular file I/O.
+\end{description}
+%%
+Once {\tt IOport} is obtained, all normal I/O primitives can be used by
+specifying the {\tt IOport} as their first argument. This is, perhaps, the
+easiest and the most convenient way to use sockets in XSB. (This feature
+has not been implemented for Windows.)
+
+\noindent
+Here is an example of the use of this feature:
+%%
+\begin{samepage}
+\begin{verbatim}
+:- compiler_options([xpp_on]).
+#include "socket_defs_xsb.h"
+
+?- (socket(Sockfd, SOCK_OK)
+   ->   socket_connect(Sockfd1, 6020, localhost, Ecode),
+        (Ecode == SOCK_OK
+        -> fd2ioport(Sockfd, SockIOport),
+           file_write(SockIOport, 'Hello Server!')
+        ;  writeln('Can''t connect to server')
+        ),
+    ;   writeln('Can''t open socket'), fail
+    ).
+\end{verbatim}
+\end{samepage}
+%%
+
+
+\section{Arrays}
+%===============
+
+The module {\tt array1} provides a simple backtrackable array
+implementation that requires no copying.  In Version 3.2, this package
+was changed to make use of the backtrackable destructive assignment
+made possible by {\tt setarg/3}.  We note that as of Version 3.2 this
+library provides simple syntactic sugar for {\tt functor/3}, {\tt
+  arg/3} and {\tt setarg/3} and relies on error messages for these
+predicates.
+
+\begin{description}
+\ourmoditem{array\_new(-Array,+Size)}{array\_new/2}{array}
+%
+Creates a one dimensional empty array of size {\tt Size}.  All the
+elements of this array are variables.  
+
+\ourmoditem{array\_elt(+Array, +Index, ?Element)}{array\_elt/3}{array}
+%
+Succeeds iff {\tt Element} unifies with the {\tt Index}-th element of
+array {\tt Array}.  
+%
+\ourmoditem{array\_update(+Array, +Index, +Elem)}{array\_update/3}{array}
+%
+Updates the array {\tt Array} such that the {\tt Index}-th element of
+the new array is {\tt Elem} using destructive assignement.  The
+implementation is quite efficient in that it avoids the copying of the
+entire array.
+\end{description}
+
+The following example shows the use of these predicates:
+{\footnotesize
+\begin{verbatim}
+| ?- import array_new/2, array_elt/3, array_update/4 from array.
+
+yes
+| ?- array_new(A,3), array_update(A,1,1), array_update(A,2,2),
+     ( array_update(A,3,3), writeln(first(A))
+     ; array_update(A,3,6), writeln(second(A))
+     ; array_update(A,3,7), writeln(third(A))),fail.
+
+first(array(1,2,3))
+second(array(1,2,6))
+third(array(1,2,7))
+
+no
+\end{verbatim}
+}
+
+\section{The Profiling Library} \label{sec:profile}
+%==============================
+
+XSB can provide Prolog-level profiling for Prolog programs, which
+allows the Prolog programmer to estimate what proportion of time is
+spent executing code for each predicate, and also what modes have been
+used to call a given predicate.  It also helps to find unindexed
+accesses to dynamic predicates which may be the cause of poor
+performance.  To enable profiling, XSB must be
+started with the command line parameter of {\tt -p}.  The module {\tt
+  xsb\_profiling} contains the predicate {\tt profile\_call/1} that
+invokes profiling.  The profiling library should only be used with the
+single-threaded engine in \version{}.
+
+\begin{description}
+\ourmoditem{profile\_call(+Goal)}{profile\_call/1}{xsb\_profiling}
+
+Calls {\tt Goal}, and when it first succeeds, prints to {\tt userout}
+a table of predicate names indicating for each, the percentage of time
+spent executing that predicate's code.  Within the table, the sum of
+the predicate times for each module is also given.  {\tt Goal} may
+backtrack, but profiling is done only for the time to the first
+success, so it is most appropriate to profile succeeding deterministic
+goals~\footnote{This includes tabled subgoals under Local Evaluation,
+  as such as goal will only succeed after deriving all of its
+  answers.}.
+\end{description}
+
+Profiling works by starting another thread that interrupts every 100th
+of a second and sets a flag so that the XSB emulator will determine
+the predicate of the currently executing code.  The printout also
+includes the total number of interrupts and for each predicate, the
+raw number of times its code was determined to be executing.  A
+predicate is printed only if its code was interrupted at least once.
+The numbers will be meaningful only for relatively long-running
+predicates, taking more than a couple of seconds.
+
+\index{interrupt instruction} 
+%
+When an interrupt occurs, the {\bf next} {\em interrupt instruction}
+to be executed -- a WAM {\sf call}, {\sf execute}, {\sf proceed} or
+{\sf trust} instruction -- will charge its associated predicate by
+logging that predicate to a table.  The system does not keep track of
+code addresses for tries (used to represent the results of completed
+tables, and trie-indexed asserted code), so for some interrupts the
+associated executing predicate cannot be determined.  In these cases
+the interrupt is charged against an ``unknown/?''  pseudo-predicate,
+and this count is included in the output.
+
+Profiling does not give the context from which the predicate is
+called, so you may want to make renamed copies of basic predicates to
+use in particular circumstances to determine their times.
+
+Predicates compiled with the ``optimize'' option may provide
+misleading results under profiling.  Note that all system predicates
+(including those in {\tt basics}) are compiled with the ``optimize''
+option, by default.  That option causes tail-recursive predicates to
+use a ``jump'' instruction rather than an ``execute'' instruction to
+make the recursive call, and so an interrupt in such a loop will not
+be charged until the next interrupt instruction is executed.  If much
+time is spent in the recursion, this might not be for a long time, and
+the interrupt might ultimately be charged to another predicate.  (If
+an interrupt has not been charged by the time of the next interrupt,
+it is lost.)
+
+Profiling is currently available under Windows, Mac OS X, and Linux.
+However, for the profiling algorithm to provide a good estimation, the
+thread that wakes and sets the interrupt flag must be of high priority
+and given the CPU when it wants it.  Accordingly, the estimates may be
+better or worse depending on the scheduling strategy of a given
+platform~\footnote{Windows and Mac OS X 10.6 provide good estimates.
+  Some Linuxes however, do not charge about 20\% of their interrupts
+  due to thread scheduling issues.  This loss of interrupts makes the
+  profile estimate inefficient, but does not bias the estimate.  We
+  haven't figured out how to get priority scheduling for interrupts on
+  all machines, so if you want profiling to work more efficiently,
+  maybe you can help figure out how to get appropriate scheduling.}.
+
+The profiling module also provides support for determining when a
+dynamic predicate is invoked in a mode that isn't supported by any
+index.  The XSB programmer can set a flag that will cause a message to
+be printed when a dynamic predicate is invoked, no index is
+applicable, and there are more than 20 potentially matching clauses.
+See {\tt profile\_unindexed\_calls/1} below for details.
+
+\begin{description}
+\ourmoditem{profile\_mode\_call(+Goal)}{profile\_mode\_call/1}{xsb\_profiling}
+
+Calls the goal {\tt Goal} and constructs a table of the modes in which
+the predicate is called and the number of times it is called in that
+mode.  Modes are simply ``b'' for ground and ``f'' for variable.
+Counts are kept in a table with entries of the form {\tt
+Pred(Md1,Md2,..,Mdn)} where Pred is the name of the called predicate
+and the Mdi are either 'f' or 'b', indicating free or bound for the
+corresponding argument.  The table can be printed using {\tt
+profile\_mode\_dump/0} and can be cleared using {\tt profile\_mode\_init/0}.
+\end{description}
+
+\begin{description}
+\ourmoditem{profile\_mode\_dump}{profile\_mode\_dump/0}{xsb\_profiling}
+
+Prints out the counts of calls in particular modes as accumulated using \\
+{\tt profile\_mode\_call(+Goal)}.
+\end{description}
+
+\begin{description}
+\ourmoditem{profile\_mode\_init}{profile\_mode\_init/0}{xsb\_profiling}
+
+Clears the table that accumulates counts of calls in particular modes
+(done by\\ {\tt profile\_mode\_call(+Goal)}.
+\end{description}
+
+\begin{description}
+\ourmoditem{profile\_unindexed\_calls(+Par)}{profile\_unindexed\_calls/1}{xsb\_profiling}
+
+Sets the kind of unindexed profiling to perform.  If {\tt Par} is
+\texttt{off},  no
+unindexed logging will be done.  This is the default.  If {\tt Par}
+is \texttt{once}  each call to a dynamic predicate that cannot use any index (and
+would backtrack through more than 20 clauses) will generate a log
+message to userout.  Note that the predicate of the goal may have indexes,
+but the particular goal may not be able to take advantage of them.
+E.g., a totally open call to a predicate with many clauses will generate an unindexed message.
+By setting the {\tt once} parameter, each unindexed call to a predicate will be logged
+only once; after logging is done, the log instruction is changed to a
+branch, so it will never produce another log message for that dynamic
+code.  If {\tt Par} is \texttt{on}, logging is done as for \texttt{once}, except every
+unindexed call to any dynamic predicate will be logged; i.e. the
+logging instruction is not changed after logging.  If {\tt Par} is a
+predicate specification (of the form Pred/Arity, Module:Pred/Arity,
+Term, or Module:Term), only unindexed calls to the indicated goal will
+be logged, and when each is logged a back-trace will be printed.  This
+allows the programmer to find the location of an unindexed call.
+\end{description}
+
+%----------------------------------------------------------------------
+\comment{
+% Replaced by tries section in volume 1.
+
+\section{Low-level Trie Manipulation Utilities}
+
+Chapter 8 of Volume 1 indicates how tries can be used as an efficient
+mechanism to store thread-private and thread-shared terms.  However,
+while they are efficient, the trie manipulation routines in Chapter 8
+of Volume 1 may not be suitable
+
+and thread-safe manner Interned tries can be used to assert an retract
+facts in an extremely efficient manner.  Terms can be interned within
+different tries, designated by a {\tt Root}, or left as default.  Like
+trie-indexed dynamic code and unlike normal asserted code, interned
+tries have a set semantics: the variant of a term can occur in a trie
+only once, additional asserts have no effect.  In addition, no
+ordering of terms within the trie is guaranteed.  In \version{} of
+XSB, when multiple threads are used, all interned tries are private to
+a thread, so that information interned by one trie will not be visible
+to other threads.  In order to ensure efficiency for these routines,
+not all possible error checking is done on their inputs.
+
+
+Section~\ref{sec:intern-basic} below provides an overview for the
+basic interface to interned tries, while
+Section~\ref{sec:intern-advanced} describes more advanced features.
+See also the module {\tt storage} in Volume 1 which uses interned
+tries for backtrackable updates and associative arrays.
+
+\subsection{A Basic API for Interned Tries} \label{sec:intern-basic}
+%%
+\begin{description}
+  %%
+\ourmoditem{new\_trie(-Root)}{newtrie/1}{intern} 
+        {\tt Root} is instantiated to a handle for a new trie.
+
+\ourmoditem{trie\_intern(+Term,+Root)}{trie\_intern/2}{intern}
+% 
+Effectively asserts \texttt{Term} by interning into the trie
+designated by {\tt Root}.  If a variant of {\tt Term} is already in
+{\tt Root} the predicate succeeds, but a new copy of {\tt Term} is not
+added to the trie.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
+
+\ourmoditem{trie\_interned(?Term,+Root)}{trie\_interned/2}{intern}
+%%
+This predicate backtracks through the terms that unify with {\tt Term}
+and that are interned into the trie represented by the handle {\tt
+  Root}.  {\tt Term} may be free, or partially bound.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
+
+\ourmoditem{delete\_trie(+Root)}{delete\_trie/1}{intern}
+%%
+Deletes all the terms in the trie pointed to by {\tt Root}.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\item 	Failure continuations point to one or more nodes in the trie with root {\tt Root}
+\bi
+\item 	{\tt misc\_error}
+\ei
+\end{itemize}
+%%
+\end{description}
+
+%=======================
+
+\subsection{Low-level Trie Manipulation Utilities} \label{sec:intern-advanced}
+
+The utilities in this section are very low-level and require good
+understanding of the trie mechanism in XSB.  Improper calls to these
+predicates can cause core dumps, particularly if an improper trie
+value is passed to them.  Despite these drawbacks, they can be used to
+implement modules such as the {\tt storage} module described in Volume
+1.
+
+%%
+\begin{description}
+  %%
+\ourmoditem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{trie\_intern/5}{intern}
+%%
+Acts as {\tt trie\_intern/2} but returns additional information: {\tt
+  Leaf} is the handle for the interned {\tt Term} in the trie.  {\tt
+  Flag} is 1 if the term is ``old'' (already exists in the trie); it
+is 0, if the term is newly inserted.  {\tt Skel} represents the
+collection of all the variables in {\tt Term}. It has the form {\tt
+  ret(V1,V2,...,VN)}, exactly as in {\tt get\_calls} (see Vol. 1 of
+the XSB manual).
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
+
+\ourmoditem{trie\_intern(+Term,-Leaf,-Skel)}{trie\_intern/3}{intern}
+%%
+Acts as {\tt trie\_intern/5}, but interns {\tt Term} into the default
+trie and does not return the new/old flag.
+
+\ourmoditem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{trie\_interned/4}{intern}
+%%
+This predicate backtracks through the terms that unify with {\tt Term}
+interned into the trie represented by the handle {\tt Root} if {\tt
+  Leaf} is a free variable.  Otherwise, if {\tt Leaf} is bound, it
+will backtrack over the terms in the trie that unify with the term
+pointed to by Leaf {\tt to}.  {\tt Term} is the term to be retrieved;
+it can be either (partially) bound or free.  {\tt Skel} is the
+collection of all the variables in {\tt Term}; it has the form {\tt
+  ret(V1,...,Vn)}.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
+
+\ourmoditem{trie\_interned(?Term,?Leaf,-Skel)}{trie\_interned/3}{intern} 
+%%
+Similar to {\tt trie\_interned/4}  but uses the default trie.
+
+\ourmoditem{trie\_unintern(+Root,+Leaf)}{trie\_unintern/2}{intern}
+%%
+Uninterns a term indicated by {\tt Leaf} from the trie indicated by
+root.  If there are failure continuations that point to trie nodes in
+{\tt Root}, the term is marked as deleted but space is not reclaimed.
+Otherwise, the term is really deleted.
+%%
+
+\ourmoditem{trie\_unintern\_nr(+Root,+Leaf)}{trie\_unintern\_nr/2}{intern}
+%%
+This is a safe version of {\tt trie\_unintern/2}. The term pointed to by
+{\tt Leaf} is marked as deleted, but is not deleted from the trie. This
+permits an efficient implementation of backtrackable updates.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} or {\tt Leaf} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} or {\tt Leaf} is instantiated, but not an integer
+  (trie handle or trie leaf) 
+\bi
+\item 	 {\tt type\_error(integer,Root)} or {\tt type\_error(integer,Leaf)}
+\ei
+\end{itemize}
+%%
+
+\ourmoditem{unmark\_uninterned\_nr(+Root,+Leaf)}{unmark\_uninterned\_nr/2}{intern}
+The term pointed to by {\tt Leaf} should have been previously marked for
+deletion using
+{\tt trie\_unintern\_nr/2}. This term is then ``unmarked'' (or undeleted)
+and becomes again a normal interned term.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} or {\tt Leaf} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} or {\tt Leaf} is instantiated, but not an integer
+  (trie handle or trie leaf) 
+\bi
+\item 	 {\tt type\_error(integer,Root)} or {\tt type\_error(integer,Leaf)}
+\ei
+\end{itemize}
+%%
+
+\ourmoditem{reclaim\_uninterned\_nr(+Root)}{reclaim\_uninterned\_rn/1}{intern}
+%%
+Runs through the chain of leaves of the trie {\tt Root} and deletes
+the terms that have been marked for deletion by {\tt
+  trie\_unintern\_nr/2}. This is a garbage collection step that should
+be done just before returning to the top level or when it can
+otherwise be ensure that no failure continuations point to a node in
+{\tt Root}.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+
+
+%%
+\end{description}
+}
+\section{Gensym}
+%================================
+
+The Gensym library provides a convenient way to generate unique
+integers or constants.  
+
+\begin{description}
+\ourmoditem{prepare(+Index)}{prepare/1}{gensym}
+%
+Sets the initial integer to be used for generation to {\tt Index}.
+Thus, the command {\tt ?- prepare(0)} would cause the first call to
+{\tt gennum/1} to return {\tt 1}.  {\tt Index} must be a non-negative
+integer.
+
+\ourmoditem{gennum(-Var)}{gennum/1}{gensym} 
+%
+Unifies {\tt Var} with a new integer.
+
+\ourmoditem{gensym(+Atom,-Var)}{gensym/2}zzzz{gensym} 
+%
+Generates a new integer, and concatenates this integer with {\tt
+Atom}, unifying the result with {\tt Var}.  For instance a call {\tt
+?- gensym(foo,Var)} might unify {\tt Var} with {\tt foo32}.
+\end{description}
+
+\section{Random Number Generator}
+%================================
+
+The following predicates are provided in module \texttt{random} to
+generate random numbers (both integers and floating numbers), based on
+the Wichmann-Hill Algorithm \cite{WicH82,McLe85}.  The random number
+generator is entirely portable, and does not require any calls to the
+operating system.  As noted below, it does require 3 seeds, each of
+which must be an integer in a given range.  These seeds are
+thread-specific: thus different threads may generate independent
+sequences of random numbers.
+
+\index{Random Variables}
+
+\begin{description}
+
+\ourmoditem{random(-Number)}{random/1}{random} 
+%
+Binds \texttt{Number} to a random float in the interval [0.0, 1.0).
+Note that 1.0 will never be generated.
+
+\ourmoditem{random(+Lower,+Upper,-Number)}{random/3}{random}
+    Binds \texttt{Number} to a random integer in the interval
+    [\texttt{Lower},\texttt{Upper}) if \texttt{Lower} and \texttt{Upper}
+    are integers.  Otherwise \texttt{Number} is bound to a random float
+    between \texttt{Lower} and \texttt{Upper}.  \texttt{Upper} will
+    never be generated.
+
+\ourmoditem{getrand(?State)}{getrand/1}{random}
+    Tries to unify \texttt{State} with the term \texttt{rand(X,Y,Z)}
+    where \texttt{X},\texttt{Y},and \texttt{Z} are integers describing
+    the state of the random generator.
+
+\ourmoditem{setrand(rand(+X,+Y,+Z))}{setrand/1}{random} 
+    Sets the state of the random generator.  \texttt{X},\texttt{Y}, and
+    \texttt{Z} must be integers in the ranges [1,30269), [1,30307),
+    [1,30323), respectively.
+
+\ourmoditem{datime\_setrand}{datime\_setrand/0}{random}
+This simple initialization utility sets the random seed triple based on a
+function of the current day, hour, minute and second. 
+
+\ourmoditem{randseq(+K, +N, -RandomSeq)}{randseq/3}{random}
+    Generates a sequence of \texttt{K} unique integers chosen randomly
+    in the range from 1 to \texttt{N}.  \texttt{RandomSeq} is not
+    returned in any particular order.
+
+\ourmoditem{randset(+K, +N, -RandomSet)}{randset/3}{random} 
+    Generates an ordered set of \texttt{K} unique integers chosen
+    randomly in the range from 1 to \texttt{N}.  The set is returned in
+    reversed order, with the largest element first and the smallest
+    last.
+
+\index{Random Variables!Normal}
+\ourmoditem{gauss(-G1,-G2)}{gauss/2}{random}
+%
+Generates two random numbers that are normally distributed with mean 0
+and standard deviation 1.  It uses the polar form of the Box-Muller
+transformation~\cite{BoxM58} of uniform random variables as generated by
+{\tt random/1}.
+
+\index{Random Variables!Weibull}
+\ourmoditem{weibull(K,Lambda,X)}{weibull/3}{random}
+%
+Generates a random number for the Weibull distribution:
+\[
+  f(x;k,\lambda) = \frac{k}{\lambda}(\frac{x}{\lambda})^{k-1}e^{-(x/\lambda)^h}
+\]
+based on the transformation
+\[
+  x = \lambda(-ln(U))^{1/k}
+\]
+of a uniformly distributed random variable produced by {\tt random/1}
+
+\index{Random Variables!Exponential}
+\ourmoditem{exponential(K,X)}{exponential/2}{random}
+%
+Generates a random number for the exponential distribution:
+\[
+  f(x;k,\lambda) = \frac{e^{-(x/\lambda)^h}}{\lambda}
+\]
+based on the transformation
+\[
+  x = \lambda(-ln(U))
+\]
+of a uniformly distributed ranom variable produce by {\tt random/1}.
+This is the same as the Weibull distribution with $k = 1$.
+
+\end{description}
+
+\section{Loading Delimiter-Separated Files}
+
+A common file format uses comma separated values, the so-called csv
+files.  The XSB module, {\tt proc\_files}, supports the loading of
+files in this, and similar, formats to define Prolog predicates.
+
+\begin{description}
+
+\ourmoditem{load\_csv(+FileName,+PredSpec)}{load\_csv/2}{proc\_files}
+
+{\tt load\_csv/2} takes a file name and a predicate specification, and
+reads a csv-formatted file into memory, defining the indicated dynamic
+predicate.  The simplest form of {\tt PredSpec} is {\tt
+PredName/Arity}.  In this case the arity must equal the number of
+fields in the csv file, and the predicate must be dynamic.  Each line
+in the file will define one fact of the predicate {\tt
+PredName/Arity}.  Fields in the file enclosed in double quotes will
+be treated as single fields (and thus can contain commas and
+new-lines.)  The dynamic predicate will be emptied before the facts
+from the file are added.  Each field will be loaded as an atom
+(including fields that contain just integers.)
+
+Alternatively, {\tt PredSpec} may be of the form {\tt
+predName(TypeSpec1,...,TypeSpecN)}, where {\tt predName} is the name
+of the dynamic predicate to be defined by the file contents, and each
+{\tt TypeSpecI} indicates the type of the corresponding field in the
+file.  The permitted values of {\tt TypeSpec} are:
+\begin{itemize}
+\item[{\tt atom}] The corresponding field value will become an atom in
+the loaded fact.
+\item[{\tt integer}] The corresponding field value will be converted
+to an integer in the loaded fact.
+\item[{\tt float}] The corresponding field value will be converted to
+a float in the loaded fact.
+\item[{\tt term}] The corresponding field must contain a Prolog term in
+canonical form, and it will be converted to that term in the loaded
+fact. 
+\item[\_\_] (A variable) Treated as {\tt atom}.
+\end{itemize}
+
+\ourmoditem{load\_dsv(+FileName,+PredSpec,+Options)}{load\_dsv/3}{proc\_files}
+
+This predicate supports the loading of more general forms of files
+with value-separated fields.  The {\tt FileName} and {\tt PredSpec}
+parameters are exactly as in {\tt load\_csv/2}, as described just
+above.  {\tt Options} is a list of options.  (With an empty list, {\tt
+load\_dsv} acts as {\tt load\_csv/2}.)  The options are:
+\begin{itemize}
+\item[{\tt separator=''Sep''}] which indicates that the character(s) {\tt Sep}
+will be used as the field separator.  There may be one or more
+characters. 
+\item[{\tt delimiter=''C''}] which indicates that the single character {\tt
+C} will be used as the field delimiter (the default being ``'''''',
+and I've yet to find a situation in which I want to change it.)
+\item[{\tt titles}] which indicates that the first line of the file should
+be ignored and not contribute a fact to the dynamic predicate.
+\end{itemize}
+
+\end{description}
+
+\section{Scanning in Prolog}
+
+Scanners, (sometimes called tokenizers) take an input string, usually
+in UTF-8 or similar format, and produce a scanned sequence of tokens.
+The requirements that various applications have for scanning differ in
+small but important ways -- a character that is special to one
+application may be part of the token of another; or some applications
+may want lower case text converted to upper-case test.  The {\tt
+stdscan.P} library provides a simple scanner written in XSB that can
+be configured in several ways.  While useful, this scanner is not
+intended to be as powerful as general-purpose scanners such as {\em
+lex} or {\em flex}.
+
+\begin{description}
+
+\ourmoditem{scan(+List,-Tokens)}{scan/2}{stdscan}
+
+Given as input a {\tt List} of character codes, {\tt scan/2} scans
+this list producing a list of atoms constituting the lexical tokens.
+Its parameters are set via {\tt set\_scan\_pars/1}.
+
+Tokens produced are either a sequence of {\em letters} and/or {\em
+numbers} or consist of a single {\em special character} (e.g. {\tt (}
+or {\tt )}).  Whitespaces may occur between tokens.
+
+\ourmoditem{scan(+List,+FieldSeparator,-Tokens)}{scan/3}{stdscan} 
+
+Given as input a {\tt List} of character codes, along with a character
+code for a field separator, {\tt scan/3} scans this list producing a
+list of list of atoms constituting the lexical tokens in each field.
+{\em scan/3} thus can be used to scan tabular information.  Its
+parameters are set via {\tt set\_scan\_pars/1}.
+
+\ourmoditem{set\_scan\_pars(+List)}{set\_scan\_pars/1}{stdscan} 
+
+{\tt set\_scan\_pars(+List)} is used to configure the tokenizer to a
+particular need.  {\tt List} is a list of parameters including the
+following:
+
+\begin{itemize}
+
+\item{{\tt whitespace}}.  The default action of the scanner is to return a
+list of tokens, with any whitespace removed.  If {\tt whitespace} is a
+parameter, then the scanner returns the token {\tt ''} when it finds
+whitespace separating two tokens (unless the two tokens are letter
+sequences; since two letter sequences can be two tokens ONLY if they
+are separated by whitespace, such an indication of whitespace would be
+redundant.)  Including the parameter {\tt no\_whitespace} undoes the
+effect of previously including {\tt whitespace}.
+
+\item{{\tt upper\_case}} The default action of the parser is to treat
+lowercase letter differently from uppercase letters.  This parameter
+should be set if conversion to uppercase should be done when producing
+a token that does {\em not} consist entirely of letters (e.g. one with
+mixed letters and digits).  Including the parameter {\tt no\_case}
+undoes the effect of previously including {\tt upper\_case}.
+
+\item{{\tt upper\_case\_in\_lit}} The default action of the parser is
+to treat lowercase letter differently from uppercase letters.  This
+parameter should be set if conversion to uppercase should be done when
+producing a token that consists entirely of letters.  Including the
+parameter {\tt no\_case\_in\_lit} undoes the effect of previously
+including {\tt upper\_case}.
+
+\item{{\tt whitespace(Code)}} adds {\tt Code} as a whitespace code.
+By default, all ASCII codes less than or equal to {\tt 32} are
+regarded as whitespace.
+
+\item{{\tt letter(Code)}} adds {\tt Code} as a letter constituting a
+token. By default, ASCII codes for characters {\tt a--z} and {\tt
+A--Z} are regarded as letters.
+
+\item{{\tt special\_char(Code)}} adds {\tt Code} as a special
+  character.  By default, ASCII codes for the following characters are
+  regarded as special characters:
+
+\begin{verbatim}
+| { } [ ] " % $ & ' ( ) * + , - . / : ; < = > ? @ \ ^ _ ~ `
+\end{verbatim}
+\end{itemize}
+
+\ourmoditem{get\_scan\_pars(-List)}{get\_scan\_pars/1}{stdscan} 
+%
+{\tt get\_scan\_pars/1} returns a list of the currently active
+parameters.
+
+\end{description} 
+
+\section{XSB Lint}
+%================================
+
+The {\tt xsb\_lint\_impexp.P} file contains a simple tool to analyze
+import/exports and definitions and uses of predicates.  It tries to
+find possible inconsistencies, producing warnings when it finds them
+and generating {\tt document\_import}/{\tt document\_export}
+declarations that might be useful.  It can be used after a large
+multi-file, multi-module XSB program has been written to find possible
+inconsistencies in (or interesting aspects of) how predicates are
+defined and used.
+
+XSB source files that contain an {\tt export} compiler directive are
+considered as modules.  Predicates defined in modules, but not
+exported, are local to that module.  When compiling a module, the XSB
+compiler generates useful warnings when predicates are used but not
+defined or defined but not used.  All predicates that are defined in
+source files that do not contain an {\tt export} directive are
+compiled to be defined in a global module, called {\tt usermod}, and
+no warning messages are generated.  The user may add {\tt
+document\_export} and {\tt document\_import} compiler directives
+(exactly analogous to the {\tt export} and {\tt import} directives) to
+non-module source files.  These directives are ignored by the compiler
+for its compilation, but cause the define-use analysis to be done and
+any warning messages to be issued, if appropriate.  This allows a user
+to get the benefit of the define-use analysis without using modules.
+(See Volume 1, Chapter 3 for more details.)
+
+The {\tt xsb\_lint\_impexp} utility processes both modules and regular
+XSB source files that contain {\tt document\_export} statements.
+%
+{\tt xsb\_lint\_impexp} is not itself a module.  To use it, {\tt
+[xsb\_lint\_impexp]} must be consulted, which will define the {\tt
+checkImpExps/\{1,2\}} and {\tt add\_libraries/1} predicates in {\tt
+usermod}.
+
+\begin{description}
+\ourmoditem{add\_libraries(+DirectoryNameList)}{add\_libraries/1}{xsb\_lint}
+%
+{\tt add\_libraries/1} takes a list of directory names and adds them
+to the {\tt library\_directory/1} predicate.  This causes the XSB
+system to look for XSB source code files in these directories.  To use
+{\tt checkImpExps/\{1,2\}}, all the directories that contain files (or
+modules) referenced (recursively) in the files to be processed must be
+in the {\tt library\_directory/1} predicate.  This predicate can be
+used to add a number of directories at once.
+
+\ouritem{checkImpExps(+Options,+FileNameList)}{checkImpExps/2}{xsb\_lint}
+%
+{\tt checkImpExps/1} reads all the XSB source files named in the list
+{\tt FileNameList}, and all files they reference (recursively), and
+produces a listing that describes properties of how they reference
+predicates.
+
+{\tt Options} is a list of atoms (from the following list) indicating
+details of how {\tt checkImpExps} should work.
+
+\begin{enumerate}
+\item
+   {\tt used\_elsewhere}: Print a warning message in the case of a
+   predicate defined in a file, not used there, but used elsewhere (in
+   a file in {\tt FileNameList}). This can be useful to see whether it
+   might be better to move the predicate definition to another file,
+   but it produces many warnings for predicates in multi-use
+   libraries.
+\item
+   {\tt unused}: Print a warning message in the case of a predicate that is
+   exported but never used.  This can be useful to see if predicate is
+   not used anywhere, and thus could be deleted.  Again this produces
+   many warnings for predicates in multi-use libraries.
+\item
+   {\tt all\_files}: By default, only predicates in files that contain a {\tt
+   :- document\_export} or {\tt :- export} declaration are processed.
+   This option causes predicates of {\em all} files (and modules) to be
+   processed.
+\item
+   {\tt all\_symbol\_uses}: Treat {\em all} non-predicate uses of symbols
+   (even constants) as predicate uses for the purpose of generating
+   imports.
+\item
+   {\tt no\_symbol\_uses}: Don't treat any non-predicate uses of symbols as
+   predicate uses for the purpose of generating imports.
+\end{enumerate}
+
+We further explain the final two options, which allow the user to
+determine more precisely what uses of a symbol are considered as uses
+of it as the predicate symbol.  All uses of symbols that appear in a
+``predicate context", i.e., in the body of a rule or in a
+meta-predicate argument position of a use of a meta-predicate, are
+considered uses of that predicate symbol.  The default is also to
+allow nonconstant symbols appearing in any other context to also count
+as uses of that symbol as that predicate symbol.  This is useful for
+programs that define their own meta-predicates.
+
+\ourmoditem{checkImpExps(+FileNameList)}{checkImpExps/1}{xsb\_lint}
+%
+{\tt checkImpExps/1}  is
+currently equivalent to {\tt checkImpExps([],FileNameList)}.
+\end{description}
+
+\section{``Pure'' Meta-programming in XSB with prolog\_db.P}
+\index{Code authors!Warren, David S.}
+
+The {\tt prolog\_db} library provides predicates that support a form of
+``pure'' meta-programming in XSB.  A programmer can create a term data
+structure that represents a Prolog database (i.e., a set of rules, and
+herein called a {\em Prolog DB}), and then ask for a goal to be proved
+in such a Prolog DB.  
+
+A Prolog DB is kept as a trie, which is a ground Prolog term.  Each
+level in the trie is implemented by a hash table, and hash tables are
+expanded and contracted as necessary.  A set of clauses is canonically
+represented, i.e., no matter what sequence of {\tt assert\_in\_db}'s
+and {\tt retractall\_in\_db}'s one uses to construct a particular set
+of clauses, the resulting Prolog DBs (i.e. Prolog terms) are identical.
+
+A Prolog DB represents an unordered set of clauses.  The order in
+which clauses are returned from {\tt clause\_in\_db} (and thus for
+{\tt call\_in\_db}) is indeterminate, and may change from one call to
+the next (due to possible expansion or contraction of a hash table in
+the representation of a Prolog DB.)
+
+A Prolog DB that is obtained from another Prolog DB by adding or
+deleting a single clause differs from it in only log subterms (unless
+a hash table has been resized).  This means that it is efficient to
+intern these DB's, and to table them (as intern).
+
+The predicates provided by the Prolog DB interface are as follows:
+\begin{description}
+\ourmoditem{empty\_db(-EmptyPrologDB)}{empty\_db/1}{prolog\_db}
+{\tt empty\_db/1} returns an empty Prolog DB.  It is used to create an
+initial Prolog DB to pass to the other in\_db predicates.
+
+\ourmoditem{assert\_in\_db(+Clause,+DB0,-DB)}{assert\_in\_db/3}{prolog\_db}
+{\tt assert\_in\_db/3} adds the clause, {\tt Clause}, to the Prolog
+DB, {\tt DB0}, and returns a new Prolog DB, {\tt DB}.  A Prolog DB is
+a {\em set} of clauses, so asserting a clause that is already in {\tt
+DB0} just returns that same database.  No ordering of clauses is
+preserved, so cuts do not make sense and cannot be used in clauses.
+(The if-then else ('->'/3) should be used instead.)
+
+\ourmoditem{retractall\_in\_db(+ClauseHead,+DB0,-DB)}{retractall\_in\_db/3}{prolog\_db}
+{\tt retractall\_in\_db/3} removes all clauses whose heads unify with
+{\tt ClauseHead} from {\tt DB0} returning {\tt DB}.  If no clauses in
+{\tt DB0} unify, then {\tt DB0} is returned unchanged.
+
+\ourmoditem{clause\_in\_db(?ClauseHead,?ClauseBody,+DB)}{clause\_in\_db/3}{prolog\_db}
+{\tt clause\_in\_db/3} returns all clauses in {\tt DB} whose heads and
+bodies unify with {\tt ClauseHead} and {\tt ClauseBody}, respectively.
+(Note that, unlike {\tt clause/2} in Prolog, {\tt clause\_in\_db} can
+be called with {\tt ClauseHead} as a variable.)  Note also that the
+order of clauses is not preserved and is indeterminate.
+
+\ourmoditem{call\_in\_db(?Goal,+DB)}{call\_in\_db/2}{prolog\_db}
+{\tt call\_in\_db/2} calls {\tt Goal} in {\tt DB} and returns all
+instances of {\tt Goal} provable by rules in {\tt DB}.  Clauses must
+not contain cuts (!).  They can contain most Prolog constructs,
+including and, or, if-then-else, \textbackslash+, calls to standard predicates, and
+calls explicitly modified by a module name. Such calls will be
+satisfied by calling the goal in the indicated module. So in this case
+one can think of a Prolog DB as being extended by the code in any
+module.
+
+\ourmoditem{load\_in\_db(+FileName,+DB0,-DB)}{load\_in\_db/3}{prolog\_db}
+{\tt load\_in\_db/3} reads the clauses from the file named {\tt
+FileName} and asserts them into database {\tt DB0} returning {\tt DB}.
+
+\ourmoditem{load\_in\_db(+FileName,-DB)}{load\_in\_db/2}{prolog\_db}
+{\tt load\_in\_db/2} reads the clauses from the file named {\tt
+FileName} and asserts them into an empty database returning {\tt DB}.
+
+\ourmoditem{union\_db(+DB1,+DB2,-DB3)}{union\_db/3}{prolog\_db}
+{\tt union\_db/3} returns in {\tt DB3} the union of the sets of
+clauses in {\tt DB1} and {\tt DB2}.
+
+\end{description}
+
+
+
+%=======================================================================
+\section{Miscellaneous Predicates}
+
+\begin{description}
+
+\ourmoditem{term\_hash(+Term,+HashSize,-HashVal)}{term\_hash/3}{machine}
+%
+Given an arbitrary Prolog term, {\tt Term}, that is to be hashed into
+a table of {\tt HashSize} buckets, this predicate returns a hash value
+for {\tt Term} that is between {\tt 0} and {\tt HashSize -1}.
+
+\ourmoditem{crypto\_hash(+Type,+Input,-Output)}{crypto\_hash/3}{machine}
+%
+Given an atom {\tt Input}, produces an encrypted string {\tt Output}
+according to the algorithm specified in {\tt Type}, which currently
+can be {\tt sha1} or {\tt md5}.
+
+\ourrepeatmoditem{pretty\_print(+ClausePairs)}{pretty\_print/1}{pretty\_print}
+\ourmoditem{pretty\_print(+Stream,+ClausePairs)}{pretty\_print/2}{pretty\_print}
+
+
+%
+The input to {\tt pretty\_print/1}, {\tt ClausePairs}, can be either a
+list of clause pairs or a single clause pair.  A clause pair is either
+a Prolog clause (or declaration) or a pair:
+%
+\begin{center}
+{\tt (Clause,Dict)} 
+\end{center}
+%
+Where {\tt Dict} is a list of the form {\tt A = V} where {\tt V} is a
+variable in {\tt Clause} and {\tt A} is the string to be used to
+denote the variable \footnote{Thus the list of variable names returned
+by {\tt read\_term/\{2,3\}} can be used directly in {\tt Dict}.}.
+
+By default, {\tt pretty\_print/1} outputs atomic terms using {\tt
+writeq/1}, but specialized output can be configured via asserting in
+{\tt usermod} a term of the form
+%
+\begin{center}
+{\tt user\_replacement\_hook(Term,Call)}
+\end{center}
+%
+which will use Call to output an atomic literal $A$ whenever $A$
+unifies with {\tt Term}.  For example, pretty printing weight
+constraints in XSB's {\tt XASP} package is done via the hook
+%
+\begin{center}
+{\tt user\_replacement\_hook(weight\_constr(Term),output\_weight\_constr(Term))}
+\end{center}
+%
+which outputs a weight constraint in a (non-Prolog) syntax that is 
+used by several ASP systems.
+
+\ourmoditem{module\_of\_term(+Term,?Module)}{module\_of\_term/2}{machine}
+%
+Given a term {\tt Term}, {\tt module\_of\_term/2} returns the module
+of its main functor symbol in {\tt Module}.  If the module cannot be
+determined wither {\tt unknown1} or {\tt unknown2} is returrned,
+depending on the reason the module name cannot be determined.
+
+\end{description}
+

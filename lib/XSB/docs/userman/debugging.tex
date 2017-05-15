@@ -1,0 +1,1038 @@
+\chapter{Debugging and Profiling} \label{debugging}
+%====================================
+\index{debugger}
+\index{tracing|(}
+\section{Prolog-style Tracing and Debugging}
+%===========================
+\index{tracing!Prolog Programs}
+%
+XSB supports a version of the Byrd four-port debugger for interactive
+debugging and tracing of Prolog code.  In this release (\version), it
+does not work very well when debugging code involving tabled
+predicates~\footnote{The current version of XSB's Prolog debugger does
+  not include exceptions as a debugging port.}.  If one only creeps
+(see below), the tracing can provide some useful information.  For
+programs that involve large amounts of tabling forest-view tracing can
+be used (Section~\ref{sec:forest-trace}).
+To turn on tracing, use {\tt trace/0}, {\tt trace/1}, or {\tt trace/2}.  To
+turn tracing off, use {\tt notrace/0}.
+
+\begin{description}
+\repeatstandarditem{trace}{trace/0}
+\standarditem{notrace}{notrace/0}
+
+When tracing is on, the system will print a message each time a
+predicate is:
+\begin{enumerate} \index{debugger!ports}
+\item initially entered (Call), 
+\item successfully returned from (Exit), 
+\item failed back into (Redo), and
+\item completely failed out of (Fail).  
+\end{enumerate}
+When debugging interactively, a message may be printed and tracer
+stopped and prompts for input.  (See the predicates {\tt show/1} and
+{\tt leash/1} described below to modify what is traced and when the
+user is prompted.)
+
+In addition to single-step tracing, the user can set spy points to
+influence how the tracing/debugging works.  A spy point is set using
+{\tt spy/1}.  Spy points can be used to cause the system to enter the
+tracer when a particular predicate is entered. Also the tracer allows
+``leaping'' from spy point to spy point during the debugging process.
+%
+The debugger also has profiling capabilities, which can measure the cpu
+time spent in each call. The cpu time is measured only down to 0.0001-th
+of a second.
+
+When the tracer prompts for input, the user may enter a return, or a single
+character followed by a return, with the following meanings:
+\bi
+\index{trace!options}
+\item{\tt c, <CR>}: {\em Creep}~ Causes the system to single-step to
+  the next port (i.e.\ either the entry to a traced predicate called
+  by the executed clause, or the success or failure exit from that
+  clause).
+\item{\tt a}: {\em Abort}~ \index{abort!trace facility} Causes execution to abort
+  and control to return to the top level interpreter.
+\index{break level}
+\item{\tt b}: {\em Break}~ Calls the evaluable predicate {\em break},
+  thus invoking recursively a new incarnation of the system
+  interpreter.  The command prompt at break level $n$ is
+  \begin{center}
+    {\tt $n$: \tt ?-}
+  \end{center}
+  The user may return to the previous break level by entering the system
+  end-of-file character (e.g.\ {\tt ctrl-D}), or typing in the atom 
+  {\tt end\_of\_file}; or to the top level interpreter by typing in
+  {\tt abort}.
+\item{\tt f}: {\em Fail}~ Causes execution to fail, thus transferring
+  control to the Fail port of the current execution.
+\item{\tt h}: {\em Help}~ Displays the table of debugging options.
+\item{\tt l}: {\em Leap}~ Causes the system to resume running the
+  program, only stopping when a spy-point is reached or the program
+  terminates.  This allows the user to follow the execution at a
+  higher level than exhaustive tracing.
+\item{\tt n}: {\em Nodebug}~ Turns off debug mode.
+\item{\tt r}: {\em Retry (fail)}~ Transfers to the Call port of the current
+  goal.  Note, however, that side effects, such as database modifications
+  etc., are not undone.
+\item{\tt s}: {\em Skip}~ Causes tracing to be turned off for the entire
+  execution of the procedure.  Thus, nothing is seen until control comes
+  back to that procedure, either at the Success or the Failure port.
+\item{\tt q}: {\em Quasi-skip} This is like Skip except that it does not mask
+  out spy points.
+\item{\tt S}: {\em Verbose skip}~ Similar to {\tt Skip} mode, but trace
+  continues to be printed. The user is prompted again when the current call
+  terminates with success or failure.  This can be used to obtain a full
+  trace to the point where an error occurred or for code profiling. (See
+  more about profiling below.)
+\item{\tt e}: {\em Exit}~ Causes immediate exit from \ourprolog\ back to the
+  operating system.
+\ei
+%/* TLS: it seems like there may not be much use for the non-queryable trace/1 */
+
+\standarditem{trace(+Filename,+option)}{trace/2}
+\index{trace!logging}
+%\index[pred]{\texttt{trace/1}}
+%\index{\texttt{trace/1}}
+%
+{\tt trace/2} is like {\tt trace/0} except that it is non-interactive
+and dumps trace information into a log file, {\tt Filename}.
+Currently the only supported option is \texttt{log}.  However, the log
+is written in the form of Prolog facts, which can be loaded
+queried. The format of the facts is:
+%% 
+\begin{verbatim}
+xsb_tracelog(CallId,CallNum,PortType,ParentCallNum,DepthOfCall,CurrentCall,Time)
+\end{verbatim}
+%% 
+where \texttt{CallId} is an identifier generated when XSB encounters a
+new top-level call. This identifier remains the same for all subgoals
+called while tracing that top-level call.
+\bi
+\item \texttt{CallNum} is a generated number to show the nesting of
+  the calls being traced. It is the same number that the user sees
+  when tracing interactively.
+%
+\item \texttt{PortType} is \texttt{'Call'}, \texttt{'Redo'},
+  \texttt{'Exit'}, or \texttt{'Fail'}.  
+\item \texttt{ParentCallNum} is the call number of the parent call.
+%
+\item \texttt{DepthOfCall} is the nesting depth of the current call
+  with respect to its ancestor calls.  
+%
+\item \texttt{CurrentCall} is the call being traced
+%
+\item \texttt{Time} is the CPU time it took to execute
+  \texttt{CurrentCall}. On \texttt{'Call'} and \texttt{'Redo'},
+  \texttt{Time} is always 0 --- it has a meaningful value only for the
+  \texttt{'Exit'} and \texttt{'Fail'} log entries. 
+\end{itemize}
+It should be noted that when calls are delayed due to the well-founded
+negation computation of because of the \texttt{when/2} primitive, the
+parent call might be off in some cases. However, the parent property
+repairs itself for subsequent calls.
+
+`The name of the predicate (\texttt{xsb\_tracelog}) used for logging
+can be changed by asserting it into the predicate
+\texttt{debug\_tracelog\_predicate/1}, which should be imported from
+\texttt{usermod}. For instance,
+%% 
+\begin{verbatim}
+   :- import debug_tracelog_predicate/1 from usermod.
+   ?- assert(debug_tracelog_predicate(foobar)).
+\end{verbatim}
+%% 
+
+\standarditem{spy(Preds)}{spy/1}
+    where {\tt Preds} is a spy specification or a list of such
+    specifications, and must be instantiated. This predicate sets spy
+    points (conditional or unconditional) on predicates.  A spy
+    specification can be of several forms. Most simply, it is a term
+    of the form $P$/$N$, where $P$ is a predicate name and $N$ its
+    arity.  Optionally, only a predicate name can be provided, in
+    which case it refers to all predicates of any arity currently
+    defined in {\tt usermod}.  It may optionally be prefixed by a
+    module name, e.g.  $ModName$:$P$/$N$. (Again, if the arity is
+    omitted, the specification refers to all predicates of any arity
+    with the given name currently defined in the given module.)  A spy
+    specification may also indicate a conditional spy point. A
+    conditional spy specification is a Prolog rule, the head
+    indicating the predicate to spy, and the body indicating
+    conditions under which to spy. For example, to spy the predicate
+    p/2 when the first argument is not a variable, one would write:
+    $spy (p(X,\_):-nonvar(X)).$ (Notice that the parentheses around
+    the rule are necessary). The body may be empty, i.e., the rule may
+    just be a fact.  The head of a rule may also be prefixed (using
+    $:$) with a module name. One should not put both conditional and
+    unconditional spy points on the same predicate.
+
+\standarditem{nospy(Preds)}{nospy/1}
+    where {\tt Preds} is a spy specification, or a list of such
+    specifications, and must be instantiated at the time of call.  What
+    constitutes a spy specification is described above under {\tt spy}.
+    {\tt nospy} removes spy points on the specified predicates. If a
+    specification is given in the form of a fact, all conditional spy points
+    whose heads match that fact are removed.
+
+\standarditem{debug}{debug/0}
+    Turns on debugging mode.
+    This causes subsequent execution of predicates with trace or spy
+    points to be traced, and is a no-op if there are no such predicates.
+    The predicates {\tt trace/0}, {\tt trace/1}, \texttt{trace/2},  and {\tt spy/1} cause debugging mode
+    to be turned on automatically.
+
+\standarditem{nodebug}{nodebug/0}
+    Turns off debugging mode.  This causes trace and spy points to be ignored.
+
+\standarditem{debugging}{debugging/0}
+    Displays information about whether debug mode is on or not, and lists
+    predicates that have trace points or spy points set on them.
+
+\standarditem{debug\_ctl(option,value)}{debug\_ctl/2}
+   {\tt debug\_ctl/2} performs debugger control functions as described below.
+   These commands can be entered before starting a trace or inside the trace.
+   The latter can be done by responding with ``{\tt b}'' at the prompt,
+   which recursively invokes an XSB sub-session. At this point, you can
+   enter the debugger control commands and type \verb|end_of_file.| This
+   returns XSB back to the debugger prompt, but with new settings.
+   %%
+   \begin{enumerate}
+   \item {\tt debug\_ctl(prompt, off)} Set non-interactive mode globally.
+     This means that trace will be printed from start to end, and the user
+     will never be prompted during the trace.
+    \item {\tt debug\_ctl(prompt, on)} 
+      Make tracing/spying interactive.
+    \item {\tt debug\_ctl(profile, on)}  
+      Turns profiling on. This means that each time a call execution
+      reaches the {\tt Fail} or {\tt Exit} port, CPU time spent in that
+      call will be printed. The actual call can be identified by locating a
+      {\tt Call}  prompt that has the same number as the ``cpu time''
+      message.
+    \item {\tt debug\_ctl(profile, off)}  
+      Turns profiling off.
+    \item {\tt debug\_ctl(redirect, +File)} 
+      Redirects debugging output to a file. This also includes program output,
+      errors and warnings.
+      Note that usually you cannot see the contents of {\tt +File} until it
+      is closed, {\it i.e.}, until another redirect operation is performed
+      (usually {\tt debug\_ctl(redirect, tty)}, see next).
+    \item {\tt debug\_ctl(redirect, tty)}     
+      Attaches the previously redirected debugging, error, program output,
+      and warning streams back to the user terminal.
+    \item {\tt debug\_ctl(show, +PortList)}  
+      Allows the user to specify at which ports should trace messages be
+      printed. {\tt PortList} must be a list of port names, i.e., a sublist
+      of ['Call', 'Exit', 'Redo', 'Fail']. 
+    \item {\tt debug\_ctl(leash, +PortList)}  
+      Allows the user to specify at which ports the tracer should stop
+      and prompt the user for direction.  {\tt PortList} must be a list of
+      port names, i.e., a sublist of ['Call', 'Exit', 'Redo', 'Fail'].  Only
+      ports that are {\tt show}-n can be {\tt leash}-ed. 
+    \item {\tt debug\_ctl(hide, +PredArityPairList)}  
+      The list must be of the form {\tt [P1/A1, P2/A2, ...]}, {\it i.e.},
+      each either must specify a predicate-arity pair. Each predicate on
+      the list will become non-traceable. That is, during the trace, each
+      such predicate will be treated as an black-box procedure, and trace
+      will not go into it.
+    \item {\tt debug\_ctl(unhide, ?PredArityPairList)} If the list is a
+      predicate-arity list, every predicate on that list will become
+      traceable again. Items in the list can contain variables. For
+      instance, {\tt debug\_ctl(unhide, [\_/2])} will make all 2-ary that
+      were previously made untraceable traceable again.  As a special case,
+      if {\tt PredArityPairList} is a variable, all predicates previously
+      placed on the ``untraceable''-list will be taken off.
+    \item {\tt debug\_ctl(hidden, -List)}
+      This returns the list of predicates that the user said should not be
+      traced.
+   \end{enumerate}
+   %%
+\end{description}
+
+
+\subsection{Control of Prolog-Style Tracing and Debugging}
+%--------------------------------------------------
+\index{tracing!Prolog Program!Controls}
+%
+\index{low-level tracing} \index{tracing!low-level}
+
+XSB debugger also provides means for the low-level control of what
+must be traced. Normally, various standard predicates are masked out
+from the trace, since these predicates do not make sense to the
+application programmer.  However, if tracing below the application
+level is needed, you can retract some of the facts specified in the
+file {\tt syslib/debugger\_data.P} (and in some cases assert into
+them). All these predicates are documented in the header of that
+file. Here we only mention the four predicates that an XSB developer
+is more likely to need. To get more trace, you should retract from the
+first three predicates and assert into the last one.
+%%
+\begin{itemize}
+\item {\tt hide\_this\_show(Pred,Arity)}: specifies calls (predicate name and
+  arity) that the debugger should {\tt not} show at the prompt. However,
+  the evaluation of this hidden call {\tt is} traced.
+\item {\tt hide\_this\_hide(Pred,Arity)}: specifies calls to hide. Trace
+  remains off while evaluating those predicates. Once trace is off, there
+  is no way to resume it until the hidden predicate exits or fails.
+\item  {\tt show\_this\_hide(Pred,Arity)}: calls to show at the
+  prompt. However, trace is switched off right after that.
+\item  {\tt trace\_standard\_predicate(Pred,Arity)}: Normally trace doesn't
+  go inside standard predicates ({\it i.e.}, those specified in
+  {\tt syslib/std\_xsb.P}. If you need to trace some of those, you must
+  {\tt assert} into this predicate.
+\end{itemize}
+%%
+In principle, by retracting all facts from the first three predicates and
+asserting enough facts into the last one, it is possible to achieve the
+behavior that approximates the {\tt -T} option. However, unlike {\tt -T},
+debugging can be done interactively. This does not obviate {\tt -T},
+however. First, it is easier to use {\tt -T} than to issue multiple asserts
+and retracts. Second, {\tt -T} can be used when the error occurs early on,
+before the moment when XSB shows its first prompt.
+
+Finally, XSB also provides a facility for low-level tracing of Prolog
+execution.  This can be activated by invoking the emulator with the
+{\tt -T} option (see Section~\ref{sec:EmuOptions}), or through the
+predicate {\tt trace/0}.  \stdrefindex{\$trace/0} It causes trace
+information to be printed out at {\em every} Prolog call (including
+those to system predicates, and tabled predicates).  While this method
+can occasionally be useful, its use is limited.  For tabled executions
+the techniques in the following sections are much more appropriate.
+Ever for Prolog programs, the volume of such trace information can become
+very large very quickly, so this method of tracing is only recommended
+for situations where no other debugging method is useful.
+
+%-----------------------------------------------------------------------------
+\newcommand{\ctrace}{{\tt logforest}}
+
+\section{Trace-based Execution Analysis through Forest Logging} \label{sec:forest-trace}
+%
+The tracing and debugging described in previous sections has proven
+useful for Prolog programs for 30 or more years.  However, when
+tabling is added to Prolog, things change.  First, as described in
+Chapter~\ref{chap:TablingOverview}, tabling can be used to find the
+least fixed point of mutually recursive predicates.  Operationally,
+this requires the ability to suspend one computation path and to
+resume another.  Second, the addition of tabled negation for the
+well-founded semantics requires the ability to delay negative goals
+whose only proof may be involved in a loop through negation and to
+simplify these goals once their truth value has become
+known. Furthermore, a tabled subgoal has different states: it may be
+{\em new}; it may be {\em incomplete} so that new answers might be
+derived for it; or {\em completed} (completely evaluated) so that the
+answers may simply be read from the table.  In short, tabling, which
+can execute much more general programs than Prolog and which can use
+the stronger well-founded semantics, requires a more complex set of
+operations than Prolog's SLDNF.  Accordingsly, debugging and tracing
+is correspondingly more complex.  Thus, while Prolog's 4-port debugger
+may be useful for programs that involve just a few tabled predicates,
+it may not be useful for programs that heavily use tabling for complex
+recursions, non-monotinic reasoning or other purposes.
+
+There is currently no standard approach to debugging tabled programs.
+One possible approach would be to extend the 4-port debugger to
+include other ports for tabling operations.  Such extensions have not
+yet been explored, and whether the paradigm of n-port debugging can be
+extended to full tabling so that it can be useful to programmers is an
+open question.  Another approach would be use the declarative approach
+of {\em justification} \cite{GuRR01,PGDRR04} to explain why
+derivations were or were not made.  XSB does in fact have a
+justification package but it is not currently robust enough to be
+recommended for general use.  Below we present the {\tt \ctrace}
+approach~\cite{Swif14b}
+
+\subsection{Tracing a tabled evaluation through forest logging}
+%
+While the operations used for tabling are more complex than those of
+SLDNF, they have a clear formal operational semantics through SLG and
+the forest-of-trees model.  We recall this model briefly below for a
+definite program but assume a background knowledge of tabled logic
+programming (see, for instance~\cite{SwiW12}).
+
+\begin{example} \rm 
+Figure~\ref{fig:local} shows a program fragment along with an SLG
+forest for the query {\tt ?- reach(1,Y)} to the the right-recursive
+tabled predicate {\tt reach/1}.  An SLG forest consists of an SLG tree
+for each tabled subgoal $S$: this tree has root $S \mif{} S$.  In a
+definite program an SLG tree represents resolution of program clauses
+and answers to prove $S$.  In Figure~\ref{fig:local} each non-root
+node of the form $K. N$ where $N = (S \mif{} Goals)\theta$ is a clause
+in which the bindings to a subgoal $S$ are maintained in $S\theta$,
+the goals remaining to prove $S$ are in $Goals\theta$, and the order
+of creation of $N$ within the tabled evaluation is represented by a
+number, $K$ (local scheduling is used in this example).  Children of a
+root node are obtained through resolution of a tabled subgoal against
+program clauses.  Children of non-root nodes are obtained through
+answer clause resolution, if the left most selected literal is tabled
+(e.g. children of node 3 or 11 in the tree for {\tt reach(1,Y)}), or
+through program clause resolution if the leftmost selected literal is
+not tabled (e.g. children of nodes 2 and 18 in the tree for {\tt
+  reach(1,Y)}).  Nodes that have empty {\em Goals} are termed {\em
+  answers}.
+%
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.99\textwidth]{slg-forest-local}
+%%\mbox{
+%%{\epsfig{file=slg-forest-local,width=.99\textwidth}}}
+\caption{A program $P_{Rrec}$ and SLG forest for (local) evaluation of
+  {\tt ?- reach(1,Y)}} \label{fig:local}
+\end{figure}
+%
+Note that the evaluation keeps track of each tabled subgoal $S$ that
+it encounters.  Later if $S$ is selected again, resolution will use
+answers rather than program clauses; if no answers are available, the
+computation will {\em suspend} at that point and the evaluation will
+backtrack to try to derive answers using some other computation path.
+Once more answers have been derived, the evaluation {\em resumes} the
+suspended computation.  Similarly, once the computation has
+backtracked through all answers available for $S$ in the current
+state, the computation path will suspend, and resume after further
+answers are found.  Thus a tabled evaluation is a fixed point
+computation for a set of interdependent subgoals.  When it is
+etermined that a (perhaps singleton) set of subgoals can produce no
+more answers, the subgoals are completed.
+\end{example}
+
+%\vspace{0.1in}
+
+The forest logging approach ({\tt \ctrace}) allows one to run a tabled
+query and produce a log that can be interpreted as (a partial image
+of) an SLG forest.  The log can then used to analyze program
+correctness, to optimize performance and so on.  Because \ctrace{}
+  produces a log, it superficially resembles the non-interactive trace
+  described earlier in this chapter.  However,
+\begin{itemize}
+\item {\tt trace/1} produces a Prolog-style trace that takes little
+  account of tabling.  \ctrace{} structures its output according to
+  the forest-of-trees model, and takes little account of program
+  clause resolution.
+
+\item \ctrace{} is implemented in C for efficiency, while {\tt
+  trace/1} is built on top of XSBs interactive debugger.  Unlike {\tt
+  trace/1}, \ctrace{} can therefore to produce logs for very large
+  evaluations with little overhead.
+\end{itemize}
+
+Currently, \ctrace{} captures the following actions.
+
+\bi
+\item {\em A call to a tabled subgoal}~ If a positive call to a tabled
+  subgoal $S_1$ is made from a tree for $S_2$ a Prolog-readable fact
+  of the form {\tt tc(S1,S2,Stage,Counter)} is logged, where {\em
+    Counter} is the ordinal number of the fact, and {\tt Stage} is
+\bi
+\item {\tt new} if $S_1$ is a new subgoal
+\item {\tt cmp} if $S_1$ is not a new subgoal and has been completed
+\item {\tt incmp} if $S_1$ is not a new subgoal but has {\em not} been
+  completed 
+\item {\tt reeval} if $S_1$ is an incremental subgoal being re-evaluated.
+\ei 
+%
+If the call is negative a fact of the form {\tt
+  nc(S1,S2,Stage,Counter)} is logged, where all arguments are as
+above.
+
+  For instance, in the above example, node 3 would be represented as
+  {\tt tc(reach(2,Y),reach(1,Y),2)} (the reason for using the counter
+  value of 2 rather than 3 is explained below).  If $S_1$ is the first
+  tabled subgoal in an evaluation, $S_2$ is the atom {\em null}.
+
+\item {\em Derivation of a new answer}~ When a new {\em unconditional}
+  answer $A$ is derived for subgoal $S$ and added to the table
+  (i.e. $A$ is not already an answer for $S$) a fact of the form {\tt
+    na(A,S,Counter)} is logged.  In the above example, the answer node
+  9 would be represented as {\tt na([2],reach(2,\_v1),4)} where the
+  first argument is a list of substitutions for the variables {\em
+    \_v1,...,\_vn} in $S$.
+
+  When a new {\em conditional} answer $A \mif D|$, with substitution
+  $A$ and delayed literals $D$. is derived for subgoal $S$ and added
+  to the table a fact of the form {\tt nda(A,S,D,Counter)} is logged.
+
+\item {\em Return of an answer to a consuming subgoal}~When an
+  unconditional answer $A$ is returned to a consuming subgoal $S$ in a
+  tree for $S_T$, a fact of the form {\tt ar(A,S,ST,Counter)} is
+  logged.  A log entry is made only if the table for $S$ is incomplete
+  (see the explanation below).
+
+  If the answer $A$ is conditional, the fact has the form {\tt
+    dar(A,S,ST,Counter)}, where each argument is as above.
+
+\item {\em Delaying a selected negative literal}.  If a selected
+  negative literal $L$ of a node $N$ is delayed, because it is
+  involved in a loop through negation, and $N$ is in a tree for $S_T$,
+  a fact of the form {\tt dly(L,$S_T$,Counter)} is logged.
+
+\index{strongly connected components (SCCs)}
+\item {\em Subgoal completion}
+\bi
+\item When a set $\cS$ of subgoals is determined to be completely
+  evaluated and is completed, a fact of the form {\tt
+    cmp(S,SCCNum,Counter)} is logged for each $S \in \cS$.  Here
+  $SCCNum$ is simply a number giving an ordinal value that can be used
+  to group subgoals into mutually dependent sets of subgoals (here
+  called {\em Strongly Conneced Components} or {\em SCCs}), i.e. the
+  {\em SCCNum} of each $S \in \cS$ has the same value, but that value
+  is not used for a completion fact of any subgoal not in $\cS$.
+%
+\index{tabling!early completion of subgoals}
+\item When a subgoal $\cS$ is {\em early completed}, i.e. it is
+  determined that no more answers for $S$ are possile or are desired a
+  fact of the form {\tt cmp(S,ec,Counter)} is logged.  If $S$ belonged
+  to a larger mutually dependent set $\cS$ when it was early
+  completed, $S$ will also be included in the completion facts for
+  $\cS$.
+\ei
+\item {\em Table Abolishes}
+\bi
+\item When a tabled subgoal $S$ is abolished, a fact of the form {\tt
+  ta(subg(S),Counter)} is logged.
+\item When all tables for a predicate $p/n$ are abolished, a fact of
+  the form {\tt ta(pred(p/n),Counter)} is logged.
+\item When all tables are abolished, a fact of the form {\tt ta(all,Counter)} is logged.
+\ei
+%
+\item {\em Location of errors} Whenever an error is thrown and the
+  execution is in a tree for a subgoal $S$, a Prolog-readable fact of
+  the form {\tt err(S,Counter)} is logged, where {\em Counter} is the
+  ordinal number of the fact.  The primary purpose of this fact is to
+  indicate the nearest tabled call that gave rise to an uncaughterror.  \ei
+
+{\tt logforest} does {\em not} contain
+
+\bi
+\item Information about the occurrence of program clause resolution
+  either when used to produce children of tabled predicates, or when
+  it is used to produce children whose nodes have a selected literal
+  that is non-tabled.
+
+\item Information about the return of answers from completed tables.
+  XSB uses a so-called {\em completed table optimization} which treats
+  answer return from completed tables in a manner akin to program
+  clause resolution.  
+ \ei
+
+\index{attributed variables}
+\noindent
+The inclusion of the above two features in {\tt logforest} would
+significantly slow down execution of XSB.  However, future versions of
+{\tt logforest} may include expanded logging features for negation,
+for call and answer subsumption and for incremental
+tabling~\footnote{Currently, attributes of attributed variables are
+  not printed out.}.
+
+\begin{example}
+The forest for {\tt reach(1,Y)} in the foregoing example has the log
+file as shown in Table~\ref{tab:fview}.
+
+\begin{table}[htbp]
+\begin{tabular}{lll}               \\ \hline  
+Log File                                     & Forest & Explanation\\ \hline 
+tc(reach( 1,\_v0),null,new,0)                & node 1 & \\
+                                             & node 2 & created by program clause resol. \\
+                                             & node 3 & created by program clause resol. \\
+tc(reach( 2,\_v0),reach( 1,\_v0),new,1)      & node 4 & \\
+                                             & node 5 & created by program clause resol.\\
+                                             & node 6 & created by program clause resol. \\
+tc(reach( 2,\_v0),reach( 2,\_v0),incmp,2)    &        & repeated subgoal registered\\
+                                             & node 7 & created by program clause resol. \\
+                                             & node 8 & created by program clause resol. \\
+na([ 2],reach( 2,\_v0),3)                    & node 8 & registered as answer\\
+ar([ 2],reach( 2,\_v0),reach( 2,\_v0),4)     & node 9 & created by answer resol.\\
+cmp(reach( 2,\_v0),2,5)                      &    9a   & {\tt reach(2,\_v0)} completed \\
+                                             & node 10 & created by return from completed table \\
+na([ 2],reach( 1,\_v0),6)                    & node 10 & registered as an answer\\
+                                             & node 11 & created by program clause resol. \\
+tc(reach( 3,\_v0),reach( 1,\_v0),new,7)      & node 12 & \\
+                                             & node 13 & created by program clause resol. \\
+                                             & node 14 & created by program clause resol. \\
+tc(reach( 1,\_v0),reach( 3,\_v0),incmp,8)    & node 14 & repeated subgoal registered \\
+ar([ 2],reach( 1,\_v0),reach( 3,\_v0),9)     & node 15 & created by answer resol. \\
+na([ 2],reach( 3,\_v0),10)                   & node 15 & registered as an answer \\
+                                             & node 16 & created by program clause resol. \\
+                                             & node 17 & created by program clause resol. \\
+na([ 1],reach( 3,\_v0),11)                   & node 17 & registered as an answer \\
+                                             & node 18 & created by program clause resol. \\
+                                             & node 19 & created by program clause resol. (repeated answer)\\
+                                             & node 20 & created by program clause resol.\\
+na([ 3],reach( 1,\_v0),12)                   & node 20 & registered as an answer\\
+ar([ 3],reach( 1,\_v0),reach( 3,\_v0),13)    & node 21 & created by answer return\\
+na([ 3],reach( 3,\_v0),14)                   & node 21 & registered as an answer\\
+ar([ 2],reach( 3,\_v0),reach( 1,\_v0),15)    & node 22 & created by answer resol.\\
+ar([ 1],reach( 3,\_v0),reach( 1,\_v0),16)    & node 23 & created by answer resol.\\
+na([ 1],reach( 1,\_v0),17)                   & node 23 & registered as an answer \\
+ar([ 3],reach( 3,\_v0),reach( 1,\_v0),18)    & node 24 & created by answer resol. \\
+ar([ 1],reach( 1,\_v0),reach( 3,\_v0),19)    & node 25 & created by answer resol.v \\
+cmp(reach( 1,\_v0),1,20)                     &  & \\
+cmp(reach( 3,\_v0),1,21)   & & \\ \hline
+\end{tabular}
+\caption{Log file for computation in Figure~\ref{fig:local}}\label{tab:fview}
+\end{table}
+\end{example}
+
+\begin{description}
+\ourrepeatmoditem{log\_forest(+Call)}{log\_forest/2}{tables}
+\ourmoditem{log\_forest(+Call,+Options)}{log\_forest/2}{tables}
+%
+These predicates turn on forest logging, call {\tt Call}, then turn
+logging off when {\tt Call} is finished.  {\tt Options} is a list of
+possible options.
+%
+\bi
+\item {\tt Options} may contain the term {\tt file(File)} which directs
+  the logging to {\tt File}; otherwise the log will be sent to
+  standard output.
+\item {\tt Options} may contain the term {\tt level(Level)} where {\tt
+  Level} may be one of the following values.
+\bi
+\item {\tt full} which means that all tabling actions are logged as
+  described above.
+%
+\item {\tt partial} which means that answer return operations are not
+  logged.
+%
+\item {\tt calls\_only} which does not log  answer return, new
+  answer, nor simplification operations.
+\ei 
+%
+The levels {\tt partial} and {\tt calls\_only} both reduce the size of
+  the log which can be useful for analyzing some computations.
+%
+\item {\tt Options} may containt the term {\tt
+  set\_pred(PredSpec,Mode)} where {\tt Mode} is {\tt on} or {\tt off}.
+  This allows certain predicates not to be logged, a useful feature if
+  only part of a program needs to be debuged
+\ei
+
+{\bf Error Cases} 
+\bi
+\item {\tt Options} is a variable, or contains a variable as an element
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Options} is not a list
+\bi
+\item {\tt type\_error(list,Options)}
+\ei
+\item {\tt Options} contains an option {\tt O} that is not a forest
+  logging option.  
+\bi
+\item {\tt domain\_error(forest\_logging\_option,O)}
+\ei
+\ei
+
+
+\index{indexing}
+\ourmoditem{load\_forest\_log(+File)}{load\_forest\_log/1}{tables}
+%
+The log produced by {\tt log\_forest/[1,2]} is a Prolog file that can
+be compiled and/or loaded dynamically just as any other Prolog file.
+However, for large logs (i.e. those of many megabytes) use of {\tt
+  load\_dync/[1,2]} XSB commands can drastically reduce the time
+needed to load the file, while use of the proper {\tt index/2}
+declarations can greately improve query time.  The simple predicate,
+{\tt load\_forest\_log/1} loads a log file and indexes needed arguments.
+\end{description}
+
+\index{tracing|)}
+
+\subsection{Analyzing the log; seeing the forest through the trees} \label{sec:forest-log-anal}
+%
+As previously described, forest logging is based on the formal
+operational semantics of SLG, and as a result the log can be analyzed
+to query any result that can be modelled by the theory.  But despite
+the power of forest logging, it can be difficult to use.  Not all
+users have the background to fully understand the operational
+semantics of SLG.  Even those users with a formal background may find
+it difficult to write efficient analysis routines for logs of large
+computations~\footnote{I find it difficult myself!}.  Accordingly, XSB
+provides routines that analyze logs and display information about a
+computation.  These routines can answer many questions about a
+computation and can provide the starting point for further
+exploration.  We introduce these routines via an extended example.
+
+\begin{example} \rm \label{ex:scc-anal}
+%
+This example arises from the actual use of forest logging to
+understand a Flora-2 computation~\cite{YaKZ05}, in which the Cyc
+reasoner (cf. http://www.cyc.com) was translated into Silk
+(cf. http://silk.semwebcentral.org) and used to answer various
+questions in biology.  Silk itself compiles into Flora-2 which in turn
+compiles into XSB~\footnote{This example was run in 2012 using a
+  64-bit server with a large amount of RAM.}.  After translation,
+query answering took more resources than expected, and users wanted to
+determine why.  Using the features of \version{}, the first step is to
+call {\tt statistics/0} at the end of the computation.  The statistics
+indicated that the computation took about 30 seconds of CPU time and
+300 megabytes of table space, while XSB's trail had allocated over 1
+gigabyte of space.  The call to {\tt statistics/0} also showed the
+following information:
+%
+\begin{verbatim}
+  8678944 variant call check/insert ops: 615067 producers, 8063877 variants.
+  317346 answer check/insert ops: 304899 unique inserts, 12447 redundant.
+\end{verbatim}
+In other words, there were nearly 10 million tabled subgoals that were
+called, indicating that this computation was heavily tabled (a
+characteristic of most Flora-2 computations), It also shows that the
+average number of answers per tabled subgoal is rather small.
+
+This basic information leads to several questions.  Why were there so
+many tabled subgoals?  Did the tabling have anything to do with the
+large amount of choice-point/trail space that was allocated?  Which
+tabled subgoals had answers?  How many times did a given tabled
+predicate call another tabled predicate?
+
+\predref{table\_dump/2} \predref{table\_dump/3} Some of
+these questions can be answered by {\tt table\_dump/[2,3]}:
+particularly, what tabled subgoals were called, and which had answers.
+However {\tt table\_dump/[2,3]} cannot provide other information, such
+as the dependencies of given tabled subgoals on other tabled subgoals
+or the order in which operations occurred.  From a formal perspective,
+{\tt table\_dump/[2,3]} does not allow a user to analyze an entire SLG
+forest: only the ``table'', i.e., the subgoals in the forest and the
+unordered set of its answers.  The table omits any information about
+interior nodes or completion information, both of which are used to
+compute dependency information.  Dependencies are useful in analyzing
+most computations, but is especially important in Flora-2 computations
+such as this one, that make heavy use of HiLog.  This use of HiLog
+means that the dependencies of tabled predicates on one another is not
+at all obvious, and may not easily be determined by static analysis.
+
+The next step, therefore, in analyzing this computation is to rerun it
+with forest logging.  For this computation forest logging has no
+impact on memory usage, but increases the time of the computation from
+about 30 seconds to about 52 seconds --- around 73\% in this case.  It
+is worthwhile noting that the actual overhead of forest logging varies
+depending on how heavily the computation is tabled.  The log itself
+had slightly over 14 million entries which were loaded into XSB via
+{\tt load\_forest\_log/1}.  The log took about 140 seconds to load and
+about 7.8 Gbytes of space for the log facts and their multiple and
+trie indexes~\footnote{The load time for this example, about 100,000
+  facts/second is typical for 2012 CPUs; the size of the loaded code
+  is larger than usual, due in part to the expansion in the size of
+  terms caused by the HiLog encoding.}.
+
+The easiest way to start the analysis is to ask the query {\tt ?-
+  forest\_log\_overview}, which for this example gives:
+%
+\begin{verbatim}
+There were 613496 subgoals in 463330 (completed) SCCs.  
+93918 subgoals were early-completed.  
+0 subgoals were not completed in the log.
+There were a total of 8670043 tabled subgoal calls:
+    613496 were calls to new subgoals
+    4467747 were calls to incomplete subgoals
+    3588800 were calls to complete subgoals
+
+Number of SCCs with 1 subgoals is 463322
+Number of SCCs with 4 subgoals is 1
+Number of SCCs with 7 subgoals is 1
+Number of SCCs with 52 subgoals is 1
+Number of SCCs with 110 subgoals is 4
+Number of SCCs with 149671 subgoals is 1
+\end{verbatim}
+%
+\index{tabling!complete evaluation}
+\index{tabling!early completion of subgoals} 
+%
+The overview extends the information shown by {\tt
+  statistics/0}.  First, the total number of completed and
+non-completed SCCs is given along with a count of how many of the
+completed subgoals were early completed.  Information about
+non-completed SCCs is useful, since the forest log may be analyzed for
+a computation that does not terminate.  Since this computation did
+terminate, all subgoals in the log were completed~\footnote{The slight
+  difference between the number of subgoals shown here and the number
+  shown by {\tt statistics/0} is due to the use of tabling in the
+  Flora compiler.}.  Note that there is also a breakdown of calls to
+tabled subgoals that distinguishes whether the tabled subgoal was new,
+completed, or incomplete.  Recall that calls to completed tabled
+subgoals essentialy treat the answers in the table as facts, so that
+these calls are efficient.  Making a call to an incomplete subgoals on
+the other hand means that the calling and called subgoals are mutually
+recursive~\footnote{This statement is true in local evaluation but not
+  in batched evaluation.} and execution of recursive sets of subgoals
+can be expensive, especially in terms of space.
+
+Finally, the overview report provides the distributions of tabled
+subgoals across SCCs.  While most of the SCCs were small there was a
+large one, with nearly 150,000 mutually dependent subgoals.  Clearly
+the large SCC should be examimed.  The first step is to obtain its
+index.  The query
+%
+\begin{verbatim}
+get_scc_size(SCC,Index)), Index > 1000.
+\end{verbatim}
+%
+returns the information that the index of the large SCC was 39.  The
+query {\tt analyze\_an\_scc(39,userout)} then provides the following
+information.
+%
+\begin{verbatim}
+There are 149671 subgoals and 4461290 links (average of 30.8073 edges per subgoal) 
+      within the SCC
+
+There are 2 subgoals in the SCC for the predicate backchainForbidden / 0
+There are 2 subgoals in the SCC for the predicate 
+                   http://www.cyc.com/silk/implementation/transformationPredicate / 0
+:
+There are 15613 subgoals in the SCC for the predicate gpLookupSentence / 3
+There are 15613 subgoals in the SCC for the predicate removalSentence / 3
+There are 18770 subgoals in the SCC for the predicate forwardSentence / 3
+There are 18771 subgoals in the SCC for the predicate lookupSentence / 3
+
+Calls from assertedSentence/3 to lookupSentence/3 : 32
+Calls from backchainForbidden/0 to 'http://www.cyc.com/silk/implementation/transformationPredicate'/0 : 2
+:
+Calls from transformationSentence/2 to sbhlSentence/3 : 5479
+Calls from tvaSentence/3 to removalSentence/3 : 7695
+\end{verbatim}
+%
+It is evident from the first line in this report that the vast
+majority of the calls to incomplete tables during this computation
+occur in the SCC under investigation.  Since information on incomplete
+tables is kept in XSB's choice point stack (cf. \cite{SaSw98}), the
+evaluation of SCC 39 is the likely culprit behind the large amount of
+stack space required.  The subgoals in the SCC are first broken out by
+their predicate name and arity, then the edges within the SCC are
+broken out by the predicates of their caller and called subgoals.  At
+this point a programmer can review the various rules for {\tt
+  lookupSentence/3}, {\tt forwardSentence/3} and other predicates to
+determine whether the recursion is intended and if so, whether it can
+be simplified.
+%
+\end{example}
+
+\subsubsection{Using abstraction in the analysis}
+%
+Within the SCC analysis, information about a given tabled subgoal $S$
+was abstracted to the functor and arity of $S$.  For this example,
+abstraction was necessary, as reporting 150,000 subgoals or 4,000,000+
+would not provide useful information for a human being.  However, it
+could be the case that seeing the tabled subgoals themselves would be
+useful for a smaller SCC.  Even for an SCC of this size, different
+levels of abstraction could be useful: mode information or type
+information might be useful in a given circumstance.  
+
+\begin{example} \label{ex:moded-scc-anal} \rm
+%
+Making the call {\tt ?-
+  analyze\_an\_scc(39,userout,abstract\_modes(\_,\_))} applies the
+predicate {\tt abstract\_modes/2} to each term, producing an output of
+the form:
+%
+\begin{verbatim}
+There are 149671 subgoals and 4461290 links (average of 30.8073 edges per subgoal) 
+           within the SCC
+
+There are 3 subgoals in the SCC for the predicate backchainRequired(g,g)
+There are 2 subgoals in the SCC for the predicate backchainForbidden(g,g)
+:
+There are 29254 subgoals in the SCC for the predicate gpLookupSentence(g,g)
+There are 29254 subgoals in the SCC for the predicate removalSentence(g,g)
+
+Calls from assertedSentence(g,g) to lookupSentence(g,g) : 10
+Calls from assertedSentence(m,g) to lookupSentence(m,g) : 22
+:
+Calls from transformationSentence(m,g) to sbhlSentence(m,g) : 741
+Calls from tvaSentence(g,g) to removalSentence(g,g) : 7695
+\end{verbatim}
+%
+{\tt abstract\_modes(In,Out)} simply goes through each argument of
+{\tt In} and unifies the corresponding argument of {\tt Out} with a
+{\tt v} if the argument is a variable, a {\tt g} if the argument is
+ground, and {\tt m} otherwise.  
+
+\end{example}
+%
+{\tt abstract\_modes/2} is simply an example: any term-abstraction
+predicate may be passed into the last argument of {\tt
+  analyze\_an\_scc/3}~\footnote{Because of the special representation
+  of Flora-2 terms, abstraction was used to produce the output of
+  Example~\ref{ex:moded-scc-anal}, while a more sophisticated version
+  of {\tt abstract\_modes/2} was used in
+  Example~\ref{ex:moded-scc-anal}.}.
+
+\subsubsection{Analyzing Negation}
+%
+Many programs that use negation are stratified in such a way that they
+do not require the use of {\sc Delaying} and {\sc Simplification}
+operations, and the routines described in the previous section are
+sufficient for these programs.  However if a program does not have a
+two-valued well-founded model, a user would often like to understand
+why.  Even in a program that is two-valued, the heavy use of {\sc
+  Delaying} and {\sc Simplification} can indicate that some rules may
+need to be optimized by having their literals reordered.
+
+\begin{example} \label{ex:neg} \rm
+Figure~\ref{fig:neg} shows a program with negation and illustrates SLG
+resolution for the query {\em p(c)} to the program.  The nodes in
+Figure~\ref{fig:neg} have been annotated with the order in which they
+were created under local scheduling. In the formalism used by
+Figure~\ref{fig:neg}, the symbol $|$ in a node separates the
+unresolved goals to the right from the delayed goals to the left.  In
+the evaluation state where nodes 1 through 10 have been created, {\em
+  p(b)} has been completed, and {\em p(a)} and {\em p(c)} are in the
+same SCC.  There are no more clauses or answers to resolve, but {\em
+  p(a)} is involved in a loop through negation in node 5, and nodes 2
+and 10 involve {\em p(a)} and {\em p(c)} in a negative
+loop~\footnote{In this example, we ignore the effects of early
+  completion which would complete {\em p(b)} immediately upon creation
+  of node 8, obviating the need to create node 9.}.
+
+In situations such as this, where all resolution has been performed
+for nodes in an SCC, an evaluation may have to apply a {\sc Delaying}
+operation to a negative literal such as {\em not(p(a))}, in order to
+explore whether other literals to its right might fail. 
+% In cases such as this, 
+When multiple literals can be delayed, an arbitrary one is chosen to
+be delayed first.  So the evaluation delays the selected literal of
+node 2 to generate node 12 producing a {\em conditional answer} -- an
+answer with a non-empty delay list
+(cf. Section~\ref{sec:conditional-answers} for an overview of how XSB
+computes and allows inspection of delayed literals).  Next, {\em not
+  p(a)} in node 5 is delayed, failing that computation path, and {\em
+  not p(c)} in node 10 is delayed to produce node 15 and failing the
+final computation path for {\em p(a)}.  At this stage the SCC
+$\{p(a),p(c)\}$ is {\em completely evaluated} meaning that there are
+no more operations applicable for goal literals (as opposed to delay
+literals).  Since {\em p(a)} is completely evaluated with no answers,
+conditional or otherwise, the evaluation determines it to be {\em
+  failed} and a {\sc Simplification} operation can be applied to the
+conditional answer of node 12, leading to the {\em unconditional}
+answer in node 17 and {\em success} of the literal {\em p(c)}.
+\end{example}
+
+\begin{figure*}[tbp] 
+\begin{center}
+%\fbox{\epsfig{file=Figures/del-simpl3.eps,width=\textwidth}}
+\epsfig{file=del-simpl3.eps,width=\textwidth}
+\end{center}
+\caption{A Normal Program and SLG Forest for Evaluation of the Query {\em p(c)}}
+\label{fig:neg}
+\end{figure*}
+
+
+As indicated previously, the forest log overview includes a total
+count of {\sc Delaying} and {\sc Simplification} operations, as well
+as a count of conditional answers.  In addition, SCC analysis counts
+negative as well as positive links within the SCC.  The current
+version of forest logging also provides a means to examine the causes
+of answers that have an undefined truth value.  Recall from
+Example~\ref{ex:neg} that there are two types of causes of an
+undefined truth value: either 1) a negative literal explicitly
+undergoes a {\sc Delaying} operation; or 2) a conditional answer may
+be used to resolve a literal.  It can be shown that in local
+evaluation, a conditional answer $A$ will never be returned out of an
+SCC if $A$ is successful or failed in the well-founded model of a
+program.  This means that if an answer for $S$ is undefined, then it
+would be caused operationally by a {\sc Delaying} operation within the
+SCC of $S$ or within some other SCC on which $S$ depends.  So to
+understand why an atom is undefined it can be useful understand the
+``root causes'' of the delay: to examine SCCs in which {\sc Delaying}
+operations were executed and conditional answers were derived, but the
+answers could not be simplified.
+% into unconditional answers.
+
+\begin{example}
+As a use case, logging was made of execution of a Flora-2 program that
+tested out a new defeasibility theory.  The forest log overview
+indicated that the top-level query was undefined: 
+%
+\begin{small}
+\begin{verbatim}
+:
+There were a total of 55 negative delays
+There were a total of 0 simplifications
+There were a total of 695 unconditional answers derived:
+There were a total of 66 conditional answers derived:
+\end{verbatim}
+\end{small}
+%
+The analysis predicate {\tt three\_valued\_scc(List)} produces a list
+of all SCC indices in which {\sc Delaying} caused the derivation of
+conditional answers.  These SCCs can then be analyzed as discussed in
+the previous section.
+\end{example}
+
+\subsection{Discussion}
+%
+Using log forest imposes a relatively minimal overhead on most
+computations, considering the information it can provide, and loading
+and analysis is relatively quick.  For this example, the top level
+analysis took around 10 seconds, and analysing SCC 39 took about 20
+seconds in Example~\ref{ex:scc-anal} and about 60 seconds in
+Example~\ref{ex:moded-scc-anal}.  For more information,
+see~\cite{Swif14b}.
+
+\subsection{Predicates for Forest Logging}
+
+\begin{description}
+\ourmoditem{forest\_log\_overview}{forest\_log\_overview/0}{tables}
+%
+Provides an overview of subgoals, calls, and SCCs in the forest log as
+indicated in Section~\ref{sec:forest-log-anal}.
+
+\ourmoditem{get\_scc\_size(?Index,?Size)}{get\_scc\_size/3}{tables}
+%
+This simple predicate determines the indices of SCCs whose size is
+{\tt Size}, for use with {\tt analyze\_an\_scc/[2,3]}.
+
+\ourmoditem{three\_valued\_sccs(List)}{three\_valued\_scc/1}{tables}
+%
+If there are any SCCs in the log where delay is performed, causing
+conditional answers to be added that were not simplified into
+unconditional answers, unifies {\tt List} with the index of all such
+SCCs.
+
+\ourrepeatmoditem{analyze\_an\_scc(+Index,+File)}{analyze\_an\_scc/2}{tables}
+\ourmoditem{analyze\_an\_scc(+Index,+File,+Abstraction)}{analyze\_an\_scc/3}{tables}
+%
+These predicates can be used to analyze the SCC indexed by {\tt Index}
+in a forest log, as explained in Section~\ref{sec:forest-log-anal}.
+The output is written to {\tt File}; calling the predicate with {\tt
+  File} set to {\tt userout} causes the output to be written to the
+console.  In {\tt analyze\_an\_scc/2}, tabled subgoals are abstracted
+to predicate indicators, in {\tt analyze\_an\_scc/3}, a two-ary
+abstraction predicate in {\tt usermod} is called.
+
+Error conditions on {\tt File} are the same as {\tt tell/1}.
+
+\ourmoditem{abstract\_modes(Term,AbstractedTerm)}{abstract\_modes/2}{usermod}
+%
+{\tt abstract\_modes(In,Out)} simply goes through each argument of
+{\tt Term} and unifies the corresponding argument of {\tt Abstracted}
+with a {\tt v} if the argument is a variable, a {\tt g} if the
+argument is ground, and {\tt m} otherwise.
+
+To use this predicate, the file {\tt term\_abstract.P} must be loaded,
+via {\tt ensure\_loaded/1} or similar means.
+
+\ourmoditem{set\_forest\_logging\_for\_pred(+PredSpec,+Mode)}{set\_forest\_logging\_for\_pred/2}{tables}
+If forest logging is active, this predicate allows any logging
+specific to the predicate or term indicater, {\tt PredSpec}, to be
+turned on or off.  Thus, for instance, tabled predicates in a
+pre-existing library need not clutter up the log.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt PredSpec} is not a predicate or term indicator.
+\bi
+\item 	{\tt type\_error}
+\ei
+%
+\item 	{\tt Mode} is not in the set \{{\tt on},{\tt off}\}
+\bi
+\item 	{\tt domain\_error}
+\ei
+\ei
+\end{description}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 
+
+\input{inspection}

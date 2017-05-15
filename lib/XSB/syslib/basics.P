@@ -98,8 +98,7 @@ ith1([_|L],I1,I,X) :- I2 is I1+1, ith1(L,I2,I,X).
 
 % log_ith(Index,ListStr,Element)
 log_ith(K,T,E) :- 
-	term_type(K,Ty),
-	(Ty =:= 2	% integer
+	(integer(K)	% integer
 	 ->	log_ith0(K,T,E,1)
 	 ;	log_ith1(K,T,E,1)
 	).
@@ -156,8 +155,7 @@ bintree1(K,[L|R],E,N) :-
 
 log_ith_bound(K,T,E) :- 
 	nonvar(T),
-	term_type(K,Ty),
-	(Ty =:= 2	% integer
+	(integer(K)	% integer
 	 ->	log_ith2(K,T,E,1)
 	 ;	log_ith3(K,T,E,1)
 	).
@@ -227,8 +225,38 @@ log_ith_to_list_btree(T,K,L0,L) :-
 		log_ith_to_list_btree(TR,K1,L1,L)
 	).
 
-	
-	
+/* log_ith_new(I,T,E) adds E to the "end" of the log_list and unifies
+I to its index.  */
+log_ith_new(I,T,E) :-
+	(var(T)
+	 ->	T = [E|_],
+		I = 0
+	 ;	log_ith_new_o(I,T,E,1,1)
+	).
+
+log_ith_new_o(I,[L|R],E,K,NI) :-
+	(var(R),
+	 log_ith_new_d(I,L,E,K,NIA)
+	 ->	I is NI + NIA - 1
+	 ;	NNI is 2*NI,
+		K1 is K+1,
+		log_ith_new_o(I,R,E,K1,NNI)
+	).
+
+log_ith_new_d(I,T,E,K,NIA) :-
+	(K =< 1
+	 ->	var(T),
+		T=E,
+		NIA = 0
+	 ;	K1 is K-1,
+		T = [L|R],
+		(var(R),
+		 log_ith_new_d(I,L,E,K1,NIA)
+		 ->	true
+		 ;	log_ith_new_d(I,R,E,K1,NNIA),
+			NIA is NNIA + 2 ** (K1-1)
+		)
+	).
 
 
 /* logk_ith(+KBase,+Index,?ListStr,?Element) is similar log_ith/3

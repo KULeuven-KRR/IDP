@@ -126,14 +126,14 @@ default_sys_error_handler_message(error(misc_error(Level),Msg)) :-
 	 ; default_sys_error_handler_message(error(misc_error,Msg))),!.
 default_sys_error_handler_message(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
-	flush_all_open_streams,
 	messageln(NewMsg,STDERR),
 	flush_output(STDERR),
+	flush_all_open_streams, % after writing error message in case error here.
 	!.
 default_sys_error_handler_message(X) :-
-	flush_all_open_streams,
 	messageln(('++Error[XSB/Runtime] Unhandled Exception: ',X),STDERR),
-	flush_output(STDERR).
+	flush_output(STDERR),
+	flush_all_open_streams. % after writing error message in case error here.
 
 flush_all_open_streams:- 
 	stream_property(S,mode(X)),(X = append ; X = write),flush_output(S),fail.
@@ -300,7 +300,8 @@ psc_modname_filename(Psc,ModName,FileName) :-
 		 ->	ModName = usermod, % 0 also means usermod
 			FileName = unknown
 		 ;	psc_name(ModPscOrFile,ModName),
-			psc_ep(ModPscOrFile,FileName)
+			psc_ep(ModPscOrFile,FileName0),
+			xsb_filename(FileName0,FileName)
 			%,standard:writeln(userout,mf(ModPscOrFile,FileName))
 		)
 	 ;	ModName = usermod,

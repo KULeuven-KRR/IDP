@@ -734,6 +734,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -764,6 +765,7 @@ with_bits64
 with_bits32
 with_aout
 with_optimization
+with_cflags
 with_config_tag
 with_site_prefix
 with_includes
@@ -857,6 +859,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1109,6 +1112,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1246,7 +1258,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1399,6 +1411,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1467,6 +1480,7 @@ Optional Packages:
   --with-bits32                force a 32-bit version of XSB
   --with-aout                  build XSB for a Unix system with .aout binary format
   --with-optimization=Ox       build XSB with compiler optimization level O, O1, ..., O4
+  --with-cflags=FLAGS          add the specified compilation flags
   --with-config-tag=TAG        Makes the configuration directory name look like
                           	CONFIG_PREFIX/configuration-TAG. If TAG is missing
 				the directory is CONFIG_PREFIX/configuration
@@ -2650,6 +2664,12 @@ if test "${with_optimization+set}" = set; then :
 fi
 
 
+# Check whether --with-cflags was given.
+if test "${with_cflags+set}" = set; then :
+  withval=$with_cflags;
+fi
+
+
 # Check whether --with-config-tag was given.
 if test "${with_config_tag+set}" = set; then :
   withval=$with_config_tag;
@@ -2932,6 +2952,7 @@ do
 	    case $1 in
 		--with-gcc | --with-cc* | --with-cilk | --with-acc | \
 		--with-bits64 | --with-bits32 | --with-aout | \
+                --with-cflags* | \
 		--with-optimization* | --with-config-tag* | --with-site-prefix* | --with-includes* | \
 		--with-static-libraries* | --with-dynamic-libraries* | --with-xpath* | \
 		--with-curl* | --with-pcre* | --with-mysql* | \
@@ -2939,7 +2960,7 @@ do
 		--with-smodels* | --with-itkwish* | --with-pita* )
 		    ;;
 	    *)
-                    echo "configure: error: uncecognized option: $1"
+                    echo "configure: error: unrecognized option: $1"
                     echo "Try 'configure --help' for more information."
                     rm -f  buildxsb.lock
                     exit 1 ;;
@@ -5009,7 +5030,7 @@ if test -n "$with_gcc" ; then
         builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
         loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
-        CFLAGS="-Wall -pipe -fPIC"
+        CFLAGS="-Wall -pipe"
    fi
 else
     case $CC in
@@ -5018,7 +5039,7 @@ else
                 builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
                 loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
-                CFLAGS="-Wall -pipe -fPIC"
+                CFLAGS="-Wall -pipe"
         ;;
         cc) if test "$__sunpro_c" = "no"; then
                 emuloop_opt_level=-${with_optimization-"O4"}
@@ -6198,11 +6219,12 @@ case "$canonical" in
                     else
                                                 $as_echo "#define LINUX_ELF 1" >>confdefs.h
 
-#			            if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
-#			              CFLAGS="-m486 ${CFLAGS}"
-#			              AC_DEFINE(USE_BP_LPCREG)
-#			            fi
+#			if test "${CC}" = "gcc" -o "${with_gcc+set}"="set"; then
+#			CFLAGS="-m486 ${CFLAGS}"
+#			AC_DEFINE(USE_BP_LPCREG)
+#			fi
 
+                        CFLAGS=" -fPIC ${CFLAGS} "
                         if test "${have_dl}" != "no" ; then
                             $as_echo "#define FOREIGN_ELF 1" >>confdefs.h
 
@@ -6933,6 +6955,9 @@ if test "$interprolog_native_engine" = "yes"; then
 	CFLAGS=" -I${JAVA_HEADER_PATH} $CFLAGS"
     fi
 fi
+
+# If --with-cflags=something is given add "something" at the end of CFLAGS
+CFLAGS=" $CFLAGS $with_cflags "
 
 
 

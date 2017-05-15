@@ -1,0 +1,146 @@
+\chapter{Restrictions and Current Known Bugs}
+
+{\bf {\em Note: this chapter is obsolescent: most restrictions are
+    discussed in previous chapter, near the functionality or
+    predicates to which they pertain.}}
+
+If at some point in your interaction with the system you suspect that
+you have run across a bug not mentioned below, please report it to
+{\tt (xsb-contact@cs.sunysb.edu)}.  Please try to find the {\em
+smallest} program that illustrates the bug and mail it to this address
+together with a script that shows the problem.  We will do our best to
+fix it or to assist you to bypass it.
+
+\section{Current Restrictions}
+\label{sec:CurrentRestrictions}
+
+\begin{itemize}
+\index{terms!cyclic}
+\item Not all of XSB's tabling and built-ins currently take account of
+  cyclic terms, so using them may lead to XSB hanging or crashing
+  (cf. Section~\ref{sec:cyclic}).  Cyclic terms can be checked using
+  the predicate {\tt is\_cyclic/1}.
+%
+\item In the current version, you should never try to rename a byte code 
+      file generated for a module, though you can move it around in your 
+      file system.  Since the module name is stored in the file, renaming it
+      causes the system to load it into wrong places.  However, byte code 
+      files for non-modules can be renamed at will.
+%
+%\item XSB allows up to 1 Gigabyte of address space for 32-bit chips.
+%  There are various tagging schemes, which depend on the operating
+%  system and where in the 32-bit virtual address space it allocates
+%  user memory.  The most general tagging scheme (named
+%  GENERAL\_TAGGING) adjusts itself to the address space in use.  Other
+%  more specific tagging schemes are available for specific
+%  architectures.  Floating point numbers are by default double
+%  precision when computed at runtime.  Floating point numbers in the
+%  compiler are only single precision (due to the way they are
+%  represented in object byte-code files.)  If {\tt
+%    --enable-fast-floats} is specified, then 28-bit floats are used.
+%  For 64-bit platforms, addresses are stored in 60 bits.  However, as
+%  the \emph{object} code file format is the same as for the 32-bit
+%  versions, compiled constants are subject to 32-bit limitations.
+%%
+%\item Indexing on floating-point numbers is suspect, since, as
+%      implemented in XSB, the semantics of floating-point unification
+%      is murky in the best case. Therefore, it is advisable that if
+%      you use floating point numbers in the first argument of a
+%      procedure, that you explicitly index the predicate in some other
+%      argument.
+%
+\item	The XSB compiler cannot distinguish the occurrences of a
+      0-ary predicate and a name of a module (of an import declaration) as
+      two different entities.  For that reason it fails to characterise the
+      same symbol table entry as both a predicate and a module at the
+      same time.  As a result of this fact, a compiler error is issued
+      and the file is not compiled.  For that reason we suggest the
+      use of mutually exclusive names for modules and 0-ary predicates,
+      though we will try to amend this restriction in future versions of
+      XSB.
+%
+\item Tabled predicates that use call-subsumption do not handle calls
+  that use attributed variables, and may not use answer subsumption or
+  incremental tabling.
+
+\comment{
+Subsumption-based tabled predicates may not be \emph{delayed}.
+      \index{tabling!call subsumption-based!interaction with negation}
+      Consequently,
+      \begin{itemize}
+      \item the truth value of a negative call on a subsumptive predicate
+	    must be known at completion of the producing call, thus
+	    avoiding a \emph{negative delay} of this negative call, and
+      \item only unconditional answers may be derived for a subsumptive
+	    predicate, thus avoiding the \emph{positive delay} of calls
+	    which consume such an answer.
+      \end{itemize}
+      Violations of either of these conditions raise an exception and
+      abort the computation.
+}
+
+%
+\end{itemize}
+
+\section{Known Bugs}
+
+\begin{itemize}
+%
+%\item Currently the C foreign language interface does not work when
+%      XSB is {\em also} compiled with the Oracle interface on Solaris.
+% I think this is mostly fixed: tls
+%\item Explicit compilation (using {\tt compile/1}) of {\em very} large
+%      files {\em may} cause a core dump due to unfinished memory
+%      management.
+%\item Variables that appear in {\em compiled} arithmetic comparison
+%      predicates should only be bound to numbers and not evaluable
+%      arithmetic expressions.  That is, the variables are not evaluated
+%      to obtain an arithmetic value, but the XSB compiler assumes
+%      that they are evaluated.  For example, executing compiled code for
+%      the following program will cause an {\tt "Arithmetic exception"}
+%      error:
+%      \begin{verbatim}
+%            p(X) :- X =:= 1.
+%
+%            ?- p(cos(0)).
+%      \end{verbatim}
+%      This behaviour is only exhibited in {\em compiled} code.
+% Currently this solution does not work: kostis
+%     For variables that is not known whether they will always be bound to
+%     numbers, it is advisable that these variables are evaluated
+%     by using {\tt is/2}.  In our example, predicate {\tt p/1} could
+%     be written as:
+%     \begin{verbatim}
+%           p(X) :- X1 is X, X1 =:= 1.
+%     \end{verbatim}
+\item The reader cannot read an infix operator immediately followed 
+      by a left parenthesis.  In such a case you get a syntax error.
+      To avoid the syntax error just leave a blank between the infix
+      operator and the left parenthesis.  For example, instead of 
+      writing:
+
+      \demo{	| ?- X=(a,b).}
+
+      \noindent
+      write:
+
+      \demo{	| ?- X= (a,b).}
+%
+\item The reader cannot properly read an operator defined as both a
+      prefix and an infix operator.  For instance the declaration 
+      \begin{verbatim}
+                :- op(1200,xf,'<=').
+                :- op(1200,xfx,'<=').
+      \end{verbatim}
+      will lead to a syntax error.
+%
+\item When the code of a predicate is reloaded many times, if the old 
+      code is still in use at the time of loading, unexpected errors may 
+      occur, due to the fact that the space of the old code is reclaimed
+      and may be used for other purposes.
+\item Currently, term comparisons ({\tt ==},{\tt @<=},{\tt @<},{\tt
+      @>}, and {\tt @>=}) do not work for terms that overflow the
+      C-recursion stack (terms that contain more than 10,000 variables
+      and/or function symbols).
+\end{itemize}
+

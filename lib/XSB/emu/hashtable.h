@@ -1,3 +1,4 @@
+
 /* Copyright (C) 2002 Christopher Clark <firstname.lastname@cl.cam.ac.uk> */
 
 #ifndef __HASHTABLE_CWC22_H__
@@ -71,10 +72,17 @@ struct hashtable;
  * @return                  newly created hashtable or NULL on failure
  */
 
+#ifndef MULTI_THREAD
 struct hashtable *
 create_hashtable1(unsigned int minsize,
                  unsigned int (*hashfunction) (void*),
                  int (*key_eq_fn) (void*,void*));
+#else
+struct hashtable *
+create_hashtable1(struct th_context *th, unsigned int minsize,
+                 unsigned int (*hashfunction) (void*),
+                 int (*key_eq_fn) (void*,void*));
+#endif
 
 /*****************************************************************************
  * hashtable_insert
@@ -131,14 +139,36 @@ valuetype * fnname (struct hashtable *h, keytype *k) \
  * @return      the value associated with the key, or NULL if none found
  */
 
+#ifndef MULTI_THREAD
 void * /* returns value */
 hashtable1_remove(struct hashtable *h, void *k);
-
-#define DEFINE_HASHTABLE_REMOVE(fnname, keytype, valuetype) \
-valuetype * fnname (struct hashtable *h, keytype *k) \
-{ \
-    return (valuetype *) (hashtable1_remove(h,k)); \
+/*
+callnodeptr * remove_some(struct hashtable *h,KEY *k) {
+  return (callnodeptr *) (hashtable1_remove(h,k));
 }
+*/
+#define DEFINE_HASHTABLE_REMOVE(fnname, keytype, valuetype)	\
+  valuetype * fnname (struct hashtable *h, keytype *k)		\
+{ \
+  return (valuetype *) (hashtable1_remove(h,k));	\
+}
+#else
+void * /* returns value */
+hashtable1_remove(th_context *th, struct hashtable *h, void *k);
+/*
+callnodeptr * remove_some(th_context *th,struct hashtable *h,KEY *k) {
+  return (callnodeptr *) (hashtable1_remove(th,h,k));
+}
+*/
+#define DEFINE_HASHTABLE_REMOVE(fnname, keytype, valuetype)	\
+  valuetype * fnname (th_context *th, struct hashtable *h, keytype *k)		\
+{ \
+  return (valuetype *) (hashtable1_remove(th,h,k));	\
+}
+#endif
+//void * /* returns value */
+//hashtable1_remove(struct hashtable *h, void *k);
+
 
 
 /*****************************************************************************
@@ -160,8 +190,13 @@ hashtable1_count(struct hashtable *h);
  * @param       free_values     whether to call 'free' on the remaining values
  */
 
+#ifndef MULTI_THREAD
 void
 hashtable1_destroy(struct hashtable *h, int free_values);
+#else
+void
+hashtable1_destroy(th_context *th, struct hashtable *h, int free_values);
+#endif
 
 #endif /* __HASHTABLE_CWC22_H__ */
 

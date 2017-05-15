@@ -76,7 +76,7 @@ inline static xsbBool functor_builtin(CTXTdecl)
 	    new_heap_free(hreg);
 	  } else { 
 	    /* functor always creates a psc in the current module */
-	    sym = (Pair)insert(string_val(functor), (char)value, 
+	    sym = (Pair)insert_psc(string_val(functor), (int)value, 
 			       (Psc)flags[CURRENT_MODULE],
 			       &new_indicator);
 	    sreg = hreg;
@@ -245,7 +245,7 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	    }
 	    if (isnil(list) && arity <= MAX_ARITY) {
 	      /* '=..'/2 always creates a psc in the current * module */
-	      sym = (Pair)insert(name, (char)arity,
+	      sym = (Pair)insert_psc(name, arity,
 				 (Psc)flags[CURRENT_MODULE],
 				 &new_indicator);
 	      new_heap_functor(hreg, sym->psc_ptr);
@@ -839,8 +839,9 @@ inline static xsbBool parsort(CTXTdecl)
   /* r2: +list of sort indicators: asc(I) or desc(I)	*/
   /* r3: 1 if eliminate dupls, 0 if not			*/
   /* r4: ?sorted list of terms				*/
-  int i, len;
-  int max_ind = 0, elim_dupls;
+  unsigned int i, len;
+  unsigned int max_ind = 0;
+  int elim_dupls;
   Cell heap_addr, term, term2, tmp_ind;
   Cell list, new_list;
   Cell *cell_tbl;
@@ -1066,8 +1067,8 @@ int term_depth(CTXTdeclc Cell Term1,int indepth) {
 #define TERM_TRAVERSAL_STACK_INIT 100000
 
 typedef struct TermTraversalFrame{
-  byte arg_num;
-  byte arity;
+  int arg_num;
+  int arity;
   Cell parent;
 } Term_Traversal_Frame ;
 
@@ -1083,7 +1084,7 @@ typedef Term_Traversal_Frame *TTFptr;
       term_traversal_stack_size = 2*term_traversal_stack_size;				\
     }									\
     if (cell_tag(Term) == XSB_STRUCT) {					\
-      term_traversal_stack[term_traversal_stack_top].arity =  (byte) get_arity(get_str_psc(Term)); \
+      term_traversal_stack[term_traversal_stack_top].arity =  get_arity(get_str_psc(Term)); \
       term_traversal_stack[term_traversal_stack_top].arg_num =  1;				\
       term_traversal_stack[term_traversal_stack_top].parent =  Term;			\
     } else {						/* list */	\

@@ -61,7 +61,8 @@ inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag)) :-
 %%    writeln(userout,arsize(ARSize)),
     (ARSize < 256
      ->	    true
-     ;	    error('Too many local variables! ... aborting compilation'), abort
+     ;	    sym_name(Sym,Name,Arity),
+	    error(('Too many local variables in clause of ',Name,'/',Arity))
     ).
 
 /*======================================================================*/

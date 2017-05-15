@@ -28,8 +28,11 @@
 	  tsetof/3, tbagof/3,
 	  sort/2, keysort/2, '^'/2, pick/3,
 	  excess_vars/4.
+:- export bounded_bagof/4.
 :- export find_n/4, n_times/2, find_n_m/5, n_m_times/3.
 :- export term_variables/2.
+:- export forall/3, forall/4.
+:- export forall/2.
 
 :- import tfindall/3 from tables.
 :- import (=..)/2,
@@ -39,3 +42,5 @@
      from machine.
 :- import variant/2 from subsumes.
 :- import gensym/2, conset/2, coninc/2 from gensym.
+:- import numbervars/1 from num_vars.
+:- import misc_error/1 from error_handler.

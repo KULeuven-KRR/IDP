@@ -186,7 +186,91 @@ n_m_times(N,M,Goal) :-
 	 ;	!
 	).
 
+%% unsafe not-exists-not.
+forall(Bind,Pred) :-
+	\+ (call(Bind), \+ call(Pred)).
 
+%% safe for all if Bind doesn't contain any free variables
+forall(Template,Bind,Pred) :-
+	excess_vars(Bind,Template,[],BVars),
+	excess_vars(Pred,Template,[],PVars),
+	(BVars == [], PVars == []
+	 ->	forall(Bind,Pred)
+	 ;	bagof(Template,Bind,BVals),  
+		all_in_list_true(BVals,PVars,Template,Pred)
+	).
+
+%% safe for all, where UBRange binds variables free in Bind.
+forall(Template,Bind,UBRange,Pred) :-
+	excess_vars(Bind,Template,[],BVars),
+	excess_vars(Pred,Template,[],PVars),
+	(BVars == [], PVars == []
+	 ->	\+ (call(Bind), \+ call(Pred))
+	 ;	bounded_bagof(Template,Bind,UBRange,BVals),  
+		all_in_list_true(BVals,PVars,Template,Pred)
+	).
+	
+
+
+
+:- import copy_term/2 from basics.
+all_in_list_true([],_,_,_).
+all_in_list_true([Val|Vals],CVars,Var,Pred) :-
+	copy_term(tt(Var,CVars,Pred),tt(Val,CVars,PredInst)),
+	call(PredInst),
+	all_in_list_true(Vals,CVars,Var,Pred).
+
+
+/*======================================================================*/
+/* bounded_bagof(?Template, +Call, +RangeBinder, ?Bag)			*/
+/*======================================================================*/
+
+bounded_bagof(Template, Generator, Range, Bag) :-
+	excess_vars(Generator, Template, [], VarList), 
+	term_variables(Range, RVarList),
+	(\+ diff_varsets(VarList,RVarList)
+	 ->	true
+	 ;	misc_error('Incorrect set of variables in Range goal of bounded_bagof/4')
+	),
+	(VarList \== []
+	 ->	Key =.. ['$'|VarList],
+		bfindall(Key-Template, Generator, Bags0, []),
+		(Bags0 == []
+		 ->	Bag = [] % bag is empty for all keys
+		 ;	keysort(Bags0, Bags), % This performs the groupby
+			bfindall(Key,Range,FullKeyList0,[]),
+			FullKeyList0 \== [],
+			sort(FullKeyList0,FullKeyList),
+			ppick(Bags, FullKeyList, Key, Bag)
+		)
+	 ;	bfindall(Template, Generator, Bag, [])
+	).
+
+diff_varsets(AVars,BVars) :-
+	numbervars(AVars),
+	sort(BVars,SBVars),
+	AVars \== SBVars.
+
+ppick([K-X|Bags], AllKs, Key, Bag) :-
+	parade(Bags, K, Bag1, Bags1),
+	pdecide(Bags1, [X|Bag1], K, AllKs, Key, Bag).
+
+pdecide(Bags, Bag0, Key1, [Key0|AllKeys], Key, Bag) :-
+	(Key0 == Key1
+	 ->	(Key = Key1, Bag = Bag0
+		 ;	
+		 (Bags == []
+		  ->	 pdecide([], _, Key1, AllKeys, Key, Bag)
+		  ;	 ppick(Bags, AllKeys, Key, Bag)
+		 )
+		)
+	 ; (Key0 @< Key1 ; Bags == [])
+	 ->	(Key = Key0, Bag = []
+		 ;	
+		 pdecide(Bags, Bag0, Key1, AllKeys, Key, Bag)
+		)
+	 ;	ppick(Bags,[Key0|AllKeys],Key,Bag)
+	).
 
 /*
 TLS: would like to make findall catch errors gracefully, as in this code, 

@@ -95,7 +95,7 @@ put_pkg_dirs_on_libpath(_,[],[]) :- !.
 put_pkg_dirs_on_libpath(FullPkgDirname,[Dir|Dirs],ExpandedDirs) :-
     slash(Slash),
     fmt_write_string(FullDirname, '%s%s%s', f(FullPkgDirname,Slash,Dir)),
-    assert(library_directory(FullDirname)),
+    add_lib_dir(FullDirname),
     put_pkg_dirs_on_libpath(FullPkgDirname, Dirs, ExpandedDirs1),
     ExpandedDirs = [FullDirname|ExpandedDirs1].
 	

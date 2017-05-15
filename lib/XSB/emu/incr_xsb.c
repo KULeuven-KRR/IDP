@@ -160,13 +160,13 @@ xsbBool incr_eval_builtin(CTXTdecl)
     int ibits = (int)ptoc_int(CTXTc 3);
     if (ibits < 4) {
       if (!(get_tabled(psc) == T_TABLED_SUB && ptoc_int(CTXTc 3) == INCREMENTAL)) {
-	set_incr(psc,(int)ptoc_int(CTXTc 3));
+	psc_set_incr(psc,(int)ptoc_int(CTXTc 3));
 	//      printf("%s/%d:%u incr set to %d\n",get_name(psc),get_arity(psc),psc,ptoc_int(3));
       } else {
 	xsb_abort("Cannot incrementally maintain a subsumptive table (%s/%d)",get_name(psc),get_arity(psc));
       }
     } else {
-      set_intern(psc,ibits);
+      psc_set_intern(psc,ibits);
     }
       break;
   }
@@ -183,7 +183,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
 
   case PSC_SET_INTERN: {
     Psc psc = (Psc)ptoc_addr(2);   
-    set_intern(psc,(int)ptoc_int(CTXTc 3));
+    psc_set_intern(psc,(int)ptoc_int(CTXTc 3));
     break;    
   }
 
@@ -192,6 +192,18 @@ xsbBool incr_eval_builtin(CTXTdecl)
     if (get_intern(psc))
       ctop_int(CTXTc 3,T_INTERN);
     else ctop_int(CTXTc 3,0);
+    break;
+  }
+
+  case PSC_SET_ALT_SEMANTICS: {
+    Psc psc = (Psc)ptoc_addr(2);   
+    psc_set_alt_semantics(psc,(int)ptoc_int(CTXTc 3));
+    break;    
+  }
+
+  case PSC_GET_ALT_SEMANTICS: {
+    Psc psc = (Psc)ptoc_addr(2);   
+    ctop_int(CTXTc 3,psc_get_alt_semantics(psc));
     break;
   }
 
@@ -222,8 +234,12 @@ xsbBool incr_eval_builtin(CTXTdecl)
       VariantSF sf  = get_call(CTXTc ptoc_tag(CTXTc 2), NULL);
       if(IsNonNULL(sf)){
 	callnodeptr c=sf->callnode;
-	if(IsNonNULL(c) &&  (c->falsecount!=0))
+	if(IsNonNULL(c) &&  (c->falsecount!=0)) {
+	  ctop_int(CTXTc 3, (Integer) c->falsecount);
+	  //	  ctop_int(CTXTc 4, (Integer) has_answers(sf) );
+	  ctop_int(CTXTc 4, (Integer) c->no_of_answers );
 	  return TRUE;
+	}
 	else
 	  return FALSE;
       } else
@@ -247,6 +263,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
     //    printf("invalidating trie %d callnode w. cn %p\n",index,itrie_array[index].callnode);
 
     c = itrie_array[index].callnode;
+    //    if (c->falsecount == 0) 
     invalidate_call(CTXTc c,NOT_ABOLISHING); 
     break;
   }
@@ -267,7 +284,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
 	return rc;
       }
       else if (flag == CALL_LIST_CREATE_EVAL) {
-	lazy_affected = empty_calllist();
+	lazy_affected = empty_calllist(CTXT);
 	dfs_ret = dfs_inedges(CTXTc subg_callnode_ptr(sf),  &lazy_affected, CALL_LIST_EVAL);
 	//	fprintf(stddbg,"dfs returned %d flag = %d\n",dfs_ret,flag);
 	if (!dfs_ret ) 
@@ -276,7 +293,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
 	return rc;
       }
       else if (flag == CALL_LIST_INSPECT)  {
-	lazy_affected = empty_calllist();
+	lazy_affected = empty_calllist(CTXT);
 	dfs_ret = dfs_inedges(CTXTc subg_callnode_ptr(sf),  &lazy_affected, CALL_LIST_INSPECT);
 	//	fprintf(stddbg,"dfs returned %d flag = %d\n",dfs_ret,flag);
 	rc = return_lazy_call_list(CTXTc sf->callnode);

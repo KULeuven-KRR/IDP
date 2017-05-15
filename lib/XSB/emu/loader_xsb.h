@@ -93,7 +93,7 @@ typedef struct text_segment text_seg, seg_hdr, *pseg ;
 
 /* === functions used in other parts of the system ====================== */
 
-extern byte *loader(CTXTdeclc char *, int);
+extern byte *loader(CTXTdeclc char *, int, prolog_term);
 extern void env_type_set(CTXTdeclc Psc, byte, byte, xsbBool);
 extern void unload_seg(pseg);
 extern unsigned int read_magic(FILE *);

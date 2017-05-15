@@ -91,6 +91,8 @@ AC_ARG_WITH(aout,
 [  --with-aout                  build XSB for a Unix system with .aout binary format])
 AC_ARG_WITH(optimization,
 [  --with-optimization=Ox       build XSB with compiler optimization level O, O1, ..., O4])
+AC_ARG_WITH(cflags,
+[  --with-cflags=FLAGS          add the specified compilation flags])
 AC_ARG_WITH(config-tag,
 [  --with-config-tag=TAG        Makes the configuration directory name look like
                           	CONFIG_PREFIX/configuration-TAG. If TAG is missing
@@ -258,6 +260,7 @@ do
 	    case $1 in
 		--with-gcc | --with-cc* | --with-cilk | --with-acc | \
 		--with-bits64 | --with-bits32 | --with-aout | \
+                --with-cflags* | \
 		--with-optimization* | --with-config-tag* | --with-site-prefix* | --with-includes* | \
 		--with-static-libraries* | --with-dynamic-libraries* | --with-xpath* | \
 		--with-curl* | --with-pcre* | --with-mysql* | \
@@ -265,7 +268,7 @@ do
 		--with-smodels* | --with-itkwish* | --with-pita* )
 		    ;;
 	    *)
-                    echo "configure: error: uncecognized option: $1"
+                    echo "configure: error: unrecognized option: $1"
                     echo "Try 'configure --help' for more information."
                     rm -f  buildxsb.lock
                     exit 1 ;;
@@ -1344,11 +1347,12 @@ case "$canonical" in
                     else
                         dnl Linux ELF
                         AC_DEFINE(LINUX_ELF)
-#			            if test "${CC}" = "gcc" -o "${with_gcc+set}" = "set"; then
-#			              CFLAGS="-m486 ${CFLAGS}"
-#			              AC_DEFINE(USE_BP_LPCREG)
-#			            fi
+#			if test "${CC}" = "gcc" -o "${with_gcc+set}"="set"; then
+#			CFLAGS="-m486 ${CFLAGS}"
+#			AC_DEFINE(USE_BP_LPCREG)
+#			fi
 
+                        CFLAGS=" -fPIC ${CFLAGS} "
                         if test "${have_dl}" != "no" ; then
                             AC_DEFINE(FOREIGN_ELF)
                             LDFLAGS="${LDFLAGS} -ldl"
@@ -1713,6 +1717,9 @@ if test "$interprolog_native_engine" = "yes"; then
 	CFLAGS=" -I${JAVA_HEADER_PATH} $CFLAGS"
     fi
 fi
+
+# If --with-cflags=something is given add "something" at the end of CFLAGS
+CFLAGS=" $CFLAGS $with_cflags "
 
 AC_SUBST(JAVA_HEADER_PATH)
 AC_SUBST(JAVA_PLATFORM_HEADER_PATH)

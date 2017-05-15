@@ -60,6 +60,7 @@
 #define FILE_PEEK_CODE     31
 #define FILE_PEEK_CHAR     32
 #define ATOM_LENGTH        33
+#define FILE_SET_CHARACTER_SET 34
 
 /* This sequence is for stream properties */
 #define STREAM_FILE_NAME              0

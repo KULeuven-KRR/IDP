@@ -50,6 +50,11 @@ compile_so(Path, COptions, LdOptions) :-
 	fmt_write_string(PathSansExt, '%s/%s', args(Dir,BaseName)),
 	compile_c(BaseName, PathSansExt, '.c ', COptions, Dir, LdOptions, _, _).
 
+respectful_message(M) :-
+        ( banner_control(quietload) ->  true
+        ; message(M)
+        ).
+
 
 %% User-level predicate that yields the flag suitable for defining 
 %% the runtime loader library search path. This flag 
@@ -124,7 +129,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	-> str_cat(' -g ', CC_Opts0, CC_Opts)
 	;  CC_Opts = CC_Opts0
 	),
-	message(('[Compiling C file ', Base, Ext ,'using ', CC_Name, ']')),
+	respectful_message(('[Compiling C file ', Base, Ext ,'using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = '' ; true ),
 	%% If not debugging, then strip the symbol table from the result
@@ -137,7 +142,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
+	    , respectful_message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ;	str_sub('linux', Configuration)
@@ -145,7 +150,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		       ' -shared ',Base, Ext, TempFile, 
 		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+	    , respectful_message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',Base, Ext, TempFile, 
 		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LD_Opts,' ',LdOption))
 #endif
@@ -154,7 +159,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		       ' -shared ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+	    , respectful_message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
@@ -163,7 +168,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		       ' -shared ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+	    , respectful_message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
@@ -172,7 +177,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		       ' -shared ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
+	    , respectful_message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
 		       Base, Ext, TempFile, ' ', CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
@@ -187,10 +192,10 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ; str_sub('apple-darwin', Configuration)
 	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption))
+	    , respectful_message((CC_Name,' -dynamiclib -undefined dynamic_lookup -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LD_Opts,' ',LdOption))
 #endif
 	    ;	str_sub('cygwin', Configuration)
-	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts,' ',XSB_CC_Opts])),
+	    ->  respectful_message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts,' ',XSB_CC_Opts])),
 		concat_atom([Base,'.o'], Obj),
 		shell([CC_Name, ' -c ', Base, Ext, /*TempFile,*/ ' -o ',
 		       Obj, ' ', CC_Opts,' ',XSB_CC_Opts]),
@@ -198,7 +203,7 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		-> TempObj = ''
 		;   substring(TempFile,0,-3,TempRoot),
 		    concat_atom([TempRoot,'.o '],TempObj),
-		    message(shell([CC_Name,' -c ',TempFile,' -o ',
+		    respectful_message(shell([CC_Name,' -c ',TempFile,' -o ',
 				   TempObj, ' ', CC_Opts,' ',XSB_CC_Opts])),
 		    shell([CC_Name,' -c ',TempFile,' -o ',
 			   TempObj, ' ', CC_Opts,' ',XSB_CC_Opts])
@@ -207,17 +212,17 @@ compile_c(Modname, OrigBase, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 		xsb_configuration(config_dir,OrigConfigDir),
 		escape_path(OrigConfigDir,ConfigDir),
 		(  TempObj = ''
-		-> message(shell(['sh ',ConfigDir,'/makedef.sh ',
+		-> respectful_message(shell(['sh ',ConfigDir,'/makedef.sh ',
 			       Obj])),
 		   shell(['sh ',ConfigDir,'/makedef.sh ',Obj])
-		;  message(shell(['sh ',ConfigDir,'/saved.o/makedef.sh ',
+		;  respectful_message(shell(['sh ',ConfigDir,'/saved.o/makedef.sh ',
 			       TempObj])),
 		   shell(['sh ',ConfigDir,'/makedef.sh ',TempObj])
 		),
-		message(shell(['mv out.def ', Base,'.def'])),
+		respectful_message(shell(['mv out.def ', Base,'.def'])),
 		shell(['mv out.def ', Base,'.def']),
 		xsb_configuration(config_bindir,BINDIR),
-		message(shell([CC_Name,' ',CC_Opts,
+		respectful_message(shell([CC_Name,' ',CC_Opts,
 			       ' -L',BINDIR,' ',
 			       ' -Wl,--out-implib=',Base,'.a ',
 			       ' -shared -s -o ',
@@ -281,7 +286,7 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    ->	M = ''
 	    ;	M = ' (Prolog compiler options are ignored)'
 	    ),
-	    message(('[Compiling Foreign Module ', Base, M, ']')),
+	    respectful_message(('[Compiling Foreign Module ', Base, M, ']')),
 	    cputime(TimeStart),
 	    seeing(OldFile),
 	    telling(OldTell),
@@ -313,7 +318,9 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    close(OStr),
 %%%	    told,
 	    tell(OldTell),
-	    time_message(TimeStart, (Modname, ' compiled'))
+            ( banner_control(quietload) ->  true
+	    ; time_message(TimeStart, (Modname, ' compiled'))
+            )
 	;   abort(('File ', HFile, ' for foreign module does not exist'))
 	),
 	!.

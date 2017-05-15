@@ -44,8 +44,8 @@
 
 #define setup_to_return_completed_answers(SGF,tsize)			\
   do {									\
-    if (!subg_is_answer_completed(SGF) && flags[ANSWER_COMPLETION]) {	\
-      flags[ANSWER_COMPLETION] = 0;					\
+    if (!subg_is_answer_completed(SGF) && pflags[ANSWER_COMPLETION]) {	\
+      pflags[ANSWER_COMPLETION] = 0;					\
       reg[1] = makeint(SGF);						\
       reg[2] = build_ret_term_reverse(CTXTc tsize, trieinstr_unif_stk);	\
       /*      lpcreg = (byte *) subg_ans_root_ptr(SGF);	*/		\
@@ -144,7 +144,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 
 //gccp(CTXT);
 
-//  printf("Check complete for ");print_subgoal(stderr, subgoal);printf("\n");
+//  printf("Check complete for %p  ",breg);print_subgoal(stderr, subgoal);printf("\n");
 
   cs_ptr = subg_compl_stack_ptr(subgoal);
 
@@ -159,6 +159,7 @@ XSB_Start_Instr(check_complete,_check_complete)
  * to see whether its inclusion makes any difference 
  */
   FailIfAnswersFound(sched_answers(CTXTc subgoal, NULL));
+//printf("got through first sched_answers\n");
   if (leader) {
     
     //    printf("leader scheduling answers breg %x\n",breg);
@@ -170,6 +171,7 @@ XSB_Start_Instr(check_complete,_check_complete)
     /* check if fixpoint has been reached, otherwise schedule any
      * unresolved answers */
     FailIfAnswersFound(check_fixpoint(cs_ptr,breg));
+    //printf("got through check_fixpoint\n");
 
 #ifdef LOCAL_EVAL
     {
@@ -180,7 +182,13 @@ XSB_Start_Instr(check_complete,_check_complete)
       /* schedule completion suspensions if any */
       cc_tbreg = ProcessSuspensionFrames(CTXTc cc_tbreg, cs_ptr);
       FailIfAnswersFound((cc_tbreg == orig_breg ? 0 : cc_tbreg));
-      
+      altsem_dbg(("got through suspension frames for negation\n"));
+
+      if (flags[ALTERNATE_SEMANTICS] == NAF_CS) {
+	FailIfAnswersFound(ProcessCSReturns(CTXTc cs_ptr));
+	PerformCSSimplification(CTXTc cs_ptr);
+      }
+
       CompleteSimplifyAndReclaim(CTXTc cs_ptr);
 /*
 #ifdef SHARED_COMPL_TABLES

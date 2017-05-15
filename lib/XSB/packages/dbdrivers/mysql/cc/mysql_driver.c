@@ -73,23 +73,23 @@ DllExport int call_conv driverMySQL_initialise()
 int driverMySQL_connect(struct xsb_connectionHandle* handle)
 {
   struct driverMySQL_connectionInfo* mysqlHandle;
-  MYSQL* mysql = mysql_init( NULL );
-  if ( mysql == NULL )
-    {
-      errorMesg = "mysql_init() failed\n";	
-      return FAILURE;
-    }
+  MYSQL *mysql = mysql_init( NULL );
+  if ( mysql == NULL ) {
+    errorMesg = "mysql_init() failed\n";	
+    return FAILURE;
+  }
 	
-  if (!mysql_real_connect(mysql, handle->server, handle->user, handle->password, handle->database, 0, NULL, 0))
-    {
-      driverMySQL_error(mysql);
-      free(mysql);
-      mysql = NULL;
-      return FAILURE; 
+  if (!mysql_real_connect(mysql, handle->server, handle->user,
+                          handle->password, handle->database, 0, NULL, 0)) {
+    driverMySQL_error(mysql);
+    mysql_close(mysql);
+    mysql = NULL;
+    return FAILURE; 
     }
 	
   mysqlHandle = (struct driverMySQL_connectionInfo *)malloc(sizeof(struct driverMySQL_connectionInfo));
-  mysqlHandle->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
+  mysqlHandle->handle =
+    (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
   strcpy(mysqlHandle->handle, handle->handle);
   mysqlHandle->mysql = mysql;
   mysqlHandles[numHandles++] = mysqlHandle;
@@ -282,13 +282,12 @@ int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
       sqlQuery = NULL;
       return FAILURE;		
     }
-  if ( mysql_stmt_prepare(stmt, sqlQuery, strlen(sqlQuery)))
-    {
-      errorMesg = mysql_stmt_error(stmt);
-      free(sqlQuery);
-      sqlQuery = NULL;
-      return FAILURE;		
-    }
+  if ( mysql_stmt_prepare(stmt, sqlQuery, (unsigned long)strlen(sqlQuery))) {
+    errorMesg = mysql_stmt_error(stmt);
+    free(sqlQuery);
+    sqlQuery = NULL;
+    return FAILURE;		
+  }
 
   rs = (struct driverMySQL_preparedresultset *)malloc(sizeof(struct driverMySQL_preparedresultset));
   rs->statement = stmt;
@@ -341,10 +340,10 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
   int i, numOfParams;
   MYSQL_BIND *bind, *bindResult;
 	
-  int* intTemp;
-  double* doubleTemp;
-  unsigned long* lengthTemp;
-  char* charTemp;
+  Integer *intTemp;
+  double *doubleTemp;
+  unsigned long *lengthTemp;
+  char *charTemp;
 
   rs = NULL;
 
@@ -375,7 +374,7 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
       if (bindValues[i]->type == INT_TYPE)
 	{			
 	  bind[i].buffer_type = MYSQL_TYPE_LONG;
-	  intTemp = (int*)malloc (sizeof(int));
+	  intTemp = malloc (sizeof(int));
 	  *intTemp = bindValues[i]->val->i_val;
 	  bind[i].buffer = intTemp;
 	  bind[i].is_null = calloc(1,sizeof(my_bool));
@@ -392,9 +391,9 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 	{
 	  bind[i].buffer_type = MYSQL_TYPE_STRING;
 	  lengthTemp = (unsigned long*)malloc (sizeof(unsigned long));
-	  *lengthTemp = strlen(bindValues[i]->val->str_val);
+	  *lengthTemp = (unsigned long)strlen(bindValues[i]->val->str_val);
 	  bind[i].length = lengthTemp;
-	  bind[i].buffer_length = strlen(bindValues[i]->val->str_val);
+	  bind[i].buffer_length = (unsigned long)strlen(bindValues[i]->val->str_val);
 	  bind[i].is_null = calloc(1,sizeof(my_bool)) ;    
 	  charTemp = (char*)malloc((strlen(bindValues[i]->val->str_val)+1) * sizeof(char));
 	  strcpy( charTemp, bindValues[i]->val->str_val);
@@ -444,11 +443,11 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 			
 	case STRING_TYPE:
 	  bindResult[i].buffer_type = MYSQL_TYPE_VAR_STRING;
-	  bindResult[i].buffer_length = rs->metaInfo[i]->length+1;
+	  bindResult[i].buffer_length = (unsigned long)rs->metaInfo[i]->length+1;
 	  bindResult[i].buffer = malloc((rs->metaInfo[i]->length+1) * sizeof(char));
 	  bindResult[i].is_null = calloc(1,sizeof(my_bool)) ;
 	  bindResult[i].length = malloc( sizeof(unsigned long) );
-	  *(bindResult[i].length) =  rs->metaInfo[i]->length+1;
+	  *(bindResult[i].length) =  (unsigned long)rs->metaInfo[i]->length+1;
 	  bindResult[i].error = calloc(1,sizeof(my_bool)) ;
 	  break;
 	}
@@ -713,10 +712,10 @@ void freeConnection(struct driverMySQL_connectionInfo* connection)
   if (connection == NULL)
     return;
 
-  if (connection->handle!= NULL)
-    { free(connection->handle);
-      connection->handle = NULL;
-    }
+  if (connection->handle!= NULL) {
+    free(connection->handle);
+    connection->handle = NULL;
+  }
   free(connection);
   connection = NULL;
   return;

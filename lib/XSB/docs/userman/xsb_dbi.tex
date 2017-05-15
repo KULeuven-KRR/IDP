@@ -1,0 +1,593 @@
+
+\chapter{The New XSB-Database Interface} \label{db_interface}
+%====================================================
+
+\begin{center}
+{\Large {\bf By Saikat Mukherjee, Michael Kifer and Hui Wan }}
+\end{center}
+
+\section{Introduction}
+%=====================
+
+The XSB-DB interface is a package that allows XSB users to access
+databases through various drivers. Using this interface, information
+in different DBMSs can be accessed by SQL queries. The interface
+defines Prolog predicates which makes it easy to connect to databases,
+query them, and disconnect from the databases. Central to the concept
+of a connection to a database is the notion of a \emph{connection handle}.  A
+connection handle describes a particular connection to a database.
+Similar to a connection handle is the notion of a query handle which
+describes a particular query statement. As a consequence of the
+handles, it is possible to open multiple database connections (to the
+same or different databases) and keep alive multiple queries (again
+from the same or different connections). The interface also supports
+dynamic loading of drivers. As a result, it is possible to query
+databases using different drivers concurrently~\footnote{In
+  \version{}, this package has not been ported to the multi-threaded
+  engine.}.
+
+Currently, this package provides drivers for ODBC, a native MySQL driver,
+and a driver for the embedded MySQL server.
+
+\section{Configuring the Interface}
+
+Generally, each driver has to be configured separately, but if the database
+packages such as ODBC, MySql, etc., are installed in standard places then
+the XSB configuration mechanism will do the job automatically.
+
+Under Windows, first make sure that XSB is configured and built correctly
+for Windows, and that it runs. As part of that building process, the
+command
+%%
+\begin{verbatim}
+    makexsb_wind  
+\end{verbatim}
+%%
+must have been executed
+in the directory {\tt XSB$\backslash$build}. It will normally configure the ODBC
+driver without problems. For the MySQL driver one has to edit the file
+%%
+\begin{verbatim}
+    packages\dbdrivers\mysql\cc\NMakefile.mak  
+\end{verbatim}
+%%
+to indicate where MySQL is installed. To build the embedded MySQL driver
+under Windows, the file
+%%
+\begin{verbatim}
+    packages\dbdrivers\mysqlenbedded\cc\NMakefile.mak  
+\end{verbatim}
+%%
+might need to be edited. Then you should either rebuild XSB using the
+{\tt makexsb\_wind} command or by running
+%%
+\begin{verbatim}
+    nmake /f NMakefile.mak
+\end{verbatim}
+%% 
+in the appropriate directories (\verb|dbdrivers\mysql\cc| or
+\verb|dbdrivers\mysqlenbedded\cc|). Note that you need a C++ compiler and
+{\tt nmake} installed on your system for this to work.\footnote{
+  {\tt http://www.microsoft.com/express/vc/}\\
+  {\tt
+    http://download.microsoft.com/download/vc15/Patch/1.52/W95/EN-US/Nmake15.exe} 
+  }
+
+Under Unix, the {\tt configure} script will build the drivers automatically
+if the {\tt --with-dbdrivers} option is specified.  If, however, ODBC and
+MySQL are not installed in their standard places, you will have to provide
+the following parameters to the configure script:
+%%
+\begin{itemize}
+\item  {\tt --with-odbc-libdir=LibDIR} -- {\tt LibDIR} is the directory
+  where the library libodbc.so lives on your system. 
+\item  {\tt --with-odbc-incdir=IncludeDIR} -- {\tt IncludeDIR} is the
+  directory where the ODBC header files, such as {\tt sql.h} live.
+\item {\tt --with-mysql-libdir=MySQLlibdir} -- {\tt MySQLlibdir} is the
+  directory where MySQL's shared libraries live on your system.
+\item {\tt --with-mysql-incdir=MySQLincludeDir} -- {\tt MySQLincludeDir} is
+  the directory where MySQL's header files live.  
+\end{itemize}
+%%
+If you are also using the embedded MySQL server and want to take advantage
+of the corresponding XSB driver, you need to provide the following directories
+to tell XSB where the copy of MySQL that supports the embedded server is installed.
+This has to be done \emph{only} if that copy is not in a standard place,
+like {\tt /usr/lib/mysql}.  
+
+\begin{itemize}%% 
+\item {\tt --with-mysqlembedded-libdir=MySQLlibdir} -- {\tt MySQLlibdir} is the
+  directory where MySQL's shared libraries live on your system.
+  This copy of MySQL must be configured with support for the embedded
+  server.
+\item {\tt --with-mysqlembedded-incdir=MySQLincludeDir} -- {\tt MySQLincludeDir} is
+  the directory where MySQL's header files live.  
+\end{itemize}
+%% 
+
+Under Cygwin, the ODBC libraries come with the distribution; they are
+located in the directory {\tt /cygdrive/c/cygwin/lib/w32api/} and are called
+{\tt odbc32.a} and {\tt odbccp32.a}. (Check if your installation is complete
+and has these libraries!)
+Otherwise, the configuration of the interface under Cygwin is
+same as in unix (you do not need to provide any ODBC-specific parameters to
+the configure script under Cygwin).
+
+
+If at the time of configuring XSB some database packages ({\it e.g.},
+MySQL) are not installed on your system, you can install them later and
+configure the XSB interface to them then. For instance, to configure the
+ODBC interface separately, you can type
+%%
+\begin{verbatim}
+    cd packages/dbdrivers/odbc
+    configure
+\end{verbatim}
+%%
+Again, if ODBC is installed in a non-standard location, you might need to
+supply the options {\tt --with-odbc-libdir} and {\tt --with-odbc-incdir} to
+the configure script. Under Cygwin ODBC is always installed in a
+standard place, and {\tt configure} needs no additional parameters.
+
+Under Windows, separate configuration of the XSB-DB interfaces is also
+possible, but you need Visual Studio installed. For instance, to configure
+the MySQL interface, type
+%%
+\begin{verbatim}
+    cd packages\dbdrivers\mysql\cc  
+    nmake /f NMakefile.mak
+\end{verbatim}
+%%
+As before, you might need to edit the NMakefile.mak script to tell the
+compiler where the required MySQL's libraries are. You also need the file
+{\tt packages$\backslash$dbdrivers$\backslash$mysql$\backslash$mysql\_init.P} with the following content:
+%%
+\begin{verbatim}
+:- export mysql_info/2.
+mysql_info(support, 'yes').
+mysql_info(libdir,  '').
+mysql_info(ccflags, '').
+mysql_info(ldflags, '').
+\end{verbatim}
+%%
+
+Similarly, to configure the ODBC interface, do
+%%
+\begin{verbatim}
+    cd packages\dbdrivers\odbc\cc  
+    nmake /f NMakefile.mak
+\end{verbatim}
+%%
+You will also need to create the file {\tt packages$\backslash$dbdrivers$\backslash$odbc$\backslash$odbc\_init.P}
+with the following contents:
+%%
+\begin{verbatim}
+:- export odbc_info/2.
+odbc_info(support, 'yes').
+odbc_info(libdir,  '').
+odbc_info(ccflags, '').
+odbc_info(ldflags, '').
+\end{verbatim}
+%%
+
+
+\section{Using the Interface}
+%========================================
+
+We use the {\tt student} database as our example to illustrate 
+the usage of the XSB-DB interface in this manual. The schema of the
+student database contains three columns viz. the student name, 
+the student id, and the name of the advisor of the student.
+
+The XSB-DB package has to be first loaded before using any of the
+predicates. This is done by the call:
+
+\begin{verbatim}
+| ?- [dbdrivers].
+\end{verbatim}
+
+Next, the driver to be used for connecting to the database has to 
+be loaded. Currently, the interface has support for a native MySQL driver
+(using the MySQL C API), and an ODBC driver. For example, to load 
+the ODBC driver call:
+
+\begin{verbatim}
+| ?- load_driver(odbc).
+\end{verbatim}
+
+Similarly, to load the mysql driver call:
+
+\begin{verbatim}
+| ?- load_driver(mysql).
+\end{verbatim}
+%%
+or
+%%
+\begin{verbatim}
+| ?- load_driver(mysqlembedded).
+\end{verbatim}
+
+\subsection{Connecting to and Disconnecting from Databases}
+%=================================================
+
+There are two predicates for connecting to databases, {\tt db\_connect/5}
+and {\tt db\_connect/6}.
+The {\tt db\_connect/5} predicate is for ODBC connections, while {\tt
+  db\_connect/6} is 
+for other (non-ODBC) database drivers.
+
+\begin{verbatim}
+| ?- db_connect(+Handle, +Driver, +DSN, +User, +Password).
+| ?- db_connect(+Handle, +Driver, +Server, +Database, +User, +Password).
+\end{verbatim}
+
+The {\tt db\_connect/5} predicate
+assumes that an entry for a data source name (DSN) exists in the {\tt
+  odbc.ini} file. The {\tt Handle} is the connection handle name used for the
+connection. The {\tt Driver} is the driver being used for the connection.
+The {\tt User} and {\tt Password} are the user name and password being used
+for the connection. The user is responsible for giving the name to the
+handle.  To connect to the data source mydb using the user name xsb and
+password xsb with the odbc driver, the call is as follows:
+
+\begin{verbatim}
+| ?- db_connect(ha, odbc, mydb, xsb, xsb).
+\end{verbatim}
+
+\noindent
+where {\tt ha} is the user-chosen handle name (a Prolog atom) for the
+connection.
+
+The {\tt db\_connect/6} predicate is used for drivers other than ODBC.  The
+arguments {\tt Handle}, {\tt Driver}, {\tt User}, and {\tt Password} are
+the same as for {\tt db\_connect/5}. The {\tt Server} and {\tt Database}
+arguments specify the server and database to connect to.  For example, for
+a connection to a database called {\tt test} located on the server {\tt
+  wolfe} with the user name {\tt xsb}, the password {\tt foo}, and using
+the {\tt mysql} driver, the call is:
+
+\begin{verbatim}
+| ?- db_connect(ha, mysql, wolfe, test, xsb, foo).
+\end{verbatim}
+
+\noindent
+where {\tt ha} is the handle name the user chose for the connection.
+
+If the connection is successfully made, the predicate invocation will
+succeed.  This step is necessary before anything can be done with the
+data sources since it gives XSB the opportunity to initialize system
+resources for the session.
+
+To close a database connection use:
+
+\begin{verbatim}
+| ?- db_disconnect(Handle).
+\end{verbatim}
+
+\noindent
+where handle is the connection handle name. For example, 
+to close the connection to above mysql database call:
+
+\begin{verbatim}
+| ?- db_disconnect(ha).
+\end{verbatim}
+
+and XSB will give all the resources it allocated for this session back
+to the system.
+
+
+\subsection{Querying Databases}
+%=====================================
+
+The interface supports two types of querying. In direct querying, the
+query statement is not prepared while in prepared querying the query
+statement is prepared before being executed. The results from
+both types of querying are retrieved tuple at a time.
+Direct querying is done by the predicate:
+
+\begin{verbatim}
+| ?- db_query(ConnectionHandle, QueryHandle, SQLQueryList, ReturnList).
+\end{verbatim}
+
+ConnectionHandle is the name of the handle used for the database connection.
+QueryHandle is the name of the \emph{query handle} for this particular query. 
+For prepared queries, the query handle is used both in order to execute the
+query and to close it and free up space. For direct querying,
+the query handle is used only for closing query statements (see below).
+The \texttt{SQLQueryList}  is a list of terms which is used to build the SQL query.
+The terms in this list can have variables, which can be
+instantiated by the preceding queries. The query list is scanned for terms,
+which are encoded into Prolog atoms and the result is then concatenated;
+it must form a valid SQL query. (The treatment of terms is further discussed
+below.)
+\texttt{ReturnList}  is a list of 
+variables each of which correspond to a return value in the query.
+It is upto the user to specify the correct number of return variables 
+corresponding to the query. Also, as in the case of a connection handle, 
+the user is responsible for giving the name to the query handle.
+For example, a query on the student database to select all the students
+for a given advisor is accomplished by the call:
+
+\begin{verbatim}
+| ?- X = adv,
+     db_query(ha,qa,['select T.name from student T where T.advisor=',X],[P]),
+     fail.
+\end{verbatim}
+
+\noindent
+where {\tt ha} and {\tt qa} are respectively the connection handle and query
+handle name the user chose.
+
+Observe that the query list is composed of the SQL string and a ground value
+for the advisor. The return list is made of one variable corresponding to
+the student name. The failure drive loop retrieves all the tuples.
+
+Preparing a  query is done by calling the following predicate:
+
+\begin{verbatim}
+| ?- db_prepare(ConnectionHandle, QueryHandle, SQLQueryList).
+\end{verbatim}
+
+As before, ConnectionHandle and QueryHandle specify the handles for
+the connection and the query. The SQLQueryList is a list of terms which
+build up the query string. The placeholder `?' is used for values which 
+have to be bound during the execution of the statement.
+For example, to prepare a query for selecting the advisor name for a student
+name using our student database:
+
+\begin{verbatim}
+| ?- db_prepare(ha,qa,['select T.advisor from student T where T.name = ?']).
+\end{verbatim}
+
+A prepared statement is executed using the predicate:
+
+\begin{verbatim}
+| ?- db_prepare_execute(QueryHandle, BindList, ReturnList).
+\end{verbatim}
+
+The BindList contains the ground values corresponding to the `?' in
+the prepared statement. The ReturnList is a list of variables for
+each argument in a tuple of the result set. For instance,
+%% 
+\begin{verbatim}
+| ?- db_prepare_execute(qa,['Bob'],[?Advisor]).
+\end{verbatim}
+%% 
+
+For direct querying, the query handle is closed automatically when
+all the tuples in the result set have been retrieved. In order to explicitly
+close a query handle, and free all the resources associated with
+the handle, a call is made to the predicate:
+
+\begin{verbatim}
+| ?- db_statement_close(QueryHandle).
+\end{verbatim}
+
+\noindent
+where QueryHandle is the query handle for the statement to be closed.
+
+\paragraph{Storing and retrieving terms and NULL values.}
+The interface is also able to transparently handle Prolog terms. 
+Users can both save and retrieve terms in string fields of the tables
+by passing the term as a separate element in the query list and making sure
+that it is enclosed in quotes in the concatenated result. For instance,
+%% 
+\begin{verbatim}
+?- db_query(handle,qh,['insert into mytbl values(11,22,',p(a),')'],[]).
+\end{verbatim}
+%% 
+The above statement inserts \texttt{p(a)} \emph{as a term}
+into the third column
+of the table \texttt{mytbl}. Under the hood, it is inserted as a special
+string, but when retrieved, this term is decoded back into a Prolog
+term. For this to work,
+the third column of \texttt{mytbl} \emph{must} be declared as a
+character string (e.g., \texttt{CHAR(50)}).
+Important to note is that \texttt{p(a)} has to appear as a list
+element above and not be quoted so that Prolog will recognize it as a term.
+
+The \texttt{NULL}  value is represented using the special 0-ary term
+\texttt{'NULL'()} \emph{when retrieved}. When you need to \emph{store} a
+null value, you can use either the above special term or just place \texttt{NULL} in the appropriate place in the SQL
+INSERT statement. For instance,
+%% 
+\begin{verbatim}
+?- db_query(handle,qh1,['insert into mytbl values(11,22,NULL)'],[]).
+?- db_query(handle,qh2,['insert into mytbl values(111,222,','NULL'(),')'],[]).
+\end{verbatim}
+%% 
+However, when retrieved from a database, a \texttt{NULL} is always
+represented by the term \texttt{'NULL'()} (and not by the atom
+\texttt{'NULL'}).
+
+
+\section{Error Handling}
+%============================
+
+Each predicate in the XSB-DB interface throws an exception with the functor 
+%%
+\begin{verbatim}
+   dbdrivers_error(Number, Message) 
+\end{verbatim}
+%%
+where Number is a string with the 
+error number and Message is a string with a slightly detailed error message.
+It is upto the user to catch this exception
+and proceed with error handling. This is done by the throw-catch error
+handling mechanism in XSB. For example, in order to catch the error which
+will be thrown when the user attempts to close a database connection for 
+a handle {\tt (ha}) which does not exist:
+
+\begin{verbatim}
+| ?- catch(db_disconnect(ha),
+     dbdrivers_error(Number, Message), handler(Number, Message)).
+\end{verbatim}
+
+It is the user's responsibility to define the handler predicate which can be as simple
+as printing out the error number and message or may involve more 
+complicated  processing.
+
+A list of error numbers and messages that are thrown by the XSB-DB interface
+is given below:
+
+\begin{itemize}
+
+\item {\bf XSB\_DBI\_001: Driver already registered}\\
+This error is thrown when the user tries to load a driver, using the {\tt load\_driver} 
+predicate, which has already been loaded previously.
+
+\item {\bf XSB\_DBI\_002: Driver does not exist}\\
+This error is thrown when the user tries to connect to a database, using
+{\tt db\_connect}, with a driver which has not been loaded.
+
+\item {\bf XSB\_DBI\_003: Function does not exist in this driver}\\
+This error is thrown when the user tries to use a function support 
+for which does not exist in the corresponding driver. For example, 
+this error is generated if the user
+tries to use {\tt db\_prepare} for a connection established with the
+mysql driver.
+
+\item {\bf XSB\_DBI\_004: No such connection handle}\\
+This error is thrown when the user tries to use a connection handle
+which has not been created.
+
+\item {\bf XSB\_DBI\_005: No such query handle}\\
+This error is thrown when the user tries to use a query handle which has 
+not been created.
+
+\item {\bf XSB\_DBI\_006: Connection handle already exists}\\
+This error is thrown when the user tries to create a connection handle in
+{\tt db\_connect} using a name which already exists as a connection handle.
+
+\item {\bf XSB\_DBI\_007: Query handle already exists}\\
+This error is thrown when the user tries to create a query handle, in
+{\tt db\_query} or {\tt db\_prepare}, using a name which already exists as
+a query handle for a different query.
+
+\item {\bf XSB\_DBI\_008: Not all parameters supplied}\\
+This error is thrown when the user tries to execute a prepared statement,
+using {\tt db\_prepare\_execute}, without supplying values for all the
+parameters in the statement.
+
+\item {\bf XSB\_DBI\_009: Unbound variable in parameter list}\\
+This error is thrown when the user tries to execute a prepared statement,
+using {\tt db\_prepare\_execute}, without binding all the parameters of the
+statement.
+
+\item {\bf XSB\_DBI\_010: Same query handle used for
+    different queries}\\
+  This error is thrown when the user issues a prepare statement ({\tt
+    db\_prepare})  using a query
+  handle that has been in use by another prepared statement and which has
+  not been closed. Query handles must be closed before reuse.
+\item {\bf XSB\_DBI\_011: Number of requested columns exceeds the number of columns in the query}\\
+  This error is thrown when the user {\tt db\_query}  specifies more items to be
+  returned in the last argument than the number of items in the {\tt
+    SELECT} statement in the corresponding query.
+\item {\bf XSB\_DBI\_012: Number of requested columns is less than the number of columns in the query}\\
+  This error is thrown when the user {\tt db\_query}  specifies fewer items to be
+  returned in the last argument than the number of items in the {\tt
+    SELECT} statement in the corresponding query.
+\item {\bf XSB\_DBI\_013: Invalid return list in query}\\
+  Something else is wrong with the return list of the query.
+\item {\bf XSB\_DBI\_014: Too many open connections}\\
+  There is a limit (200) on the number of open connections.
+\item {\bf XSB\_DBI\_015: Too many registered drivers}\\
+  There is a limit (100) on the number of database drivers that can be
+  registered at the same time.
+\item {\bf XSB\_DBI\_016: Too many active queries}\\
+  There is a limit (2000) on the number of queries that can remain
+  open at any given time.
+\end{itemize}
+
+\section{Notes on specific drivers}
+%============================
+
+Note: in most distributions of Linux,
+with all of these drivers you need to install both the runtime
+version of the corresponding packages as well as the development version.
+For instance, for the \texttt{unixodbc} driver, these packages will
+typically have the names \texttt{unixodbc} and \texttt{unixodbc-dev}.
+For the MySQL driver, the packages would typically be named
+\texttt{libmysqlclient} and \texttt{libmysqlclient-dev}.  
+For the embedded MySQL driver, the relevant package would be
+\texttt{libmysqld-pic} and 
+\texttt{libmysqld-dev}. 
+
+\subsubsection{ODBC Driver}
+
+The ODBC driver has been tested in Linux using the {\tt unixodbc} driver
+manager.  It currently supports the following functionality: (a)
+connecting to a database using a DSN, (b) direct querying of the database,
+(c) using prepared statements to query the database, (d) closing a
+statement handle, and (d) disconnecting from the database.
+The ODBC driver has also been tested under Windows and Cygwin.
+
+
+\subsubsection{MySQL Driver}
+
+The MySQL driver provides access to the native MySQL C API.
+Currently, it has support for the following functionality: (a) connecting
+to a database using {\tt db\_connect}, (b) direct querying of
+the database, (c) using prepared statements to query the database, (d) closing a
+statement handle, and (e) disconnecting from the database.
+
+The MySQL driver has been tested under Linux and Windows.
+
+
+\subsubsection{Driver for the Embedded MySQL Server}
+
+This driver provides access to the Embedded MySQL Server Library {\tt libmysqld}. Currently, it has support for the following functionality: (a) connecting
+to a database {\tt db\_connect}, (b) direct querying of
+the database, (c) using prepared statements to query the database, (d) closing a
+statement handle, and (e) disconnecting from the database.
+
+The MySQL driver for Embedded MySQL Server has been tested under Linux.
+
+\noindent
+In order to use this driver, you will need:
+\begin{itemize}
+ \item MySQL with Embedded Server installed on your machine. If your don't
+ have a precompiled binary distribution of MySQL, which was configured with
+ libmysqld support (the embedded server library), you will need to build
+ MySQL from sources and configure it with the {\tt --with-embedded-server} option.
+
+ \item append to {\tt /etc/my.cnf} (or {\tt /etc/mysql/my.cnf} -- whichever
+   is used on your machine) or $\sim${\tt/.my.cnf}:
+       \begin{verbatim}
+               [mysqlembedded_driver_SERVER]
+               language = /usr/share/mysql/english
+               datadir = ..... 
+       \end{verbatim}
+       You will probably need to replace
+       {\tt /usr/share/mysql/english} with a directory
+       appropriate for your MySQL installation.
+
+       You might also need to set the {\tt datadir} option to specify
+       the directory where the databases managed by the embedded server are
+       to be kept. This has to be done if there is a possibility of running
+       the embedded MySQL server alongside the regular MySQL server. In
+       that case, the {\tt datadir} directory of the embedded server must
+       be different from the {\tt datadir} directory of the regular server
+       (which is likely to be specified using the {\tt datadir} option in
+       {\tt /etc/my.cnf} or {\tt /etc/mysql/my.cnf}. This is because
+       specifying the same directory might lead to a corruption of your
+       databases. See {\tt
+         http://dev.mysql.com/doc/refman/5.1/en/multiple-servers.html} for
+       further details on running multiple servers.
+\end{itemize}
+
+Please note that loading the embedded MySQL driver increases the memory
+footprint of XSB. This additional memory is released automatically when XSB
+exits. If you need to release the memory before exiting XSB, you can call {\tt
+  driverMySQLEmbedded\_lib\_end} after disconnecting from MySQL.  Note
+that once {\tt driverMySQLEmbedded\_lib\_end} is called, no further
+connections to MySQL are allowed from the currently running session of XSB
+(or else XSB will exit abnormally).
+
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual2"
+%%% End: 

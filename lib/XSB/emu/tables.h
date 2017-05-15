@@ -37,7 +37,7 @@
 
 int	table_call_search(CTXTdeclc TabledCallInfo *, CallLookupResults *);
 int	table_call_search_incr(CTXTdeclc TabledCallInfo *, CallLookupResults *); /* incremental */
-BTNptr	table_answer_search(CTXTdeclc VariantSF, int, int, CPtr, xsbBool *);
+BTNptr	table_answer_search(CTXTdeclc VariantSF, int, int, CPtr, xsbBool *, xsbBool *);
 void	table_consume_answer(CTXTdeclc BTNptr, int, int, CPtr, TIFptr);
 ALNptr	table_identify_relevant_answers(CTXTdeclc SubProdSF, SubConsSF, CPtr);
 void	table_complete_entry(CTXTdeclc VariantSF);

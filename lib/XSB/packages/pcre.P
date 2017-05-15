@@ -51,8 +51,10 @@ substitute(Pattern,Subject,Substitution,Result) :-
 check_installation :-
 	catch(\+ pcre_info:pcre_info(support,yes),
 	      _,
-	      throw(error(existence_error, 'Error: The XSB package PCRE has not been configured - see the XSB manual, volume 2'))),
+	      throw(error(existence_error(package,pcre),
+                          context('The XSB package PCRE has not been configured - see the XSB manual, volume 2',_)))),
 	!,
-	throw(error(existence_error, 'Error: The package PCRE has not been configured - see the XSB manual, volume 2')).
+	throw(error(existence_error(package,pcre),
+                    context('The package PCRE has not been configured - see the XSB manual, volume 2',_))).
 
 check_installation :- !.

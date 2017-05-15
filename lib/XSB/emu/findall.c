@@ -361,10 +361,6 @@ copy_again : /* for tail recursion optimisation */
 	Cell newpsc;
 	int ar;
     
-	if (isinternstr(from) && isinternstr_really(from)) {
-	  *to = from;
-	  return;
-	}
 	pfirstel = (CPtr)cs_val(from);
 	if ( cell_tag((*pfirstel)) == XSB_STRUCT )
 	  {
@@ -372,6 +368,11 @@ copy_again : /* for tail recursion optimisation */
             *to = *pfirstel;
             return;
 	  }
+
+	if (isinternstr(from) && isinternstr_really(from)) {
+	  *to = from;
+	  return;
+	}
 
 	/* first time we visit this struct */
       

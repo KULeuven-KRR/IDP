@@ -21,6 +21,8 @@
 ** 
 */
 
+:- compiler_options([sysmod,optimize,xpp_on]).
+
 /*=======================================================================
 
 bagReduce(+UnaryPred,?Result,+BinOp,+OpId) reduces all values that
@@ -513,8 +515,8 @@ filterPO1(Call,PO) :-
 	).
 
 %-----------------
-:- table table_once/1.
-:- use_variant_tabling table_once(_).
+:- table table_once/1 as variant, opaque.
+%:- use_variant_tabling table_once(_).
 table_once(Call) :- 
 	'_$savecp'(Breg),
 	breg_retskel(Breg,1,Skel,Cs),

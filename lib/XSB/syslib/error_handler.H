@@ -50,7 +50,7 @@
 	      get_backtrace_list/2.
 
 :- export psc_modname_filename/3.
-:- export flush_all_open_streams/1.
+:- export flush_all_open_streams/0.
 :- export xsb_error_get_tag/2,xsb_error_get_message/2,xsb_error_get_backtrace/2,xsb_error_get_goal/2,xsb_error_get_tid/2,
           xsb_error_get_goalatom/2.
 
@@ -66,3 +66,4 @@
 :- import xsb_flag/2 from curr_sym.
 :- import internal_thread_exit/1, thread_property/2 , xsb_thread_self/1 from thread.
 :- import flush_output/1,stream_property/2 from file_io.
+:- import xsb_filename/2 from consult.

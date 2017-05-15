@@ -26,9 +26,13 @@
 #include "incr_xsb_defs.h"
 #include "table_inspection_defs.h"
 
-:- export incr_is_invalid/1.
-incr_is_invalid(Term):- 
-	incr_eval_builtin(IS_AFFECTED,Term).
+:- export incr_is_invalid/1,incr_is_invalid/3.
+incr_is_invalid(Call):- 
+   incr_is_invalid(Call,_Falsecount,_HasAnswers).
+
+incr_is_invalid(Call,Falsecount,HasAnswers):- 
+	(Call = M:Goal -> term_new_mod(M,Goal,NewGoal) ; Call = NewGoal),
+	incr_eval_builtin(IS_AFFECTED,NewGoal,Falsecount,HasAnswers).
 
 /* Does not use affected_gl which is not always updated by lazy or by abolishes */
 :- export incr_invalid_subgoals/1.
@@ -38,7 +42,6 @@ incr_invalid_subgoals(List):-
 	  	    incr_is_invalid(Term)),List) -> true ; List = []).
 
 %--------
-
 incr_directly_depends(X,Y):-	
 	(nonvar(X),var(Y)
 	 ->	immed_depends(X,Y)
@@ -50,11 +53,14 @@ incr_directly_depends(X,Y):-
 	 ;	instantiation_error(incr_directly_depends/2,'1 and 2','at least one nonvar')
 	).
 
+:- import term_new_mod/3 from machine.
 immed_depends(Call,Call2):-
-	incr_eval_builtin(IMMED_DEPENDS_LIST, Call, CallList),
+	(Call = M:Goal -> term_new_mod(M,Goal,NewGoal) ; Call = NewGoal),
+	incr_eval_builtin(IMMED_DEPENDS_LIST, NewGoal, CallList),
 	member(Call2,CallList).		
 
 immed_affects(Call,Call2):-
+	(Call = M:Goal -> term_new_mod(M,Goal,NewGoal) ; Call = NewGoal),
 	incr_eval_builtin(IMMED_AFFECTS_LIST, Call, CallList),
 	member(Call2,CallList).		
 
@@ -175,6 +181,7 @@ check_incremental(Term,Type,Pred,Arity):-
 
 %-----------
 % returns callnodeptr as handle
+   :- export get_calls_incr/2.
 get_calls_incr(CallTerm, Handle) :-
 	findall(get_calls_incr(CallTerm,Handle),
 		get_calls_incr_each(CallTerm,Handle),
@@ -316,12 +323,24 @@ abolish_trans_connected_ptr_calls:-
 	fail.
 abolish_trans_connected_ptr_calls.
 
+:- import functor/3,catch/3 from standard.
+:- import current_predicate/1 from curr_sym.
+:- import get_calls/3 from tables.
+   :- import writeln/1 from standard.
 :- export is_incremental_subgoal/1.
 is_incremental_subgoal(Subgoal):- 
 	(var(Subgoal) -> 
-  	   predicate_property(Subgoal,tabled),predicate_property(Subgoal,incremental)
-         ; true),
-        get_calls(Subgoal).
+  	   current_predicate(S),
+   	   (S = Mod:Funct/Arity -> 
+	      functor(S1,Funct,Arity),
+	      Subgoal = Mod:S1
+	    ; functor(S,Funct,Arity),
+	      Subgoal = S1)
+         ; true ),
+	 predicate_property(Subgoal,tabled),predicate_property(Subgoal,incremental),
+%	 writeln(incremental_pred(Subgoal)),
+         catch(get_calls(Subgoal,_,_),_E,fail).
+	 
 
 %:-export get_scc_dependency_structure/2.
 get_scc_dependency_structure(List,Depends):- 
@@ -413,6 +432,7 @@ call_if_affected(C) :-
 lazy_reeval_trap(Call):- 
 	create_lazy_call_list(Call,CALL_LIST_EVAL,List),
 	reverse(List,ListR),
+%        writeln(lazy_reeval_list([ListR,Call])),
 	lazy_reeval_1(ListR),
 	call_c(Call).
 

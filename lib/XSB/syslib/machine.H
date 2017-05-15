@@ -33,6 +33,9 @@
 :- export
     float_op/10,
     float_op/5,
+   psc_immutable/2,
+   psc_get_alt_semantics/2,
+   psc_set_alt_semantics/2,
 	psc_name/2, 
 	psc_arity/2, 
 	psc_type/2, 
@@ -75,13 +78,14 @@
 	trie_assert_hdr_info/3,
 	call0/1,
         calln/2,calln/3,calln/4,calln/5,calln/6,calln/7,calln/8,calln/9,calln/10,calln/11,calln/12,
-	code_load/3, 
+	code_load/4, 
 	file_gettoken/5,
 	stat_cputime/1,
 	stat_walltime/1,
 	str_match/5,
         dirname_canonic/2,
 	psc_insert/4, 
+	psc_find/4, 
 	psc_import/3, 
 	psc_import_as/2, 
 	psc_insertmod/3,
@@ -187,7 +191,8 @@
 
 :- import assert/1, retract/1, (dynamic)/1 from assert.
 :- import write/1, writeln/1, is_attv/1, warning/1 from standard.
-   :- import incr_eval_builtin/3 from increval.
+:- import incr_eval_builtin/3 from increval.
+:- import term_to_atom/3 from string.
 
 :- export 
 	file_function/7, file_function/3, conname/2, conpsc/2, 

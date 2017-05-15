@@ -9,7 +9,7 @@
 
 /* Should now take out setarg/3 and use one in constraintlib */
 
-:- import call/1,call/2,write/2,get/1,'=..'/2 from standard.
+:- import call/1,call/2,call/3,write/2,get/1,'=..'/2 from standard.
 :- import sort/2 from setof.
 
 :- import trie_delete/2,trie_create/2, trie_unify/2, trie_insert/2 from intern.

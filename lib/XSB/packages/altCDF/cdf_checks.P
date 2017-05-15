@@ -192,7 +192,7 @@ to and loading them from a component.
 	  cdf_id_fields/4 from cdf_init_cdf.
 :- import get_component_extensional/2 from cdf_comps_share.
 
-:- import cdf_flags/2 from usermod.
+:- import cdf_flags/2 from usermod(cdf_init_cdf). % defined dynamically there.
 
 :- import allAttr_ext/3, classHasAttr_ext/3, hasAttr_ext/3,
 	   maxAttr_ext/4, minAttr_ext/4 from usermod.
@@ -898,8 +898,8 @@ check_type_dl_head(Head,Context) :-
 	fail.
 	
 %%dl_type_table(exists(R,C),check_ind_types(_,exists(R,C),[[rid],[cid]])).
-dl_type_table(exists(R,_C),check_ind_types(_,exists(R,_),[[rid],[cid]])).  %hack for now till figure out how to handle nested exists...
-dl_type_table(exists_immed(R,C),check_ind_types(_,exists_immed(R,_C),[[rid],[cid]])).
+dl_type_table(exists(R,_),check_ind_types(_,exists(R,_),[[rid],[cid]])).  %hack for now till figure out how to handle nested exists...
+dl_type_table(exists_immed(R,_),check_ind_types(_,exists_immed(R,_),[[rid],[cid]])).
 dl_type_table(all(R,C),check_ind_types(_,all(R,C),[[rid],[cid]])).
 dl_type_table(atLeast(N,R,C),check_ind_types(_,atLeast(N,R,C),[posint,[rid],[cid]])).
 dl_type_table(atMost(N,R,C),check_ind_types(_,atMost(N,R,C),[posint,[rid],[cid]])).

@@ -41,10 +41,7 @@
 	xpp_options/1,
 	gpp_options/1,
 	enqueue_preprocessor/1,
-	dequeue_preprocessor/1,
-	'_$multifile'/1, '_$multifile1'/1,
-	'_$multifile2'/3, '_$apply_arity'/1,
-	'_$multifile_retract'/3.
+	dequeue_preprocessor/2.
 :- export parsing_file_name/1.
 
 :- import
@@ -59,7 +56,7 @@
    from auxlry.
 
 :- import append/3, memberchk/2, log_ith/3, member/2, copy_term/2 from basics.
-:- import ith/3 from basics.
+:- import ith/3, ground/1 from basics.
 
 :- import inline_predicate/2 from builtin.
 
@@ -74,7 +71,7 @@
 
 :- import
 	preprocessing_error/1,
-	existence_error/4, misc_error/1, syntax_error/1, check_ground/3
+	existence_error/4, syntax_error/1, check_ground/3
    from error_handler.
 
 :- import
@@ -102,21 +99,21 @@
 
 :- import functor/3, seen/0, file_exists/1, '=..'/2, atom/1, integer/1,
           op/3, (index)/3, (index)/2, real/1, see/1, expand_term/2, (=..)/2,
-	  '\='/2, check_table_options/3,
+	  check_table_options/3,
+	  callable/1, goal_cut_trans/3, requires_cut_transforming/1,
 	  arg/3,
 	  open/3,
 	  close/1,
 	  call/1, compound/1,
 	  is_most_general_term/1, number/1, atom_codes/2
      from standard.
-:- import throw/1 from standard.
 
 :- import file_read/3 from xsb_read.
 
 :- import standard_symbol/3 from std_xsb.
 :- import standard_metapredicate/3 from std_xsb.
 
-:- import concat_atom/2 from string.
+   :- import concat_atom/2, term_to_atom/3 from string.
 
 :- import sym_insert/5, sym_propin/2, sym_complete/1, sym_prop/2,
 	  add_new_clause/3, clause_listify/2

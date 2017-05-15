@@ -219,6 +219,8 @@ xasp:
 module: prepare xsbmod do_cleaning inform_module
 
 dynmodule: prepare xsbdynmod
+	@echo "... done ..."
+	@echo ""
 
 cygdll: prepare loccygdll do_cleaning inform_module
 
@@ -445,6 +447,10 @@ clean:
 	@rm -f ${src_config_libdir}/*$(xsb_obj_extension) ${src_config_libdir}/*.so
 	@echo "Cleaning up ${src_config_objlibdir}"
 	@-rm -f ${src_config_objlibdir}/*
+	@echo "Cleaning up ${install_config_libdir}"
+	@- rm -f $(install_config_libdir)/*.so
+	@- rm -f $(install_config_libdir)/*.dylib
+	@- rm -f $(install_config_libdir)/*.xwam
 	@echo "Cleaning up ${src_emudir}"
 	@-rm -f ${src_emudir}/*.o
 	@echo "Cleaning up packages"

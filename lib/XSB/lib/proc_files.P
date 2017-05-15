@@ -57,7 +57,7 @@ load_dsv(FileName,PSpec,Options) :-
 	),
 	load_dsv(FileName,PSpec,Sep,Delim,Options).
 
-read_dsv(FileName,Options,Term) :-
+read_dsv(FileNameOrStr,Options,Term) :-
 	(member(separator=Sep0,Options)
 	 ->	std_separator(Sep0,Sep)
 	 ;	Sep = ","
@@ -71,10 +71,13 @@ read_dsv(FileName,Options,Term) :-
 		)
 	 ;	Delim = 0'"' %"
 	),
-	functor(Term,Pred,Arity),
-	length(Types,Arity),	% no constraints
+	(member(types=Types,Options)
+	 ->	true
+	 ;	functor(Term,Pred,Arity), % no constraints
+		length(Types,Arity)
+	),
 	Term =.. [Pred|Args],
-	read_dsv(FileName,Term,Sep,Delim,Options,Types,Args).
+	read_dsv(FileNameOrStr,Term,Sep,Delim,Options,Types,Args).
 
 :- comment(load_dsv/5,
 "@pred{load_dsv(+FileName,+PSpec,+Sep,+Delim,+Options)} loads a
@@ -123,12 +126,15 @@ load_dsv(FileName,PSpec,Sep,Delim,Options) :-
 	 true
 	).
 
-read_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
+read_dsv(FileNameOrStr,PSpec,Sep,Delim,Options,Types,Args) :-
 	cputime(T0),
 	conset('__errcnt',0),
 	conset('__recsread',0),
 	conset('__linesread',0),
-	open(FileName,read,Stream),
+	(integer(FileNameOrStr)
+	 ->	Stream = FileNameOrStr
+	 ;	open(FileNameOrStr,read,Stream)
+	),
 	(member(returns=Returns,Options)
 	 ->	length(Args,NumFields)
 	 ;	NumFields = 0,
@@ -139,14 +145,15 @@ read_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
 	 ->	!,
 		close(Stream),
 		conget('__recsread',RecsRead),
-		time_message(T0,(FileName,' loaded (delimited) ',RecsRead,' records')),
+		time_message(T0,(FileNameOrStr,' loaded (delimited) ',RecsRead,' records')),
 		fail
 	 ;	coninc('__recsread',RecsRead),
 		(RecsRead =:= 1,member(titles,Options)
 		 ->	fail
 		 ;	atom_codes_list(Fields,CodeFields),
-			(atom(PSpec) ->	Args = Fields
-                        ;	cvt_types(Fields,Types,Args,Fields)
+			(atom(PSpec)
+			 ->	Args = Fields
+			 ;	cvt_types(Fields,Types,Args,Fields)
 			)
 		)
 	).
@@ -239,18 +246,10 @@ cvt_types([F|Fs],[T|Ts],[A|As],Fields) :-
 	
 	
 delim_file_process(Stream,Sep,Delim,CodeFields):-
-	(file_read_line_list(Stream,List)
+	repeat,
+	(file_read_line_list(Stream,CList)
 	 ->	coninc('__linesread'),
-		(break_into_code_fields(Stream,CodeFields,List,Sep,Delim)
-		 ;
-		 repeat,
-		 (file_read_line_list(Stream,CList)
-		  ->	 coninc('__linesread'),
-			 break_into_code_fields(Stream,CodeFields,CList,Sep,Delim)
-		  ;	 !,
-			 CodeFields = end_of_file
-		 )
-		)
+		break_into_code_fields(Stream,CodeFields,CList,Sep,Delim)
 	 ;	!,
 		CodeFields = end_of_file
 	).

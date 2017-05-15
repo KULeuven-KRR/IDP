@@ -52,17 +52,15 @@ make_mysqlembedded_driverH(CC, CC_opts) :-
             xsb_running_under(windows) -> true
         ; %% MacOS
             xsb_running_under(darwin) -> 
-            %% probably needs -lsupc++ to avoid undefined symbol error
             fmt_write_string(LD_flags,
-                             ' %s %s  -lmysqld -s -lz -lm -lcrypt -lpthread %s%sdriver_manager.dylib %s%smysqlembedded_driver.dylib',
-                             f(EmbedMySQLRunpathFlag, EmbedMySQL_libdir_flag, 
-                               ConfigLibDir, Slash, ConfigLibDir, Slash))
+                             ' %s %s -L%s -lmysqld -s -lz -lm -lcrypt -lpthread ',
+                             f(EmbedMySQLRunpathFlag,EmbedMySQL_libdir_flag, 
+                               ConfigLibDir))
         ; %% other unixes
-            %% -lsupc++ is needed to avoid undefined symbol error
             fmt_write_string(LD_flags,
-                             ' %s %s  -lmysqld -lsupc++ -s -lz -lm -lcrypt -lpthread %s%sdriver_manager.so %s%smysqlembedded_driver.so',
+                             ' %s %s -L%s -lmysqld -s -lz -lm -lcrypt -lpthread %s%sdriver_manager.so ',
                              f(EmbedMySQLRunpathFlag, EmbedMySQL_libdir_flag, 
-                               ConfigLibDir,Slash,ConfigLibDir,Slash))
+                               ConfigLibDir,ConfigLibDir,Slash))
         ),
         fmt_write_string(LD_directives_file,
                          '%s%scc%smysqlembedded_driver.H',
@@ -182,8 +180,6 @@ make_mysqlembedded_driverH(CC, CC_opts) :-
                 fmt_write_string(CC_opts,
                                  ' %s -I %s -I %s',
                                  f(CCflags, ConfigDir, DBDriversDir)),
-                compile_so(Module, [cc(CC), cc_opts(CC_opts)], LDflags),
-
                 (xsb_running_under(darwin) -> LibrarySuffix='.dylib'
                 ;  LibrarySuffix='.so'
                 ),
@@ -191,10 +187,10 @@ make_mysqlembedded_driverH(CC, CC_opts) :-
                 str_cat(Module, LibrarySuffix, SharedLib),
                 %% this is needed because compile_so above creates a shared lib
                 %% and we need to move it to where XSB can find it.
-                force_rename_file(SharedLib, ConfigSharedMod),
                 make_mysqlembedded_driverH(CC, CC_opts),
                 %% this will regenerate SharedLib in cc/ - needed by Mac
                 consult(Module, [cc(CC), cc_opts(CC_opts)]),
+                force_rename_file(SharedLib, ConfigSharedMod),
                 force_rename_file(ObjfileX, LibObjFileX)
             )
         ).

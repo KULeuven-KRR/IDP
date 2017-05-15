@@ -39,6 +39,7 @@
 #define XSB_HDR_EXTENSION_ATOM    '.H'
 #define XSB_ASM_EXTENSION_ATOM    '.A'
 #define XSB_DCL_EXTENSION_ATOM    '.D'
+#define XSB_LCK_EXTENSION_ATOM    '.xsblock'
 
 #define XSB_OBJ_EXTENSION_ATOM_SANS_DOT    'xwam'
 #define XSB_SRC_EXTENSION_ATOM_SANS_DOT    'P'

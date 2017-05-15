@@ -63,3 +63,5 @@
 :- import write_header/0, process_from/3 from wrapping.
 :- import write_int/2 from xsb_writ.
 :- import xsb_configuration/2 from xsb_configuration.
+
+:- import banner_control/1 from banner.

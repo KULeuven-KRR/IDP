@@ -52,12 +52,15 @@ load_cdf_init_cdf.  % to allow altCDF to force loading of this module.
     minAttr_ext/4,   maxAttr_ext/4,
     necessCond_ext/2, coversAttr_ext/3		from usermod.
 
+:- import isa_int_prim/2 from usermod(cdf_init).
+
 :- import  isa_int/2, hasAttr_int/3, minAttr_int/4,
       classHasAttr_int/3, allAttr_int/3,maxAttr_int/4,
       necessCond_int/2, coversAttr_int/3                   from usermod.
 
 :- import assert_cdf_int/1, retractall_cdf_int/1 from usermod.
 
+:- dynamic cdf_flags/2.
 :- import cdf_flags/2, user_cdf_flag/2,
      cdf_flag/1, initial_cdf_flag/2, cdf_configuration/2 from usermod.
 
@@ -71,8 +74,7 @@ load_cdf_init_cdf.  % to allow altCDF to force loading of this module.
 :- import compdlrule/3 from usermod.
 
 %%%%%%%%%%
-%:- import apply_checks/2 from cdf_checks.
-:- import apply_checks/2 from usermod.
+:- import apply_checks/2 from usermod(cdf_checks).
 
 %%%%%%%%%%
 :- import cdf_set_log_off/0, cdf_log/1, cdf_reset_log/0
@@ -97,7 +99,7 @@ load_cdf_init_cdf.  % to allow altCDF to force loading of this module.
 :- import xsb_configuration/2 from xsb_configuration.
 :- xsb_configuration(install_dir,InstallDir),
 	add_lib_dir(InstallDir,'packages/altCDF').
-:- ensure_loaded(cdf_checks).	% since cdf_checks is not a module, and
+%%:- ensure_loaded(cdf_checks).	% since cdf_checks is not a module, and
                 % cdf_init_cdf uses predicates defined
                 % there, it must be explicitly loaded.
 
@@ -110,7 +112,6 @@ load_cdf_init_cdf.  % to allow altCDF to force loading of this module.
 :- import parsort/4 from machine.
 
 :- import '_$index'/3 from file_op.
-%%%:- import conset/2, conget/2, coninc/1 from gensym.
 :- import member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import concat_atom/2 from string.
@@ -139,9 +140,14 @@ cdf_dynamic(dlTable/11).
 cdf_dynamic(isa_ext_12/2).  % delete if not mti
 cdf_dynamic(isa_ext_21/2).  % delete if not mti
 cdf_dynamic(allAttr_ext/3).
+
 %cdf_dynamic(hasAttr_ext/3).  % delete if mti
-cdf_dynamic(hasAttr_ext_123/3). % delete if not mti
-cdf_dynamic(hasAttr_ext_231/3). % delete if not mti
+%%% following 2 clauses *should* work when mti, but cause strange crash in
+%%% explain-class in emall classifier.  Don't know what's happening,
+%%% so LEAVE THEM OUT, until/unless understand what's happening and is fixed.
+%%cdf_dynamic(hasAttr_ext_123/3). % delete if not mti
+%%cdf_dynamic(hasAttr_ext_231/3). % delete if not mti
+
 cdf_dynamic(classHasAttr_ext/3).
 cdf_dynamic(minAttr_ext/4).
 cdf_dynamic(maxAttr_ext/4).
@@ -287,6 +293,7 @@ initialize_state:-
     initialize_state_nl.
 
 initialize_state_nl :-
+    abolish_cdf_tables,
     clear_mfile_rules,
     cdf_clear_dynamics,
     load_component(cdf,'',[]),
@@ -547,7 +554,7 @@ Note that  explosive_isa/2, proper_isa/2*/
 table_isa(X,Y):- isa(X,Y).
 
 #if TABLEDISA
-:- table isa/2 as subsumptive.
+:- table isa/2. % as subsumptive.
 #endif
 
 isa(Sub,Sup):-
@@ -634,6 +641,7 @@ isa_bf_inner(Sub,Sup):-
 %--------------------
 
 % Here implicit would fail; just do immediate, and look down.
+/** change nonvars to ground... 
 isa_fx(Sub,Sup):-
      (nonvar(Sub),Sub = cid(_,_) ->
         isa_subclass_fx(Sub,Sup)
@@ -642,27 +650,41 @@ isa_fx(Sub,Sup):-
                ; (nonvar(Sub),Sub = crid(_,_) ->
                       isa_subcrel_fx(Sub,Sup)
             ; isa_nospec_fx(Sub,Sup) ) ) ).
+***/
+isa_fx(Sub,Sup):-
+     (ground(Sub),Sub = cid(_,_) ->
+        isa_subclass_fx(Sub,Sup)
+          ; (ground(Sub),Sub = rid(_,_) ->
+                 isa_subrel_fx(Sub,Sup)
+               ; (ground(Sub),Sub = crid(_,_) ->
+                      isa_subcrel_fx(Sub,Sup)
+            ; isa_nospec_fx(Sub,Sup) ) ) ).
 
 isa_nospec_fx(Sub,Sub).
 isa_nospec_fx(Sub,Sup):-
     isa_nospec_fx_maybe_table(Sub,Sup).
 
 #if TABLEDISA
-:- table isa_nospec_fx_maybe_table/2.
-#endif
-
+:- table isa_nospec_fx_maybe_table/2 as subsumptive.
+isa_nospec_fx_maybe_table(Sub,Sup):-
+	isa_nospec_fx(Mid,Sup),
+	immed_isa1(Sub,Mid).
+#else
 isa_nospec_fx_maybe_table(Sub,Sup):-
     immed_isa1(Mid,Sup),
     isa_nospec_fx(Sub,Mid).
+#endif
 
-isa_subclass_fx(Sub,Sub).
-isa_subclass_fx(Sub,Sup):-
-    isa_subclass_fx_maybe_table(Sub,Sup).
+isa_subclass_fx(Sub,Sup) :-
+	isa_subclass_fx_maybe_table(Sub,Sup).
 
 #if TABLEDISA
 :- table isa_subclass_fx_maybe_table/2.
-#endif
-
+isa_subclass_fx_maybe_table(Sub,Sub).
+isa_subclass_fx_maybe_table(Sub,Sup):-
+	isa_subclass_fx(Mid,Sup),
+	immed_isa1(Sub,Mid).
+#else
 /**isa_subclass_fx_maybe_table(Sub,Sup):-
 	nonvar(Sub),
 	cdf_id_fields(Sub,cid,Suba,_),
@@ -670,9 +692,13 @@ isa_subclass_fx(Sub,Sup):-
 	!,
 	immed_isa1(Sub,SubM),
 	isa_bf(SubM,Sup).  ***/
+isa_subclass_fx_maybe_table(Sub,Sub).
 isa_subclass_fx_maybe_table(Sub,Sup):-
-    immed_isa1(cid(MN,MS),Sup),
+	writeln(userout,ent_nontab_isfxmt(Sub,Sup)),
+	immed_isa1(cid(MN,MS),Sup),
     isa_subclass_fx(Sub,cid(MN,MS)).
+#endif
+
 
 isa_subrel_fx(Sub,Sub).
 isa_subrel_fx(Sub,Sup):-
@@ -2161,7 +2187,8 @@ bound_on([_ArgNo|ArgNos],Goal) :-
 bound_on_all(ArgNo,Goal) :-
     ArgNo1 is ArgNo /\ 255,
     arg(ArgNo1,Goal,Arg),
-    nonvar(Arg),
+%%    nonvar(Arg),
+    ground(Arg),
     (ArgNo < 256
      ->	true
      ;	ArgNoM is ArgNo >> 8,
@@ -2245,7 +2272,7 @@ newExtTerm(Context,Term,Upd0,Upd):-
 %%%%%% TLS: please keep this here -- we want to do the initialization
 %%%%%% LAST upon load.
 
-?- ensure_loaded(cdf_config), writeln(userout,cdf_config_loaded).
+?- ensure_loaded(cdf_config). %, writeln(userout,cdf_config_loaded).
 
 #if TABLEDISA
 ?- cdf_message('Using tabled isa').

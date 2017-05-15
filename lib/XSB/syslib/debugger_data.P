@@ -73,6 +73,16 @@ hide_this_hide(abolish_table_pred,1).
 hide_this_hide(abolish_table_call,1).
 hide_this_hide(abolish_all_tables,0).
 
+show_this_hide(incr_assert,1).
+show_this_hide(incr_asserta,1).
+show_this_hide(incr_assertz,1).
+show_this_hide(incr_retract,1).
+show_this_hide(incr_retractall,1).
+show_this_hide(incr_directly_depends,2).
+show_this_hide(incr_trans_depends,2).
+show_this_hide(is_incremental_subgoal,1).
+show_this_hide(incr_is_invalid,1).
+
 %% trace inside these standard predicates
 trace_standard_predicate(call,1).
 trace_standard_predicate(call,2).
@@ -111,7 +121,7 @@ hide_this_show(tcall,1).
 hide_this_hide(is_incomplete,2).
 
 trace_standard_predicate(catch,3).
-trace_this_noprint(catch,3).
+trace_this_print(catch,3).
 trace_this_noprint('$$exception_ball',2).
 
 %% On Redo, enable printing of debug prompts

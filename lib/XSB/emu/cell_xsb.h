@@ -264,7 +264,8 @@ extern unsigned long enc[], dec[];
 /* Miscellaneous							*/
 /*======================================================================*/
 
-#define MAX_ARITY	255
+#define MAX_ARITY    65535
+
 #define CELL_DEFS_INCLUDED
 
 #define arity_integer(dcell) \

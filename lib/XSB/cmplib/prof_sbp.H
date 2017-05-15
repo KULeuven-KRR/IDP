@@ -24,12 +24,11 @@
 */
 
 
-:- export prepare/0, name_append/3.
-:- export gensym/2, gennum/1, myclose/1, write_int/1, write_float/1.
+:- export prepare/0.
+:- export gensym/2, gennum/1, write_int/1, write_float/1.
 :- export copyterm/2, conlength/2.
 :- export conset/2, conget/2, coninc/1.
 :- export newcounter/1, inccounter/1, getcounter/1.
-:- export ll_arg/3.
 
 :- import dict_lookup/3 from auxlry.
 :- import append/3 from basics.
