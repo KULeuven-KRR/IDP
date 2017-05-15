@@ -109,6 +109,7 @@ enum BoolType {
 	XSB_SUBSUMPTIVE_TABLING,
 	SHOW_XSB_WARNINGS,
 	REFINE_DEFS_WITH_XSB,
+	XSB_COMPILES_PROGRAMS, // compile instead of load programs. For efficiency reasons this should be TRUE for large definitions and FALSE for small ones
 	XSB
 };
 

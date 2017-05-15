@@ -31,7 +31,7 @@ private:
 	XSBInterface();
 	void loadOpenSymbols();
 	void loadInterpretation(PFSymbol*);
-	void sendToXSB(std::string);
+	void sendToXSB(std::string, bool mustnevercompile = false);
 	void commandCall(const std::string& command);
 	void handleResult(int xsb_status);
 	PrologTerm* symbol2term(const PFSymbol*);
