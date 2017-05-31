@@ -1,5 +1,5 @@
 /* File:      conget_xsb_i.h
-** Author(s): ??
+** Author(s): warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1999
@@ -60,6 +60,6 @@ static inline xsbBool conset(Cell string, Integer newval)
     xsb_abort("[conget] Cannot set data of callable predicate %s/%d.\n",
 	      get_name(str_psc),get_arity(str_psc));
 
-  set_data(str_psc, (Psc) newval);
+  psc_set_data(str_psc, (Psc) newval);
   return TRUE;
 }

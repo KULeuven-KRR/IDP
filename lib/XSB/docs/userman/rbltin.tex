@@ -1,0 +1,1162 @@
+%========================================================
+
+\section{Asserting, Retracting, and Other Database Modifications} \label{sec:assert}
+
+\index{indexing}
+XSB provides an array of features for modifying the dynamic database.
+As a default, using {\tt assert/1}, clauses can be asserted using
+first-argument indexing in a manner that is now standard to Prolog
+implementations.  However, a variety of other behaviors can be
+specified using the (executable) directives {\tt index/3} and {\tt
+  index/2}.  For instance, dynamic clauses can be declared to have
+multiple or joint indexes, and this indexing can be either hash-based
+as is typical in Prolog systems or based on {\em tries}.  No matter
+what kind of indexing is used, space is dynamically allocated when a
+new clause is asserted and, unless specified otherwise, released after
+it is retracted.  Furthermore, the size of any index table expands
+dynamically as clauses are asserted.
+
+All dynamic predicates are compiled into SLG-WAM code, however the
+manner of their compilation may differ, and the differences in
+compilation affect the semantics for the predicate.  If a dynamic
+predicate $P/n$ is given an indexing directive of {\tt trie}, clauses
+for $P/n$ will be compiled using trie instructions; otherwise clauses
+for $P/n$ will be compiled into SLG-WAM instructions along the lines
+of static predicates. 
+
+Consider first dynamic predicates that use any indexing other than
+{\tt trie} -- including multiple or joint indices and star indexing.
+XSB asserts WAM code for such clauses so that that the execution time
+of dynamic code is similar to compiled code for unit and binary
+clauses.  Furthermore, tabling can be used by explicitly declaring a
+predicate to be both dynamic and tabled.  In \version{}, when the
+clause of a dynamic predicate is asserted as WAM code, the {\em
+  ``immediate semantics''} rather than the ISO Semantics of
+assert/retract~\cite{LiOk87}.  The immediate semantics allows assert
+and retract to be fast and spatially efficient, but requires that
+significant care must be taken when modifying the definition of a
+predicate which is currently being executed.
+
+\comment{
+| This means that significant care must be taken when
+| modifying the definition of a predicate which is currently being
+| executed. Notice that this makes some operations difficult. For
+| example, one might try to retract from dynamically asserted
+| predicates, {\tt p/1} and {\tt q/1}, exactly their intersection, by
+| issuing the following query:
+| \begin{center} 
+| {\tt :- p(X), q(X), retract(p(X)), retract(q(X)), fail.}
+| \end{center}
+| Neither {\tt retract/1} nor {\tt retractall/1} support this behavior,
+| due to their techniques for space reclamation.  One alternative is to
+| use {\tt findall/3} to collect the intersection first, before retracting.
+| Another is to use the predicates {\tt retract\_nr/1} and {\tt
+| reclaim\_space/1}, described below.  
+}
+
+If a dynamic predicate is given an indexing directive of {\tt trie},
+clauses of the predicate are compiled (upon a call {\tt assert/1})
+using trie instructions as described in \cite{RRSSW98}.  Creation of
+trie-based dynamic code is significantly faster than creation of other
+dynamic code, and execution time may also be faster.  However,
+trie-based predicates can only be used for unit clauses where a
+relation is viewed as a set, and where the order of the facts is not
+important.
+
+XSB does not at this time fully support dynamic predicates defined
+within compiled code.  The only way to generate dynamic code is by
+explicitly asserting it, or by using the standard predicate {\tt
+  load\_dyn/1} to read clauses from a file and assert them (see the
+section {\it Asserting Dynamic Code} in Volume 2).  There is a {\tt
+  dynamic/1} predicate (see page~\pageref{dynamic/1}) that declares a
+predicate within the system so that if the predicate is called when no
+clauses are presently defining it, the call will quietly fail instead
+of issuing an {\sf ``Undefined predicate''} error message.
+
+\begin{description}
+%
+\index{indexing}
+\isoitem{asserta(+Clause)}{asserta/1}
+%
+If the index specification for the predicate is not {\tt trie}, this
+predicate adds a dynamic clause, {\tt Clause}, to the database {\em
+before} any other clauses for the same predicate currently in the
+database.  If the index specification for the predicate is {\tt trie},
+the clause is asserted arbitrarily within the trie, and a warning
+message sent to {\tt stderr}.
+
+Note that because of the precedence of {\tt :-/2}, asserting a clause
+containing this operator requires an extra set of parentheses: {\tt
+  assert((Head :- Body))}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Clause} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Clause} is not a callable clause.
+\bi
+\item 	{\tt domain\_error(callable,Clause)}
+\ei
+%
+\item 	{\tt Clause} has a head that is a static built-in
+\bi
+\item 	{\tt permission\_error(modify,builtin,Clause)}
+\ei
+\item 	{\tt Clause} has a head that is a static user predicate
+\bi
+\item 	{\tt permission\_error(modify,static,Clause)}
+\ei
+%
+\ei
+
+\index{indexing}
+\isoitem{assertz(+Clause)}{assertz/1}
+%
+If the index specification for the predicate is not {\tt trie}, this
+predicate adds a dynamic clause, {\tt Clause}, to the database {\em
+  after} any other clauses for the same predicate currently in the
+database.  If the index specification for the predicate is {\tt trie},
+the clause is asserted arbitrarily within the trie, and a warning
+message sent to {\tt stderr}.  Error cases are as with {\tt
+  asserta/1}.
+
+Note that because of the precedence of {\tt :-/2}, asserting a clause
+containing this operator requires an extra set of parentheses: {\tt
+  assert((Head :- Body))}.
+
+\index{indexing}
+\standarditem{assert(+Clause)}{assert/1}
+%
+If the index specification for the predicate is not {\tt trie}, this
+predicate adds a dynamic clause, {\tt Clause}, to the database {\em
+  after} any other clauses for the same predicate currently in the
+database (acting as {\tt assertz/1}).  If the index specification for
+the predicate is {\tt trie}, the clause is asserted arbitrarily within
+the trie.  Error cases are as with {\tt assertz/1}.
+
+Note that because of the precedence of {\tt :-/2}, asserting a clause
+containing this operator requires an extra set of parentheses: {\tt
+  assert((Head :- Body))}.
+
+\index{indexing}
+\standarditem{assert(+Clause,+AorZandVar,+Index)}{assert/3}
+This is a lower-level interface to (non-trie-indexed) assert.  It is
+normally not needed except in one particular situation, when assert
+aborts because it needs too many registers.  In this case, this
+lower-level assert may allow the offending clause to be correctly
+asserted.
+
+The default implementation of non-trie-indexed assert generates code
+with a single pass through the asserted term.  Because of this, it
+cannot know when it has encountered the final occurrence of a
+variable, and thus it can never release (and thus re-use) registers
+that are used to refer to variables.  Since there is a limit of 255
+registers in the XSB virtual machine, asserting a clause with more
+than this many distinct variables results in an error.  There is an
+alternative implementation of assert that initially traverses the
+clause to determine the number of occurrences of each variable and
+thus allows better use of registers during code generation.
+
+{\tt Clause} is the clause to assert. {\tt AorZandVar} is an integer
+whose lower 2 bits are used: The low-order bit is 0 if the clause is
+to be added as the first clause, and 1 if it is to be added as the
+last clause. If the second bit (2) is on, then the clause is traversed
+to count variable occurrences and so improve register allocation for
+variables; if it is 0, the default one-pass code-generation is done.
+So, for example, if {\tt AorZandVar} is 3, then the clause will be
+asserted as the last one in the predicate and the better register
+allocation will be used.  {\tt Index} indicates the argument(s) on
+which to index.
+
+\isoitem{retract(+Clause)}{retract/1}
+%
+Removes through backtracking all clauses in the database that match
+with {\tt Clause}.  {\tt Clause} must be of one of the forms: {\tt
+  Head} or {\tt Head :- Body}.  Note, that because of the precedence
+of {\tt :-/2}, using the second form requires an extra set of
+parentheses: {\tt retract((Head :- Body))}.  
+
+The technical details on space reclamation are as follows.  When
+retract is called, a check is made to determine whether it is safe to
+reclaim space for that clause.  Safety is ensured when:
+\begin{itemize}
+\item A check is made of the choice point stack indicating that no
+  choice point will backtrack into space that is being reclaimed; AND
+\begin{itemize}
+\item The predicate is thread-private; OR 
+\item there is a single active thread
+\end{itemize}
+\item AND if the predicate is tabled, there is no incomplete table
+     for that predicate.
+\end{itemize}
+If it is safe to reclaim space for the clause, space is reclaimed
+immediately.  Otherwise the clause is marked so that its space may
+later be reclaimed through garbage collection.  (See {\tt
+  gc\_dynamic/1}).
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Clause} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Clause} is not a callable clause.
+\bi
+\item 	{\tt domain\_error(callable,Clause)}
+\ei
+%
+\item 	{\tt Clause} has a head that is a static built-in
+\bi
+\item 	{\tt permission\_error(modify,builtin,Clause)}
+\ei
+\item 	{\tt Clause} has a head that is a static user predicate
+\bi
+\item 	{\tt permission\_error(modify,static,Clause)}
+\ei
+%
+\ei
+
+\isoitem{retractall(+Head)}{retractall/1} removes every
+clause in the database whose head matches with {\tt Head}.  The
+predicate whose clauses have been retracted retains the {\tt dynamic}
+property (contrast this behavior with that of predicates {\tt
+  abolish/[1,2]} below).  Predicate {\tt retractall/1} is determinate
+and always succeeds.  The term {\tt Head} is not further instantiated
+by this call.  Conditions for space reclamation and error cases are as
+with {\tt retract/1}.
+
+\isoitem{abolish(+PredSpec)}{abolish/1} 
+%
+Removes all information about the specified predicate. {\tt PredSpec}
+is of the form {\tt Pred/Arity}.  Everything about the abolished
+predicate is completely forgotten by the system (including the {\tt
+  dynamic or static} property, whether the predicate is tabled, and
+whether the predicate is thread-shared or
+thread-private)~\footnote{For compatibility with older Prologs, there
+  is also an {\tt abolish/2} which takes {\tt Pred} and {\tt Arity} as
+  its two arguments.}.  Any completed tables for the predicate are
+also removed.
+
+It is an error to abolish a predicate when there is more than 1 active
+thread, regardless of whether the predicate is thread-private or
+thread-shared.  The reason for this is that, even if {\tt PredInd}
+denotes a thread-private predicate, one thread may be making use of
+{\tt PredInd} as another thread abolishes it.  {\tt abolish/1} throws
+an error in such a case to prevent such a semantic inconsistency.
+Similarly, if there is a non-completed table for {\tt PredInd}, an
+error is thrown to prevent incompleteness in the tabled computation.
+
+\compatibility \version{} of XSB allows static predicates to be
+abolished and their space reclaimed.  Such space is reclaimed
+immediately, and unlike the case for abolished static code,  no check
+is made to ensure that XSB's choice point stack is free of choice
+points for the abolished static predicate.  Abolishing static code is
+thus dangerous and should be avoided unless a user is certain it is
+safe to use.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt PredInd}, {\tt Pred} or {\tt Arity} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Arity} is not in the range 0..$2^{16}$ ({\tt max\_arity})
+\bi
+\item 	{\tt domain\_error(arity\_indicator,Arity)}
+\ei
+%
+\item 	{\tt PredInd} indicates a static built-in
+\bi
+\item 	{\tt permission\_error(modify,builtin,Predind)}
+\ei
+%
+\item {\tt abolish/1} is called when there is more than 1 active thread.
+\bi
+\item {\tt misc\_error}
+\ei
+%
+\item {\tt PredInd} has a non-completed table in the current thread.
+\bi
+\item {\tt table\_error}
+\ei
+%
+\item There are active backtrack points to a (dynamic) clause for {\tt
+  PredInd}~\footnote{XSB throws an error in this case because garbage
+  collection for abolished predicates has not been implemented
+  (unlike for retract(all) and various table abolishes).  Besides, you
+  shouldn't be abolishing a predicate that you could backtrack into.
+  What were you thinking?}. 
+\bi
+\item {\tt misc\_error}
+\ei
+%
+\ei
+
+\isoitem{clause(+Head,?Body)}{clause/2}
+%
+Returns through backtracking all dynamic clauses in the database whose
+head matches {\tt Head} and Body matches {\tt Body}.  For facts the
+{\tt Body} is {\tt true}.  {\tt clause/2} works properly for all
+dynamically {\em asserted} clauses, even if they are trie-indexed;
+however {\tt clause/2} does not access trie-inserted terms.  In the
+multi-threaded engine, when a thread $T$ calls {\tt clause/2} it
+accesses both thread-shared dynamic code and thread-private dynamic
+code for $T$.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Head} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Head} (or {\tt Body}) is not a callable clause.
+\bi
+\item 	{\tt domain\_error(callable,Head)}
+\ei
+%
+\item 	{\tt Head} is a static built-in
+\bi
+\item 	{\tt permission\_error(access,builtin,Head)}
+\ei
+\item 	{\tt Head} is a static user predicate
+\bi
+\item 	{\tt permission\_error(access,static,Clause)}
+\ei
+%
+\ei
+
+\standarditem{gc\_dynamic(-N)}{gc\_dynamic/1} 
+\index{garbage collection!dynamic clauses}
+%
+Invokes the garbage collector for dynamic clauses that have been
+retracted, or whose predicate has been abolished.  When called with
+more than 1 active thread, {\tt gc\_dynamic/1} will always perform
+garbage collection for that thread's private retracted clauses;
+however in \version{}, it will only perform garbage collection for
+retracted thread-shared clauses if there is a single active thread.
+{\tt N} is the number or shared and/or private frames left to be
+collected -- if {\tt N} is unified to 0, then all possible garbage
+collecting has been performed.  {\tt N} is unified to -1 garbage
+collection was not attempted (due to multiple active threads).
+
+By default, {\tt gc\_dynamic/1} is called automatically at the top
+level of the XSB interpreter, when abolishing a predicate, and when
+calling retractall for an ``open'' term containing no variable
+bindings.
+
+\comment{
+Now obsolete, what with GC.
+
+| \standarditem{retract\_nr(+Clause)}{retract\_nr/1}
+| Performs just as {\tt retract/1} does, except that it does not reclaim the
+| space used by the retracted clause. This is provided to allow programmers
+| to modify dynamic clauses while executing them (a practice that is 
+| discouraged.) For example, to retract an intersection, as described above,
+| one could do:
+| \begin{center}
+| {\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail.}
+| \end{center}
+| In order to reclaim space after using {\tt retract\_nr/1}, see 
+| {\tt reclaim\_space/1} below.  Predicate {\tt retract\_nr/1}
+| is not a standard predicate and must be imported from module {\tt assert}.
+| {\tt retract\_nr/1} is provided for (partial)
+| compatibility with the {\tt retract/1} predicate of SB-Prolog.
+
+%In this case, the {\tt retract\_nr/1} deletes the clauses, but will not
+%drastically modify the clause data structure,
+%and this code will execute. Of course, space is not reclaimed for further
+%use (but see {\tt reclaim\_space/1} below).  Predicate {\tt retract\_nr/1}
+%is not a standard predicate but must be imported from module {\tt assert}.
+%The use of this predicate is discouraged; it is provided for (partial)
+%compatibility with the {\tt retract/1} predicate provided by SB-Prolog that
+%did not reclaim space.
+
+| \standarditem{reclaim\_space(+Head)}{reclaim\_space/1} Runs
+| through the dynamic code for the predicate indicated by {\tt Head},
+| and reclaims space for any clauses that have been deleted from that
+| predicate by {\tt retract\_nr/1}.  This cannot safely be used when
+| execution is still within some invocation of the specified predicate,
+| or will backtrack into such a scope.  To complete our example of
+| retracting the intersection of dynamic predicates:
+| \begin{center}
+| {\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail\ ;\\
+|      reclaim\_space(p(\_)), reclaim\_space(q(\_)).}
+| \end{center}
+| would do the trick. Notice that the {\tt reclaim\_space} calls 
+| must be made after execution has completely failed
+| out of choice points for {\tt q(X)} and {\tt p(X)}.  Predicate 
+| {\tt reclaim\_space/1} is not
+| standard but must be imported from module {\tt assert}.
+| As with {\tt retract\_nr}, the use of this predicate is discouraged; 
+| it is provided for (partial) compatibility with SB-Prolog.
+}
+\comment{ 
+TLS: I don't think we need hashtable size given that we use dynamic
+hashing.  We still are supporting it, but we don't need to encourage it
+\vspace{-.35in}
+\standarditem{index(+PredSpec, +IndexSpec, +HashTableSize)}{index/3}
+
+| If {\tt index/3} is used, then the predicate indicated by {\tt
+| PredSpec} is declared to be indexed according to {\tt IndexSpec} using
+| initial hash table of sizes of {\tt HashTableSize}.  After this
+| directive is given, all clauses asserted to {\tt PredSpec} will be so
+| indexed.  
+
+| For dynamic predicates,
+| {\tt index/2} is an executable directive that can be used to specify
+| the indexing of a predicate before clauses to that predicate have been
+| asserted.  
+
+
+| As an example, one could specify: {\tt index(p/5,[1+2,1,4],300)}.
+| After clauses are asserted to it, a call to {\tt p/5} would first
+| check to see if both the first and second arguments are non-variable
+| and if so, use an index based on both those values. Otherwise, it
+| would see if the second argument is non-variable and if so, use an
+| index based on it. Otherwise, it would see if the fourth argument is
+| non-variable and if so use an index based on it. As a last resort, it would
+| use no index but a list containing an element that is a variablebacktrack through all the clauses in the predicate.
+| (Notice that it may well make sense to include an argument that 
+| appears in a joint specification later alone, as 1 in this example,
+| but it never makes sense foring the single argument to appear earlier. In
+| that case the joint index would never be used.)
+
+}
+
+\index{indexing}
+\standarditem{index(+PredSpec, +IndexSpec)}{index/2}
+\label{index_dynamic} \index{indexing!dynamic predicates}
+%
+In {\tt index(PredSpec, IndexSpec)}, {\tt PredSpec} is a predicate
+indicator or term indicator, and {\tt IndexSpec} is a form of index
+specification as described below.
+
+In general, XSB supports hash-based indexing on various arguments of
+clauses, on combinations of arguments, as well as within the arguments
+of a clause.  The availability of various kinds of indexing depends on
+whether code is static (e.g. compiled) or dynamic (e.g. asserted,
+loaded with {\tt load\_dyn/1} and so on).  Index directives can be
+given to the compiler as part of source code or executed during
+program execution (analogously to {\tt op/3}).  When executed during
+program execution, {\tt index/2} does {\em not\/} re-index an already
+existing predicate; however for dynamic predicates {\tt index/2} does
+affect the index for clauses asserted after the directive has been
+given.
+
+\index{tries!asserted}
+\index{indexing!hash-based}
+\begin{itemize}
+\item {\em Hash-based Indexing} 
+\begin{itemize}
+\item {\em Static Predicates}\ 
+In this case {\tt IndexSpec} must be a non-negative integer which
+indicates the argument on which an index is to be constructed.  If
+{\tt IndexSpec} is~0, then no index is kept (possibly an efficient
+strategy for predicates with only one or two clauses.)
+%
+\item {\em Dynamic Predicates} For a dynamic predicate, (to which no
+  clauses have yet been asserted), a wide variety of indexing
+  techniques are possible.  We discuss their syntax first, and then
+  their semantics.  For dynamic predicates then, {\tt IndexSpec} can
+  be either an {\em indexing element} or a list of indexing elements.
+  Each indexing element defines a separate index and specifies an
+  argument or group of arguments that make up the search key of that
+  index.  Thus an indexing element consists of one or more {\em
+    argument indicators} joined together by {\tt +/2}.  An argument
+  indicator is may be an integer ({\tt ArgNo}) indicating an argument
+  number (starting from 1) to use in the index, or it may have the
+  form {\tt *(ArgNo)}.
+
+  If {\tt ArgNo} is an integer, only the main functor symbol of
+  argument {\tt ArgNo} will participate in the index.  When annotated
+  with the asterisk, the first 5 fields of argument {\tt ArgNo} (in a
+  depth-first traversal of the term) will be used in the index.  If
+  there are fewer than 5, they all will be used.  If any of the first
+  5 is a variable, then the index cannot be used.
+
+  An index is usually on a single argument, in which case the indexing
+  element consists of a single argument indicator.  If an indexing
+  element contains more than one argument specifier, then a joint
+  index is specified i.e. an index will be constructed so that the
+  values of each argument indicator are to be concatenated to create the
+  search key of the index.
+
+Examples help clarify this.  {\tt index(p/3,[2,1])} indicates that
+clauses asserted for the predicate {\tt p/3} should be indexed on both
+the second and the first argument.  A query $Q$ to {\tt p/3} will
+first use the second argument index to {\tt p/3} if the second
+argument of $Q$ is non-variable, and will use the main functor of the
+second argument.  Otherwise, if the second argument of $Q$ is a
+variable, but not the first argument, the first argument index of {\tt
+  p/3} will be used.  If both arguments in $Q$ are variables, no index
+will be used and $Q$ will backtrack through all clauses for {\tt p/3}.
+
+{\tt index(p/3,[*(2),1])} would result in similar behavior as the
+previous example, but the first index to be tried (on the second
+argument) would be built using more of the term value in that second
+argument position (not just the main functor symbol.)
+
+As another example, one could specify: {\tt index(p/5,[1+2,1,4])}.
+After clauses are asserted to it, a call to {\tt p/5} would first
+check to see if both the first and second arguments are non-variable
+and if so, use an index based on both those values. Otherwise, it
+would see if the first argument is non-variable and if so, use an
+index based on it. Otherwise, it would see if the fourth argument is
+non-variable and if so use an index based on it. As a last resort, it
+would use no index but backtrack through all the clauses in the
+predicate.  In each of these cases, the indexes are built using only
+the main functor symbol in the indicated argument position. (Notice
+that it may well make sense to include an argument that appears in a
+joint specification later alone, as 1 in this example, but it never
+makes sense forcing the single argument to appear earlier. In that
+case the joint index would never be used.)
+
+If we want to use similar indexing on {\tt p/5} of the previous
+example, except say argument 1 takes on complex term values and we
+want to index on more of those terms, we might specify the index as
+{\tt index(p/5,[*(1)+2,*(1),4])}.
+\index{indexing!star}
+\index{indexing!multiple-argument}
+\index{indexing!composite}
+
+\end{itemize}
+
+\index{tries!asserted!indexing}
+\index{indexing!trie-based}
+\item {\em Trie-based Indexing} 
+%
+If {\tt Predspec} is dynamic, the executable directive {\tt
+  index(Predspec,trie)} causes clauses for {\tt Predspec} to be
+asserted using tries (see \cite{RRSSW98}, which is available through
+the XSB web page).  The name trie indexing is something of a misnomer
+since the trie itself both indexes the term and represents it.  In
+XSB, a trie index is formed using a left-to-right traversal of the
+unit clauses.  These indexes can be very effective if discriminating
+information lies deep within a term, and if there is sharing of
+left-prefixes of a term, trie indexing can reduce the space needed to
+represent terms.  Furthermore, asserting a unit clause as a trie is
+much faster than asserting it using default WAM code.  
+%%%%%%%%%%%%
+\comment{ Trie
+  indexing can be used with alternative or joint indexes.  For the
+  directive {\tt index(p/3,[2,1],trie)}, two trie indices would be
+  formed for {\tt p/3}: one that traversed arguments in order {\em
+    2,1,3} and another that traversed arguments in order {\em 1,2,3}.
+  The actual implementation seeks to reduce redundant storage of code
+  for alternative indices.  }
+%%%%%%%%%%%%
+Despite these advantages, representing terms as tries leads to
+semantic differences from asserted code, of which the user should be
+aware.  First, the order of clauses within a trie is arbitrary: using
+{\tt asserta/1} or {\tt assertz} for a predicate currently using trie
+indexing will give the same behavior as using {\tt assert}.  Also, the
+current version of XSB only allows trie indexing for unit clauses.
+\end{itemize}
+
+If in doubt what indexing is being used for a predicate, a call to
+{\tt current\_index/2} can be made.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt PredSpec} or {\tt IndexSpec} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt PredSpec} is neither a variable, a predicate indicator, nor a 
+  callable term.
+\bi
+\item 	{\tt type\_error(predicate\_indicator\_or\_callable,PredSpec)}
+\ei
+\item {\tt IndexSpec} is not ground
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item {\tt IndexSpec} is neither a properly formed indexing element
+  nor a list of indexing elements 
+\bi
+\item 	{\tt domain\_error(indexing\_element,IndexSpec)}
+\ei
+\item {\tt IndexSpec} is a list containing an element {\tt IndexElt}
+  that not a properly formed indexing element
+\bi
+\item 	{\tt domain\_error(indexing\_element,IndexElt)}
+\ei
+\item {\tt PredSpec} represents a predicate that has been previously
+  defined to be static 
+\bi
+\item 	{\tt permission\_error(modify,static\_predicate)}
+\ei
+\ei
+
+\label{dynamic-declaration}
+\isoitem{dynamic(+Operations)}{dynamic/1}\label{dynamic/1}
+%
+{\tt dynamic/1} can be used either as a compiler declaration or as an
+executable directive.  Used as a compiler declaration, it indicates
+that all clauses for each predicate denoted by the command are dynamic
+-- clauses for these predicates can be asserted or retracted.  Without
+this declaration compiled clauses will be treated as static.  Executed
+as a directive in a state of execution where no clauses exist for each
+denoted predicate {\tt dynamic/1} ensures clauses for the affected
+predicates are to be treated as dynamic. If {\tt PredSpec} contains a
+predicate that is defined as static or as foreign code, a permission
+error will be thrown.  {\tt Operations} can take one of two forms:
+%
+
+\begin{enumerate}
+\item {\tt Operations} is a predicate indicator, a callable term, or a
+  comma-list of predicate indicators or callable terms.
+%
+\item {\tt Operations} has the form {\tt Predspec as Options} where
+\bi
+\item {\tt PredSpec} is a predicate indicator, a callable term, or
+  comma-list of predicate indicators or callable terms.
+%
+\item {\tt Options} is either a dynamic\_option or a list of
+  dynamic\_options.  These dynamic options control the attributes of a
+  dyamic predicate.  In \version, the following dynamic options are
+  supported 
+%
+\bi
+\item{\tt intern} which causes every clause for this predicate, before 
+being asserted, to force all its ground subterms to be interned into a 
+global table.
+%
+\item{\tt tabled} which causes the dynamic predicate to be tabled.
+  The declaration/directive {\tt dynamic p/n as tabled} has the same
+  effect as {\tt table p/n as dynamic}.
+%
+\item {\tt variant} which causes the table evaluation method of the
+  predicate(s) to use call variance.
+%
+%\item {\tt subsumptive} which causes the table evaluation method of
+%  the predicate(s) to use call subsumption.
+%
+\item {\tt incremental} which allows (incremental) tables that are
+  based on the dynamic predicate to be automatically updated when
+  clauses are asserted or retracted.
+%
+\item {\tt opaque}. This option is essencially the same as
+  non-incremental dynamic code, {\em except} that {\tt opaque}
+  predicates can be made {\tt incremental} by a later {\tt dynamic/1}
+  directive, and {\tt incremental} predicates can be made {\tt opaque}
+  by a {\tt dynamic/1} directuve.
+%
+\item {\tt private} which causes the predicate(s) to be treated as
+  thread private.
+%
+\item {\tt shared} which causes the predicate(s) to be treated as
+  thread shared.
+\ei
+\ei
+\end{enumerate}
+
+If the directive 
+
+{\tt  dynamic $p/n$.}
+
+is executed, its behavior is as follows:
+\begin{itemize}
+\item If $p/n$ is already dynamic, the directive has no effect,
+  regardless of wither $p/n$ is tabled, incremental or opaque, private
+  or shared.
+%
+\item If $p/n$ has {\em not} already been defined, the directive makes
+  $p/n$ non-tabled, non-incremental, and to use the default thread
+  sharing strategy ({\tt private} unless XSB is called with {\tt
+    --shared\_predicates}).
+\end{itemize}
+
+If the directive 
+
+{\tt  dynamic $PredList$ as $Options$.}
+
+is executed, various checks are performed on $Options$.  These checks
+are (mostly) performed before any predicates are declared as dynamic
+or options changed, and reduce the possibility of leaving some $p/n$
+in $PredList$ with inconsistent attributes.
+%
+\begin{itemize}
+\item If a dynamic predicate in {\tt Predlist} is declared as {\tt
+  incremental} it may be changed to {\tt opaque} at any time;
+  similarly, a dynamic predicate that is {\tt opaque} may be changed
+  to {\tt incremental}
+%
+\item Otherwise, an attempt to change an attribute of $p/n$ in
+  $PredList$ -- i.e. whether $p/n$ is tabled or not,
+  incremental/opaque or not, and thread-private or thread-shared --
+  will throw a permission error.
+\end{itemize}
+
+In addition, regardless of the state of predicates in $PredList$, if
+options contains an inconstent set of declarations, a domain error
+will be thrown.  {\tt Options} is inconsistent in the following cases:
+%
+\bi
+\item {\tt Options} contains {\tt tabled} or {\tt variant} and {\tt
+  opaque} or {\tt incremental}.  Tabled dynamic incremental code is
+  not yet supported in XSB.
+%
+\item {\tt Options} contains both {\tt private} and {\tt shared}
+%
+\item {\tt Options} contains both {\tt incremental} and {\tt opaque}
+\item {\tt Options} contains {\tt intern} and ({\tt dynamic} or {\tt
+subsumptive} or {\tt incremental} or {\tt opaque})
+\ei
+
+{\bf Error Cases} 
+
+Error cases are summarized as follows.  Let {\tt Operations} be of the
+form {\tt PredSpec} or {\tt PredSpec} as {\tt Options}.  Then if 
+%
+\bi
+\item {\tt PredSpec} or is a variable or a comma list containing a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item An element of {\tt PredSpec} is neither a variable nor a comma
+  list
+\bi
+\item 	{\tt type\_error(callable,PredSpec)}
+\ei
+\item 	A predicate in {\tt PredSpec} has been previously defined to be static or foreign
+\bi
+\item 	{\tt permission\_error(modify,static\_predicate)}
+\ei
+\item {\tt Options} is a variable or a list containing a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Options} contains an element {\tt Option} that isn't a dynamic option (as described above)
+\bi
+\item {\tt domain\_error(dynamic\_option,Option)}
+\ei
+\item {\tt Options} contains inconsistnet elements (as described above)
+\bi
+\item {\tt table\_error}
+\ei
+\item An option in {\tt Options} would modify a predicate in predspec
+  in a manner that is not allowed (as described above)
+\bi
+\item {\tt permission\_error}
+\ei
+\ei
+
+In addition, if a predicate {\tt p/n} was declared to be dynamic and a
+file containing clauses for {\tt p/n} is later consulted, a permission
+error will be thrown.
+
+\end{description}
+
+\subsection{Reading Dynamic Code from Files} \label{sec:LoadDyn}
+%===============================================
+
+Several built-in predicates are available that can assert the contents
+of a file into XSB's database.  These predicates are useful when code
+needs to be dynamic, or when the they contain a large number of
+clauses or facts.  Configured properly, files containing millions of
+facts can be read and asserted into memory in under a minute, making
+XSB suitable for certain kinds of in-memory database
+operations~\footnote{In \version{}, loading code dynamically can also
+be useful when the clauses contain atoms whose length is more than 255
+that cannot be handled by the XSB compiler.}.  
+
+Each of the predicates in this section allow loading from files with
+proper prolog extensions, and makes use of the XSB library paths.  See
+Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
+
+\begin{description}
+\standarditem{load\_dyn(+FileName)}{load\_dyn/1}\label{load_dyn/1}
+%\predindex{load\_dyn/1~(L)}
+    Asserts the contents of file {\tt FileName} into the database.
+    All existing clauses of the predicates in the file that already
+    appear in the database, are retracted, unless there is a {\tt
+      multifile/1} declaration for them.  An indexing declaration of a
+    predicate {\tt p/n} in {\tt FileName} will be observed as long as
+    the declarations occur before the first clause of {\tt p/n}.
+    Clauses in {\tt FileName} must be in a format that {\tt read/1}
+    will process.  So, for example, operators are permitted.  Modules
+    (files containing export statements) can be loaded and all terms
+    are treated as they are in the compiler.
+
+    Dynamically loaded files can be filtered through the XSB preprocessor.
+    To do this, put the following in the source file: 
+    %%{
+    \begin{verbatim}
+    :- compiler_options([xpp_on]).      
+    \end{verbatim}
+
+    %%
+    Of course, the name \verb|compiler_options| might seem like a misnomer
+    here (since the file is not being compiled), but it is convenient to
+    use the same directive both for compiling and loading, in case the same
+    source file is used both ways.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is a variable
+ \bi
+ \item 	{\tt instantiation\_error}
+ \ei
+\item 	{\tt FileName} is not an atom.
+ \bi
+ \item 	{\tt type\_error(atom,Filename)}
+ \ei
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+ \bi
+ \item 	{\tt misc\_error}
+ \ei
+%
+\ei
+
+\standarditem{load\_dyn(+FileName,+Dir)}
+{load\_dyn/2}\label{load_dyn/2}
+    Asserts the contents of file {\tt FileName} into the database.
+    {\tt Dir} indicates whether {\tt assertz} or {\tt asserta} is to
+    be used.  If {\tt Dir} is {\tt z}, then {\tt assertz} is used and
+    the behavior of {\tt load\_dyn(FileName)} is obtained.  If {\tt
+    Dir} is {\tt a}, then {\tt asserta} is used to add the clauses to
+    the database, and clauses will be in the reverse order of their
+    appearance in the input file.  {\tt asserta} is faster than {\tt
+    assertz} for predicates such that their indexing and data result
+    in many hash collisions.  {\tt Dir} is ignored for facts in {\tt
+    FileName} that are trie-indexed.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item 	{\tt FileName} is not an atom:
+\bi
+\item 	{\tt type\_error(atom,FileName)}
+\ei
+%
+\item 	{\tt Dir} is not equal to {\tt a} or {\tt z}~\footnote{For
+backward compatibility, {\tt 0} and {\tt 1} are also allowed.}: 
+\bi
+\item 	{\tt domain\_error(a\_or\_z,Dir)}
+\ei
+%
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
+\ei
+
+\standarditem{load\_dync(+FileName)}{load\_dync/1}
+\index{canonical format}
+    Acts as {\tt load\_dyn/1}, but assumes that facts are in
+    ``canonical'' format and is much faster as a result.  In XSB, a
+    term is in canonical format if it does not use any operators other
+    than list notation and comma-list notation.  This is the format
+    produced by the predicate {\tt write\_canonical/1}. (See {\tt
+    cvt\_canonical/2} to convert a file from the usual {\tt read/1}
+    format to {\tt read\_canonical} format.)  As usual, clauses of
+    predicates are not retracted if they are compiled instead of
+    dynamically asserted. All predicates are loaded into {\tt
+    usermod}.  {\tt :- export} declarations are ignored and a warning
+    is issued.
+
+    Notice that this predicate can be used to load files of Datalog
+    facts (since they will be in canonical format).  This predicate is
+    significantly faster than {\tt load\_dyn/1} and should be used
+    when speed is important.  (See {\tt load\_dync/2} below for
+    further efficiency considerations.)  A file that is to be
+    dynamically loaded often but not often modified by hand should be
+    loaded with this predicate. 
+
+    As with \verb|load_dyn/1|, the source file can be filtered through the C
+    preprocessor. However, since all clauses in such a file must be in
+    canonical form, the \verb|compiler_options/1| directive should look as
+    follows:
+    %%
+    \begin{verbatim}
+     :-(compiler_options('.'(xpp_on,[]))).      
+    \end{verbatim}
+    %%
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item 	{\tt FileName} is not an atom.
+\bi
+\item 	{\tt type\_error(atom,FileName)}
+\ei
+%
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
+\ei
+
+\standarditem{load\_dync(+FileName,+Dir)}{load\_dync/2} \label{load_dync/2}
+    Acts as {\tt load\_dyn/2}, but assumes that facts are in
+    ``canonical'' format.  {\tt Dir} is ignored for trie-asserted
+    code, but otherwise indicates whether {\tt assertz} or {\tt
+    asserta} is to be used.  If {\tt Dir} is {\tt z}, then {\tt
+    assertz} is used and the exact behavior of {\tt
+    load\_dync(FileName)} is obtained.  If {\tt Dir} is {\tt a}, then
+    {\tt asserta} is used to add the clauses to the database, and
+    clauses will end up in the reverse order of their appearance in
+    the input file.  
+
+    Setting {\tt Dir} to {\tt a} for non trie-asserted code can
+    sometimes be {\em much} faster than the default of {\tt z}.  The
+    reason has to do with how indexes on dynamic code are represented.
+    Indexes use hash tables with bucket chains.  No pointers are kept
+    to the ends of bucket chains, so when adding a new clause to the
+    end of a bucket (as in {\tt assertz}), the entire chain must be
+    run.  Notice that in the limiting case of only one populated
+    bucket (e.g., when all clauses have the same index term), this
+    makes assertz-ing a sequence of clauses quadratic.  However, when
+    using {\tt asserta}, the new clause is added to the beginning of
+    its hash bucket, and this can be done in constant time, resulting
+    in linear behavior for asserta-ing a sequence of clauses.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item 	{\tt FileName} is not an atom:
+\bi
+\item 	{\tt type\_error(atom,FileName)}
+\ei
+%
+\item 	{\tt Dir} is not instantiated to {\tt a} or {\tt z}~\footnote{For
+backward compatibility, {\tt 0} and {\tt 1} are also allowed.}: 
+\bi
+\item 	{\tt domain\_error(a\_or\_z,Dir)}
+\ei
+%
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
+\ei
+
+\standarditem{ensure\_loaded(+FileName,+Action)}{ensure\_loaded/2}
+%
+This predicate does nothing if {\tt FileName} has been loaded or
+consulted into XSB, and has not changed since it was loaded or
+consulted.  Otherwise
+%
+\bi
+\item If {\tt Action} is instantiated to {\tt dyn} the behavior is as
+{\tt load\_dyn/1} (or {\tt load\_dyn(FileName,z)}).
+
+\item If {\tt Action} is instantiated to {\tt dyna} the behavior is as
+{\tt load\_dyn(FileName,a)}.
+
+\item If {\tt Action} is instantiated to {\tt dync} the behavior is as
+{\tt load\_dync/1} (or {\tt load\_dync(FileName,z)}).
+
+\item If {\tt Action} is instantiated to {\tt dynca} the behavior is as
+{\tt load\_dync(FileName,a)}.
+
+\item If {\tt Action} is instantiated to {\tt consult}, {\tt FileName}
+is consulted (action is the same as {\tt ensure\_loaded/1}).
+
+\ei
+
+{\bf Error Cases}
+\bi
+\item 	{\tt FileName} is not instantiated:
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item 	{\tt FileName} is not an atom:
+\bi
+\item 	{\tt type\_error(atom,FileName)}
+\ei
+%
+\item 	{\tt Action} is not a valid load action as described above
+\bi
+\item 	{\tt domain\_error(loadAction,Action)}
+\ei
+%
+\ei
+
+\ourmoditem{cvt\_canonical(+FileName1,+FileName2)}{cvt\_canonical/2}{consult}
+%
+    Converts a file from standard term format to ``canonical'' format.
+    The input file name is {\tt FileName1}; the converted file is put in
+    {\tt FileName2}.  This predicate can be used to convert a file in
+    standard Prolog format to one loadable by {\tt load\_dync/1}.
+\end{description}
+
+%----------------------------------------------------------------------
+
+\index{transaction logic}
+\subsection{The {\tt storage} Module: Associative Arrays and Backtrackable Updates}
+\label{storage module}
+\index{backtrackable updates|(}
+
+XSB provides a high-level interface that allows the creation of
+``objects'' that efficiently manage the storage of facts or of
+associations between keys and values.  Of course, facts and
+associative arrays can be easily managed in Prolog itself, but the
+{\tt storage} module is highly efficient and supports the semantics of
+backtrackable updates as defined by Transaction logic \cite{BoKi94} in
+addition to immediate updates.  The semantics of backtrackable updates
+means that an update made by the storage module may is provisional
+until the update is committed.  Otherwise, if a subgoal calling the
+update fails, the change is undone. The commit itself may be made
+either by the predicate {\tt storage\_commit/1}, or less cleanly by
+cutting over the update itself.
+
+A storage object $O$ is referred to by a name, which must be a Prolog
+atom.  $O$ can be associated either with a set of facts or a set of
+\emph{key-value pairs}.  Within a given storage object each key is
+associated with a unique value: however since keys and values can be
+arbitrary Prolog terms, this constraint need not be a practical
+restriction.  A storage object $O$ is created on demand, simply by
+calling (a backtrackable or non-backtrackable) update predicate that
+refers to $O$.  However to reclaim $O$'s space within a running
+thread, the predicate {\tt storage\_reclaim\_space/1} must be called.
+Both backtackable and non-backtrackable updates can be made to the
+same storage object, although doing so may not always be a good
+programming practice.
+
+If multiple threads are used, each storage object is private to a
+thread, and space for a storage object is reclaimed upon a thread's
+exit.  Thread-shared storage objects may be supported in future
+versions.
+
+All the predicates described in this section must be imported from
+module {\tt storage}.
+
+\subsubsection{Non-backtrackable Storage}
+
+\begin{description}
+\standarditem{storage\_insert\_keypair(+StorageName,+Key, +Value, ?Inserted)}{storage\_insert\_keypair/4}
+%%
+Insert the given Key-Value pair into {\tt StorageName}.  If the pair
+is new, then {\tt Inserted} unifies with {\tt 1}. If the pair is
+already in {\tt StorageName}, then {\tt Inserted} unifies with {\tt
+  0}. If {\tt StorageName} already contains a pair with the given key
+that is associated with a \emph{different} value, then {\tt Inserted}
+unifies with {\tt -1}.  The first argument, {\tt StorageName}, must be
+an atom naming the storage to be used. Different names denote
+different storages.  In all cases the predicate succeeds.
+
+\standarditem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}
+{storage\_delete\_keypair/3}
+%%
+Delete the key-value pair with the given key from {\tt
+  StorageName}. If the pair was in {\tt StorageName} then {\tt
+  Deleted} unifies with {\tt 1}.  If it was \emph{not} in {\tt
+  StorageName}s then {\tt Deleted} unifies with {\tt 0}.  The first
+argument, {\tt StorageName}, must be an atom naming the storage object
+to be used. Different names denote different storages.  In both cases
+the predicate succeeds.
+
+\standarditem{storage\_find\_keypair(+StorageName, +Key, ?Value)}
+{storage\_find\_keypair/3}
+%%
+If {\tt StorageName} has a key pair with the given key, then {\tt Value} unifies
+with the value stored in {\tt StorageName}. If no such pair exists in the
+database, then the goal fails.
+
+Note that this predicate works with non-backtrackable associative arrays
+described above as well as with the backtrackable ones, described below.
+
+\standarditem{storage\_insert\_fact(+StorageName, +Fact, ?Inserted)}{storage\_insert\_fact/3}
+Similar to keypair insertion, but this primitive inserts facts rather than
+key pairs.
+
+\standarditem{storage\_delete\_fact(+StorageName, +Fact, ?Inserted)}{storage\_delete\_fact/3}
+Similar to key-pair deletion, but this primitive deletes facts rather than
+key pairs.
+
+\standarditem{storage\_find\_fact(+StorageName, +Fact)}{storage\_find\_fact/2}
+Similar to key-pair finding, but this primitive finds facts facts rather than
+key pairs.
+%%
+\end{description}
+
+\subsubsection{Backtrackable Updates}
+\label{backtrackable update}
+
+\begin{description}
+\standarditem{storage\_insert\_keypair\_bt(+StorageName, +Key, +Value, ?Inserted)}
+{storage\_insert\_keypair\_bt/4}
+%%
+Calling this predicate inserts a key pair into the trie
+represented by {\tt StorageName},
+similarly to
+\texttt{storage\_insert\_keypair/4}, and the key-value pair can then be
+queried via {\tt storage\_find\_keypair/3}, just as with the
+non-backtrackable updates described above.  In addition, the key-value
+pair can be removed from {\tt StorageName} by explicit deletion.
+However, the key pair will be removed from {\tt StorageName} upon
+failing over the insertion goal {\em unless} a commit is made to {\tt
+  StorageName} through the goal {\tt storage\_commit(StorageName)}.
+The exact semantics is defined by Transaction Logic \cite{BoKi94}.
+
+Note it is the update itself that is backtrackable, not the key-value
+pair.  Hence, a key-pair may be (provisionally) inserted by a
+backtrackable update and deleted by a non-backtrackable update, or
+inserted by a non-backtrackable update and (provisionally) deleted by
+a backtrackable update.  Of course, whether such a mixture makes sense
+would depend on a given application.
+
+\standarditem{storage\_delete\_keypair\_bt(+StorageName, +Key, ?Deleted)}
+{storage\_delete\_keypair\_bt/3}
+%%
+Like {\tt storage\_delete\_keypair/3}, but backtrackable as described
+for the predicate \texttt{storage\_insert\_keypair\_bt/4}.
+
+\standarditem{storage\_insert\_fact\_bt(+StorageName, +Goal)} {storage\_insert\_fact\_bt/2}
+%%
+Like {\tt storage\_insert\_fact/2}, but backtrackable.
+
+\standarditem{storage\_delete\_fact\_bt(+StorageName, +Goal)} 
+{storage\_delete\_fact\_bt/2}
+%%
+This is a backtrackable version of {\tt storage\_delete\_fact/2}.
+
+\standarditem{storage\_commit(+StorageName)} {storage\_commit/1}
+%%
+Commits to {\tt StorageName} any backtrackable updates since the last
+commit, or since initialization if no commit has been made to {\tt
+  StorageName}.  If {\tt StorageName} does not exist, the predicate
+silently fails.
+%%
+\end{description}
+%%
+\subsubsection{Reclaiming Space}
+%%
+\begin{description}
+\standarditem{storage\_reclaim\_space(+StorageName)}{storage\_reclaim\_space/1}
+%%
+This is similar to {\tt reclaim\_space/1} for {\tt assert} and {\tt
+  retract}, but it is used for storage managed by the primitives defined in
+the {\tt storage} module. As with {\tt reclaim\_space/1}, this goal is
+typically called just before returning to the top level.
+%%
+\end{description}
+
+\index{backtrackable updates|)}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 

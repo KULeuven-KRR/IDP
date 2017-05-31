@@ -92,7 +92,7 @@
 #define	SYS_umask	60
 #define	SYS_chroot	61
 #define	SYS_fstat	62
-				/* 63 is unused */
+#define	SYS_realpath	63
 #define	SYS_getpagesize 64
 #define	SYS_msync	65
 				/* 66 is old: vfork */

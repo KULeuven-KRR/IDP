@@ -272,7 +272,7 @@ DLL_LINK_FLAGS=\
 	/nologo \
 	/STACK:8388608 \
 	/subsystem:windows \
-	/dll \
+	/DLL \
 	/machine:x64 \
 	$(SOCKET_LIBRARY) \
 	$(SITE_LIBS) \

@@ -50,7 +50,8 @@
 
    findall_clean should be called at the start of every toplevel.  */
 
-#define FINDALL_CHUNCK_SIZE 4000 /* anything > MAX_ARITY+2 is good */
+//#define FINDALL_CHUNCK_SIZE 4000 /* anything > MAX_ARITY+2 is good */
+#define FINDALL_CHUNCK_SIZE 2*MAX_ARITY /* anything > MAX_ARITY+2 is good */
 
 /* one invocation of findall is associated with one entry in the
    findall_solutions array: we then call this entry active; the type of the

@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -168,6 +169,7 @@ Cell dynfail_inst;
 Cell halt_inst;
 Cell proceed_inst;
 Cell completed_trie_member_inst;
+Cell continue_consumer_inst;
 byte *check_interrupts_restore_insts_addr;
 
 /* these three are from orient_xsb.c */
@@ -278,13 +280,14 @@ static void init_flags(CTXTdecl)
   flags[MAX_QUEUE_TERMS] = DEFAULT_MQ_SIZE; 
   flags[HEAP_GC_MARGIN] = 8192 * ZOOM_FACTOR;
 #else
-  flags[HEAP_GC_MARGIN] = 32*K * ZOOM_FACTOR;
+  flags[HEAP_GC_MARGIN] = 64*K * ZOOM_FACTOR;
 #endif
   flags[WRITE_DEPTH] = 64;
   //  flags[UNIFY_WITH_OCCURS_CHECK_FLAG] = 0;
+  flags[ALTERNATE_SEMANTICS] = 0;
+  pflags[ANSWER_COMPLETION] = 1;
 #ifndef MULTI_THREAD
   // not (yet) tested with multi-threaded, so leave off if MT
-  flags[ANSWER_COMPLETION] = 1;
 #endif
 }
 
@@ -1178,6 +1181,22 @@ void init_thread_structures(CTXTdecl)
   SM_InitDeclDyna(private_smAssertBTHT,BasicTrieHT, BTHTs_PER_BLOCK,
 		     "Basic Trie Hash Table (Asserted Private)");
 
+  private_smCallNode = (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smCallNode,CALL_NODE,CALLNODE_PER_BLOCK,"CallNode");
+
+  private_smCallList = (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smCallList,CALLLIST,CALLLIST_PER_BLOCK,"CallList");
+
+  private_smCall2List = (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smCall2List,CALL2LIST,CALL2LIST_PER_BLOCK,"Call2List");
+
+  private_smOutEdge = (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smOutEdge,OUTEDGE,OUTEDGE_PER_BLOCK,"OutEdge");
+
+  /* smKey is small -- need to to use SM_DeallocateSmallStruct */
+  private_smKey = (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smKey,KEY,KEY_PER_BLOCK,"HashKey");
+
   private_current_de_block = NULL;
   private_current_dl_block = NULL;
   private_current_pnde_block = NULL;
@@ -1215,6 +1234,8 @@ void init_thread_structures(CTXTdecl)
   callAbsStk_index = 0;
   callAbsStk_size    = 0;
 
+  incr_hashtable_chain = NULL;
+
   /***************/
 
 /* This is here just for the first thread - others initialize its xsb tid
@@ -1231,6 +1252,7 @@ void init_thread_structures(CTXTdecl)
   pthread_cond_init( &th->cond_var, NULL );
 #endif
   th->cond_var_ptr = NULL;
+
 }
 
 void cleanup_thread_structures(CTXTdecl)
@@ -1322,6 +1344,8 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
 		  int complstacksize, int pdlsize)
 {
   void tstInitDataStructs(CTXTdecl);
+
+  //  setlocale(LC_NUMERIC, ""); // Commented out because it overwrites standard C++ functions (e.g. atof(..))
 
   // single-threaded engine uses this for tries.
   init_private_trie_table(CTXT);
@@ -1500,11 +1524,11 @@ Psc make_code_psc_rec(CTXTdeclc char *name, int arity, Psc mod_psc) {
   Pair temp;
   int new;
   Psc new_psc;
-  temp = (Pair)insert(name, (byte) arity, mod_psc, &new);
+  temp = (Pair)insert_psc(name, arity, mod_psc, &new);
   new_psc = pair_psc(temp);
-  set_data(new_psc, mod_psc);
-  set_env(new_psc, T_UNLOADED);
-  set_type(new_psc, T_ORDI);
+  psc_set_data(new_psc, mod_psc);
+  psc_set_env(new_psc, T_UNLOADED);
+  psc_set_type(new_psc, T_ORDI);
   if (mod_psc != global_mod) link_sym(CTXTc new_psc, global_mod); /* Add to global module as well */
   return new_psc;
 }
@@ -1540,6 +1564,7 @@ void init_symbols(CTXTdecl)
   cell_opcode(&hash_handle_inst) = hash_handle;
   cell_opcode(&trie_fail_inst) = trie_fail;
   cell_opcode(&completed_trie_member_inst) = completed_trie_member;    
+  cell_opcode(&continue_consumer_inst) = continue_consumer;
 
   check_interrupts_restore_insts_addr = calloc((3+1),sizeof(Integer));
   write_byte(check_interrupts_restore_insts_addr,&Loc,check_interrupt);
@@ -1558,7 +1583,7 @@ void init_symbols(CTXTdecl)
   /* insert mod name global */
   /*tp = insert_module(T_MODU, "global");	/ loaded */
   tp = insert_module(T_MODU, "usermod");	/* loaded */
-  set_data(pair_psc(tp), (Psc)USERMOD_PSC);	/* initialize global mod PSC */
+  psc_set_data(pair_psc(tp), (Psc)USERMOD_PSC);	/* initialize global mod PSC */
   global_mod = pair_psc(tp);
 
   /* insert "."/2 into global list */
@@ -1591,14 +1616,18 @@ void init_symbols(CTXTdecl)
   caret_psc = make_code_psc_rec(CTXTc "^", 2, setofmod_psc);
   setof_psc = make_code_psc_rec(CTXTc "setof", 3, setofmod_psc);
   bagof_psc = make_code_psc_rec(CTXTc "bagof", 3, setofmod_psc);
+  forall2_psc = make_code_psc_rec(CTXTc "forall", 2, setofmod_psc);
+  forall3_psc = make_code_psc_rec(CTXTc "forall", 3, setofmod_psc);
+  forall4_psc = make_code_psc_rec(CTXTc "forall", 4, setofmod_psc);
+
   cut_psc = make_code_psc_rec(CTXTc "!", 0, standard_psc);
   cond_psc = make_code_psc_rec(CTXTc "->", 2, standard_psc);
   dollar_var_psc = make_code_psc_rec(CTXTc "$VAR", 1, global_mod);
 
   ccall_mod_psc = pair_psc(insert_module(0,"ccallxsb"));
-  c_callloop_psc = pair_psc(insert("c_callloop_query_loop",1,ccall_mod_psc,&new));
+  c_callloop_psc = pair_psc(insert_psc("c_callloop_query_loop",1,ccall_mod_psc,&new));
   if (new) {
-    set_data(c_callloop_psc,ccall_mod_psc);
+    psc_set_data(c_callloop_psc,ccall_mod_psc);
     env_type_set(CTXTc c_callloop_psc, T_IMPORTED, T_ORDI, (xsbBool)new);
     link_sym(CTXTc c_callloop_psc, global_mod);
   }
@@ -1623,7 +1652,7 @@ void init_symbols(CTXTdecl)
   /* Finally, eagerly insert pscs used for resource errors.  This way,
      we don't have to worry abt the symbol table growing when we're
      thowing a memory error. */
-  temp = (Pair)insert("$$exception_ball", (byte)2, 
+  temp = (Pair)insert_psc("$$exception_ball", 2, 
 					pair_psc(insert_module(0,"standard")), 
 		      &new_indicator);
   temp = (Pair) insert("error",3,global_mod,&new_indicator);

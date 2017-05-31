@@ -205,16 +205,24 @@ typedef struct {
 #define PrRef_Mark(PRREF)           ( (PRREF)->mark )
 #define PrRef_DelCF(PRREF)          ( (PRREF)->delcf )
 
+typedef struct Table_Info_Frame *TIFptr;
+
 /* Can't use CTXTdeclc here because its included early in context.h */
 #ifdef MULTI_THREAD
+extern TIFptr New_TIF(struct th_context *,Psc);
 extern xsbBool assert_buff_to_clref_p(struct th_context *, prolog_term, byte, PrRef, int, prolog_term, int, ClRef *);
 extern void c_assert_code_to_buff(struct th_context *, prolog_term);
-
+extern void add_empty_conditional_answer (struct th_context *, int,VariantSF);
 #else
+extern TIFptr New_TIF(Psc);
 extern xsbBool assert_buff_to_clref_p(prolog_term, byte, PrRef, int, prolog_term, int, ClRef *);
-
 extern void c_assert_code_to_buff(prolog_term);
+extern void add_empty_conditional_answer (int,VariantSF);
 #endif
+
+extern struct tif_list  tif_list;
+
+
 
 
 /*===========================================================================*/
@@ -285,7 +293,6 @@ typedef struct Deleted_Clause_Frame {
 
 typedef byte TabledEvalMethod;
 
-typedef struct Table_Info_Frame *TIFptr;
 typedef struct Table_Info_Frame {
   Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
   byte method;	                /* eval pred using variant or subsumption? */
@@ -350,15 +357,8 @@ struct tif_list {
   TIFptr first;
   TIFptr last;
 };
-extern struct tif_list  tif_list;
 
 /* TLS: New_TIF is now a function in tables.c */
-
-#ifdef MULTI_THREAD
-extern TIFptr New_TIF(struct th_context *,Psc);
-#else
-extern TIFptr New_TIF(Psc);
-#endif
 
 /* TLS: as of 8/05 tifs are freed only when abolishing a dynamic
    tabled predicate, (or when exiting a thread to abolish
@@ -692,12 +692,15 @@ typedef struct subgoal_frame {
   union{
     CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame (pre-compl) */
     long visitors;};
-  CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr (pre-compl)  */
 #ifdef MULTI_THREAD
   Thread_T tid;	  /* Thread id of the generator thread for this sg */
 #endif
 #ifdef CONC_COMPL
+  CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr (pre-compl)  */
   ALNptr tag;		  /* Tag can't be stored in answer list in conc compl */
+#else
+  union{  CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr (pre-compl)  */
+    ALNptr tag;};		  /* Tag can't be stored in answer list in conc compl */
 #endif
 #ifdef SHARED_COMPL_TABLES
   byte grabbed; 	  /* Subgoal is marked to be computed for leader in
@@ -709,7 +712,7 @@ typedef struct subgoal_frame {
   unsigned int callsto_number:32;
   unsigned int ans_ctr:32;
 #else
-  Integer callsto_number;    /* if 64 bits double-use call_ans_ctr */
+  Integer callsto_number;    
   UInteger ans_ctr; 
 #endif
 
@@ -738,7 +741,6 @@ typedef struct subgoal_frame {
 #define subg_compl_stack_ptr(b)	( ((VariantSF)(b))->compl_stack_ptr )
 #define subg_compl_susp_ptr(b)	( ((VariantSF)(b))->compl_suspens_ptr )
 #define subg_nde_list(b)	( ((VariantSF)(b))->nde_list )
-#define subg_call_ans_ctr(b)	( ((VariantSF)(b))->call_ans_ctr )
 
 #define subg_tid(b)		( ((VariantSF)(b))->tid )
 #define subg_tag(b)		( ((VariantSF)(b))->tag )
@@ -781,9 +783,13 @@ typedef struct subgoal_frame {
 #define SUBG_INCREMENT_CALLSTO_SUBGOAL(subgoal)  (subgoal -> callsto_number)++
 #define INIT_SUBGOAL_CALLSTO_NUMBER(subgoal) subg_callsto_number(subgoal)  = 1
 
-#define SUBG_INCREMENT_ANSWER_CTR(subgoal) {	\
-    if (++subg_ans_ctr(subgoal) > (unsigned) flags[MAX_ANSWERS_FOR_SUBGOAL]) { \
-      if (flags[MAX_ANSWERS_FOR_SUBGOAL_ACTION] == XSB_ERROR) {		\
+#define SUBG_INCREMENT_ANSWER_CTR(subgoal,template_size) {				\
+    /*    printf("number of calls is %d\n",subg_ans_ctr(subgoal));*/	\
+    if (subg_ans_ctr(subgoal)++ == (unsigned) flags[MAX_ANSWERS_FOR_SUBGOAL]) { \
+      if (flags[MAX_ANSWERS_FOR_SUBGOAL_ACTION] == XSB_ABSTRACT) {	\
+	add_empty_conditional_answer(CTXTc template_size,subgoal);		\
+      }									\
+      else if (flags[MAX_ANSWERS_FOR_SUBGOAL_ACTION] == XSB_ERROR) {	\
 	sprint_subgoal(CTXTc forest_log_buffer_1,0, subgoal);		\
 xsb_abort("Tripwire max_answers_for_subgoal hit. The user-set limit on the number of %d answers for a single subgoaol has been exceeded for %s\n",flags[MAX_ANSWERS_FOR_SUBGOAL],forest_log_buffer_1->fl_buffer); \
       }									\
@@ -1196,17 +1202,19 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 /*----------------------------------------------------------------------*/
 
 #define pdlpush(cell)	*(pdlreg) = cell;				\
-                        if (pdlreg-- < (CPtr)pdl.low)	       		\
-			  xsb_abort("PANIC: pdl overflow; large or cyclic structure?")
+	if (--pdlreg == (CPtr)pdl.low) {				\
+	  xsb_abort("PANIC: pdl overflow; large or cyclic structure?");	\
+	};
 
 #define pdlpop		*(++pdlreg)
 
 #define pdlempty	(pdlreg == (CPtr)(pdl.high) - 1)
 
-#define resetpdl \
-   if (pdlreg < (CPtr) pdl.low) \
-     xsb_exit("pdlreg grew too much"); \
-   else (pdlreg = (CPtr)(pdl.high) - 1)
+#define resetpdl {		  \
+   if (pdlreg < (CPtr) pdl.low) {					\
+     xsb_exit("pdlreg grew too much");					\
+   }									\
+   else (pdlreg = (CPtr)(pdl.high) - 1); }
 
 #define pdlprint  {				\
     CPtr temp_pdlreg = pdlreg;				\
@@ -1223,15 +1231,37 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 /*----------------------------------------------------------------------*/
 
 #ifdef CALL_ABSTRACTION
+
+/* TES: fix for 32 bits*/
 #define get_var_and_attv_nums(var_num, attv_num, abstr_size, tmp_int)   \
   var_num = (int)tmp_int & 0xffff;					\
   abstr_size = ((int)tmp_int & 0x3f0000) >>16;				\
-  attv_num = (int)tmp_int >> 27
+  /*  gfp_state = (int) tmp_int & 0x800000;			*/	\
+  attv_num = (int)tmp_int >> 28
 
 #define get_template_size(var_num,tmp_int)   var_num = tmp_int & 0xffff
 
+#define get_gfp_state(ccp,gfp_state) {		    \
+    Integer tmp_int;							\
+    CPtr answer_template_heap = nlcp_template(ccp); \
+    tmp_int = int_val(cell(answer_template_heap));			\
+    altsem_dbg(("answer_template_heap get_gfp %lx\n",tmp_int));		\
+    gfp_state =  (tmp_int & 0x800000)? 1 : 0; /* bit 24 */	 \
+  }
+
+#define set_gfp_state(ccp) {			\
+    Integer tmp_int;							\
+    CPtr answer_template_heap = nlcp_template(ccp);			\
+    tmp_int = int_val(cell(answer_template_heap));			\
+    altsem_dbg(("answer_template_heap before %lx\n",tmp_int));		\
+    tmp_int = tmp_int | 0x800000;					\
+    altsem_dbg(("answer_template_heap before %lx iv %lx\n",tmp_int,makeint(tmp_int))); \
+    cell(answer_template_heap) =   makeint(tmp_int); /* bit 24 */ \
+    altsem_dbg(("answer_template_heap after %lx\n",cell(answer_template_heap))); \
+  }
+
 #define encode_ansTempl_ctrs(Attvars,AbstractSize,Ctr)   \
-  makeint((Attvars << 27) | (AbstractSize << 16) | Ctr)
+  makeint((Attvars << 28) | (AbstractSize << 16) | Ctr)
 #else
 #define get_var_and_attv_nums(var_num, attv_num, tmp_int)	\
   var_num = (int) (tmp_int & 0xffff);				\

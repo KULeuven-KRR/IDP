@@ -1,4 +1,4 @@
-/* File:      consult.P
+/* File:      CONSULT.P
 ** Author(s): Kostis F. Sagonas, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -28,6 +28,7 @@
 #include "char_defs.h"
 #include "flag_defs_xsb.h"
 #include "extensions_xsb.h"
+#include "incr_xsb_defs.h"
 
 compile(Path) :- compile_opt_checked(Path, []).	% compile with no options
 
@@ -71,18 +72,16 @@ compile0(Path, Options) :-
 	search_module(Path, Dir, Mod, SExt, Base, _Obj),
 	!,
 	(SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT
-	 ->	
-	    compile_f(SExt, Base, Options, _, Mod, Dir)
-	 ;
-	    permission_error(compile,'file/module',Path,compile/[1,2])
+	 ->	compile_f(SExt, Base, Options, _, Mod, Dir)
+	 ;	permission_error(compile,'file/module',Path,compile/[1,2])
 	).
 compile0(Path, _) :-
-	(var(Path) -> 
-	    instantiation_error(compile/[1,2],1)
-	  ; (\+ atom(Path) -> 
-	        type_error(atom,Path,compile/[1,2],1)
-	      ; 
-	        existence_error('file/module',Path,compile/[1,2],1) ) ).
+	(var(Path)
+	 ->	instantiation_error(compile/[1,2],1)
+	 ; \+ atom(Path)
+	 ->	type_error(atom,Path,compile/[1,2],1)
+	 ;	existence_error('file/module',Path,compile/[1,2],1)
+	).
 
 compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList).
@@ -124,7 +123,6 @@ consult(Path, Options) :- \+ (\+ (reconsult(Path, Options))).
 
 :- thread_shared consult_file_loaded(_).
 :- dynamic consult_file_loaded(_).
-:- export consult_file_loaded/1.
 
 reconsult(Path) :- reconsult(Path, []).
 
@@ -147,40 +145,36 @@ check_one_thread_w_override:-
 	 ; check_one_thread(load,file,reconsult/3) ).
 
 reconsult0(Path, Options, Ensure_loaded) :-
-	(Path == user
-	 ->	
-	        (check_one_thread_w_override,
-	         compile_load_user(Options))
-	 ;	(search_module(Path, Dir, Mod, SExt, Base, Obj)
-		 ->	expand_filename(Obj,ExpObj),
-			((SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
-			  i_want_compile(SExt, Base, Obj))
- 		          ->    check_one_thread_w_override,
-			        compile_f(SExt,Base,Options,_ExList,Mod,Dir),
-				load_exec(Obj, Mod),
-				(consult_file_loaded(ExpObj)
-				 ->	true
-				 ;	assert(consult_file_loaded(ExpObj))
-				)
-			 ;     /* Compilation not required */
-  			       (Ensure_loaded==true ->  
-			                (consult_file_loaded(ExpObj)
-				         ->     true
-				         ;      /* File not loaded, ok to load w. many threads */
-					        load_exec(Obj, Mod),
-						assert(consult_file_loaded(ExpObj)) 
-					 )
-			         ;	/* Ensure_loaded == false */
-				       check_one_thread_w_override,
-				       load_exec(Obj, Mod),
-				       (consult_file_loaded(ExpObj)
-				        ->     true
-					;      assert(consult_file_loaded(ExpObj))
-				       )
-				)
-			)
-		)
-         ;	existence_error('file/module',Path,consult/1,1)
+	(Path == user ->	
+            (check_one_thread_w_override,
+                compile_load_user(Options))
+        ;  (search_module(Path, Dir, Mod, SExt, Base, Obj)
+           ->	expand_filename(Obj,ExpObj),
+               (SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
+                   i_want_compile(SExt, Base, Obj)
+               ->    check_one_thread_w_override,
+                   compile_f(SExt,Base,Options,_ExList,Mod,Dir),
+                   load_exec(Obj, Mod, Dir), % Mod would be atomized ModTerm
+                   (file_is_consultloaded(ExpObj) ->	true
+                   ; record_file_consultloaded(ExpObj)
+                   )
+               ;   %%  Compilation not required
+                   (Ensure_loaded==true ->  
+                       (file_is_consultloaded(ExpObj) ->     true
+                       ;  %% File not loaded, ok to load w. many threads
+                           load_exec(Obj, Mod, Dir),
+                           record_file_consultloaded(ExpObj) 
+                       )
+                   ;	%% Ensure_loaded == false 
+                       check_one_thread_w_override,
+                       load_exec(Obj, Mod, Dir),
+                       (file_is_consultloaded(ExpObj) -> true
+                       ; record_file_consultloaded(ExpObj)
+                       )
+                   )
+               )
+           )
+        ;   existence_error('file/module',Path,consult/1,1)
 	).
 
 i_want_compile(SExt, Base, Obj) :-
@@ -302,7 +296,7 @@ get_magic_num(ObjFile,[One,Two,Three,Four]) :-
 /*  search_module(+FileName, -Dir, -Mod, -SExt, -Base, -Obj)	        */
 /*                                                                      */
 /*	Given a FileName (must be an atom), search_module/6 finds the	*/
-/*	location of the corresponding module and returns:		            */
+/*	location of the corresponding module and returns:		*/
 /*		1) the directory (Dir),					*/
 /*		2) the module name (Mod),				*/
 /*		3) the extension (SExt) of the source file		*/
@@ -348,20 +342,21 @@ real_search_module(ModName, Dir, Base, Ext) :-
         existing_file_extension(Base, Ext).
 
 /*======================================================================*/
-/* load_exec(+File, +ModName)						*/
-/*	Changed to use the C loader (code_load/3) that automatically	*/
+/* load_exec(+File, +ModName, +Directory)				*/
+/*	Changed to use the C loader (code_load/4) that automatically	*/
 /*	imports all exported predicates of the module into the current	*/
 /*	working module when its third argument is 1.  - Kostis (4/3/93)	*/
-/* The loader returns int 4 when a foreign file has been loaded.  
+/* The loader returns int 4 when a foreign file has been loaded.  	*/
 /*======================================================================*/
 
-load_exec(File, ModName) :-	
+load_exec(File, ModName, Directory) :-	
+        standardize_pathname(File,FullFile),
 	cputime(LoadStartTime),
-	code_load(File, Init, 1),	% use the changed C loader.
+	code_load(FullFile, Init, 1, ModName),	% use the changed C loader.
 	% jf: for Windows a valid segment pointer might be negative
 	( Init =\= 0			% load succeeded
 	; Init =:= 0,
-	  get_magic_num(File,[_One,_Two,_Three,Four]),\+ immutable(Four),
+	  get_magic_num(FullFile,[_One,_Two,_Three,Four]),\+ immutable(Four),
           abort(['Error in loading file ',File])
 	),
 	!,
@@ -380,13 +375,24 @@ load_exec(File, ModName) :-
 	(Init =\= 4			% Prolog byte code loaded
                                         % Do not check Init > 4 as valid segment pointers may be negative.
 	 ->     % push/pop_loaded_file: added by MK, 7/16/01
-		push_loaded_file(File,Rand),
-	        co_code_call(Init, true, 2), % call '_$main'
+		push_loaded_file(FullFile,Rand),
+		cwd(OldCWD),	% set working directory to directory containing file being loaded. (dsw 11/30/16)
+		cd(Directory),
+		catch(
+		      co_code_call(Init, true, 2), % call '_$main'
+		      Ball,
+		      cd_throw(OldCWD,Ball)
+		     ),
+		cd(OldCWD),
 		pop_loaded_file(Rand),
 		unload_seg(Init)		% free space for '_$main'
 	 ;	true			% Foreign obj code loaded
 	).
-load_exec(_,_).
+load_exec(_,_,_).
+
+cd_throw(Dir,Ball) :-
+	cd(Dir),
+	throw(Ball).
 
 immutable(10).
 immutable(11).
@@ -397,7 +403,7 @@ co_code_call(A,B,C) :- code_call(A,B,C).
 compile_load_user(Options) :-
 	compile(user, user, XSB_SRC_EXTENSION_ATOM, Options, _), !,
 	str_cat(user,XSB_OBJ_EXTENSION_ATOM,UserObjFile),
-	load_exec(UserObjFile, user),
+	load_exec(UserObjFile, user, '.'),
 	rm(UserObjFile).
 
 /*****************************************************************
@@ -414,18 +420,48 @@ add_lib_dir((A,B)) :- !,
 add_lib_dir(Path) :-
 	add_lib_dir1(Path).
 
+add_lib_dir1(a(Path)) :- !,
+	standardize_pathname(Path, FullPath),
+	retractall(library_directory(FullPath)), % remove if it was there
+	asserta(library_directory(FullPath)).	 % put at front.
+%% push onto the top of the stack - don't remove anything
+add_lib_dir1(push(Path)) :- !,
+	standardize_pathname(Path, FullPath),
+	asserta(library_directory(FullPath)).	 % put at front.
 add_lib_dir1(Path) :-
-	expand_filename(Path, FullPath),
-	(library_directory(FullPath)
-	 ->	true
-	 ;	assert(library_directory(FullPath))
+	standardize_pathname(Path, FullPath),
+	(library_directory(FullPath) ->	true
+        ;  assert(library_directory(FullPath))
 	).
 
 add_lib_dir(Root,(A,B)) :- !,
 	add_lib_dir(Root,A),
 	add_lib_dir(Root,B).
-add_lib_dir(Root,Path) :-
-	add_lib_dir1([Root,'/',Path]).
+add_lib_dir(ancestordir(AncName),Path0) :- !,
+	path_sysop(cwd_ancestordir,AncName,Root),
+	(Path0 = a(Path)
+        ->	add_lib_dir1(a([Root,'/',Path]))
+        ;	add_lib_dir1([Root,'/',Path0])
+	).
+add_lib_dir(Root,Path0) :-
+	(Path0 = a(Path)
+        ->	add_lib_dir1(a([Root,'/',Path]))
+        ;	add_lib_dir1([Root,'/',Path0])
+	).
+
+%% extend to multiple dirs, if needed
+remove_lib_dir(Dir) :-
+        standardize_pathname(Dir,StandardDir),
+        retract(library_directory(StandardDir)).
+removeall_lib_dir(Dir) :-
+        standardize_pathname(Dir,StandardDir),
+        retractall(library_directory(StandardDir)).
+
+has_lib_dir(D) :-
+        (var(D) -> library_directory(D)
+        ; standardize_pathname(D,StandardD),
+            library_directory(StandardD)
+        ).
 
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
@@ -482,10 +518,10 @@ load_dyn(File,DirIn,Module) :-
 
 load_dyn_nocheck(File,DirIn,Module) :-
 	load_dyn_convert(DirIn,Dir,load_dyn),
-	get_fname(File,SExt,Base,Mod),
+	get_fname(File,Dirctry,SExt,Base,Mod),
 	(SExt == XSB_OBJ_EXTENSION_ATOM_SANS_DOT
 	 ->	existence_error('Prolog file/module',Base,load_dyn/[1,2],1)
-	 ;	load_dyn0(SExt,Base,Mod,Dir,Module)
+	 ;	load_dyn0(Dirctry,SExt,Base,Mod,Dir,Module)
 	).
 
 load_dyn_convert(a,0,_):- !.
@@ -495,21 +531,22 @@ load_dyn_convert(1,1,_):- !.
 load_dyn_convert(Dir,_,Pred):- 
 	domain_error('a or z',Dir,Pred,2).
 
-get_fname(Filename,SExt,Base,Mod) :-
-	( search_module(Filename,_Dir,Mod,SExt,Base,_Obj) -> true
+get_fname(Filename,Dirctry,SExt,Base,Mod) :-
+	( search_module(Filename,Dirctry,Mod,SExt,Base,_Obj) -> true
          ; existence_error('file/module',Filename,load_dyn/[1,2],1)
 %	; warning('Cannot find file'(Filename)), fail
 	).
 
-load_dyn0(SExt,Base,Mod,Dir,Module) :-
+load_dyn0(Dirctry,SExt,Base,Mod,Dir,Module) :-
 	get_HRname(SExt,Base,Hfname,Rfname),
 	expand_filename(Rfname,ARfname),
 	init_for_load(ARfname, Mod),
+	fmod_from_base(Base,FMod),
 	(Hfname == []
          ->     true
-         ;      load_dyn1(Hfname,Dir,Module) % ? into module?
+         ;      load_dyn1(Hfname,Dirctry,Dir,FMod,Module) % ? into module?
         ),
-	load_dyn1(ARfname,Dir,Module),
+	load_dyn1(ARfname,Dirctry,Dir,FMod,Module),
 	cleanup_for_load.
 
 get_HRname(SExt,Base,Hfname,Rfname) :-
@@ -530,23 +567,30 @@ get_HRname(SExt,Base,Hfname,Rfname) :-
 
 dotted_ext(Ext,DExt) :- str_cat('.',Ext,DExt).
 
-load_dyn1(Rfname,Dir,Module) :-
+fmod_from_base(Base,FMod) :-
+	(atom_codes(Base,BaseC),
+	 llappend(_,[Slash|FModC],BaseC),
+	 (Slash =:= CH_SLASH ; Slash =:= CH_BACKSLASH)
+	  ->	 atom_codes(FMod,FModC)
+	  ;	 FMod = Base
+	 ).
+
+llappend([X|L1],L2,[X|L3]) :- llappend(L1,L2,L3).
+llappend([],L,L).
+
+load_dyn1(Rfname,Dirctry,Dir,Base,Module) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_xpp_file(Rfname, XPP_process),
 	current_input_port(XPPport), %% port from process, if it was launched
-	(Module == usermod
-	 ->	true
-	 ;	psc_insertmod(Module,4,ModPsc),
-		stat_set_flag(CURRENT_MODULE,ModPsc)
-	),
-	(   catch(read_and_assert(Dir),Ball,close_and_throw(XPP_process,XPPport,Ball))
+	(   catch(read_and_assert(Dir,Base,Module),Ball,close_and_throw(XPP_process,XPPport,Ball))
 	%% If needs restart, close old file and skip to the second load_dyn1
 	->  ( conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(xpp_on,0)
 	),
 	!,
-	stat_set_flag(CURRENT_MODULE,0),  % reset to usermod
+	execute_accumulated_commands(Dirctry),
+	stat_set_flag(CURRENT_MODULE,0), % reset to usermod
 	check_xpp_process_status(Rfname,XPP_process,'Dynamic loading aborted'),
 	%% Release the file descriptor used to read from preprocessor
 	(XPP_process == skip -> true
@@ -559,10 +603,10 @@ load_dyn1(Rfname,Dir,Module) :-
 	->  true
 	;   time_message(T0,(Rfname,' dynamically loaded'))
 	).
-load_dyn1(Rfname,Dir,Module) :- 
+load_dyn1(Rfname,Dirctry,Dir,Base,Module) :- 
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
-	load_dyn1(Rfname,Dir,Module).
+	load_dyn1(Rfname,Dirctry,Dir,Base,Module).
 
 close_and_throw(XPP_process,XPPport,Ball) :-
 	(XPP_process == skip
@@ -581,17 +625,22 @@ close_and_throw(XPP_process,XPPport,Ball) :-
 :- dynamic load_dyn_module(_).
 :- dynamic load_dyn_apply(_).  %arities of apply already seen
 
-init_for_load(Filename,Mod) :-
+init_for_load(Filename,_Mod) :-
 	conset(needs_restart, 0), conset(xpp_on, 0), % Cleanup before XPP
 	file_time(Filename,Time),
-	retractall(load_dyn_file_loaded(Filename,_)),
-	assert(load_dyn_file_loaded(Filename,time(Time))),
+        remove_file_dynloaded(Filename),
+        record_file_dynloaded(Filename,Time),
 	retractall(load_dyn_trie_retracted(_)),
 	retractall(load_dyn_retracted(_,_,_,_,_)),
 	assert(load_dyn_file(Filename)),
 	retractall(load_dyn_pred_loaded(Filename,_,_,_)),
-	assert(load_dyn_module(Mod)),
-	retractall(load_dyn_apply(_)).
+	retractall(load_dyn_module(_)),
+	retractall(load_dyn_apply(_)),
+	init_in_mod.
+
+init_in_mod :-
+	retractall(in_mod(_,_,_)),
+	assert(in_mod([_|_],usermod,known)).
 
 cleanup_for_load :-
 	conset(needs_restart, 0), conset(xpp_on, 0), % Cleanup after XPP
@@ -600,65 +649,72 @@ cleanup_for_load :-
 	retractall(load_dyn_file(_)),
 	retractall(load_dyn_module(_)),
 	retractall(load_dyn_apply(_)).
+%%	retractall(in_mod(_,_,_)).
 
 %% This version is used for load_dyn1 only!
-read_and_assert(Dir) :-
+read_and_assert(Dir,Base,Module) :-
 	read(Term1),
 	expand_term(Term1,Term),
 	(Term == end_of_file
 	 ->	!, fail
-	 ;	do_assert_and_fail(Term,Dir)
+	 ;	do_assert_and_fail(Term,Dir,Base,Module)
 	).
 %% Don''t loop, if restart is requested
-read_and_assert(_) :- conget(needs_restart,1), !.
-read_and_assert(Dir) :- read_and_assert(Dir).
+read_and_assert(_,_,_) :- conget(needs_restart,1), !.
+read_and_assert(Dir,Base,Module) :- read_and_assert(Dir,Base,Module).
 
 load_dync(File) :-
-	load_dync(File,1,usermod).	% assertz in usermod
+	load_dync(File,1,usermod,1).	% assertz in usermod
 
 load_dync(File,DirIn) :-
-	load_dync(File,DirIn,usermod).
+	load_dync(File,DirIn,usermod,1).
 
-load_dync(File,Dirin,Module) :-
+load_dync(File,DirIn,Module) :-
+	load_dync(File,DirIn,Module,1).
+
+load_dync(File,Dirin,Module,FactFlg) :-
 	check_one_thread(load,file,load_dync/[1,2,3]),
 	check_atom(File,load_dync/[1,2,3],1),
-	load_dync_nocheck(File,Dirin,Module).
+	check_one_thread(load,file,load_dync/2),
+	load_dync_nocheck(File,Dirin,Module,FactFlg).
 	
-load_dync_nocheck(File,Dirin,Module) :-
+load_dync_nocheck(File,Dirin,Module,FactFlg) :-
 	load_dyn_convert(Dirin,Dir,load_dync),
-	get_fname(File,SExt,Base,Mod),
-	load_dync0(SExt,Base,Mod,Dir,Module).
+	get_fname(File,Dirctry,SExt,Base,Mod),
+	load_dync0(Dirctry,SExt,Base,Mod,Dir,Module,FactFlg).
 
-load_dync0(SExt,Base,Mod,Dir,Module) :-
+load_dync0(Dirctry,SExt,Base,Mod,Dir,Module,FactFlg) :-
 	get_HRname(SExt,Base,Hfname,Rfname),
 	expand_filename(Rfname,ARfname),
 	init_for_load(ARfname, Mod),
+	fmod_from_base(Base,FMod),
 	(Hfname == []
          ->     true
-         ;      load_dync1(Hfname,Dir,Module) % ? in module?
+         ;      load_dync1(Hfname,Dirctry,Dir,FMod,Module,FactFlg)
         ),
-	load_dync1(ARfname,Dir,Module),
+	load_dync1(ARfname,Dirctry,Dir,FMod,Module,FactFlg),
 	cleanup_for_load.
 
-load_dync1(Rfname,Dir,Module) :-
+load_dync1(Rfname,Dirctry,Dir,Base,Module,FactFlg) :-
 	cputime(T0),
 	seeing(OldFile),
 	open_or_xpp_file(Rfname, XPP_process),
 	current_input_port(XPPport),
 	conset('_$load_dync_line_no',0),
 	conset('_$load_dync_error_cnt',0),
-	(Module == usermod
-	 ->	true
-	 ;	psc_insertmod(Module,4,ModPsc),
-		stat_set_flag(CURRENT_MODULE,ModPsc)
-	),
+%%	(Module == usermod
+%%	 ->	true
+%%	 ;	psc_insertmod(Module,4,ModPsc),
+%%		stat_set_flag(CURRENT_MODULE,ModPsc)
+%%	),
 	file_read_canonical(-1000,0,0),	% initialize previous psc
-	(   read_and_assert(XPPport,Dir)
+	(   read_and_assert(XPPport,Dir,Base,Module,FactFlg)
 	%% If needs restart, close old file and skip to the second load_dync1
 	->  (conget(needs_restart,1) -> seen, see(OldFile), fail ; true)
 	;   conset(needs_restart, 0), conset(xpp_on,0)
 	),
 	!,
+	execute_accumulated_commands(Dirctry),
 	stat_set_flag(CURRENT_MODULE,0),  % reset to usermod
 	check_xpp_process_status(Rfname,XPP_process,'Dynamic loading aborted'),
 	%% Release the file descriptor used to read from preprocessor
@@ -672,26 +728,46 @@ load_dync1(Rfname,Dir,Module) :-
 	->  true
 	;   time_message(T0,(Rfname,' dynamically loaded'))
 	).
-load_dync1(Rfname,Dir,Module) :- 
+load_dync1(Rfname,Dirctry,Dir,Base,Module,FactFlg) :- 
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
-	load_dync1(Rfname,Dir,Module).
+	load_dync1(Rfname,Dirctry,Dir,Base,Module,FactFlg).
 
 
 %% This version is used for load_dync1 only!
-read_and_assert(IPort,Dir) :-
+read_and_assert(IPort,Dir,Base,Module,FactFlg) :-
 	coninc('_$load_dync_line_no'),
-	file_read_canonical(IPort,Term,Opsc),	% Opsc: Old(Previous) psc
-	(Opsc =\= 0,\+not_asserted_term(Term)
-	 ->	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
-		se_assert_code_to_buff(Term),
-		(Term = (Head:-_) -> true ; Head = Term),
-		assert_buff_to_clref(Head,NArity,Prref,Dir,Index,Hashsize),
+	file_read_canonical(IPort,Term,Opsc),	% Opsc: PSC ptr of prev (and this) if prev same; otw 0
+	(Opsc =:= 0
+	 ->	true
+	 ; not_asserted_term(Term)
+	 ->	true
+	 ;	load_dyn_module(RMod),
+		(FactFlg =:= 1
+		 ->	(RMod == usermod
+			 ->	Term1 = Term
+			 ;	term_new_mod(Module,Term,Term1)
+			)
+		 ;	fix_head_term(Term,RMod,Term1)
+		),
+		('_$trie_asserted'(Term1) 
+		 ->	term_psc(Term1,Psc),
+			(load_dyn_trie_retracted(Psc)
+			 ->	true
+			 ;	term_new(Psc,Gen),
+				retractall(Gen),
+				asserta(load_dyn_trie_retracted(Psc))
+			),
+			t_assert(Term1, _Flag)
+		 ;	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
+			se_assert_code_to_buff(Term1),
+			assert_buff_to_clref(Term1,NArity,Prref,Dir,Index,Hashsize)
+		),
 		fail
-	 ;	true
 	),
 	(Term == end_of_file
-	 ->	!, fail
+	 ->	!,
+		fail
 	 ; Term == read_canonical_error
 	 ->	conget('_$load_dync_line_no',BadLineNo),
 		file_write0(STDMSG,'     READ_CAN_ERROR at (or about) term (usu. line) number '),
@@ -705,40 +781,80 @@ read_and_assert(IPort,Dir) :-
 		 ;	true
 		),
 		fail
-	 ;	do_assert_and_fail(Term,Dir)
+	 ;	do_assert_and_fail(Term,Dir,Base,Module)
 	).
-read_and_assert(_IPort,_Dir) :-
+read_and_assert(_IPort,_Dir,_Base,_Module,_FactFlg) :-
 	conget(needs_restart,1), % if needs restart
 	!,			% don't continue to read
 	conset('_$load_dync_line_no',0),
 	conset('_$load_dync_error_cnt',0).
-read_and_assert(IPort,Dir) :- read_and_assert(IPort,Dir).
+read_and_assert(IPort,Dir,Base,Module,FactFlg) :-
+	read_and_assert(IPort,Dir,Base,Module,FactFlg).
 
 
 not_asserted_term(:-(_)).
 not_asserted_term(?-(_)).
 not_asserted_term(_Mod:_Term).
-not_asserted_term((_Mod:_Head:-_Body)).
-not_asserted_term(Term) :- '_$trie_asserted'(Term).
+not_asserted_term((_:-_)).
+%%not_asserted_term((_Mod:_Head:-_Body)).
+%%%not_asserted_term(Term) :- '_$trie_asserted'(Term).
 
-do_assert_and_fail([],_) :- !, fail.  %% ?? maybe holdover from previous multifile processing?
-do_assert_and_fail(Term,Dir) :-	
-	(Term = (:-Cmd)
-	 ->	proc_directive(Cmd),fail
-	 ;	true
-	),
-	(Term = (?-Cmd)
-	 ->	(call(Cmd) -> fail ; warning('Command failed.'), fail)
-	 ;	true
-	),
-	(Term = (Head0 :- _)
+:- dynamic load_dyn_cmds/1.
+:- index(load_dyn_cmds/1,0).
+
+execute_accumulated_commands(Dir) :-
+	cwd(OldDir),
+	cd(Dir),
+	(load_dyn_cmds(Cmd),
+	 (catch(Cmd,Ball,cd_throw(OldDir,Ball))
+	  ->	 fail
+	  ;	 warning('Command failed.'),
+		 fail
+	 )
+	 ;
+	 cd(OldDir),
+	 retractall(load_dyn_cmds(_))
+	).
+
+do_assert_and_fail([],_,_,_) :- !, fail.
+do_assert_and_fail(:-(Cmd),_Dir,Base,Mod) :- !, % DIRECTIVE
+	(load_dyn_module(RMod)
 	 ->	true
-	 ;	Head0 = Term
+	 ;	RMod = Mod
 	),
-	(Head0 = Mod:Head1
-	 ->	term_new_mod(Mod,Head1,Head)
-	 ;	Head = Head0, Mod = usermod
+	Cmd =.. [CmdName|CmdArgs],
+	(CmdName == export, CmdArgs = [PAs]
+	 ->	(load_dyn_module(RMod0)
+		 ->	(RMod0 == Base
+			 ->	true
+			 ;	permission_error(redefine,'assumed module, export must precede ANY definition/use',
+						 p/n,load_dyn/1)
+			)
+		 ;	assert(load_dyn_module(Base))
+		),
+		add_to_in_mod(PAs,Base),
+		assert(load_dyn_cmds(import(from(PAs,Base))))
+	 ; proc_directive(CmdName,CmdArgs,RMod)
+	 ->	true
+	 ;	fix_body_goal(Cmd,RMod,Cmd1),
+		assert(load_dyn_cmds(Cmd1))
 	),
+	fail.
+do_assert_and_fail(?-(Cmd),_Dir,_Base,Mod) :- !, % COMMAND
+	(load_dyn_module(RMod)
+	 ->	true
+	 ;	RMod = Mod
+	),
+	fix_body_goal(Cmd,RMod,Cmd1),
+	assert(load_dyn_cmds(Cmd1)),
+	fail.
+do_assert_and_fail(:-(Head0,Body0),Dir,_Base,Mod) :- !, % RULE
+	(load_dyn_module(RMod)
+	 ->	true
+	 ;	RMod = Mod
+	),
+	check_set_mod(RMod),
+	fix_head_term(Head0,RMod,Head),
 	(predicate_property(Head,built_in)
 	 ->	warning('Cannot assert to builtin'(Head)),fail
 	 ;	true
@@ -760,49 +876,84 @@ do_assert_and_fail(Term,Dir) :-
 		multifile_cvt_head(Head,MHead),
 		conpsc(MHead,Psc), conpsc(Head,OPsc)
 	 ;	MHead = Head,
-		conpsc(Head,OPsc), Psc = OPsc
+		conpsc(MHead,Psc), conpsc(Head0,OPsc)
 	),
 	('_$trie_asserted'(MHead) 
-	->  (Term = (_ :- _)
-	    ->  warning('Asserting a nonfact into a trie, ignored'(Term)),
+	 ->	warning('Asserting a nonfact into a trie, ignored'((Head:-Body0))),
 		fail
-	    ;   true
-	    ),
-	    (load_dyn_trie_retracted(OPsc) 
-	    ->  true
-	    ;   term_new(Psc,Gen),
-		retractall(Gen),
-		asserta(load_dyn_trie_retracted(OPsc))
-	    ),
-	    t_assert(MHead, _Flag)
-	;
-	    (load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
-	    ->	true
-	    ;	term_new(Psc,Gen),
+	 ;	true
+	),
+	(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
+	 ->	true
+	 ;	term_new(Psc,Gen),
 		retractall(Gen),
 		psc_arity(Psc,Arity),
 		set_retracted(MHead,Arity,OPsc,Psc,Prref,Index,Hashsize),
 		NArity is Arity+1
-	    ),
-	    (Term = (_ :- Body)
-	     ->	    (var(Body)
-		     ->	    Nbody = call(Body)
-		     ;	    goal_cut_trans(Body,Nbody,Cutpoint)
-		    ),
-		    (Body \== Nbody
-		     ->	    MHead =.. Hlist,
-			    append(Hlist,[Cutpoint],Nhlist),
-			    Nhead =.. Nhlist,
-			    (Mod == usermod
-			     ->	    se_assert_code_to_buff((Nhead:-Nbody))
-			     ;	    term_new_mod(Mod,Nhead,NMhead),
-				    se_assert_code_to_buff((NMhead:-Nbody))
-			    )
-		     ;	    se_assert_code_to_buff((MHead:-Body))
-		    )
-	     ;	se_assert_code_to_buff(MHead)
-	    ),
-	    assert_buff_to_clref(MHead,NArity,Prref,Dir,Index,Hashsize)
+	),
+	(var(Body0)
+	 ->	Nbody = call(Body0)
+	 ;	fix_body_goal(Body0,RMod,Body),
+		goal_cut_trans(Body,Nbody,Cutpoint)
+	),
+	(Body \== Nbody
+	 ->	MHead =.. Hlist,
+		append(Hlist,[Cutpoint],Nhlist),
+		Nhead0 =.. Nhlist, %%% FIX TO KEEP IN SAME MOD, CHECK THAT GOAL_CUT_TRANS PRESERVES MODS
+		term_new_mod(RMod,Nhead0,Nhead),
+		se_assert_code_to_buff((Nhead:-Nbody))
+	 ;	se_assert_code_to_buff((MHead:-Body))
+	),
+	assert_buff_to_clref(MHead,NArity,Prref,Dir,Index,Hashsize),
+	fail.
+do_assert_and_fail(Head0,Dir,_Base,Mod) :- % FACT
+	(load_dyn_module(RMod)
+	 ->	true
+	 ;	RMod = Mod
+	),
+	check_set_mod(RMod),
+	fix_head_term(Head0,RMod,Head),
+	(predicate_property(Head,built_in)
+	 ->	warning('Cannot assert to builtin'(Head)),fail
+	 ;	true
+	),
+	('_$multifile'(Head)
+	 ->	(functor(Head,apply,AArity)
+		 ->	(load_dyn_apply(AArity)
+			 ->	true
+			 ;	proc_multifile(Head),
+				assert(load_dyn_apply(AArity))
+			)
+		 ;	true
+		),			
+		multifile_cvt_head(Head,MHead),
+		conpsc(MHead,Psc), conpsc(Head0,OPsc)
+	 ; functor(Head,apply,AArity)  % an apply that has not been declared mf
+	 ->	proc_multifile(Head),
+		assert(load_dyn_apply(AArity)),
+		multifile_cvt_head(Head,MHead),
+		conpsc(MHead,Psc), conpsc(Head0,OPsc)
+	 ;	MHead = Head,
+		conpsc(MHead,Psc), conpsc(Head0,OPsc)
+	),
+	('_$trie_asserted'(MHead) 
+	 ->	(load_dyn_trie_retracted(OPsc)
+		 ->	true
+		 ;	term_new(Psc,Gen),
+			retractall(Gen),
+			asserta(load_dyn_trie_retracted(OPsc))
+		),
+		t_assert(MHead, _Flag)
+	 ;	(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
+		 ->	true
+		 ;	term_new(Psc,Gen),
+			retractall(Gen),
+			psc_arity(Psc,Arity),
+			set_retracted(MHead,Arity,OPsc,Psc,Prref,Index,Hashsize),
+			NArity is Arity+1
+		),
+		se_assert_code_to_buff(MHead),
+		assert_buff_to_clref(MHead,NArity,Prref,Dir,Index,Hashsize)
 	),
 	fail.
 
@@ -812,7 +963,6 @@ se_assert_code_to_buff(_).
 
 multifile_cvt_head(Head,MHead) :-
 	Head =.. [Pred|Args],
-%%	load_dyn_module(ModName),
 	load_dyn_file(ModName),
 	get_p_mod(Pred,ModName,LinkPred),
 	MHead =.. [LinkPred|Args].
@@ -830,106 +980,145 @@ multifile_cvt_head(Head,MHead) :-
 */
 
 set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize) :-
-	('_$index'(Head,Index,Hashsize)
-	 ->	true
-	 ; Arity =:= 0
-	 ->	Index = 0,default_assert_size(Hashsize)
-	 ;	Index = 1,default_assert_size(Hashsize)
+	('_$index'(Head,Index,Hashsize) -> true
+        ; Arity =:= 0
+        ->  Index = 0,default_assert_size(Hashsize)
+        ;   Index = 1,default_assert_size(Hashsize)
 	),
-	NArity is Arity+1,		% to hold the cut addr
+	NArity is Arity+1,      % to hold the cut addr
 	psc_type(Psc, SYMTYPE),
-	(SYMTYPE =\= 1
-	 ->	dynamic(Head)
-	 ;	true
+	(SYMTYPE =\= 1 ->  dynamic(Head)
+        ;  true
 	),
 	db_get_prref(Psc,Prref),
 	asserta(load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)),
 	load_dyn_file(Filename),
 	asserta(load_dyn_pred_loaded(Filename,Head,Index,Hashsize)).
 
-proc_directive(export(_X)) :- !,
+proc_directive(export,[_],_RMod) :- !, % should have been handled above
 	warning('export directive ignored.').
-proc_directive(local(_X)) :- !,
-	warning('local directive ignored.').
-proc_directive(import(from(X, Mod))) :- !,
-	import(from(X, Mod)).
-proc_directive(index(X)) :- !,
-	proc_index(X).
-proc_directive(index(Ps,Arg,Size)) :- !,
-	multifile_cvt(Ps,Skel),
+proc_directive(local,[X],RMod) :- !,
+	add_to_in_mod(X,RMod).
+proc_directive(dynamic,[X],RMod) :-
+	proc_dynamic(X,RMod).
+proc_directive(import,[from(X,Mod)],_RMod) :- !,
+	add_to_in_mod(X,Mod).
+proc_directive(import,[as(from(PredIn,Mod),PredAs)],RMod) :- !,
+	mpa_to_skel(PredIn,PredInSkel),
+	term_new_mod(Mod,PredInSkel,MPredInSkel),
+	term_psc(MPredInSkel,PscIn),
+	mpa_to_skel(PredAs,PredAsSkel),
+	term_new_mod(RMod,PredAsSkel,MPredAsSkel),
+	term_psc(MPredAsSkel,PscAs),
+	psc_import_as(PscIn,PscAs).
+proc_directive(document_import,[_],_RMod) :- !,
+	true.
+proc_directive(index,[X],RMod) :- !,
+	proc_index(X,RMod).
+proc_directive(index,[Ps,Arg,Size],RMod) :- !,
+	multifile_cvt(Ps,RMod,Skel),
 	index(Skel,Arg,Size).
-proc_directive(index(Ps,trie)) :- !,
-	multifile_cvt(Ps,Skel),
+proc_directive(index,[Ps,trie],RMod) :- !,
+	multifile_cvt(Ps,RMod,Skel),
 	index(Skel,trie).
-proc_directive(index(Ps,Arg)) :- !,
-	multifile_cvt(Ps,Skel),
+proc_directive(index,[Ps,Arg],RMod) :- !,
+	multifile_cvt(Ps,RMod,Skel),
 	index(Skel,Arg,0).
-proc_directive(mode(_X)) :- !,
-	warning('mode directive ignored.').
-proc_directive(parallel(_X)) :- !,
-	warning('parallel directive ignored.').
-proc_directive(table(as(Pred,TabOpts))) :- !,
-	proc_table(Pred),  % do first
+proc_directive(mode,[_X],_RMod) :- !.
+	%warning('mode directive ignored.').
+proc_directive(parallel,[_X],_RMod) :- !.
+	%warning('parallel directive ignored.').
+proc_directive(comment,[_,_],_RMod) :- !.
+	%warning('comment directive ignored.').
+proc_directive(table,[as(Pred,TabOpts)],RMod) :- !,
+	proc_table(Pred,RMod),  % do first
 	proc_table_options(TabOpts,Pred).
-proc_directive(table(Pred)) :- !,
-	proc_table(Pred).
-proc_directive(table_all) :- !, 
+proc_directive(table,[Pred],RMod) :- !,
+	proc_table(Pred,RMod).
+proc_directive(table_all,[],_RMod) :- !, 
 	warning('table_all directive ignored. Use table/n explicitly').
-proc_directive(thread_shared(Preds)) :- !,
+proc_directive(thread_shared,[Preds],_RMod) :- !,
 	thread_shared(Preds).
-proc_directive(thread_private(Preds)) :- !,
+proc_directive(thread_private,[Preds],_RMod) :- !,
 	thread_private(Preds).
-proc_directive(op(P,T,S)) :- !, op(P,T,S).
-proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
-proc_directive(multifile(Specs)) :- !,
+proc_directive(op,[P,T,S],_RMod) :- !, op(P,T,S).
+proc_directive(hilog,[X],_RMod) :- !, add_hilog_symbol(X).
+proc_directive(multifile,[Specs],_RMod) :- !,
 	proc_multifile(Specs).
-proc_directive(compiler_options(Options)) :- !,
+proc_directive(compiler_options,[Options],_RMod) :- !,
 	(xpp_is_off ->  conset(migh_need_restart,1) ;   true),
 	check_file_compiler_options(Options),
 	setoptions1(Options).
-proc_directive(Cmd) :-
-	(call(Cmd)
-	 ->	true
-	 ;	warning('Command failed.')
-	).
 
+%:- import (use_subsumptive_tabling)/1,(use_variant_tabling)/1,add_incr_table/2 from tables.
 % Table options; only some handled.  Might try to do better.
 proc_table_options((TabOpt1,TabOpt2),Pred) :- !,
 	proc_table_options(TabOpt1,Pred),
 	proc_table_options(TabOpt2,Pred).
-proc_table_options(shared,Pred) :- !,
-	thread_shared(Pred).
-proc_table_options(private,Pred) :- !,
-	thread_private(Pred).
-proc_table_options(TabOpt,Pred) :- !,
-	warning(('table modifier ignored: ',TabOpt,' for ',Pred)).
+proc_table_options(incremental,_Pred) :- !,
+	domain_error(dynamic_table_option,incremental,(table)/1,1,
+	['must be one of ','dynamic,dyn,subsumptive,variant,nonincremental,opaque,private,shared,approximate,intern']).
+proc_table_options(Option,Pred) :- !,
+	exec_table_option(Option,Pred).
 
-multifile_cvt(Ps,Skel) :-
+add_to_in_mod((Preds1,Preds2),Mod) :- !,
+	add_to_in_mod(Preds1,Mod),
+	add_to_in_mod(Preds2,Mod).
+add_to_in_mod(PSpec,Mod) :-
+	(PSpec = Pred/Arity
+	 ->	true
+	 ;	functor(PSpec,Pred,Arity)
+	),
+	functor(GTerm,Pred,Arity),
+	(in_mod(GTerm,OMod,Type)
+	 ->	(Mod == OMod
+		 ->	true
+		 ;	functor(GTerm,P,N),
+			(Type == known
+			 ->	permission_error(redefine,'imported (or exported) predicate',
+						 OMod:P/N,load_dyn/1)
+			 ;	permission_error(redefine,'assumed module, import/export must precede use',
+						 OMod:P/N,load_dyn/1)
+			)
+		)
+	 ;	assert(in_mod(GTerm,Mod,known))
+	).
+
+multifile_cvt(Ps,Mod,Skel) :-
 	mpa_to_skel(Ps,Skel0),
 	('_$multifile'(Skel0)
-	 ->	%%load_dyn_module(Mod),
-		load_dyn_file(Mod),
+	 ->	load_dyn_file(Mod),
 		functor(Skel0,Pred,Arity),
 		get_p_mod(Pred,Mod,P_Mod),
 		functor(Skel,P_Mod,Arity)
-	 ;	Skel = Skel0
+	 ;	fix_head_term(Skel0,Mod,Skel)
 	).
 
-proc_index((Pred, Preds)) :- !,
-	proc_index(Pred),
-	proc_index(Preds).
-proc_index(Pname/Arity-Arg) :- !,
-	multifile_cvt(Pname/Arity,Skel),
+proc_index((Pred, Preds),Mod) :- !,
+	proc_index(Pred,Mod),
+	proc_index(Preds,Mod).
+proc_index(Pname/Arity-Arg,Mod) :- !,
+	multifile_cvt(Pname/Arity,Mod,Skel),
 	index(Skel, Arg, 0).
-proc_index(Pname/Arity) :- 
-	multifile_cvt(Pname/Arity,Skel),
+proc_index(Pname/Arity,Mod) :- 
+	multifile_cvt(Pname/Arity,Mod,Skel),
 	index(Skel, 1, 0).
 
-proc_table((Pred, Preds)) :- !,
-	proc_table(Pred),
-	proc_table(Preds).
-proc_table(Pname/Arity) :- 
-	table(Pname/Arity).
+proc_table((Pred, Preds),Mod) :- !,
+	proc_table(Pred,Mod),
+	proc_table(Preds,Mod).
+proc_table(Pname/Arity,Mod) :- 
+	functor(Term,Pname,Arity),
+	fix_head_term(Term,Mod,MTerm),
+	table(MTerm).
+
+proc_dynamic((Pred, Preds),Mod) :- !,
+	proc_dynamic(Pred,Mod),
+	proc_dynamic(Preds,Mod).
+proc_dynamic(Pname/Arity,Mod) :- 
+	functor(Term,Pname,Arity),
+	fix_head_term(Term,Mod,MTerm),
+	dynamic(MTerm).
 
 proc_multifile((Spec1,Spec2)) :- !,
 	proc_multifile(Spec1),
@@ -937,7 +1126,6 @@ proc_multifile((Spec1,Spec2)) :- !,
 proc_multifile(Spec) :-
 	mpa_to_skel(Spec,Spec1),
 	functor(Spec1,Pred,Arity),
-%%	load_dyn_module(ModName),
 	load_dyn_file(ModName),
 	get_p_mod(Pred,ModName,LinkPred),
 	functor(LinkSkel,LinkPred,Arity),
@@ -1008,28 +1196,31 @@ ensure_dyn_loaded_novarcheck(File,Dir,Module) :-
 	).
 
 ensure_dync_loaded(Files) :-
-	ensure_dync_loaded(Files,1,usermod).
+	ensure_dync_loaded(Files,1,usermod,1).
 
 ensure_dync_loaded(File,Dir,Module) :- 
-	check_nonvar(File,ensure_dync_loaded/1,1),
-	ensure_dync_loaded_novarcheck(File,Dir,Module).
+	ensure_dync_loaded(File,Dir,Module,1).
 
-ensure_dync_loaded_novarcheck([],_Dir,_Module) :- !.
-ensure_dync_loaded_novarcheck([File|Files],Dir,Module) :- !, 
-	ensure_dync_loaded(File,Dir,Module),
-	ensure_dync_loaded(Files,Dir,Module).
-ensure_dync_loaded_novarcheck(File,Dir,Module) :-
+ensure_dync_loaded(File,Dir,Module,FactFlg) :- 
+	check_nonvar(File,ensure_dync_loaded/1,1),
+	ensure_dync_loaded_novarcheck(File,Dir,Module,FactFlg).
+
+ensure_dync_loaded_novarcheck([],_Dir,_Module,_FactFlg) :- !.
+ensure_dync_loaded_novarcheck([File|Files],Dir,Module,FactFlg) :- !, 
+	ensure_dync_loaded(File,Dir,Module,FactFlg),
+	ensure_dync_loaded(Files,Dir,Module,FactFlg).
+ensure_dync_loaded_novarcheck(File,Dir,Module,FactFlg) :-
 	(if_should_not_reload(File)
 	 ->	true
-	 ;	load_dync_nocheck(File,Dir,Module)   % no thread check
+	 ;	load_dync_nocheck(File,Dir,Module,FactFlg)   % no thread check
 	).
 
 if_should_not_reload(File) :-
-	get_fname(File,SExt,Base,_Mod),
+	get_fname(File,_Dirctry,SExt,Base,_Mod),
 	get_HRname(SExt,Base,_Hfname,Filename),
 	expand_filename(Filename,AFilename),
 	file_time(AFilename,Ctime),
-	load_dyn_file_loaded(AFilename,time(Ltime)),
+        file_is_dynloaded(AFilename,Ltime),
 	Ltime >= Ctime,
 	\+ need_more_index(AFilename).
 
@@ -1060,8 +1251,8 @@ indexes_subsumed(Ispec,OIndex) :-
 %% entries from the stack
 push_loaded_file(File,Rand) :-
 	gensym('loadfile',Rand),
-	expand_filename(File,ExpandedFile),
-	asserta(loading_stack(Rand,ExpandedFile)).
+	standardize_pathname(File,StandardizedFile),
+	asserta(loading_stack(Rand,StandardizedFile)).
 
 
 pop_loaded_file(Rand) :-
@@ -1072,20 +1263,233 @@ current_loaded_file(File) :- loading_stack(_,File), !.
 
 if_file_loaded(FileName) :-
 	(atom(FileName)
-	 ->	search_module(FileName,_Dir,_Mod,_SExt,_Base,Obj),
-		expand_filename(Obj,ExpObj),
-		(consult_file_loaded(ExpObj)
-		 ->	true
-		 ;	get_fname(FileName,SExtd,Based,_Modd),
-			get_HRname(SExtd,Based,_Hfname,Rfname),
-			expand_filename(Rfname,ARfname),
-			load_dyn_file_loaded(ARfname,_)
-		)
-	 ;      instantiation_error(if_file_loaded/1,1)
+        ->  search_module(FileName,_Dir,_Mod,_SExt,_Base,Obj),
+            expand_filename(Obj,ExpObj),
+            (file_is_consultloaded(ExpObj) -> true
+            ; get_fname(FileName,_Dirctry,SExtd,Based,_Modd),
+                get_HRname(SExtd,Based,_Hfname,Rfname),
+                expand_filename(Rfname,ARfname),
+                file_is_dynloaded(ARfname,_)
+            )
+        ;  instantiation_error(if_file_loaded/1,1)
 	).
 
-is_loaded(FilePath) :- consult_file_loaded(FilePath); load_dyn_file_loaded(FilePath,_).
+is_loaded(FilePath) :-
+        file_is_consultloaded(FilePath)
+        ; file_is_dynloaded(FilePath,_).
 
 % Add currently loading file's directory to library_directory
 % Useful to pull related files in a location independent manner
-add_this_lib_dir :- current_loaded_file(F), parse_filename(F,D,_,_), add_lib_dir(D).
+add_this_lib_dir :-
+        current_loaded_file(F),
+        parse_filename(F,D,_,_),
+        add_lib_dir(D).
+
+record_file_consultloaded(F) :-
+        atom(F),
+        standardize_pathname(F,StandardF),
+        assert(consult_file_loaded(StandardF)).
+remove_file_consultloaded(F) :-
+        atom(F),
+        standardize_pathname(F,StandardF),
+        retractall(consult_file_loaded(StandardF)).
+file_is_consultloaded(F) :-
+        atom(F),
+        standardize_pathname(F,StandardF),
+        consult_file_loaded(StandardF).
+
+record_file_dynloaded(F,Time) :-
+        atom(F),
+        standardize_pathname(F,StandardF),
+        assert(load_dyn_file_loaded(StandardF,time(Time))).
+remove_file_dynloaded(F) :-
+        atom(F),
+        standardize_pathname(F,StandardF),
+        retractall(load_dyn_file_loaded(StandardF,_)).
+file_is_dynloaded(F,Time) :-
+        atom(F),
+        standardize_pathname(F,StandardF),
+        load_dyn_file_loaded(StandardF,time(Time)).
+
+standardize_pathname(F,StandardF) :-
+        %%expand_filename(F,StandardF).
+        path_sysop(standardize,F,StandardF).
+
+%% expand and convert back slashes to forward slashes
+xsb_filename(InFile,UnixFile) :-
+	expand_filename(InFile,ExpFile),
+	(str_sub('\\',ExpFile)
+	 ->	atom_codes(ExpFile,ExpFileC),
+		cvt_back_to_for(ExpFileC,FExpFileC),
+		atom_codes(UnixFile,FExpFileC)
+	 ;	UnixFile = ExpFile
+	).
+
+cvt_back_to_for([],[]).
+cvt_back_to_for([Ci|ExpFileC],[Co|FExpFileC]) :-
+	(Ci =:= 0'\\
+	 ->	Co = 0'/
+	 ;	Co = Ci
+	),
+	cvt_back_to_for(ExpFileC,FExpFileC).
+	
+
+/* Take a clause with all terms in usermod, and a module, and convert
+   all terms in the clause to the right modules. */
+
+:- dynamic in_mod/3.		% (OpenTerm,Mod,Type) Type=known,assumed
+
+check_set_mod(Module) :-
+	(load_dyn_module(_)
+	 ->	true
+	 ;	assert(load_dyn_module(Module))
+	).
+
+fix_head_term(Head,Module,MHead) :-
+	(load_dyn_module(RMod)
+	 ->	cvt_head_to_mod(Head,RMod,MHead)
+	 ;	cvt_head_to_mod(Head,Module,MHead)
+	).
+	
+fix_body_goal(Body,usermod,Body) :- !.
+fix_body_goal(Body,Module,MBody) :-
+	(load_dyn_module(RMod)
+	 ->	cvt_body_to_mod(Body,RMod,MBody)
+	 ;	cvt_body_to_mod(Body,Module,MBody)
+	).
+
+cvt_head_to_mod(Head,Mod,MHead) :-
+	(atom(Head)
+	 ->	cvt_to_mod(Head,Mod,MHead,known)
+	 ; number(Head)
+	 ->	MHead = Head
+	 ;	Head =.. [Pred|Args],
+		cvt_term_to_mod_list(Args,1,0,unknown,MArgs),
+		Head1 =.. [Pred|MArgs],
+		cvt_to_mod(Head1,Mod,MHead,known)
+	).
+
+%% Mod is known to be right (Type=known), or just to use if unknown (Type=assumed)
+cvt_to_mod(Head,Mod,MHead,Type) :-
+	(in_mod(Head,OMod,OType)
+	 ->	(Type == known, OMod \== Mod % Must be Mod, but previously assumed another
+		 ->	functor(Head,P,N),
+			(OType == known
+			 ->	permission_error(redefine,'imported (or exported) predicate',
+						 OMod:P/N,load_dyn/1)
+			 ;	permission_error(redefine,'assumed module, import/export/definition must precede use',
+						 OMod:P/N,load_dyn/1)
+			)
+		 ;	true
+		),
+		(OMod == usermod
+		 ->	MHead = Head
+		 ;	term_new_mod(OMod,Head,MHead)
+		)
+	 ; functor(Head,Pred,Arity),standard_symbol(Pred,Arity,SMod)
+	 ->	cvt_to_mod_and_add(Head,SMod,Type,MHead)
+	 ;	cvt_to_mod_and_add(Head,Mod,Type,MHead)
+	).
+
+cvt_to_mod_and_add(Head,Mod,Type,MHead) :-
+	(atom(Head)
+	 ->	(Mod == usermod
+		 ->	MHead = Head
+		 ;	assert(in_mod(Head,Mod,Type)),
+			term_new_mod(Mod,Head,MHead)
+		)
+	 ;	functor(Head,Fun,Arity),
+		functor(MGHead,Fun,Arity),
+		assert(in_mod(MGHead,Mod,Type)),
+		(Mod == usermod
+		 ->	MHead = Head
+		 ;	term_new_mod(Mod,Head,MHead)
+		)
+	).
+
+cvt_body_to_mod(Body,_Mod,MBody) :-
+	(var(Body)
+	 ->	MBody = Body
+	 ; number(Body)
+	 ->	abort('ERROR: [load_dyn] number cannot be a goal.')
+	),
+	!.
+cvt_body_to_mod((G1,G2),Mod,(MG1,MG2)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1),
+	cvt_body_to_mod(G2,Mod,MG2).
+cvt_body_to_mod(';'(G1,G2),Mod,';'(MG1,MG2)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1),
+	cvt_body_to_mod(G2,Mod,MG2).
+cvt_body_to_mod('->'(G1,G2),Mod,'->'(MG1,MG2)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1),
+	cvt_body_to_mod(G2,Mod,MG2).
+cvt_body_to_mod(not(G1),Mod,not(MG1)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1).
+cvt_body_to_mod(\+(G1),Mod,\+(MG1)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1).
+cvt_body_to_mod(fail_if(G1),Mod,fail_if(MG1)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1).
+cvt_body_to_mod(once(G1),Mod,once(MG1)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1).
+cvt_body_to_mod(for_all(G1,G2),Mod,for_all(MG1,MG2)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1),
+	cvt_body_to_mod(G2,Mod,MG2).
+cvt_body_to_mod(do_all(G1,if_none(G2,G3)),Mod,do_all(MG1,if_none(MG2,MG3))) :- !,
+	cvt_body_to_mod(G1,Mod,MG1),
+	cvt_body_to_mod(G2,Mod,MG2),
+	cvt_body_to_mod(G3,Mod,MG3).
+cvt_body_to_mod(do_all(G1),Mod,do_all(MG1)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1).
+cvt_body_to_mod(do_all(G1,G2),Mod,do_all(MG1,MG2)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1),
+	cvt_body_to_mod(G2,Mod,MG2).
+cvt_body_to_mod(call(G1),Mod,call(MG1)) :- !,
+	cvt_body_to_mod(G1,Mod,MG1).
+cvt_body_to_mod(!,_,!) :- !.
+cvt_body_to_mod(Body,Mod,MBody) :-
+	(atom(Body)
+	 ->	cvt_to_mod(Body,Mod,MBody,assumed)
+	 ; number(Body)
+	 ->	MBody = Body
+	 ; Body = Mod1:NBody, nonvar(Mod1)
+	 ->	(Mod1 == usermod
+		 ->	MBody = Body
+		 ;	term_new_mod(Mod1,NBody,MBody)
+		)
+	 ;	Body =.. [Pred|Args],
+		functor(Body,Pred,Arity),
+		(standard_metapredicate(Pred,Arity,MetaArgNo)
+		 ->	cvt_term_to_mod_list(Args,1,MetaArgNo,Mod,MArgs)
+		 ;	cvt_term_to_mod_list(Args,1,0,Mod,MArgs)
+		),
+		Body1 =.. [Pred|MArgs],
+		cvt_to_mod(Body1,Mod,MBody,assumed)
+	).
+
+cvt_term_to_mod_list([],_,_,_,[]).
+cvt_term_to_mod_list([Term|Terms],ArgNo,MArgNo,Mod,[MTerm|MTerms]) :-
+	(ArgNo =:= MArgNo	% if meta arg
+	->     cvt_body_to_mod(Term,Mod,MTerm)
+	;      cvt_term_to_mod(Term,MTerm)
+	),
+	ArgNo1 is ArgNo + 1,
+	cvt_term_to_mod_list(Terms,ArgNo1,MArgNo,Mod,MTerms).
+
+cvt_term_to_mod(Term,MTerm) :-
+	(var(Term)
+	 ->	MTerm = Term
+	 ; atom(Term)
+	 ->	cvt_to_mod(Term,usermod,MTerm,assumed)
+	 ; number(Term)
+	 ->	MTerm = Term
+	 ; Term = Mod1:NTerm, nonvar(Mod1)
+	 ->	(Mod1 == usermod
+		 ->	MTerm = NTerm
+		 ;	term_new_mod(Mod1,NTerm,MTerm)
+		)
+	 ;	Term =.. [Pred|Args],
+		cvt_term_to_mod_list(Args,1,0,unknown,MArgs),
+		Term1 =.. [Pred|MArgs],
+		cvt_to_mod(Term1,usermod,MTerm,assumed)
+	).
+

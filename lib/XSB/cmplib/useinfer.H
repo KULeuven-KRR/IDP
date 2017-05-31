@@ -27,7 +27,7 @@
 :- export useinfer/3.
 
 :- import standard_metapredicate/3 from std_xsb.
-:- import member/2, ith/3 from basics.
+:- import member/2, ith/3, append/3 from basics.
 :- import warning/1, option/1 from auxlry.
 :- import standard_symbol/3 from std_xsb.
 :- import sym_propin/2, sym_prop/2, sym_insert/5, sym_scan/3,

@@ -104,6 +104,9 @@ xsb_stream_lock(IOport):-
 	file_function(XSB_STREAM_LOCK_B, IOport, _).
 xsb_stream_unlock(IOport):- 
 	file_function(XSB_STREAM_UNLOCK_B, IOport, _).
+file_set_character_set(S_or_A,CharSet) :-
+	check_open_stream_or_alias(S_or_A,file_set_character_set/2,1,_any,Stream),
+	file_function(FILE_SET_CHARACTER_SET, Stream, CharSet).
 
 preserve_numeric_calls(0,r):- !.
 preserve_numeric_calls(1,w):- !.
@@ -340,6 +343,27 @@ path_sysop(isabsolute,Filename) :- !,
 	is_absolute_filename(Filename).
 path_sysop(expand,Filename,ExpandedName) :- !,
 	expand_filename(Filename,ExpandedName).
+/*
+   Expands file name then replaces symlinks with the real file names.
+   If not a symlink then just expands.
+   On windows does nothing (only expands) - for now.
+*/
+path_sysop(standardize,Filename,CanonicalFileName) :- !,
+        expand_filename(Filename,FullFilename),
+        sys_file_realpath(FullFilename,CanonicalFileName,Res),
+        (Res =:= 0 -> true
+        ; CanonicalFileName = FullFilename
+        ).
+/*
+  This one just reads symlinks. If a file contains a symlink inside then
+  it won't do anythink useful. See standardize above for the real thing.
+*/
+path_sysop(readlink,Filename,CanonicalFileName) :- !,
+        expand_filename(Filename,FullFilename),
+        sys_file_readlink(FullFilename,CanonicalFileName,Res),
+        (Res =:= 0 -> true
+        ; CanonicalFileName = FullFilename
+        ).
 path_sysop(cwd_ancestordir,BaseName,ExpandedName) :- !,
 	cwd(CurrDir0),		% cwd returns name without trailing slash
 	slash(Slash),

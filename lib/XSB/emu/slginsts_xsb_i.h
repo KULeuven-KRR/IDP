@@ -133,7 +133,7 @@
   }
 
 #define LOG_ANSWER_RETURN(answer,template_ptr)				\
-  if (flags[CTRACE_CALLS] > 1 && !subg_forest_log_off(consumer_sf))  {			\
+  if (flags[CTRACE_CALLS] == FL_FULL && !subg_forest_log_off(consumer_sf))  {			\
     sprintAnswerTemplate(CTXTc forest_log_buffer_1,template_ptr, template_size); \
     sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)consumer_sf);	\
     sprint_subgoal(CTXTc forest_log_buffer_3,0,(VariantSF)ptcpreg); \
@@ -146,6 +146,30 @@
 	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer, \
 	      ctrace_ctr++);						\
   }
+
+
+#define LOG_NEW_ANSWER(producer_sf,answer_template,template_size)	\
+  if (flags[CTRACE_CALLS] >= FL_PARTIAL && !subg_forest_log_off(producer_sf))  {	\
+    memset(forest_log_buffer_1->fl_buffer,0,MAXTERMBUFSIZE);		\
+    memset(forest_log_buffer_2->fl_buffer,0,MAXTERMBUFSIZE);		\
+    memset(forest_log_buffer_3->fl_buffer,0,MAXTERMBUFSIZE);		\
+    /*    sprint_registers(CTXTc  buffera,TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_SIZE]); */ \
+    /*    printAnswerTemplate(stddbg,answer_template ,(int) template_size); */ \
+    sprintAnswerTemplate(CTXTc forest_log_buffer_1, answer_template, template_size);\
+    if (ptcpreg)							\
+      sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)producer_sf); \
+    else sprintf(forest_log_buffer_2->fl_buffer,"null");		\
+    if (delayreg) {							\
+      sprint_delay_list(CTXTc forest_log_buffer_3, delayreg);		\
+      fprintf(fview_ptr,"nda(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer, \
+	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer, \
+	      ctrace_ctr++);						\
+    }									\
+    else								\
+      fprintf(fview_ptr,"na(%s,%s,%d).\n",forest_log_buffer_1->fl_buffer, \
+	      forest_log_buffer_2->fl_buffer,ctrace_ctr++);		\
+  }
+
 
 /* need to test if ground (or better, but harder, if goals are
    identical) since p(X) :- p(X) is different from p(X) :- p(Y), yet
@@ -293,7 +317,7 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
       /* adding called-by graph edge */
       if(IsNonNULL(producer_sf)){
 	if(IsIncrSF(producer_sf)){
-	  addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
+	  addcalledge(CTXTc producer_sf->callnode,parent_table_sf->callnode);  
 	} 
 	else{
 	  if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
@@ -328,7 +352,6 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
     subg_tag(producer_sf) = INCOMP_ANSWERS;
     UNLOCK_CALL_TRIE() ;
 #endif
-    LOG_TABLE_CALL("new");
 
 /* --------- for new producer incremental evaluation  --------- */
     /* table_call_search tried to find the affected call, so if it has
@@ -338,24 +361,29 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
        the old call */
 
     if(IsNonNULL(old_call_gl)){
+      LOG_TABLE_CALL("reeval");
       producer_sf->callnode->prev_call=old_call_gl;
       producer_sf->callnode->outedges=old_call_gl->outedges;
       producer_sf->callnode->outcount=old_call_gl->outcount;
       producer_sf->callnode->outedges->callnode=producer_sf->callnode;
       producer_sf->ans_root_ptr=old_answer_table_gl;
+      if (IsNonNULL(old_answer_table_gl)) { 
+	BTN_Parent(old_answer_table_gl) = (BTNptr) producer_sf;
+      }
       old_call_gl->falsecount=0; /* this will stop propagation of unmarking */
       old_call_gl->deleted=1; 
       old_call_gl=NULL;
       old_answer_table_gl=NULL;
     } 
     else {
+      LOG_TABLE_CALL("new");
       if(IsIncrSF(producer_sf))
 	initoutedges(CTXTc producer_sf->callnode);
     }
 
     if(parent_table_is_incr){  
       if(IsIncrSF(producer_sf)){
-	addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
+	addcalledge(CTXTc producer_sf->callnode,parent_table_sf->callnode);  
       }else{
 	if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
 	  xsb_abort("Predicate %s:%s/%d not declared incr_table\n",
@@ -686,7 +714,10 @@ if ((ret = table_call_search(CTXTc &callInfo,&lookupResults))) {
 	   * delay_positively().
 	   */
 	  if (num_heap_term_vars == 0) {
-	    fail_if_direct_recursion(producer_sf);
+	    if (flags[ALTERNATE_SEMANTICS] != NAF_CS) {
+	      // This breaks CS, which needs all delay lists to enure correctness.
+	      fail_if_direct_recursion(producer_sf);
+	    }
 	    delay_positively(producer_sf, first_answer,
 			     makestring(get_ret_string()));
 	  }
@@ -750,7 +781,7 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
   Op1(get_xxxxl);
   tip =  (TIFptr) get_xxxxl;
 
-			       //  printf("Subgoal Depth %d\n",TIF_SubgoalDepth(tip));
+//  printf("TTSNY: Subgoal Depth %d\n",TIF_SubgoalDepth(tip));
   if ( TIF_SubgoalDepth(tip) == 65535) {
     int i;
     //    new_heap_functor(hreg, TIF_PSC(tip)); /* set str psc ptr */
@@ -785,7 +816,7 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
       if(IsIncrSF(sf)){
 	cn=(callnodeptr)BTN_Child(CallLUR_Leaf(lookupResults));
 	if(IsNonNULL(cn)) {
-	  addcalledge(cn,sf->callnode);  
+	  addcalledge(CTXTc cn,sf->callnode);  
 	}
       }
     }
@@ -882,6 +913,7 @@ XSB_Start_Instr(answer_return,_answer_return)
     tmp = int_val(cell(answer_template));
 #ifdef CALL_ABSTRACTION
     get_var_and_attv_nums(template_size, attv_num, abstr_size,tmp);
+    altsem_dbg(("template size %d attv_num %d abstr_size %d tmp %lx\n",template_size, attv_num, abstr_size,tmp));
 #else
     get_var_and_attv_nums(template_size, attv_num, tmp);
 #endif
@@ -1027,6 +1059,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
   int template_size, attv_num; Integer tmp;
   VariantSF producer_sf;
   xsbBool isNewAnswer = FALSE;
+  xsbBool wasRederived = FALSE;
   BTNptr answer_leaf;
 #ifdef CALL_ABSTRACTION
   int abstr_size;
@@ -1041,7 +1074,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 
   ADVANCE_PC(size_xxx);
 
-  xsb_dbgmsg((LOG_COMPLETION,"starting new_answer breg %x\n",breg));
+  //  printf("-----starting new answer\n");
   producer_sf = (VariantSF)cell(ereg-Yn);
   producer_cpf = subg_cp_ptr(producer_sf);
 
@@ -1107,98 +1140,92 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 
   SET_TRIE_ALLOCATION_TYPE_SF(producer_sf); /* No-op in seq engine */
   answer_leaf = table_answer_search( CTXTc producer_sf, template_size, attv_num,
-				     answer_template, &isNewAnswer );
+				     answer_template, &wasRederived,&isNewAnswer );
+
+//printf("completion status %d isnew %d wasRederived %d\n",subg_is_complete(producer_sf),isNewAnswer,wasRederived);
+
+if (wasRederived) {
+  //  printf("           was rederived answer ");print_subgoal(stddbg,producer_sf);printf("\n");
+  LOG_NEW_ANSWER(producer_sf,answer_template,template_size);
+  SUBG_INCREMENT_ANSWER_CTR(producer_sf,template_size);
+  subg_callnode_ptr(producer_sf)->no_of_answers++;
+  if (subg_is_ec_scheduled(producer_sf) ) {  // See comment below
+    perform_early_completion(CTXTc producer_sf, producer_cpf);
+  }
+ }
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */
 
-  if (flags[CTRACE_CALLS] && !subg_forest_log_off(producer_sf))  { 
-    memset(forest_log_buffer_1->fl_buffer,0,MAXTERMBUFSIZE);
-    memset(forest_log_buffer_2->fl_buffer,0,MAXTERMBUFSIZE);
-    memset(forest_log_buffer_3->fl_buffer,0,MAXTERMBUFSIZE);
-    //    sprint_registers(CTXTc  buffera,TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_SIZE]);
-    //    printAnswerTemplate(stddbg,answer_template ,(int) template_size);
-    sprintAnswerTemplate(CTXTc forest_log_buffer_1, 
-			 answer_template, template_size);
-    if (ptcpreg)
-      sprint_subgoal(CTXTc forest_log_buffer_2,0,(VariantSF)producer_sf);     
-    else sprintf(forest_log_buffer_2->fl_buffer,"null");
-    if (delayreg) {
-      sprint_delay_list(CTXTc forest_log_buffer_3, delayreg);
-      fprintf(fview_ptr,"nda(%s,%s,%s,%d).\n",forest_log_buffer_1->fl_buffer,
-	      forest_log_buffer_2->fl_buffer,forest_log_buffer_3->fl_buffer,
-	      ctrace_ctr++);
-    }
-    else 
-      fprintf(fview_ptr,"na(%s,%s,%d).\n",forest_log_buffer_1->fl_buffer,
-	      forest_log_buffer_2->fl_buffer,ctrace_ctr++);
-  }
+    LOG_NEW_ANSWER(producer_sf,answer_template,template_size);
+
 #ifdef DEBUG_ABSTRACTION
-  printf("AT (na) %p size %d\n",answer_template,template_size);
-  print_heap_abstraction(answer_template-2*(abstr_size)-(template_size-1),abstr_size);
-  printAnswerTemplate(stddbg,answer_template,template_size);
-  print_registers(stddbg, TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_SIZE]);
+    printf("AT (na) %p size %d\n",answer_template,template_size);
+    print_heap_abstraction(answer_template-2*(abstr_size)-(template_size-1),abstr_size);
+    printAnswerTemplate(stddbg,answer_template,template_size);
+    print_registers(stddbg, TIF_PSC(subg_tif_ptr(producer_sf)),flags[MAX_TABLE_SUBGOAL_SIZE]);
 #endif
 
-    SUBG_INCREMENT_ANSWER_CTR(producer_sf);
+    SUBG_INCREMENT_ANSWER_CTR(producer_sf,template_size);
     /* incremental evaluation */
-    if(IsIncrSF(producer_sf))
-      subg_callnode_ptr(producer_sf)->no_of_answers++;
-    
-    
+    if(IsIncrSF(producer_sf)) subg_callnode_ptr(producer_sf)->no_of_answers++;
+
     delayreg = tcp_pdreg(producer_cpf);      /* restore delayreg of parent */
-    if (is_conditional_answer(answer_leaf)) {	/* positive delay */
+    if (is_conditional_answer(answer_leaf)) {   /* positive delay */
 #ifndef LOCAL_EVAL
 #ifdef DEBUG_DELAYVAR
       fprintf(stddbg, ">>>> delay_positively in new_answer_dealloc\n");
 #endif
-      /*
+      /*                                                                                                      
        * The new answer for this call is a conditional one, so add it
        * into the delay list for its root subgoal.  Notice that
-       * delayreg has already been restored to the delayreg of parent.
-       *
-       * This is the new version of delay_positively().  Here,
-       * ans_var_pos_reg is passed from variant_answer_search().  It is a
-       * pointer to the heap where the substitution factor of the
-       * answer was saved as a term ret/n (in variant_answer_search()).
+       * delayreg has already been restored to the delayreg of parent.                                             
+       *                                                                                                          
+       * This is the new version of delay_positively().  Here,     
+       * ans_var_pos_reg is passed from variant_answer_search().  It is a                                             
+       * pointer to the heap where the substitution factor of the                        
+       * answer was saved as a term ret/n (in variant_answer_search()).                                                      
        */
 #ifndef IGNORE_DELAYVAR
-      fail_if_direct_recursion(producer_sf);
-      if (isinteger(cell(ans_var_pos_reg))) {
-	delay_positively(producer_sf, answer_leaf,
-			 makestring(get_ret_string()));
+      if (flags[ALTERNATE_SEMANTICS] != NAF_CS) {
+	// This breaks CS, which needs all delay lists to enure correctness.
+	fail_if_direct_recursion(producer_sf);
       }
-      else 
-	delay_positively(producer_sf, answer_leaf, makecs(ans_var_pos_reg));
+      if (isinteger(cell(ans_var_pos_reg))) {
+        delay_positively(producer_sf, answer_leaf,
+                         makestring(get_ret_string()));
+      }
+      else
+        delay_positively(producer_sf, answer_leaf, makecs(ans_var_pos_reg));
 #else
-	delay_positively(producer_sf, answer_leaf,
-			 makestring(get_ret_string()));
+      delay_positively(producer_sf, answer_leaf,
+		       makestring(get_ret_string()));
 #endif /* IGNORE_DELAYVAR */
 #endif /* ! LOCAL_EVAL */
     }
     else {
       if (template_size == 0 || subg_is_ec_scheduled(producer_sf) ) {
-	/*
-	 *  The table is for a ground call which we just proved true.
-	 *  (We entered an ESCAPE Node, above, to note this fact in the
-	 *  table.)  As we only need to do this once, we perform "early
-	 *  completion" by ignoring the other clauses of the predicate
-	 *  and setting the failure continuation (next_clause) field of
-	 *  the CPF to a check_complete instr.
-	 *
-	 */
-	/*		
-		printf("performing early completion for: (%d)",subg_is_complete(producer_sf));
-		print_subgoal(CTXTc stddbg, producer_sf);
-		printf("(breg: %x pcpf %x\n",breg,producer_cpf);alt_print_cp(CTXTc"ec");
-	 */
+        /*
+         *  The table is for a ground call which we just proved true.
+         *  (We entered an ESCAPE Node, above, to note this fact in the
+         *  table.)  As we only need to do this once, we perform "early
+         *  completion" by ignoring the other clauses of the predicate
+         *  and setting the failure continuation (next_clause) field of
+         *  the CPF to a check_complete instr.
+         *
+         */
+        /*
+                printf("performing early completion for: (%d)",subg_is_complete(producer_sf));
+                print_subgoal(CTXTc stddbg, producer_sf);
+                printf("(breg: %x pcpf %x\n",breg,producer_cpf);alt_print_cp(CTXTc"ec");
+	*/
 	perform_early_completion(CTXTc producer_sf, producer_cpf);
 #if defined(LOCAL_EVAL)
-	flags[PIL_TRACE] = 1;
-	/* The following prunes deeper choicepoints at early completion if possible */
-	if (tcp_pcreg(producer_cpf) != (byte *) &answer_return_inst) {
+        flags[PIL_TRACE] = 1;
+        /* The following prunes deeper choicepoints at early completion if possible */
+        if (tcp_pcreg(producer_cpf) != (byte *) &answer_return_inst) {
           CPtr b = breg;
-	  //          printf("+++ ec breg: %p, producer %p\n",b,producer_cpf);
-          while (b < producer_cpf) {
+          //          printf("+++ ec breg: %p, producer %p\n",b,producer_cpf);                                                 
+          while (b < producer_cpf) { 
 	    //            printf("+++ unwind %p\n",b);
             CHECK_TRIE_ROOT(CTXTc b);
             CHECK_CALL_CLEANUP(CTXTc b);
@@ -1285,16 +1312,11 @@ XSB_End_Instr()
 /*-------------------------------------------------------------------------*/
 
 XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
-
-  //       printf(">>>> resume_compl_suspension is called %d\n",infcounter);
-  //      print_local_stack_nonintr(CTXTc "resume_cs");
-  //       print_instr = 1;
-  //   alt_dis();
 {
   if (csf_pcreg(breg) == (pb)(&resume_compl_suspension_inst)) {
     CPtr csf = breg;
     
-    //     printf(">>>> csf\n");
+    //    printf(">>>> old_rcsi\n");
 
     /* Switches the environment to a frame of a subgoal that was	*/
     /* suspended on completion, and sets the continuation pointer.	*/
@@ -1312,7 +1334,7 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
     breg = csf_prevcsf(csf);
     lpcreg = cpreg;
   } else {
-    //     printf(">>>> csp\n");
+    //     printf(">>>> new_recs\n");
     CPtr csf = cs_compsuspptr(breg);
     /* Switches the environment to a frame of a subgoal that was	*/
     /* suspended on completion, and sets the continuation pointer.	*/
@@ -1336,6 +1358,39 @@ XSB_Start_Instr(resume_compl_suspension,_resume_compl_suspension)
   }
   //  print_local_stack_nonintr(CTXTc "resume_cs");
 
+}
+XSB_End_Instr()
+
+XSB_Start_Instr(continue_consumer,_continue_consumer) 
+{
+  altsem_dbg((">>>> continue consumer\n"));
+
+    CPtr conscp = breg;
+    
+    /* Switches the environment to a frame of a subgoal that was	*/
+    /* suspended on completion, and sets the continuation pointer.	*/
+    check_glstack_overflow(0,lpcreg,OVERFLOW_MARGIN);
+    freeze_and_switch_envs(conscp, NLCP_SIZE);
+    ptcpreg = nlcp_ptcp(conscp);
+    //    neg_delay = (nlcp_neg_loop(conscp) != FALSE);
+    delayreg = nlcp_pdreg(conscp);
+    cpreg = nlcp_cpreg(conscp); 
+    ereg = nlcp_ereg(conscp);
+    ebreg = nlcp_ebreg(conscp);
+    hbreg = nlcp_hreg(conscp);
+    save_find_locx(ereg);
+    hbreg = hreg;
+    breg = nlcp_prevbreg(conscp);
+    set_gfp_state(conscp);
+    nlcp_pcreg(conscp) = (pb) &answer_return_inst;
+    add_positive_delay(CTXTc "cs_undef");
+    //    undefPair = insert("cs_undef", 0, pair_psc(insert_module(0,"xsbbrat")), &isNew); 
+    //    Utip = get_tip(CTXTc pair_psc(undefPair));				
+    //    delay_negatively(TIF_Subgoals(Utip));				
+    //      printf("list %p ret %s\n",ALN_Answer(subg_ans_list_ptr(TIF_Subgoals(Utip))),get_ret_psc(0));
+    //      delay_positively(TIF_Subgoals(Utip),ALN_Answer(subg_ans_list_ptr(TIF_Subgoals(Utip))),get_ret_psc(0));		
+    lpcreg = cpreg;
+    altsem_dbg(("done with continue consumer\n"));
 }
 XSB_End_Instr()
 

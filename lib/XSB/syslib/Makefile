@@ -51,7 +51,8 @@ Option = [sysmod,optimize,quit_on_error]
 
 #-------------------------------------------------------------------#
 #
-XSB=../bin/xsb
+#XSB=../bin/xsb
+XSB=../config/x64-pc-windows/bin/xsb.exe
 Prolog = $(XSB) -e "segfault_handler(warn)."
 #
 #-------------------------------------------------------------------#

@@ -23,8 +23,8 @@
 ** 
 */
 
-
-:- export file_read/2, file_read/3, vv/2.
+:- export token_type/2.
+:- export file_read/2, file_read/3.
 :- export file_read_foe/3, file_read_fapoe/3.
 :- export vv/2.  %% this is a functor symbol, not a predicate
 %%:- export iso_file_read/3.
@@ -32,7 +32,7 @@
 :- import '_$op'/3 from file_op.
 :- import file_put/2 from file_io.
 :- import file_write0/2, file_nl/1 from xsb_writ.
-:- import atom/1, atom_codes/2, repeat/0, '=..'/2 from standard.
+:- import atom/1, atom_codes/2, repeat/0, '=..'/2, warning/1 from standard.
 :- import syntax_error/1 from error_handler.
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import term_new/2, term_set_arg/4, 

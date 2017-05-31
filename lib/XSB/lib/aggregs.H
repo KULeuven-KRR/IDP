@@ -61,6 +61,7 @@
 
 :- import arg/3, call/1, call_c/1, atom/1, '=..'/2
 	from standard.
+:- import (table)/1 from standard.
 :- import ground/1 from basics.
 :- import call/2, call/3, call/4 from standard.
 :- import member/2, copy_term/2 from basics.

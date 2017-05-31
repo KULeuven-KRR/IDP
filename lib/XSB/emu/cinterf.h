@@ -344,7 +344,9 @@ DllExport extern void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term l
 				      int regs_to_protect, char *in_func, char *where);
 DllExport extern void c_bytes_to_p_charlist(CTXTdeclc char *name, size_t len, prolog_term list,
 				      int regs_to_protect, char *in_func, char *where);
-
+DllExport extern int call_conv xsb_add_c_predicate(CTXTdeclc char *modname, char *predname,
+					 int arity, int (*cfun)());
+  
 /*******************************************************************************/
 
 #ifndef MULTI_THREAD

@@ -1180,20 +1180,28 @@ table_1(Pred):-
 table_index(PredSpecs,IndexSpec) :-
 	comma_member(PSpec,PredSpecs),
 	functor(PSpec,Pred,Arity),
+	retractall(table_index_predicates(PSpec,_)),
 	collect_orders_from_indexes(IndexSpec,Arity,_,IndexOrds),
+	upto_n(1,Arity,StdOrd),
+	IndexOrds \== [StdOrd],
 	module_of_term(PSpec,Module),
 	member(IndexOrd,IndexOrds),
 	concat_atom([Pred,'$'],PredD),
 	concat_atom([PredD|IndexOrd],'_',NPredName),
 	functor(NTermU,NPredName,Arity),
 	term_new_mod(Module,NTermU,NTerm),
-	(table_index_predicates(PSpec,NTerm)
-	 ->	true
-	 ;	assert(table_index_predicates(PSpec,NTerm))
-	),
+	assert(table_index_predicates(PSpec,NTerm)),
 	fail.
 table_index(_PredSpecs,_IndexSpec).
 		       
+upto_n(I,K,List) :-
+	(I =< K
+	 ->	List = [I|List1],
+		I1 is I+1,
+		upto_n(I1,K,List1)
+	 ;	List = []
+	).
+
 abolish_table_index_pred(PredSpec) :-
 	mpa_to_skel(PredSpec,RPredSpec),
 	table_index_predicates(RPredSpec,TPredSpec),
@@ -2247,7 +2255,7 @@ use_module(Mod,Syms,_):-
 	import(from(Syms, Mod)).
 
 import(from(Syms, Mod)) :- !, 
-	conname(Mod, MName),
+	term_to_atom(Mod,MName,[quoted(true)]),
 	import(Syms, MName).
 
 import([], _) :- !.
@@ -2688,6 +2696,33 @@ handle_timer_interrupt(MaxMemorySize,Handler) :-
 	 ->	call(Handler)
 	 ;	true
 	).
+
+intersect_variables(A,B,C) :-
+	excess_vars(A,B,[],AminusB),
+	excess_vars(A,AminusB,[],C).
+
+do_all(SetGoal,DoGoal0) :-
+	term_variables(DoGoal0,Vars0),
+	intersect_variables(SetGoal,Vars0,Vars),
+	findall(Vars,SetGoal,List0),
+	(DoGoal0 = if_none(DoGoal,ElseGoal)
+	 ->	(List0 == []
+		 ->	call(ElseGoal),
+			fail
+		 ;	true
+		)
+	 ;	DoGoal = DoGoal0
+	),		 
+	sort(List0,List),
+	member(Vars,List),
+	call(DoGoal),
+	fail.
+do_all(_SetGoal,_DoGoal).
+
+do_all(Goal) :-
+	call(Goal),
+	fail.
+do_all(_Goal).
 
 
 /* --------------------- end of file standard.P ----------------------- */

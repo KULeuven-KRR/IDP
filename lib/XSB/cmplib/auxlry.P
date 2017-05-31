@@ -48,21 +48,6 @@ warning(Message) :-
 error(Message) :- 
 	misc_error(Message).
 
-/*
-TLS No need for this any more -- lets use XSBs error mechanism
-
-error(Message) :- 
-	( conget('error occurred', 1)
-	->  true
-	;   conset('error occurred', 1)
-	),
-	ttywritenl(('++Error[XSB]: [Compiler] ', Message), STDERR),
-	(conget(quit_on_error,1)
-	->  sys_exit(1)
-	;   true
-	).
-*/
-
 :- dynamic('_$global_compiler_options'(_)).
 
 set_global_compiler_options(Options) :-
@@ -115,6 +100,7 @@ setoptions1([Opt|Rest]) :-
 setopt(Opt,Setting) :-
 	( current_option(Opt) -> conset(Opt, Setting)
 	; current_option(Opt, NewOpt) -> conset(NewOpt, Setting)
+        ; executable_option(Opt) -> execute_option(Opt)
 	; warning(('Unknown compiler option: ', Opt))
 	),
 	additional_option_settings(Opt).
@@ -131,8 +117,8 @@ additional_option_settings(Opt) :-
 	(functor(Opt,OptName,1), arg(1,Opt,OptList1),   %% unary xpp_on/xpp_dump
 	    (is_list(OptList1) -> OptList = OptList1
 	    ; OptList = [OptList1]
-	    ),
-	    !
+	    )
+        -> true
 	; Opt =.. [OptName|OptList]                    %% N-ary xpp_on/xpp_dump
 	),
 	(OptName == xpp_on ; OptName == xpp_dump),
@@ -240,6 +226,20 @@ set_ciao_opts:-
 	op(978, xfx,(::)).
 %	op(1100,fx,(document_export)),
 %	op(1100,fx,(document_import)).
+
+executable_option(character_set(_)).
+execute_option(character_set(CharSet)) :-
+        nonvar(CharSet),
+        valid_charset(CharSet),
+        !,
+        standard:seeing(Stream),
+        file_io:file_set_character_set(Stream,CharSet).
+execute_option(character_set(CharSet)) :-
+	warning(('Unknown character set ignored: ', CharSet)).
+
+valid_charset(cp1252).
+valid_charset(utf_8).
+valid_charset(latin_1).
 
 
 set_preprocessor_queue([]).

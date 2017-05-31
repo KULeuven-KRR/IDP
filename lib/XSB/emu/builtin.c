@@ -218,8 +218,8 @@ extern xsbBool str_sub(void);
 extern xsbBool str_match(CTXTdecl);
 
 // For force_truth_value (which may not be used much)
-extern void force_answer_true(BTNptr);
-extern void force_answer_false(BTNptr);
+extern void force_answer_true(CTXTdeclc BTNptr);
+extern void force_answer_false(CTXTdeclc BTNptr);
 
 // catch/throw.
 extern int set_scope_marker(CTXTdecl);
@@ -832,7 +832,7 @@ int is_proper_list(Cell term)	/* for standard preds */
 
 /* --------------------------------------------------------------------	*/
 //  Need to expand this.
-#define MAX_LOCAL_TRAIL_SIZE 32*K
+#define MAX_LOCAL_TRAIL_SIZE MAX_ARITY
 
 struct ltrail {
   CPtr *ltrail_top;
@@ -922,9 +922,11 @@ int count_variable_occurrences(Cell term) {
   case XSB_ATTV:
     return count + 1;
   case XSB_STRUCT: {
-    int i, arity;
-    arity = (int) get_arity(get_str_psc(term));
-    if (arity == 0) return count;
+    unsigned int i, arity;
+    arity = get_arity(get_str_psc(term));
+    if (arity == 0) {
+      return count;
+    }
     for (i = 1; i < arity; i++) {
       count += count_variable_occurrences(get_str_arg(term,i));
     }
@@ -997,8 +999,10 @@ CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, int ifExist,
     Psc psc;
     psc = get_str_psc(term);
     arity = (int) get_arity(psc);
-    if (arity == 0) return varlist;
-    if (psc == caret_psc && ifExist) {
+    if (arity == 0) {
+      return varlist;
+    }
+    if (ifExist && (psc == caret_psc || psc == forall2_psc)) {
       CPtr *save_templ_base;
       save_templ_base = templ_trail->ltrail_top;
       make_ground(get_str_arg(term,1), templ_trail);
@@ -1006,7 +1010,7 @@ CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, int ifExist,
       undo_ltrail_bindings(templ_trail,save_templ_base);
       return varlist;
     }
-    if (ifExist && (psc == setof_psc || psc == bagof_psc)) {
+    if (ifExist && (psc == setof_psc || psc == bagof_psc || psc == forall3_psc)) {
       CPtr *save_templ_base;
       save_templ_base = templ_trail->ltrail_top;
       make_ground(get_str_arg(term,1), templ_trail);
@@ -1015,10 +1019,20 @@ CPtr excess_vars(CTXTdeclc Cell term, CPtr varlist, int ifExist,
       undo_ltrail_bindings(templ_trail,save_templ_base);
       return varlist;
     }
-      for (i = 1; i < arity; i++) {
-	varlist = excess_vars(CTXTc get_str_arg(term,i), varlist, ifExist, templ_trail, var_trail);
-      }
-      term = get_str_arg(term,arity);
+    if (ifExist && (psc == forall4_psc)) {
+      CPtr *save_templ_base;
+      save_templ_base = templ_trail->ltrail_top;
+      make_ground(get_str_arg(term,1), templ_trail);
+      make_ground(get_str_arg(term,3), templ_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,2),varlist,ifExist,templ_trail,var_trail);
+      varlist = excess_vars(CTXTc get_str_arg(term,4),varlist,ifExist,templ_trail,var_trail);
+      undo_ltrail_bindings(templ_trail,save_templ_base);
+      return varlist;
+    }
+    for (i = 1; i < arity; i++) {
+      varlist = excess_vars(CTXTc get_str_arg(term,i), varlist, ifExist, templ_trail, var_trail);
+    }
+    term = get_str_arg(term,arity);
   }
     goto begin_excess_vars;
   case XSB_LIST:
@@ -1139,6 +1153,7 @@ void init_builtin_table(void)
   set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
 
   set_builtin_table(PSC_INSERT, "psc_insert");
+  set_builtin_table(PSC_FIND, "psc_find");
   set_builtin_table(PSC_IMPORT, "psc_import");
   set_builtin_table(PSC_IMPORT_AS, "psc_import_as");
   set_builtin_table(PSC_DATA, "psc_data");
@@ -1421,7 +1436,7 @@ int builtin_call(CTXTdeclc byte number)
   }
   case PSC_SET_TYPE: {	/* R1: +PSC; R2: +type (int): see psc_xsb.h */
     Psc psc = (Psc)ptoc_addr(1);
-    set_type(psc, (byte)ptoc_int(CTXTc 2));
+    psc_set_type(psc, (byte)ptoc_int(CTXTc 2));
     break;
   }
   case PSC_PROP: {	/* R1: +PSC; R2: -term */
@@ -1456,7 +1471,7 @@ int builtin_call(CTXTdeclc byte number)
       xsb_warn(CTXTc "[psc_set_prop/2] Cannot set property of predicate.\n");
       return FALSE;
     }
-    set_data(psc, (Psc)ptoc_int(CTXTc 2));
+    psc_set_data(psc, (Psc)ptoc_int(CTXTc 2));
     break;
   }
 
@@ -1484,14 +1499,14 @@ int builtin_call(CTXTdeclc byte number)
   case PSC_SET_EP: {	       /* R1: +PSC; R2: +int */
     Psc psc = (Psc)ptoc_addr(1);
     byte *ep = (pb)ptoc_int(CTXTc 2);
-    if (ep == (byte *)NULL) set_ep(psc,(byte *)(&(psc->load_inst)));
-    else if (ep == (byte *)4) set_ep(psc,(byte *)&fail_inst);
+    if (ep == (byte *)NULL) psc_set_ep(psc,(byte *)(&(psc->load_inst)));
+    else if (ep == (byte *)4) psc_set_ep(psc,(byte *)&fail_inst);
     break;
   }
 
   case PSC_SET_SPY: { 	       /* R1: +PSC; R2: +int */
     Psc psc = (Psc)ptoc_addr(1);
-    set_spy(psc, (byte)ptoc_int(CTXTc 2));
+    psc_set_spy(psc, (byte)ptoc_int(CTXTc 2));
     break;
   }
 
@@ -1515,7 +1530,7 @@ int builtin_call(CTXTdeclc byte number)
     {int new;
       Cell term = ptoc_tag(CTXTc 1);
       if (isstring(term)) {
-	ctop_addr(2, pair_psc(insert(string_val(term), 0, (Psc)flags[CURRENT_MODULE], &new)));
+	ctop_addr(2, pair_psc(insert_psc(string_val(term), 0, (Psc)flags[CURRENT_MODULE], &new)));
       }
       else if (isconstr(term))
 	ctop_addr(2, term_psc(term));
@@ -1545,7 +1560,10 @@ int builtin_call(CTXTdeclc byte number)
     ctop_int(CTXTc 3, compare(CTXTc (void *)ptoc_tag(CTXTc 1), (void *)ptoc_tag(CTXTc 2)));
     break;
   case TERM_NEW_MOD: {  /* R1: +ModName, R2: +Term, R3: -NewTerm */
-    int new, disp;
+    int new;
+    unsigned int disp;
+    int import_from_usermod = FALSE;
+    char *modname;
     Psc termpsc, modpsc, newtermpsc;
     Cell arg, term = ptoc_tag(CTXTc 2);
     /* XSB_Deref(term); not nec since ptoc_tag derefs */
@@ -1554,16 +1572,25 @@ int builtin_call(CTXTdeclc byte number)
       break;
     }
     termpsc = term_psc(term);
-    modpsc = pair_psc(insert_module(0,ptoc_string(CTXTc 1)));
-    /*    if (!colon_psc) colon_psc = pair_psc(insert(":",2,global_mod,&new));*/
-    while (termpsc == colon_psc) {
-      term = get_str_arg(term,2);
-      XSB_Deref(term);
-      termpsc = term_psc(term);
+    modname = ptoc_string(CTXTc 1);
+    if (strncmp(modname,"usermod(",strlen("usermod(")) == 0) {
+      import_from_usermod = TRUE;
+      modpsc = global_mod;
+    } else {
+      modpsc = pair_psc(insert_module(0,modname));
     }
-    newtermpsc = pair_psc(insert(get_name(termpsc),get_arity(termpsc),modpsc,&new));
-    if (new) {
-      set_data(newtermpsc, modpsc);
+    newtermpsc = pair_psc(insert_psc(get_name(termpsc),get_arity(termpsc),modpsc,&new));
+    if (import_from_usermod) {
+      if (new) printf("ERROR: shouldn't be new\n");
+      //printf("usermod predicate: %s/%d type: %x, env: %x\n",get_name(newtermpsc),get_arity(newtermpsc),get_type(newtermpsc),get_env(newtermpsc));
+      if (!(isstring(get_data(newtermpsc)) && strcmp(string_val(get_data(newtermpsc)),modname) == 0)) {
+	psc_set_data(newtermpsc, (Psc)makestring(string_find(modname,1)));
+	psc_set_env(newtermpsc,T_UNLOADED);  // force reload if diff/new File
+	//printf("set env to T_UNLOADED\n");
+      }
+      //      env_type_set(CTXTc newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
+    } else if (new) {
+      psc_set_data(newtermpsc, modpsc);
       env_type_set(CTXTc newtermpsc, T_IMPORTED, T_ORDI, (xsbBool)new);
     }
     ctop_constr(CTXTc 3, (Pair)hreg);
@@ -1768,13 +1795,17 @@ int builtin_call(CTXTdeclc byte number)
     Psc newpsc;
     int k = (int)ptoc_int(CTXTc 1);
     Cell goal = ptoc_tag(CTXTc (k+2));
+    if (k > 253) {  // TES: subtracting 2 -- this might not be right.
+      xsb_abort("Calling calln with too many arguments\n");
+    }
     if (k == 0) {
       return prolog_call0(CTXTc goal);
     } else if (isstring(goal)) {
       for (i = 1; i <= k; i++) {
 	bld_copy(reg+i,cell(reg+i+1));
       }
-      newpsc = pair_psc(insert(string_val(goal),(byte)k,(Psc)flags[CURRENT_MODULE],&new));
+      //      newpsc = pair_psc(insert(string_val(goal),(byte)k,(Psc)flags[CURRENT_MODULE],&new));
+      newpsc = pair_psc(insert_psc(string_val(goal),k,(Psc)flags[CURRENT_MODULE],&new));
       pcreg = get_ep(newpsc);
       if (asynint_val) intercept(CTXTc newpsc);
       return TRUE;
@@ -1800,7 +1831,8 @@ int builtin_call(CTXTdeclc byte number)
 	  //printf("here00 %s/%d\n",get_name(psc),get_arity(psc));
 	} else {
 	  //printf("isstring\n");
-	  psc = pair_psc(insert(string_val(goal),(byte)k,modpsc,&new));
+	  //	  psc = pair_psc(insert(string_val(goal),(byte)k,modpsc,&new));
+	  psc = pair_psc(insert_psc(string_val(goal),k,modpsc,&new));
 	}
       } else {
 	//printf("string\n");
@@ -1812,7 +1844,7 @@ int builtin_call(CTXTdeclc byte number)
 	  bld_copy(reg+i,cell(reg+i+1));
 	}
 	//printf("inserting\n");  
-	newpsc = pair_psc(insert(string_val(goal),(byte)k,modpsc,&new));
+	newpsc = pair_psc(insert_psc(string_val(goal),k,modpsc,&new));
 	pcreg = get_ep(newpsc);
 	if (asynint_val) intercept(CTXTc newpsc);
 	return TRUE;
@@ -1835,11 +1867,11 @@ int builtin_call(CTXTdeclc byte number)
       if (!modpsc) modpsc = (Psc)flags[CURRENT_MODULE];
       if (!modpsc) modpsc = global_mod;
       //printf("inserting %s/%d into modpsc %s\n",goalname,get_arity(psc),get_name(modpsc));
-      newpsc = pair_psc(insert(goalname,(byte)(arity+k),modpsc,&new));
+      newpsc = pair_psc(insert_psc(goalname,(arity+k),modpsc,&new));
       if (new) {
-	set_data(newpsc, modpsc);
-	set_env(newpsc,T_UNLOADED);
-	set_type(newpsc, T_ORDI);
+	psc_set_data(newpsc, modpsc);
+	psc_set_env(newpsc,T_UNLOADED);
+	psc_set_type(newpsc, T_ORDI);
       }
       pcreg = get_ep(newpsc);
       if (asynint_val) intercept(CTXTc newpsc);
@@ -1965,8 +1997,11 @@ int builtin_call(CTXTdeclc byte number)
 				/* R2: -int, addr of 1st instruction;	     */
 				/*	0 indicates an error                 */
 				/* R3 = 1 if exports to be exported, 0 otw   */
+				/* R4 = Prolog list of module parameters     */
+				/*      as atoms.			     */
     SYS_MUTEX_LOCK( MUTEX_LOADER );
-    ctop_int(CTXTc 2, (Integer)loader(CTXTc ptoc_longstring(CTXTc 1), (int)ptoc_int(CTXTc 3)));
+    ctop_int(CTXTc 2, (Integer)loader(CTXTc ptoc_longstring(CTXTc 1), (int)ptoc_int(CTXTc 3),
+				      (prolog_term)ptoc_tag(CTXTc 4)));
     SYS_MUTEX_UNLOCK( MUTEX_LOADER );
     break;
 
@@ -1983,12 +2018,38 @@ int builtin_call(CTXTdeclc byte number)
       psc = pair_psc(insert_module(0, addr));
     else
       psc = (Psc)flags[CURRENT_MODULE];
-    sym = pair_psc(insert(ptoc_string(CTXTc 1), (char)ptoc_int(CTXTc 2), psc, &value));
+    //    sym = pair_psc(insert(ptoc_string(CTXTc 1), (char)ptoc_int(CTXTc 2), psc, &value));
+    sym = pair_psc(insert_psc(ptoc_string(CTXTc 1), (int)ptoc_int(CTXTc 2), psc, &value));
     if (value) {
-      set_data(sym, psc);
+      psc_set_data(sym, psc);
       env_type_set(CTXTc sym, (addr?T_IMPORTED:T_GLOBAL) , T_ORDI, (xsbBool)value);
     }
     ctop_addr(3, sym);
+    break;
+  }
+
+  case PSC_FIND: {  /* R1: +String, functor name to find
+		       R2: +Integer, arity of functor to find
+		       R3: +String, module name in which to look for functor
+		       R4: -PSC if named functor is in indicated module; 0 if not
+		    */
+    Psc mod_psc;
+    Pair *search_ptr, pair;
+    char *name = ptoc_string(CTXTc 1);
+    int arity = (int)ptoc_int(CTXTc 2);
+    char *mod_name = ptoc_string(CTXTc 3);
+    if (mod_name) mod_psc = pair_psc(insert_module(0, mod_name));
+    else mod_psc = (Psc)flags[CURRENT_MODULE];
+    if ((Cell)get_data(mod_psc) == USERMOD_PSC) {
+      search_ptr = (Pair *)(symbol_table.table +
+	           hash(name, arity, symbol_table.size));
+    }
+    else {
+      search_ptr = (Pair *)&(get_data(mod_psc));
+    }
+    pair = search_psc_in_module(arity, name, search_ptr);
+    if (pair==NULL) ctop_addr(4,NULL);
+    else ctop_addr(4,pair_psc(pair));
     break;
   }
 
@@ -2000,19 +2061,31 @@ int builtin_call(CTXTdeclc byte number)
      * don't already exist) and links the predicate into usermod.
      */
     int  value;
-    Psc  psc = pair_psc(insert_module(0, ptoc_string(CTXTc 3)));
-    Pair sym = insert(ptoc_string(CTXTc 1), (char)ptoc_int(CTXTc 2), psc, &value);
-    if (value)       /* if predicate is new */
-      set_data(pair_psc(sym), (psc));
+    Psc  mod_psc;
+    Pair sym;
+    char *mod_name = ptoc_string(CTXTc 3);
+    if (strncmp(mod_name,"usermod(",strlen("usermod(")) == 0) {
+      sym = insert_psc(ptoc_string(CTXTc 1),(int)ptoc_int(CTXTc 2), global_mod, &value);
+      init_psc_ep_info(pair_psc(sym)); // reset to reload
+      psc_set_data(pair_psc(sym),(Psc)makestring(string_find(mod_name,1)));
+    } else {
+      mod_psc = pair_psc(insert_module(0, mod_name));
+      sym = insert_psc(ptoc_string(CTXTc 1), (int)ptoc_int(CTXTc 2), mod_psc, &value);
+      if (value)       /* if predicate is new */
+	psc_set_data(pair_psc(sym), (mod_psc));
+      if (flags[CURRENT_MODULE]) /* in case before flags is initted */
+	link_sym(CTXTc pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
+      else link_sym(CTXTc pair_psc(sym), global_mod);
+    }
     env_type_set(CTXTc pair_psc(sym), T_IMPORTED, T_ORDI, (xsbBool)value);
-    if (flags[CURRENT_MODULE]) /* in case before flags is initted */
-      link_sym(CTXTc pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
-    else link_sym(CTXTc pair_psc(sym), global_mod);
     break;
   }
 
   case PSC_IMPORT_AS: {    /* R1: PSC addr of source psc, R2 PSC addr of target psc */
-    set_psc_ep_to_psc(CTXTc (Psc)ptoc_int(CTXTc 2),(Psc)ptoc_int(CTXTc 1));
+    Psc psc_to_set = (Psc)ptoc_int(CTXTc 2);
+    Psc target_psc = (Psc)ptoc_int(CTXTc 1);
+    set_psc_ep_to_psc(CTXTc psc_to_set,target_psc);
+    psc_set_type(psc_to_set,get_type(target_psc));
     break;
   }
 
@@ -2173,8 +2246,8 @@ int builtin_call(CTXTdeclc byte number)
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
     {char *filename = expand_filename(ptoc_longstring(CTXTc 1));
       //    ctop_string(CTXTc 2, string_find(filename,1));
-    ctop_string(CTXTc 2, filename);
-    mem_dealloc(filename,MAXPATHLEN,OTHER_SPACE);
+      ctop_string(CTXTc 2, filename);
+      mem_dealloc(filename,MAXPATHLEN,OTHER_SPACE);
     }
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
@@ -2306,7 +2379,7 @@ int builtin_call(CTXTdeclc byte number)
   }
   case PSC_SET_TABLED: {	/* reg 1: +PSC; reg 2: +int */
     Psc psc = (Psc)ptoc_addr(1);
-    if (ptoc_int(CTXTc 2)) set_tabled(psc,0x08);
+    if (ptoc_int(CTXTc 2)) psc_set_tabled(psc,0x08);
     else psc->env = psc->env & ~0x8; /* turn off */
     break;
   }
@@ -2869,7 +2942,7 @@ case WRITE_OUT_PROFILE:
        subgoal frame.  Let's see if it works ...    */
     /* changing to variant */
     if ((eval_meth == VARIANT_EVAL_METHOD) && (get_tabled(psc) != T_TABLED_VAR)) {
-      set_tabled(psc,T_TABLED_VAR);
+      psc_set_tabled(psc,T_TABLED_VAR);
       //      if (get_tabled(psc) == T_TABLED)
       if (get_tip(CTXTc psc)) {
 	TIF_EvalMethod(get_tip(CTXTc psc)) = VARIANT_EVAL_METHOD;
@@ -2882,7 +2955,7 @@ case WRITE_OUT_PROFILE:
       if (get_incr(psc))
 	xsb_abort("cannot change %s/%n to use call subsumption as it is tabled incremental\n",
 		  get_name(psc),get_arity(psc));
-      set_tabled(psc,T_TABLED_SUB);
+      psc_set_tabled(psc,T_TABLED_SUB);
       /* T_TABLED if the predicate is known to be tabled, but no specific eval method */
       if (get_tip(CTXTc psc)) {
 	TIF_EvalMethod(get_tip(CTXTc psc)) = SUBSUMPTIVE_EVAL_METHOD;
@@ -3184,9 +3257,9 @@ case WRITE_OUT_PROFILE:
     BTNptr as_leaf = (BTNptr)ptoc_addr(1);
     char *tmpstr = ptoc_string(CTXTc 2);
     if (!strcmp(tmpstr, "true"))
-      force_answer_true(as_leaf);
-    else if (!strcmp(tmpstr, "false"))
-      force_answer_false(as_leaf);
+      force_answer_true(CTXTc as_leaf);
+    else if (!strcmp(tmpstr, "false")) 
+      force_answer_false(CTXTc as_leaf);
     else xsb_abort("[FORCE_TRUTH_VALUE] Argument 2 has unknown truth value (%s)",tmpstr);
     break;
   }
@@ -3490,7 +3563,7 @@ void retrieve_prof_table(CTXTdecl) { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt), r4
     }
   }
 
-  if (p3psc == NULL) p3psc = insert("p",3,(Psc)flags[CURRENT_MODULE],&tmp)->psc_ptr;
+  if (p3psc == NULL) p3psc = insert_psc("p",3,(Psc)flags[CURRENT_MODULE],&tmp)->psc_ptr;
   arg3 = ptoc_tag(CTXTc 3);
   bind_cs((CPtr)arg3,hreg);
   new_heap_functor(hreg,p3psc);

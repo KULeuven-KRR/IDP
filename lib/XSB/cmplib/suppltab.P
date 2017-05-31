@@ -35,7 +35,7 @@
 /*	      dependency graph are already broken.			*/
 /*======================================================================*/
 
-supplementary_tabling(module(SymTab,DL,CL,QR), module(SymTab,DL,CL1,QR)) :-
+supplementary_tabling(module(SymTab,DL,CL,QR,Pars), module(SymTab,DL,CL1,QR,Pars)) :-
 	( ( option(auto_table)	% This breaks all loops
 	  ; call_themselves(CL, LoopPreds, CL), LoopPreds == []
 	  ) ->

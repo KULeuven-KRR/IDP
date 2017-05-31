@@ -9,7 +9,7 @@
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 1998-2011
+** Copyright (C) The Research Foundation of SUNY, 1998-2016
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -52,7 +52,11 @@ xsb_configuration(compiler, 'cl.exe').
 xsb_configuration(compiler_flags, '').
 xsb_configuration(loader_flags, '').
 
-%% Change these to yes, if these libs are available
+xsb_configuration(build_date, '@xsb_build_date@').
+
+/* Packages */
+
+%% Change these to yes, if these libs become available
 xsb_configuration(regmatch_support, 'no').
 xsb_configuration(wildmatch_support, 'no').
 

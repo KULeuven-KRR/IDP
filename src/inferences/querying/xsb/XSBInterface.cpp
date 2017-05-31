@@ -88,6 +88,7 @@ XSBInterface::XSBInterface() {
 	auto checkvalue = xsb_init_string(const_cast<char*>(ss.str().c_str()));
 	handleResult(checkvalue);
 	commandCall("[basics].");
+	sendToXSB(PrologProgram::getCompilerCode());
 	// Set warnings to not be printed
 	if (not getOption(SHOW_XSB_WARNINGS)) {
 		stringstream ss1;
@@ -126,25 +127,29 @@ void XSBInterface::load(const Definition* d, Structure* structure) {
 		logActionAndTimeSince("Printing out the rules took ",startclock);
 	}
 	auto str3 = _pp->getRanges();
-	auto compiler = PrologProgram::getCompilerCode();
 
 	// TODO: lost the optimisation of using load_dyn/2 when facts are two-valued, refactoring code is in order to realise this again
 	// Currently all 3 files are loaded into XSB at the same time always, but this should be just when the facts are three-valued.
 	// In this way, the table declarations are joined into one file
 	stringstream ss;
-	ss << compiler << "\n%Rules\n" << str << "\n%Facts\n" << str2 << "\n%Ranges\n" << str3;
+	ss << "\n%Rules\n" << str << "\n%Ranges\n" << str3;
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 7) {
-		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << "\n";
+		clog << "The transformation to XSB resulted in the following code:\n\n" << ss.str() << endl;
 	}
 	startclock = clock();
 	sendToXSB(ss.str());
+	 ss.str("");
+	ss << "\n%Facts\n" << str2 << endl;
+	sendToXSB(ss.str(), true);
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 2) {
 		logActionAndTimeSince("Sending the XSB program took ",startclock);
 	}
 }
 
-void XSBInterface::sendToXSB(string str) {
+void XSBInterface::sendToXSB(string str, bool mustnevercompile) {
+  bool compile = (not mustnevercompile and getOption(BoolType::XSB_COMPILES_PROGRAMS));
 	char* filename;
+  
 #ifdef DEBUG
 	if (getOption(IntType::VERBOSE_DEFINITIONS) >= 3) {
 		stringstream filess;
@@ -164,7 +169,11 @@ void XSBInterface::sendToXSB(string str) {
 		tmp << str;
 		tmp.close();
 		stringstream ss;
-		ss << "load_dyn('" << filename << "').\n";
+		if (compile) {
+			ss << "consult('" << filename << "').\n";
+		} else {
+			ss << "load_dyn('" << filename << "').\n";
+		}
 		commandCall(ss.str());
 	} catch (const Exception& ex) {
 		stringstream ss;

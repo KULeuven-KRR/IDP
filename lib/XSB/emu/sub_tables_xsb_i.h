@@ -439,6 +439,11 @@ TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
   NumSubOps_AnswerCheckInsert++;
 #endif
 
+  //  Cell answer_depth_ctr;
+  //  if (TIF_AnswerDepth(subg_tif_ptr(sf))) 
+  //    answer_depth_limit = (UInteger) (TIF_AnswerDepth(subg_tif_ptr(sf)));
+  //  else answer_depth_limit = (UInteger) flags[MAX_TABLE_ANSWER_METRIC];  
+
   AnsVarCtr = 0;
   if ( IsNULL(subg_ans_root_ptr(sf)) )
     subg_ans_root_ptr(sf) = newAnswerSet(CTXTc nTerms, (TSTNptr) sf);

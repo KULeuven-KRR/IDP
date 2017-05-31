@@ -69,17 +69,30 @@ set_tabled_eval(Predicate,EvalMethod) :-
 add_table(Spec) :-
 	mpa_to_skel(Spec,Call),
 	term_psc(Call,Psc),
-	((psc_type(Psc, Type),Type =:= T_PRED) -> /* static and loaded */
+	psc_type(Psc,Type),
+	(Type =:= T_PRED -> /* static and loaded */
 	    ((psc_tabled(Psc, Tabled),Tabled \== 0) ->
 		true
 	      ; permission_error(table,static_code,Spec,(table)/1) )
-	  ; psc_set_tabled(Psc,1)).  %% set it as tabled
+	    ;	   (Type =:= T_DYNA, dynamic_pred_has_clauses(Spec,IfCls), IfCls =:= 1
+		    ->	   permission_error(table,'dynamic predicate with clauses',Spec,(table)/1)
+		    ; psc_set_tabled(Psc,1) %% set it as tabled
+		    ->	   true
+		    ;	   permission_error(table,'predicate that cannot be tabled',Spec,(table)/1)
+		   )
+	). 
 
 retract_table(Spec) :-
 	mpa_to_skel(Spec,Call),
 	term_psc(Call,Psc),
 	psc_set_tabled(Psc,0).  %% set it as non-tabled
-	
+
+/* The following predicates are only called from table/1, 
+   and consistency has already been checked, so it is safe to 	
+   assume that we can just set the bits without further checking. 
+*/
+
+%:- import console_writeln/1 from standard.
 /* Mode can be INCREMENTAL, NONINCREMENTAL, or OPAQUE */
 add_incr_table(Spec,Mode) :-
 	mpa_to_skel(Spec,Call),
@@ -88,8 +101,69 @@ add_incr_table(Spec,Mode) :-
 	   permission_error(add_incremental_tabling,predicate_with_tables,Spec,(table)/1) 
 	 ; psc_set_incr(Psc,Mode)).
 
-/*----------------------------------------------------------------------*/
+add_alt_semantics(Spec,Mode) :-
+	mpa_to_skel(Spec,Call),
+	term_psc(Call,Psc),	
+	(predicate_has_tables(Psc) ->
+	   permission_error(add_alt_semantics,predicate_with_tables,Spec,(table)/1) 
+	 ; alt_semantics(Mode,C_Mode),
+	   psc_set_alt_semantics(Psc,C_Mode)).
 
+alt_semantics(weak_cs,WEAK_CS):- !.
+alt_semantics(wfs_semantics,WFS_SEMANTICS).
+
+/*----------------------------------------------------------------------*/
+:- export is_tabled/1.
+is_tabled(Term):- 
+	term_psc(Term,Psc),
+	psc_tabled(Psc,T),
+	T \== 0.
+
+truth_value(Goal,TV):- 
+	(is_tabled(Goal) -> 
+   	   truth_value_tp(Goal,TV)
+         ; truth_value_ntp(Goal,TV) ).
+
+truth_value_tp(Goal,TV):- 	
+	(Goal,fail ; true),
+	truth_value_1(Goal,TV).
+
+truth_value_ntp(Goal,TV):- 	
+	abolish_table_subgoal(truth_value_ntp_1(Goal)),
+	(truth_value_ntp_1(Goal),fail ; true),
+	truth_value_1(truth_value_ntp_1(Goal),TV).
+
+:- table truth_value_ntp_1/1 as variant, opaque.
+truth_value_ntp_1(Goal):- Goal.
+
+truth_value_1(Goal,TV):- 
+ 	table_status(Goal, _PredTypeCode, _CallTypeCode, AnsSetStatusCode,_SF),
+	(AnsSetStatusCode == COMPLETED_ANSWER_SET -> 
+	    ( (\+ \+ Goal) -> 
+		variant_get_residual(Goal,Resid),
+		(Resid == [] -> TV = true ; TV = undefined)
+	     ;  TV = false)
+	 ; tv_answer_set_status_code(AnsSetStatusCode, Obj_type),
+	   permission_error(obtain_models_truth_value,Obj_type,Goal,model_tv/2) ).
+
+/*
+truth_value_2(Goal,TV):- 
+ 	table_status(Goal, _PredTypeCode, _CallTypeCode, AnsSetStatusCode,_SF),
+	(AnsSetStatusCode == COMPLETED_ANSWER_SET -> 
+	    ( (\+ \+ Goal) -> 
+		variant_get_residual(Goal,Resid),
+		(Resid == [] -> TV = true ; TV = undefined)
+	     ;  TV = false)
+	 ; tv_answer_set_status_code(AnsSetStatusCode, Obj_type),
+	   permission_error(obtain_models_truth_value,Obj_type,Goal,model_tv/2) ).
+*/
+	    
+tv_answer_set_status_code(INCR_NEEDS_REEVAL,  incremental_needs_reeval).
+tv_answer_set_status_code(UNDEFINED_ANSWER_SET,  non_tabled_subgoal).
+tv_answer_set_status_code(COMPLETED_ANSWER_SET,  complete).
+tv_answer_set_status_code(INCOMPLETE_ANSWER_SET, incomplete_subgoal).
+
+    
 /*
  * To obtain info about both subsumptive and variant predicates.
  * See the file ../emu/builtin.c for a description of the valid
@@ -335,7 +409,7 @@ tunnumcall(GGoal) :-
 	call(VGoal).
 
 % we've got true and fail -- why not this?
-:- table undefined/0.
+:- table undefined/0 as opaque.
 undefined:- tnot(undefined).
 
 /*----------------------------------------------------------------------*/
@@ -629,6 +703,8 @@ abolish_all_tables :-
 	   abolish_table_info,
 	   reinitialize_undefineds.
 
+:- import table_index_predicates/2 from standard.
+% TES: predicate does not seem to work if abolish_table_pred_bi is not last (?) 
 abolish_table_pred(Spec,Options) :-
 	check_nonvar(Spec,abolish_table_pred/2,1),
 	(Spec = M:Goal -> 
@@ -636,7 +712,17 @@ abolish_table_pred(Spec,Options) :-
 	    term_new_mod(M,TermIn,Term)
 	  ; (Spec = F/A -> functor(Term,F,A) ; Term = Spec)),
 	check_abolish_options_list(Options,ActionType,abolish_table_pred/2),
-	abolish_table_pred_bi(Term,ActionType).
+	(\+table_index_predicates(Term,_)
+	 ->	abolish_table_pred_bi(Term,ActionType)
+	 ;	findall(TTerm,table_index_predicates(Term,TTerm),TTerms),
+		%% no failure-driven loop; breaks cascaded abolishes.
+		abolish_table_pred_bi_all(TTerms,ActionType)
+	).
+
+abolish_table_pred_bi_all([],_ActionType).
+abolish_table_pred_bi_all([Term|Terms],ActionType) :-
+	abolish_table_pred_bi(Term,ActionType),
+	abolish_table_pred_bi_all(Terms,ActionType).
 
 abolish_table_pred(Spec) :- abolish_table_pred(Spec,[]).
 
@@ -690,7 +776,7 @@ check_abolish_options_list([Option|_Rest],ActionType,Pred):- !,
 check_abolish_options_list(Culprit,_ActionType,Pred):- 
 	type_error(list,Culprit,Pred,2).
 
-/* TLS: Action on call subsumption is to delete producer for consumer
+/* TES: Action on call subsumption is to delete producer for consumer
    calls. get_calls/3 automatically finds all producers, so there is
    no action we need to take for consumer calls.
 
@@ -916,7 +1002,10 @@ log_forest(Call):-
 
 log_forest(Call,Options):- 
 	check_log_forest_options(Options,File),
-	start_forest_view(File),
+	% dont reset CTRACE_CALLS
+	table_inspection_function(START_FOREST_VIEW,File,_,_,_),
+	set_prolog_flag(backtrace_on_error,off),
+	stat_flag(CTRACE_CALLS, Flag),writeln(log_forest(Flag)),
 	call(Call),
 	stop_forest_view.
 
@@ -925,10 +1014,13 @@ check_log_forest_options(Options,_File):-
 	fail.
 check_log_forest_options([],File):-
 	(var(File) -> File = userout ; true).
-check_log_forest_options([Option|_Rest],File):- !,
+check_log_forest_options([Option|Rest],File):- !,
 	check_nonvar(Option,log_forest/2,2),
 	(Option = file(LogFile) -> File = LogFile
-	     ; domain_error([file/1],Option,log_forest/2,2,'') ).
+	   ; Option = level(Level) -> set_prolog_flag(ctrace,Level)
+             ; Option = set_pred(PredSpec,Mode) -> set_forest_logging_for_pred(PredSpec,Mode)
+ 	       ; domain_error([file/1,level/1],Option,log_forest/2,2,'') ),
+	check_log_forest_options(Rest,File).
 check_log_forest_options(Culprit,_File):- 
 	type_error(list,Culprit,log_forest/2,2).
 
@@ -1648,7 +1740,7 @@ scc_depends_1([Scc1|R],Scc2,In,Out,Sign):-
 scc_depends_2(SCC1,SCC2,depends(Comp1,Comp2)):-
 	member(ret(Comp1,AnsPtr),SCC1),
 %	writeln(ret(Comp1,AnsPtr)),
-	AnsPtr \== 0,  % TLS: fix
+	AnsPtr \== 0,  % TES: fix
 	table_inspection_function(IMMED_ANS_DEPENDS_PTRLIST, AnsPtr, PtrList,_,_),
 	member(ret(AnsPtr1,_),PtrList),
 	member(ret(Comp2,AnsPtr1),SCC2).
@@ -1656,7 +1748,7 @@ scc_depends_2(SCC1,SCC2,depends(Comp1,Comp2)):-
 scc_self_depends(SCC,Comp,neg):- 
 	member(ret(Comp,AnsPtr),SCC),
 %	writeln(ret(Comp,AnsPtr)),
-	AnsPtr \== 0,  % TLS: fix
+	AnsPtr \== 0,  % TES: fix
 	table_inspection_function(IMMED_ANS_DEPENDS_PTRLIST, AnsPtr, PtrList,_,_),
 	member(ret(AnsPtr1,IS_SUBGOAL_FRAME),PtrList),
 	member(ret(_Comp,AnsPtr1),SCC),
@@ -1926,17 +2018,17 @@ answer_completion(SGF,Template) :-
 	ac_loop(SGF,Template),	% iterate answer-completion
 	fail.			% not strictly nec since ac_loop will fail
 answer_completion(SGF,Template) :-
-	stat_set_flag(83,1),	% turn ANSWER_COMPLETION back on,
+	stat_set_flag(ANSWER_COMPLETION,1),	% turn ANSWER_COMPLETION back on,
 				% was turned off in C before entry
 	trie_get_return(SGF,Template,1).
 
 ac_loop(SGF,Tmp) :-
 	%%print_residual_pgm(SGF,Tmp),
 	abolish_table_pred(eval_subgoal_in_residual(_,_),[abolish_tables_singly]),
-	stat_set_flag(103,0),  % reset SIMPLIFICATION_DONE
+	stat_set_flag(SIMPLIFICATION_DONE,0),  % reset SIMPLIFICATION_DONE
 	(eval_subgoal_in_residual(SGF,Tmp),fail ; true),
 	delete_answers_for_failing_calls,
-	stat_flag(103,SimpFlg),
+	stat_flag(SIMPLIFICATION_DONE,SimpFlg),
 	(SimpFlg =:= 1
 	 ->	%%writeln(userout,iterate),
 		ac_loop(SGF,Tmp)
@@ -2122,7 +2214,7 @@ table_counts(Module,Pred,Arity,CallCnt,AnsCnt) :-
 	).
 
 
-end_of_file.
+%end_of_file.
 
 :- export explain_u_val/4.
 :- import brat_undefined/0 from xsbbrat.
@@ -2161,6 +2253,8 @@ find_forward_dependencies(Call):-
 
 find_answers(Pred):- 
 	table_inspection_function(FIND_ANSWERS,Pred,_,_,_).
+
+end_of_file.
 
 print_ls :- table_inspection_function(PRINT_LS,_,_,_,_).
 print_tr :- table_inspection_function(PRINT_TR,_,_,_,_).

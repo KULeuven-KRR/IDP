@@ -1,0 +1,1950 @@
+\section{Information about the System State} \label{State}
+%========================================================
+\index{state of the system} \index{system, state of}
+
+Various aspects of the state of an instance of XSB --- information
+about what predicates, modules, or dynamic clauses have been loaded,
+their object files, along with other information can be inspected in
+ways similar to many Prolog systems.  However, because the atom-based
+module system of XSB may associate structures with particular modules,
+predicates are provided to inspect these elements as well.  The
+following descriptions of {\em state} predicates use the terms {\em
+predicate indicator}, {\em term indicator} and {\em current module} to
+mean the following:
+\index{predicate indicator}
+\index{term indicator}
+\begin{itemize}
+\item By {\em predicate indicator} \index{predicate indicator} we mean a
+      {\em compound term} of the form {\tt M:F/A} or simply {\tt F/A}.
+      When the predicate indicator is fully instantiated, {\tt M} and {\tt F}
+      are atoms representing the {\em module name} and the {\em functor} 
+      of the predicate respectively and {\tt A} is a non negative integer 
+      representing its {\em arity}.
+
+      Example: {\tt usermod:append/3}
+\item By {\em term indicator} \index{term indicator} we mean a predicate or
+      function symbol of arity N followed by a sequence of N variables
+      (enclosed in parentheses if N is greater than zero).  A term indicator
+      may optionally be prefixed by the module name, thus it can be of the
+      form {\tt M:Term}.
+
+      Example: {\tt usermod:append(\_,\_,\_)}
+\item A module {\tt M} becomes a {\em current (i.e. ``known'') module} as
+      soon as it is loaded in the system or when another module that is
+      loaded in the system imports some predicates from module {\tt M}.
+
+      Note that due to the dynamic loading of XSB, a module can be
+      current even if it has not been loaded, and that some predicates
+      of that module may not be defined. In fact, a module can be
+      current even if it does not exist.  This situation occurs when a
+      predicate is improperly imported from a non-existent module.
+      Despite this, a module can never lose the property of being {\em
+        current}.
+\end{itemize}
+
+\begin{description}
+
+\isoitem{current\_input(?Stream)}{current\_input/1}
+    Succeeds iff stream {\tt Stream} is the current input stream, or 
+    procedurally unifies {\tt Stream} with the current input stream.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream} is neither a variable nor a stream identifier
+\bi
+\item 	{\tt domain\_error(stream\_or\_variable,Stream))}
+\ei
+\ei
+%
+%\compatibility 
+%
+%In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
+%is not a current input stream, but quietly fails instead.
+
+\isoitem{current\_output(?Stream)}{ISO}{current\_output/1}
+%
+    Succeeds iff stream {\tt Stream} is the current output stream, or 
+    procedurally unifies {\tt Stream} with the current output stream.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream} is neither a variable nor a stream identifier
+\bi
+\item 	{\tt domain\_error(stream\_or\_variable,Stream))}
+\ei
+\ei
+%
+\compatibility 
+%
+In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
+is not a current input stream, but quietly fails instead.
+
+\index{Prolog-commons}
+\index{Prolog flags}
+\label{prolog-flags}
+\isoitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{current\_prolog\_flag/2}
+%
+{\tt current\_prolog\_flag/2} allows the user to examine both dynamic
+aspects of XSB along with certain non-changeable ISO flags and
+non-changeable Prolog-commons flags.  Calls to {\tt
+  current\_prolog\_flag/2} will unify against ISO, Prolog-commons, and
+XSB-specific flags.
+
+ISO and Prolog-commons flags are as follows:
+
+\index{Prolog flags!{\tt bounded}}
+\index{Prolog flags!{\tt min\_integer}}
+\index{Prolog flags!{\tt max\_integer}}
+\index{Prolog flags!{\tt integer\_rounding\_function}}
+\index{Prolog flags!{\tt debug}}
+\index{Prolog flags!{\tt unknown}}
+\index{Prolog flags!{\tt double\_quotes}}
+\index{Prolog flags!{\tt dialect}}
+\index{Prolog flags!{\tt version\_data}}
+\begin{itemize}
+\item {\tt bounded} Indicates whether integers in XSB are bounded.
+  This flag always has the value {\tt true}
+%
+\item {\tt min\_integer, max\_integer} The minimum and maximum
+  integers available in the current XSB configuration (differs between
+  32- and 64-bits).
+%
+\item {\tt max\_arity} Indicates the maximum arity of terms in XSB.
+  This flag always has the value {\tt 65535 ($2^{16}$}
+%
+\item {\tt integer\_rounding\_function} This flag always has the value
+  {\tt toward\_zero}
+%
+\item {\tt debug} Indicates whether trace or debugging is turned {\tt
+  on} or {\tt off}
+%
+\index{Unknown predicate handling}
+\item {\tt unknown} Indicates the behavior to be taken when calling an
+  unknown predicate.  The value can be set to {\tt error}, {\tt fail},
+  {\tt warning}, {\tt unknown} or {\tt user\_hook}.  The default
+  setting is {\tt error}.
+  
+  The first three values respectively indicate that calls to unknown
+  predicates should throw an existence error, fail, or produce a
+  warning message to the {\tt user\_warning} stream and then throw an
+  existence error.
+  
+  The value is {\tt undefined} then a call $G$ to an unknown
+  predicate succeeds with value {\em undefined}, and the delay literal
+  {\tt wcs\_undefined(G)} is added to the delay list.\footnote{This
+    action is part of a semantics for Prolog sometimes called the {\em
+      Weak Completion Semantics.}}
+
+  The value is {\tt user\_hook} allows a hook to be user-specified.
+  The hook must be specified as follows.  In {\tt usermod} the fact
+  
+  {\tt unknown\_predicate\_hook(Goal)} 
+
+  should be asserted, where {\tt Goal}$= Predicate(Arg)$.  When
+  handling a call of the form $G_1$, where $G_1$ refers to an unknown
+  predicate, {\tt Goal} will be unified with $G_1$ and then
+  $Goal\theta_{G_1}$ will be called.
+
+  {\bf Example}
+
+Suppose the following code has been compiled during an XSB session.
+
+\begin{verbatim}
+:- import misc_error/1 from error_handler.
+
+my_unknown_predicate_hook(Goal):-
+        writeln(this_is_my_undefined_warning_about(Goal)),
+        misc_error(unknown_predicate).
+\end{verbatim}
+
+and the following fact asserted into usermod.
+
+\begin{verbatim}
+unknown_predicate_hook(my_unknown_predicate_hook(_X)
+\end{verbatim}
+
+Then XSB will have the following behavior when calling the following
+unknown predicate:
+
+\begin{verbatim}
+| ?- foo(X).
+this_is_my_undefined_warning_about(foo(A))
+++Error[XSB/Runtime/P]: [Miscellaneous] unknown_predicate
+Forward Continuation...
+:
+\end{verbatim}
+
+%
+\item {\tt double\_quotes} Indicates that double-quoted terms in XSB
+  represent lists of character codes.  Value is {\tt codes}
+%
+\item {\tt dialect} indicates the implementation of Prolog that is
+  running.  Using this flag, applications intended to run on more than
+  one Prolog can take actions that conditional on the executing
+  Prolog.  The value is {\tt xsb}.
+
+\item {\tt version\_data} indicates the version of XSB that is
+  running.  Using this flag, applications intended to run on more than
+  one Prolog can take actions that conditional on the executing
+  Prolog.  The value is 
+
+{\tt xsb($\langle Major\_version\#\rangle,\langle Minor\_version\#\rangle,\langle Patch\_version\#\rangle,\_$)}.
+\end{itemize}
+
+\compatibility The ISO flags {\tt char\_conversion} is not available
+-- XSB does not use character conversion.  XSB reads double quoted
+strings as lists of character codes, so that the value of the flag
+{\tt double\_quotes} is always {\tt codes}, and this flag is not
+settable.
+
+\index{Prolog flags!{\tt backtrace\_on\_error}}
+\index{Prolog flags!{\tt dcg\_style}}
+\index{Prolog flags!{\tt heap\_garbage\_collection}}
+\index{Prolog flags!{\tt heap\_margin}}
+\index{Prolog flags!{\tt clause\_garbage\_collection}}
+\index{Prolog flags!{\tt atom\_garbage\_collection}}
+\index{Prolog flags!{\tt table\_gc\_action}}
+\index{Prolog flags!{\tt goal}}
+Non-standard flag names may be specific to XSB or may be common to XSB
+and certain other Prolog.  These flag names are:
+\begin{itemize}
+\index{streams!STDERR}
+%
+\item {\tt backtrace\_on\_error} The flag is {\tt on} iff
+  system-handled errors automatically print out the trace of the
+  execution stack where the error arose, {\tt off} otherwise. Default
+  is {\tt on}.  In the multi-threaded engine, this flag is
+  thread-specific and controls whether the backtrace for a current
+  execution will be printed to {\tt STDERR}.
+%\
+\item {\tt dcg\_style}  the DCG style currently used; {\tt xsb} or {\tt
+  standard} (standard is used in Quintus, SICSTUS, etc.).  See
+Section~\ref{sec-dcg-differences} for more details. Default is {\tt
+  xsb}. This flag affects all threads in the process.
+%
+\index{garbage collection}
+\item {\tt heap\_garbage\_collection} Values: {\tt indirection} or
+  {\tt none}.  Indicates the heap garbage collection strategy that is
+  currently being employed (see also Section~\ref{sec:EmuOptions}).
+  Default is {\tt indirection}.  This flag is private to each thread.
+%\item {\tt heap\_garbage\_collection}  {\tt indirection}, {\tt none}, {\tt
+%  sliding}, or {\tt copying} depending on the heap garbage collection
+%strategy that is currently being employed (see also
+%Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}.  This
+%flag is private to each thread.  
+%
+\item {\tt heap\_margin} Specifies the size {\em in bytes} of the
+  margin used to determine whether to perform heap garbage collection
+  or reallocation of the environment stack.  The default is 8192 (8K)
+  bytes for 32-bit platforms 16384 (16K) for 64-bit platforms.
+  Setting this field to a large value (e.g. in the megabyte range) can
+  cause XSB to be more aggressive in terms of expanding heap and local
+  stack and to do fewer heap garbage collections than with the default
+  value.  However {\tt heap\_margin} should never be set {\em lower}
+  than its default, as this may prevent XSB from properly creating
+  large terms on the heap.
+
+%
+\item {\tt clause\_garbage\_collection} Values: {\tt on} if garbage
+  collection for retracted clauses is allowed, and off
+  otherwise. Default is {\tt on}.  This flag is private to each
+  thread.
+%
+\item {\tt atom\_garbage\_collection} Values: {\tt on} if garbage
+  collection for atomic constants is allowed, and off
+  otherwise. Default is {\tt on}.  This flag is global for all threads
+  (currently, string garbage collection will only be invoked if there
+  is a single active thread.)
+
+%
+\item {\tt table\_gc\_action} The setting {\tt
+  abolish\_tables\_transitively} causes predicates or subgoals that
+  depend on a conditional answer of an abolished table to be abolished
+  automatically; the setting {\tt abolish\_tables\_singly} not does
+  not cause this action.  The distinction is important, since if table
+  $T_1$ depends on table $T_2$, and $T_2$ is abolished but $T_1$ is
+  not, then predicates that introspect the dependencies of $T_1$ could
+  cause memory violations (e.g., {\tt get\_residual/2}).  Default is
+  {\tt abolish\_tables\_transitively}.  This flag affects all threads
+  in the process.
+%
+\item {\tt goal}  The goal passed to XSB on command line with the `-e'
+switch; or `{\tt true.}' if nothing is passed.  This flag may be
+examined, but not set. 
+%
+\index{Prolog flags!{\tt tracing}}
+\index{Prolog flags!{\tt warning\_action}}
+\index{Prolog flags!{\tt write\_depth}}
+\index{Prolog flags!{\tt write\_attributes}}
+\item {\tt tracing}  Values: {\tt on} iff trace mode is on; {\tt off}
+otherwise. This flag affects all threads in the process. 
+%
+\item {\tt write\_depth}  The depth to which a term is written by {\tt
+  write}-like predicates.  Default is 64.  This flag affects all
+threads in the process.  
+
+\item {\tt warning\_action} The action to take on warnings: the
+  default value {\tt print\_warning} prints a warning message to the
+  {\tt user\_warning} stream when {\tt warning/1} is called; {\tt
+    silent\_warning} silently succeeds when {\tt warning/1} is called;
+  and {\tt error\_warning/1} throws a miscellaneous exception.
+
+\index{attributed variables}
+\item {\tt write\_attributes} Determines the action to take by {\tt
+  write/1} when it writes an attributed variable.  By default {\em
+  write/1} portrays attributed variables using module-specific
+  routines (cf. Volume 2 of this manual) as $Variable \{ Module :
+  PA\_Output\}$ where $PA\_Output$ is the output of the {\tt
+    portray\_attrubutes/2} clause for $Module$.  However the value
+  {\tt ignore} causes an attributed variable to be written simply as a
+  variable; and {\tt dots} causes $Variable \{ <module\_name> : ...\}$
+  to be written.  Finally, the value {\tt write} causes a variables
+  attribute to be written as a term~\footnote{When writing an
+    attribute, any attributed variables in the attribute itself are
+    written just as variables with their attributes ignored.}.  The
+  default behavior is set to the value {\tt portray}.
+
+\index{Prolog flags!{\tt unify\_with\_occurs\_check}}
+\index{occurs check}
+\index{terms!cyclic}
+\item {\tt unify\_with\_occurs\_check} If set to {\tt on}, perform all
+  unification using an occurs check, which makes unification
+  mathematically correct, at the cost of increasing its computational
+  complexity.  Without the occurs check, the unification
+\[
+   X = f(X)
+\]
+  will produce a cyclic term {\tt X = f(f(f(f(...))))}; with the
+  occurs check this unification will fail.  Setting the flag to {\tt
+    on} may slow down programs, perhaps drastically, and may be
+  incompatible with some constraint libraries such as CHR.  An
+  alternate to this flag is the ISO predicate {\tt
+    unify\_with\_occurs\_check/2}: see Section~\ref{sec:cyclic} for
+    further discussion.  The default for this flag is {\tt off}.
+%
+\index{Prolog flags!{\tt character\_set}}
+\index{Prolog flags!{\tt character\_set}}
+\index{character sets} 
+\item {\tt character\_set} If set to {\tt utf\_8}, interprets
+input/output byte sequences as UTF-8 encodings of unicode code points;
+if set to {\tt cp1252} then interprets bytes using the Windows Code
+Page 1252; if set to {\tt latin\_1}, then input/output bytes are
+interpreted as directly representing unicode code points.  Default for
+UNIX-style systems is {\tt utf\_8} and for Windows-style systems is
+{\tt cp1252}, but the flag (and character sets) may be changed at any
+time.  (See section ``Character Sets in XSB'' in XSB User Manual
+Volume 2 for more details.)
+%
+\index{Prolog flags!{\tt errors\_with\_position}}
+\index{Prolog flags!{\tt errors\_with\_position}}
+\index{errors with position} 
+\item {\tt errors\_with\_position} If set to on, then the Prolog
+{\tt read} predicates, when they encounter a syntax error in the term
+being read, will throw a syntax error which contains a pair
+\texttt{ErrorMessage-ErrorPosition}.  {\tt ErrorPosition} is an integer
+indicating the position in the file at which the syntax error was
+detected. If set to off, then the read predicates will simply throw
+the syntax error message.
+
+\predref{explain\_u\_val/3}
+\predref{explain\_u\_val/6}
+\predref{get\_residual\_sccs/3}
+\predref{get\_residual\_sccs/5}
+\index{Prolog flags!{\tt exception\_action}}
+\item {\tt exception\_action} If set to {\tt iso} then ISO-style
+  exceptions will be thrown whenever an error condition arises.
+  However, if {\tt exception\_action} is set to {\tt
+    undefined\_truth\_value} then certain goals will succeed with an
+  undefined truth value rather than throwing an error.  When this
+  occurs, a literal is added to the delay list of the current
+  evaluation.  Later, it can be determined whether an undefined answer
+  depends on an exceptional condition through {\tt
+    explain\_u\_val/[3.6]}, {\tt get\_residual\_sccs/[3,5]} or via a
+  justification system that depends on these predicates.  The default
+  for this flag is {\tt iso}
+%
+\predref{get\_scc\_dumpfile/0}
+\index{Prolog flags!{\tt exception\_pre\_action}}
+\index{tabling!and exceptions}
+\item {\tt exception\_pre\_action} If set to {\tt
+  print\_incomplete\_tables}, then the incomplete subgoals are printed
+  {\em before} throwing an exception.  The execution of this action
+  causes the stack of incomplete tables to be printed to a temporary
+  file in {\tt \$XSBDIR/etc}.  The file can be obtained via the
+  predicate {\tt get\_scc\_dumpfile/1}; later, information in the file
+  can be used to help understand the context in which the exception
+  arose.  The file will be created only if an exception is thrown over
+  at least one incomplete table.  The default for this flag is {\tt
+    off}.
+
+  Use of this flag may be seen as an aid to analyzing tabling behavior
+  when XSB is part of a running system; for interactive analysis
+  inspection predicates may be more useful
+  (cf. Section~\ref{sec:suspend-analyze}).
+%
+\index{Prolog flags!{\tt max\_tab\_usage}}
+\predref{statistics/1}
+\predref{statistics/0}
+\item {\tt max\_tab\_usage} If set to {\tt on}, maintains the maximal
+  table usage (in bytes) for display in {\tt statistics/[0,1]}.  This
+  information can be useful if a program performs various types of
+  table abolishes.  Setting this flag to {\tt on} may slightly slow
+  down computation.  Defailt is {\tt off}.
+
+\end{itemize}
+
+%----------------
+
+\index{tripwires}
+\index{term size}
+\index{Prolog flags!{\tt max\_table\_subgoal\_size}}
+\index{Prolog flags!{\tt max\_table\_subgoal\_size\_action}}
+\index{Prolog flags!{\tt max\_incomplete\_subgoals}}
+\index{Prolog flags!{\tt max\_incomplete\_subgoals\_action}}
+\index{Prolog flags!{\tt max\_scc\_subgoals}}
+\index{Prolog flags!{\tt max\_scc\_subgoals\_action}}
+\index{termination!subgoal abstraction}
+\index{termination!radial restraint}
+%\index{Prolog flags!{\tt max\_answer\_list\_depth}}
+%\index{Prolog flags!{\tt max\_answer\_list\_action}}
+%
+\paragraph*{Tripwire Flags}
+The following flags that pertain to tripwires
+(cf. Setion~\ref{sec:tripwire}) are not currently implemented in the
+multi-threaded engine.  Each tripwire has one flag that sets a limit
+on some aspect of derivation along with an action of what to do in
+such a case.
+
+\begin{itemize}
+
+\item {\tt max\_table\_subgoal\_size} A limit set on the size of a
+  subgoal argument that can be added to a table: if the limit is
+  reached, an action is taken as indicated in the following flag.  To
+  understand the use of this flag, consider that if a predicate such
+  as
+\begin{verbatim}
+p(X):- p(f(X)).
+\end{verbatim}
+  is tabled, it can create subgoals of unbounded size.  
+  When the limit is set to 0, this tripwire is disabled.  The
+  default value is {\tt 0}.
+
+\item {\tt max\_table\_subgoal\_size\_action} The action to take
+  whenever a tabled subgoal of limit size is encountered.  When the
+  maximum subgoal size is reached, XSB can
+\begin{enumerate}
+\item Throw a miscellaneous error, set using the value {\tt error}.
+  This is the default action.
+%
+\item Apply subgoal abstraction, using the value {\tt abstract}.
+%
+\item Suspend the computation and throw it into a break-level CLI,
+  using the value {\tt suspend}
+%
+%\item Fail the subgoal, an action that may be valid for
+%  certian programs, settable using the value {\tt fail}.
+%
+\end{enumerate}
+
+\item {\tt max\_incomplete\_subgoals} A limit set on the maximum
+  number of tabled subgoals that can be incomplete at one time.  If
+  the limit is reached, an action is taken as indicated in the
+  following flag.  Note that subgoals are usually completed during the
+  course of a derivation, so a large number of incomplete subgoals may
+  indicate unfounded recursion or some other mis-specification in a
+  program.  When the limit is set to 0, this tripwire is
+  disabled.  The default value is {\tt 0}.
+
+\item {\tt max\_incomplete\_subgoals\_action} The action to take
+  whenever the limit number of incomplete subgoals is encountered.
+  XSB can
+\begin{enumerate}
+\item Throw a miscellaneous error, set using the value {\tt error}.
+  This is the default action.
+%
+\item Suspend the computation and throw it into a break-level CLI,
+  using the value {\tt suspend}.
+%
+\end{enumerate}
+
+\item {\tt max\_sccs\_subgoals} A limit set on the maximum number of
+  incomplete tabled subgoals {\em that are mutually recursive}.  If
+  the limit is reached, an action is taken as indicated in the
+  following flag.  Note that a large number of mutually recursive
+  subgoals may indicate a mis-specification in a program, such as an
+  unintended expansion of the search space via meta-predicates or
+  HiLog.  When the limit is set to 0, this tripwire is disabled.
+  The default value is {\tt 0}.
+
+\item {\tt max\_sccs\_subgoals\_action} The action to take whenever
+  the limit number of incomplete subgoals within a single SCC is
+  encountered.  XSB can
+\begin{enumerate}
+\item Throw a miscellaneous error, set using the value {\tt error}.
+  This is the default action.
+%
+\item Suspend the computation and throw it into a break-level CLI,
+  using the value {\tt suspend}.
+%
+\end{enumerate}
+
+\index{Prolog flags!{\tt max\_table\_answer\_size}}
+\index{Prolog flags!{\tt max\_table\_answer\_size\_action}}
+\index{Prolog flags!{\tt max\_answers\_for\_subgoal}}
+\index{Prolog flags!{\tt max\_answers\_for\_subgoal\_action}}
+
+\item {\tt max\_table\_answer\_size} A limit set on the size of an
+  answer argument that can be added to a table: if the limit is
+  reached, an action is taken as indicated in the following flag.  To
+  understand the use of this flag, consider the program fragment:
+\begin{verbatim}
+:- table p/1.
+p(f(X)):- p(X).          p(a).
+\end{verbatim}
+  is tabled, the model for the goal {\tt ?- p(X)} is infinite, so that
+  this program will not terminate.  When the size is set to 0, this
+  this tripwire is disabled.  The default value is {\tt 0}.
+
+\item {\tt max\_table\_answer\_size\_action} The action to take when a
+  tabled answer of maximum size is encountered.  When the maximum
+  answer size is reached, XSB can
+\begin{enumerate}
+\item Throw a miscellaneous error, set using the value {\tt error}.
+  This is the default action.
+%
+\item Apply answer abstraction through radial restraint, using the
+  value {\tt abstract}.
+%
+\item Suspend the computation and throw it into a break-level CLI,
+  using the value {\tt suspend}
+%
+\end{enumerate}
+
+\item {\tt max\_answers\_for\_subgoal} A limit set on the number of
+  answers that any single tabled subgoal should have: if the limit is
+  reached, an action is taken as indicated in the following flag.
+  Note that in a program with a large number of constant or functor
+  symbols, it is possible to construct many answers of a
+  fixed size; and if too many such answers are added for a given
+  subgoal, it may indicate a program mis-specification.  When the size
+  is set to 0, this tripwire is disabled.  The default value is
+  {\tt 0}.
+
+\item {\tt max\_answers\_for\_subgoal\_action} The action to take when
+  a the number of answers for a given subgoal exceeds the limit set in
+  the previous flag.  XSB can
+\begin{enumerate}
+\item Throw a miscellaneous error, set using the value {\tt error}.
+  This is the default action.
+%
+\item Suspend the computation and throw it into a break-level CLI,
+  using the value {\tt suspend}
+%
+\end{enumerate}
+
+\index{Prolog flags!{\tt max\_memory}}
+\item {\tt max\_memory} The maximum amount of memory that an XSB
+  thread (in the single-threaded engine) or all XSB threads (in the
+  multi threaded engine) can use for their combined execution stacks,
+  program space, tables, or any other purpose.  If a query exceeds
+  this amount, XSB will abort the query with a resource exception and
+  then try to reclaim space used by the query.  As with other flags,
+  this flag can be set during an XSB session.
+
+  The maximum amount can be set in two ways.  If given a floating
+  point number $F, 0 \le F \leq 1$, the maximum will be set to $F$
+  times the total amount of RAM for the machine on which XSB is
+  executing.  If given an integer $I$, the maximum will be set to $I$
+  kilobytes.  The value of 0 effectively disables the flag, allowing
+  XSB to allocate as much memory as the underlying OS will grant.  The
+  default value is 0, so that the flag is disabled by default.
+\end{itemize}
+%{\bf  {\em Note that this flag affects only structures that are not lists
+%    (since large lists are more common than other large structures).
+%  }}
+
+%\item {\tt max\_table\_answer\_list\_action} The action to take when a
+%  tabled answer of maximum list depth is encountered.  To understand
+%  the use of this flag, consider the program fragment:
+%\begin{verbatim}
+%:- table l/1.
+%l([a|X]):- l(X).          l([a]).
+%\end{verbatim}
+%  is tabled, the model for the goal {\tt ?- l(X)} is infinite, so that
+%  this program will not terminate.  When the maximum answer list depth
+%  is reached, XSB can either throw a miscellaneous error (the default
+%  action); emit a warning; or XSB can fail -- an action that may be
+%  valid for certain programs~\footnote{Failure in this case can be
+%    seen as an implicit form of answer abstraction.}.  The action is
+%  set to fail by the value {\tt failure} while the action of throwing
+%  an error can be (re-)set using the value {\tt error}, and the action
+%  of warning is set by the value {\tt warning}.
+%
+%\item {\tt max\_table\_answer\_list\_depth} The maximum list depth of
+%  an answer argument that can be added to a table: when the depth is
+%  reached, an action is taken as indicated for the previous flag.  The
+%  default value is {\tt maximum\_integer}.
+%
+%  {\em Note that this flag affects only structures that are lists
+%    (since large lists are more common than other large structures).
+%  }
+
+%----------------
+
+\paragraph{Flags Pertaining to Multi-Threading}
+The following flags affect only the multi-threaded engine.
+
+\index{Prolog flags!{\tt thread\_glsize}}
+\index{Prolog flags!{\tt thread\_tcpsize}}
+\index{Prolog flags!{\tt thread\_complsize}}
+\index{Prolog flags!{\tt thread\_pdlsize}}
+\begin{itemize}
+\item {\tt thread\_glsize} In the multi-threaded engine, the initial
+  size, in kbytes, of the global and local stack area of a newly
+  created thread if no such option is explicitly passed.  By default
+  this is 768 (or 1536 for 64-bit configurations), or whatever was
+  passed in if the command-line option {\tt -m} was used, but that
+  value may be modified at any time by resetting the flag.  This flag
+  affects a thread created by any thread in the process.
+
+\item {\tt thread\_tcpsize} In the multi-threaded engine, the initial
+  size, in kbytes, of the trail and choice point area of a newly
+  created thread if no such option is explicitly passed.  By default
+  this is 768 (or 1536 for 64-bit configurations), or whatever was
+  passed in if the command-line option {\tt -c} was used, but that
+  value may be modified at any time by resetting the flag.  This flag
+  affects a thread created by any thread in the process.
+
+\item {\tt thread\_complsize} In the multi-threaded engine, the
+  initial size, in kbytes, of the completion stack area of a newly
+  created thread if no such option is explicitly passed.  By default
+  this is 64 (or 128 for 64-bit configurations), or whatever was
+  passed in if the command-line option {\tt -0} was used, but that
+  value may be modified at any time by resetting the flag.  This flag
+  affects a thread created by any thread in the process.
+
+\item {\tt thread\_pdlsize} In the multi-threaded engine, the initial
+  size, in kbytes, of the unification stack area of a newly created
+  thread if no such option is explicitly passed.  By default this is
+  64 (or 128 for 64-bit configurations), or whatever was passed in if
+  the command-line option {\tt -m} was used, but that value may be
+  modified at any time by resetting the flag.  This flag affects a
+  thread created by any thread in the process.
+
+\index{Prolog flags!{\tt thread\_detached}}
+\index{Prolog flags!{\tt max\_threads}}
+\index{Prolog flags!{\tt max\_queue\_size}}
+\index{Prolog flags!{\tt shared\_predicates}}
+\item {\tt thread\_detached} In the multi-threaded engine, this
+  specifies whether threads are to be created as detached or joinable
+  if no explicit option is passed.  A value of {\tt true} indicates
+  that threads are to be created as detached, and {\tt false} as
+  joinable.  If this flag is not set, its default is {\tt false}.
+
+\item {\tt max\_threads} In the multi-threaded engine, the maximum
+  number of valid threads.  By default this is 1024 and this value may
+  not be reset at runtime, but it may be set by the command-line
+  option {\tt --max\_threads}.  This option is settable only by a
+  command-line argument, and has no effect in the single-threaded
+  engine.
+
+\item {\tt max\_queue\_size} In the multi-threaded engine, the default
+  maximum number of terms a message queue contains before writes to
+  the message queue block.  By default this is 1000.  If set to 0,
+  queues by default will be unbounded.  This option has no effect in
+  the single-threaded engine.
+
+\index{shared\_predicates}
+\item {\tt shared\_predicates} In the multi-threaded engine, indicates
+  whether predicates are considered thread-shared by default -- that
+  is, whether tables or dynamic predicates are shared among threads.
+  By default this is false, and predicates are considered
+  thread-private by default.  This option is settable only by a
+  command-line argument, and has no effect in the
+  single-threaded engine.
+
+\end{itemize}
+    
+\predref{xsb\_configuration/2}.  
+%
+Note that the above non-ISO flags are used only for dynamic XSB
+settings, {\it i.e.}, settings that might change between sessions (via
+command line arguments) or within the same session (via modifiable
+flags).  For static configuration information, the predicate {\tt
+  xsb\_configuration/2} should be used.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Flag\_Name} is neither a variable nor an atom.
+\bi
+\item 	{\tt domain\_error(atom\_or\_variable,Flag\_Name)}
+\ei
+\ei
+
+\isoitem{set\_prolog\_flag(?Flag\_Name, ?Value)}{set\_prolog\_flag/2}
+%
+{\tt set\_prolog\_flag/2} allows the user to change settable prolog
+flags.  Currently the only settable ISO flag is the {\tt unknown}
+flag.  Setting the flag {\tt unknown} to {\tt fail} results in calls
+to undefined predicates to quietly fail.  Setting it to {\tt warning}
+causes calls to undefined predicates to generate a warning (to {\tt
+  STDWARN}) and then fail.  Setting it to {\tt error} (the default)
+causes calls to undefined predicates to throw an existence error.
+
+Dynamic XSB settings can also be changed, as described in {\tt
+  current\_prolog\_flag/2}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Flag\_Name} or {\tt Value} is a variable.
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Flag\_Name} is not the name of a recognized Prolog flag.
+\bi
+\item 	{\tt domain\_error(prolog\_flag,Flag\_Name)}
+\ei
+\ei
+
+\isoitem{current\_predicate(?Predicate\_Indicator)}{current\_predicate/1}
+%
+{\tt current\_predicate/1} can be used to backtrack through indicators
+for loaded user or system predicates.  If {\tt Predicate\_Indicator}
+unifies with {\tt Module:F/A} all loaded predicates unifying with this
+indicator is returned.  If {\tt Predicate\_indicator} is {\tt F/A},
+{\tt current\_predicate/1} behaves as if it were called with the form
+{\tt usermod:F/A}.  Unlike {\tt current\_functor/1} {\tt
+current\_predicate/1} does not return indicators for predicates that
+have been imported but not actually loaded into code space.  For more
+detailed analysis of predicate properties, the predicate {\tt
+predicate\_property/2} can be used.
+
+As an example to backtrack through all of the predicates defined and loaded in
+module {\tt blah}, regardless of whether {\tt blah} is a system or a
+user defined module, use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(blah:Predicate).
+    }
+
+    In this case {\tt Predicate} will have the form: {\tt Functor/Arity}.
+
+    To backtrack through all predicates defined and loaded in any current 
+    module, use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(Module:Functor/Arity).
+    }
+
+    This succeeds once for every predicate that is loaded in XSB's
+    database.
+
+    To find the predicates having arity 3 that are loaded in {\tt
+    usermod}, use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(usermod:Functor/3).
+    }
+
+    while to find all predicates loaded in the global modules of the system
+    regardless of their arity, use:
+
+    \stuff{
+    \> \>	| ?- current\_predicate(usermod:Predicate). \\
+    }
+%
+
+\noindent
+{\bf Error Cases}
+\bi
+\item 	{\tt Predicate\_indicator} is neither a variable nor a predicate indicator
+\bi
+\item 	{\tt type\_error(predicate\_indicator,Predicate\_indicator))}
+\ei
+\ei
+%
+\compatibility
+%
+In XSB, {\tt current\_predicate} will backtrack through system
+predicates as well as user predicates.
+
+
+%-----------------------------------------------------------------------------------------------
+\comment{
+%TLS: I don't see that this gives us anything useful over
+%current_predicate/1, so why confuse the user?
+%\ouritem{current\_predicate(?Name, ?Term\_Indicator)}
+%{current\_predicate/2}}
+%    Succeeds iff {\tt Term\_Indicator} is the most general term 
+%    corresponding to one of the predicates having functor {\tt Name} that are 
+%    defined and loaded in a particular module in the database. 
+%    (The module can be either system or user defined).
+%    Or procedurally, {\tt current\_predicate/2}
+%    unifies {\tt Name} with the name of a loaded predicate, and 
+%    {\tt Term\_Indicator} with the most general term corresponding to that
+%   predicate.  The flavours of this predicate are analogous to those of 
+%    {\tt current\_predicate/1} and behave according to whether 
+%    {\tt Term\_Indicator} has one of the following two forms:
+%    \begin{enumerate}
+%    \item{\tt Module:Term.}
+%    \item{\tt Term} (module is assumed to be usermod).
+%    \end{enumerate}
+%    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+%    only for {\tt usermod}. Like {\tt current\_predicate/1} only 
+%    predicates that have a property in the following set:
+%    \begin{center}
+%    {\tt $\{$ loaded, dynamic, foreign $\}$ }
+%    \end{center}
+%    (see {\tt predicate\_property/2} below) are reported.
+%
+%    For example, if predicates {\tt foo/1} and {\tt foo/3} are defined and
+%    loaded into module {\tt blah}, the following query will return:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_predicate(foo, blah:Term).\\
+%    \>  \>						\\
+%    \>	\>      Term = foo(\_638788,\_638792,\_638796);	\\
+%    \>  \>						\\
+%    \>	\>	Term = foo(\_638788);			\\
+%    \>  \>						\\
+%    \>	\>	no
+%    }
+%
+%    If a module is specified, {\tt current\_predicate/2} succeeds only for
+%    those predicates which are defined and loaded in that module. Unless 
+%    the module is one of the global modules, {\tt current\_predicate/2} fails
+%    for those predicates which are imported into that module.
+%
+%    On the other hand, the goal:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_predicate(Name, Term).
+%    }
+%
+%    can be used to backtrack through every predicate that is loaded in the
+%    global modules of \ourprolog's database.
+%
+%    Note that the order of term generation is undetermined. Once again, 
+%    there are no error conditions associated with this predicate; if its
+%    argument is not what it should be, the predicate simply fails.
+%
+%\ouritem{current\_functor(?Name, ?Term\_Indicator)}
+%{current\_functor/2}}
+%    Succeeds iff {\tt Term\_Indicator} is the most general term 
+%    corresponding to one of the currently known terms having {\tt Name} 
+%    as their functor appearing in a current module.  (Both system and user 
+%    defined modules are checked).  Or procedurally, 
+%    {\tt current\_functor/2} unifies {\tt Name} with the name of a functor 
+%    known to the database, and {\tt Term\_Indicator} with the most 
+%    general term corresponding to that functor. The flavours of this predicate 
+%    are analogous to the ones of {\tt current\_functor/1} according to 
+%    whether {\tt Term\_Indicator} has one of the following two forms:
+%    \begin{enumerate}
+%    \item{\tt Module:Term.}
+%    \item{\tt Term} (for global modules).
+%    \end{enumerate}
+%    If {\tt Term\_Indicator} is uninstantiated, then this predicate succeeds
+%    only for global modules.  
+%    As in {\tt current\_functor/1} even unloaded predicates are reported
+%    (if they have been imported and are are known to the database).
+%
+%    For example, if a predicate {\tt foo/2} and and a function symbol 
+%    {\tt foo/1} are defined into module {\tt blah}, the following query 
+%    will return:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_functor(foo, blah:Term).	\\
+%    \>  \>						\\
+%    \>	\>      Term = foo(\_638788,\_638792);		\\
+%    \>  \>						\\
+%    \>	\>	Term = foo(\_638788);			\\
+%    \>  \>						\\
+%    \>	\>	no
+%    }
+%
+%    If a module is specified, {\tt current\_functor/2} succeeds only for
+%    those functors (function and predicate symbols) which are defined in 
+%    that module. Unless the module is one of the global modules, 
+%    {\tt current\_functor/2} fails for the predicates which are imported 
+%    into that module.
+%
+%    On the other hand, the goal:
+%
+%    \stuff{
+%    \>	\>	| ?- current\_functor(Name, Term).
+%    }
+%
+%    can be used to backtrack through every known term {\tt Term} in the global
+%    modules of \ourprolog's database that has {\tt Name} as its functor.
+%
+%    Note that the order of term generation is undetermined. Once again, 
+%    there are no error conditions associated with this predicate; if its
+%    arguments are inappropriate, the predicate simply fails.
+}
+%--------------------------------------------------------------------------------------------------
+
+\standarditem{current\_module(?Module)}{current\_module/1}
+    The standard predicate {\tt current\_module/1} allows the user to
+    check whether a given module is {\em current} or to generate
+    (through backtracking) all currently known modules.  Succeeds iff
+    {\tt Module} is one of the modules in the database. This includes
+    both user modules and system modules.  For more detailed analysis
+    of module properties, the predicate {\tt module\_property/2}
+    can be used.
+
+    Note that predicate {\tt current\_module/1} succeeds for a given
+    module even if that module does not export any predicates. There
+    are no error conditions associated with this predicate; if its
+    argument does not unify with one of the current modules, {\tt
+    current\_module/1} simply fails.
+
+\standarditem{current\_module(?Module, ?ObjectFile)}{current\_module/2}
+    Predicate {\tt current\_module/2} gives the relationship between
+    the modules and their associated object file names. The file name
+    {\tt ObjectFile} must be absolute and end with the object file
+    extension for the system (by default, {\tt .xwam}).
+%
+    It is possible for a current module to have no associated file
+    name (as is the case for {\tt "usermod"}), or for the system to be
+    unable to determine the file name of a current module. In both
+    cases, predicate {\tt current\_module/1} will succeed for this
+    module, while {\tt current\_module/2} will fail. The system is
+    unable to determine the file name of a given module if that module
+    is not in one of the directories of the search path (see
+    Section~\ref{LibPath}).  Once again, there are no error conditions
+    associated with this predicate; if the arguments of {\tt
+    current\_module/2} are not correct, or {\tt Module} has no
+    associated {\tt File}, the predicate will simply fail.
+
+\standarditem{current\_functor(?Predicate\_Indicator)}
+{current\_functor/1}
+{\tt current\_predicate/1} can be used to backtrack through indicators
+for all non-atomic terms occurring in loaded modules.  If {\tt
+Predicate\_Indicator} unifies with {\tt Module:F/A} all term
+indicators unifying with {\tt F/A} in a module unifying with {\tt
+Module} are returned.  If {\tt Predicate\_indicator} is {\tt F/A},
+{\tt current\_predicate/1} behaves as if it were called with the form
+{\tt usermod:F/A}.  Unlike {\tt current\_predicate/1} {\tt
+current\_functor/1} returns not only structures occurring in
+predicates but predicates that are imported into loaded modules but
+are not yet themselves loaded.
+
+As an example, to backtrack through all of the functors of positive
+arity (function and predicate symbols) that appear in the global
+modules of the system regardless of whether they are system or a user
+defined, use:
+
+    \stuff{
+    \> \>	| ?- current\_functor(Functor/Arity), Arity > 0.
+    }
+
+    There are no error conditions associated with this predicate; if its 
+    argument is not a predicate indicator the predicate simply fails.
+
+\standarditem{current\_index(Functor/Arity,IndexSpec)}
+{current\_index/2}
+%
+XSB has a variety of ways to index dynamic predicate including
+alternate argument indexing, multiple argument indexing,
+star-indexing, and tries, as discussed in Section~\ref{sec:assert}.
+In addition XSB allows a choice of which argument to index for
+compiled predicates as well.  {\tt current\_index/2} returns the index
+specification for each functor/arity pair unifying with {\tt
+Functor/Arity} and visible from the calling context of  {\tt current\_index/2}.
+
+\standarditem{current\_atom(?Atom\_Indicator)}{current\_atom/1}
+    Generates (through backtracking) all currently known atoms, and unifies
+    each in turn with {\tt Atom\_Indicator}. 
+
+\index{tabling!call subsumption}
+\index{tabling!call variance}
+\index{tabling!answer subsumption}
+\index{tabling!incremental}
+%??? need to define visible.
+\label{PredProp}
+\standarditem{predicate\_property(?Term\_Indicator, ?Property)}
+{predicate\_property/2}
+    The standard predicate {\tt predicate\_property/2} can be used to find 
+    the properties of any predicate that is visible to a particular module.
+    Succeeds iff {\tt Term\_Indicator} is a term indicator for a current 
+    predicate whose principal functor is a predicate having {\tt Property} 
+    as one of its properties. Or procedurally, {\tt Property} is unified 
+    with the currently known properties of the predicate having 
+    {\tt Term\_Indicator} as its skeletal specification.
+    
+    A brief description of {\tt predicate\_property/2} is as follows:
+    \begin{itemize} 
+\item If {\tt Term\_Indicator} is not a variable, and is a structure
+	or atom, then {\tt Property} is successively unified with the
+	various properties associated with {\tt Term\_Indicator}.  If
+	{\tt Term\_Indicator} is not a known to the system, the call
+	succeeds with {\tt Property} successively unified to {\tt
+	exported} and {\tt unclassified}.  These properties can be
+	considered as a default for any structure or atom.
+\item If {\tt Property} is bound to a valid predicate property, then {\tt
+	predicate\_property/2} successively unifies {\tt
+	Term\_Indicator} with the skeletal specifications of all
+	predicates known to the system having the specified {\tt
+	Property}.  
+\item If {\tt Term\_Indicator} is a variable, then
+	it is unified (successively through backtracking) with the
+	most general term for a predicate whose known properties are
+	unified with {\tt Property}.  
+\item If {\tt Term\_Indicator}
+	is not a term indicator, or if {\tt Property} is not a valid
+	predicate property, the call fails.  
+\end{itemize} 
+\noindent
+For example, all the loaded predicate skeletal specifications in
+module {\tt "usermod"} may be enumerated using:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(Pred, loaded).
+    }
+
+    Also the following query finds all predicate skeletal specifications that 
+    are exported by module {\tt blah}:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(blah:Pred, exported).
+    }
+
+    Currently, the following properties are associated with predicates 
+    either implicitly or by declaration.  Double lines show property
+    categories, and a predicate can have at most one property of each
+    category.
+
+\begin{itemize}
+\item{\em Execition Type} which is one of
+\begin{itemize}
+\item{unclassified} The predicate symbol is not yet classified
+  according to this category. This property has various meanings.
+  Usually for exported predicate symbols in system or user defined
+  modules it means that the predicate is yet unloaded (because it has
+  not been used).  In {\tt usermod} it usually means that the
+  predicate is either a function symbol, or an unloaded predicate
+  symbol (including constants).
+%
+\item{dynamic} The predicate is dynamic.
+%
+\item{\tt loaded} The predicate (including internal predicates) is a
+  Prolog predicate loaded into the module in question; this is always
+  the case for predicates in {\tt usermod}.
+%
+\item{\tt unloaded} The predicate is yet unloaded into the module in
+  question.
+\item{\tt foreign} The predicate is a foreign predicate. This implies
+  that the predicate is already loaded in the system, because
+  currently there is no way for XSB to know that a predicate is a
+  foreign predicate until it is loaded in the system.
+%
+\end{itemize}
+%
+\item{\em Visibility Type} which can be one of
+\begin{itemize}
+\item{\tt exported} The predicate symbol is exported by the module in
+  question; in other words the predicate symbol is visible to any
+  other module in the system.
+%
+\item{\tt local} The predicate symbol is local to the module in
+  question.
+%
+\item{\tt imported\_from(Mod)} The predicate symbol is imported into
+  the module in question from module {\tt Mod}.
+%
+\end{itemize}
+%
+\item{\em Tabling Call Behavior} which can be one of 
+\begin{itemize}
+\item{\tt tabled(variant)} The predicate has been declared tabled and
+  to use call variance.
+%
+\item{\tt tabled(subsumptive)} The predicate has been declared tabled and
+  to use call subsumption
+%
+\item{\tt tabled(default)} The predicate has been declared tabled and
+  to use the default tabling strategy of the session, which can be
+  either call variance or call subsumption.
+%
+\end{itemize}
+\item{\em Incremental Tabling Behavior} which can be one of 
+\begin{itemize}
+\item{\tt incremental} The predicate was declared as either
+  incremental dynamic or as incremental tabled; or
+%
+\item{\tt opaque} The predicate was declared as opaque to incremental
+  updates.
+\end{itemize}
+%
+\item{\tt spied} The predicate symbol has been declared spied (either
+  conditionally or unconditionally).
+%
+\item{\tt shared} The predicate has been declared shared in the
+  multi-threaded engine.  This means that any dynamic code or tables
+  for this predicate will be shared among threads, but it does not
+  affect static, non-tabled code.  
+%
+\item{\tt built\_in} The predicate symbol has the same
+  Functor and Arity as one of XSB's standard predicates, and is
+  available tothe user without needing to load a file or import
+  th epredicate from a module. 
+%
+%\item{\tt built\_in} Same meaning as the property {\tt
+%  xsb\_standard\_pred}.  This property provides compatibility with
+%  other Prolog compilers and with forthcoming ISO Prolog
+%  standards. 
+%
+\item{\tt meta\_predicate(Template)}  The
+  predicate is a meta-predicate. This property provides
+  compatibility with other Prolog compilers and with forthcoming
+  ISO Prolog standards. 
+\end{itemize}
+
+    Finally, since {\tt dynamic} is usually declared as an operator with 
+    precedence greater than 999, writing the following:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(X, dynamic).
+    }
+
+    will cause a syntax error. The way to achieve the desired result is to
+    parenthesize the operator like in:
+
+    \stuff{
+    \>   \>	| ?- predicate\_property(X, (dynamic)).
+    }
+
+
+\standarditem{module\_property(?Module, ?Property)}{module\_property/2}
+    The standard predicate {\tt module\_property/2} can be used to find the
+    properties of any current module.
+    Succeeds iff {\tt Module} is the name of a current module having 
+    {\tt Property} as one of its properties. Or procedurally, {\tt Property}
+    is unified with the currently known properties of the module having 
+    {\tt Module} as its name.
+
+    Currently, the following properties are associated with modules 
+    implicitly 
+
+    \begin{center}
+    \begin{tabular}{||l|l||}               \hline 
+	{\em Property}		& {\em Explanation} \\ \hline \hline
+	{\tt unloaded}		& 
+		The module (including system modules) though it is \\
+	&	current, is yet unloaded in the system. \\ \hline
+	{\tt loaded}		& 
+		The module (including system modules) is loaded in the \\
+	&	system; this is always the case for {\tt usermod}.\\ \hline
+    \end{tabular}
+    \end{center}
+
+\standarditem{listing}{listing/0}
+    Lists in the current output stream the clauses for all dynamic
+    predicates found in module {\tt usermod}.  Note that {\tt listing/0}
+    does not list any compiled predicates unless they have the
+    {\tt dynamic} property (see {\tt predicate\_property/2}).  A
+    predicate gets the {\tt dynamic} property when it is explicitly
+    declared as {\tt dynamic}, or automatically acquires it when some
+    clauses for that predicate are asserted in the database.  In
+    cases where a predicate was compiled but converted to {\tt dynamic}
+    by asserting additional clauses for that predicate, {\tt listing/0}
+    will just display an indication that there exist compiled clauses
+    for that predicate and only the dynamically created clauses of the
+    predicate will be listed.  For example:
+
+    \stuff{ 
+    \>   \>     | ?- [user]. \\ 
+    \>   \>     [Compiling user] \\
+    \>   \>     a(X) :- b(X). \\
+    \>   \>     a(1). \\
+    \>   \>     [user compiled, cpu time used: 0.3 seconds] \\
+    \>   \>     [user loaded] \\
+    \>   \>     \\
+    \>   \>     yes \\
+    \>   \>     | ?- assert(a(3)). \\
+    \>   \>     \\
+    \>   \>     yes \\
+    \>   \>     | ?- listing. \\
+    \>   \>     \\
+    \>   \>     a(A) :- \\
+    \>   \>  \>    \$compiled. \\
+    \>   \>     a(3). \\
+    \>   \>     \\
+    \>   \>     yes \\
+    }
+
+    Predicate {\tt listing/0} always succeeds.  The query:
+
+    \stuff{
+    \>   \>     | ?- listing.
+    }
+
+    \noindent
+    is just a notational shorthand for the query:
+
+    \stuff{
+    \>   \>     | ?- listing(X).
+    }
+
+\standarditem{listing(+Predicate\_Indicator)}{listing/1}
+    If {\tt Predicate\_Indicator} is a variable then {\tt listing/1} is
+    equivalent to {\tt listing/0}.
+    If {\tt Predicate\_Indicator} is an atom, then {\tt listing/1} 
+    lists the dynamic clauses for all predicates of that name found in 
+    module {\tt usermod} of the database.
+    The argument {\tt Predicate\_Indicator} can also be a predicate 
+    indicator of the form {\tt Name/Arity} in which case only the 
+    clauses for the specified predicate are listed.
+    Finally, it is possible for {\tt Predicate\_Indicator}
+    to be a list of predicate indicators and/or atoms; e.g.
+
+    \stuff{
+    \>   \>     | ?- listing([foo/2, bar, blah/4]).
+    }
+
+    If {\tt Predicate\_Indicator} is not a variable, an atom or a predicate 
+    indicator (or list of predicate indicators) of the form {\tt Name/Arity}, 
+    predicate {\tt listing/1} will simply fail.
+
+    In future releases of \ourprolog, we intend to allow the user to
+    specify a predicate indicator of the form {\tt Module:Name/Arity} 
+    as argument of {\tt listing/1}.
+
+\standarditem{xsb\_configuration(Feature\_Name, ?Value)}
+{xsb\_configuration/2}
+    Succeeds iff the current value of the XSB  feature {\tt
+    Feature\_Name} is {\tt Value}.
+
+    This predicate provides information on a wide variety of features
+    related to how XSB was built, including the compiler used, the compiler
+    and loader flags, the machine and OS on which XSB was built, the
+    release number, the various directories that XSB uses to find its
+    libraries, etc.
+
+    To find all features and their values, ask the following query:
+
+    \stuff{
+    \>   \>	| ?- xsb\_configuration(FeatureName, Value), fail.
+    }
+
+    Here is how {\tt xsb\_configuration} might look like:
+
+{\small
+\begin{verbatim}
+    xsb_configuration(architecture, 'i386-apple-darwin8.9.1').
+    %% configuration is usualy the same as architecture, but it can also
+    %% contain special tags, {\it e.g.}, i386-apple-darwin8.9.1-dbg, for a verion
+    %% built with debugging enabled.
+    xsb_configuration(configuration, 'i386-apple-darwin8.9.1-dbg').
+    xsb_configuration(host_os, 'darwin8.9.1').
+    xsb_configuration(os_version, '8.9.1').
+    xsb_configuration(os_type, 'darwin').
+    xsb_configuration(host_vendor, 'apple').
+    xsb_configuration(host_cpu,  'i386').
+    xsb_configuration(compiler, 'gcc').
+    xsb_configuration(compiler_flags, '-faltivec -fPOC -Wall -pipe -g').
+    xsb_configuration(loader_flags, '-g -lm ').
+    xsb_configuration(compile_mode, 'debug').
+    %% The type of XSB engine configured.
+    xsb_configuration(scheduling_strategy, '(local)').
+    xsb_configuration(engine_mode, 'slg-wam').
+    xsb_configuration(word_size, '32').
+    %% The following is XSB release information
+    xsb_configuration(major_version, '3').
+    xsb_configuration(minor_version, '3').
+    xsb_configuration(patch_version, '1').
+    xsb_configuration(beta_version, '').
+    xsb_configuration(version, '3.3.1').
+    xsb_configuration(codename, 'Pignoletto').
+    xsb_configuration(release_date, date(2011, 04, 12)).
+    %% Support for other languages
+    xsb_configuration(perl_support, 'yes').v
+    xsb_configuration(perl_archlib, '/usr/lib/perl5/i386-linux/5.00404').
+    xsb_configuration(perl_cc_compiler, 'cc').
+    xsb_configuration(perl_ccflags, '-Dbool=char -DHAS_BOOL -I/usr/local/include').
+    xsb_configuration(perl_libs, '-lnsl -lndbm -lgdbm -ldb -ldl -lm -lc -lposix -lcrypt').
+    xsb_configuration(javac, '/usr/bin/javac').
+    /* Tells where XSB is currently residing; can be moved */
+    xsb_configuration(install_dir, InstallDir) :- ...
+    /* User home directory. Usually HOME. If that is null, then it would
+       be the directory where XSB is currently residing.
+       This is where we expect to find the .xsb directory */
+    xsb_configuration(user_home, Home) :- ...
+    /* Where XSB invocation script is residing */
+    xsb_configuration(scriptdir, ScriptDir) :- ...
+    /* where are cmplib, syslib, lib, packages, etc live */
+    xsb_configuration(cmplibdir, CmplibDir) :- ...
+    xsb_configuration(libdir, LibDir) :- ...
+    xsb_configuration(syslibdir, SyslibDir) :- ...
+    xsb_configuration(packagesdir, PackDir) :-  ...
+    xsb_configuration(etcdir, EtcDir) :- ...
+    /* architecture and configuration specific directories */
+    xsb_configuration(config_dir, ConfigDir) :- ...
+    xsb_configuration(config_libdir, ConfigLibdir) :- ...
+    /* site-specific directories */
+    xsb_configuration(site_dir, '/usr/local/XSB/site').
+    xsb_configuration(site_libdir, SiteLibdir) :- ...
+    /* site and configuration-specific directories */
+    xsb_configuration(site_config_dir, SiteConfigDir) :- ...
+    xsb_configuration(site_config_libdir, SiteConfigLibdir) :- ...
+    /* Where user's arch-specific libraries are found by default. */
+    xsb_configuration(user_config_libdir, UserConfigLibdir) :- ...
+\end{verbatim}
+}
+
+\standarditem{hilog\_symbol(?Symbol)}{hilog\_symbol/1}
+    Succeeds iff {\tt Symbol} has been declared as a HiLog symbol, or 
+    procedurally unifies {\tt Symbol} with one of the currently known 
+    (because of a prior declaration) HiLog symbols. The HiLog symbols
+    are always atoms, but if the argument of {\tt hilog\_symbol},
+    though instantiated, is not an atom the predicate simply fails.
+    So, one can enumerate all the HiLog symbols by using the following
+    query:
+
+    \stuff{
+    \>   \>	| ?- hilog\_symbol(X).
+    }
+
+\isoitem{current\_op(?Precedence, ?Specifier, ?Name)}{current\_op/3}
+%
+    This predicate is used to examine the set of operators currently
+    in force.  It succeeds when the atom {\tt Name} is currently an
+    operator of type {\tt Specifier} and precedence {\tt Precedence}.  None
+    of the arguments of {\tt current\_op/3} need to be instantiated at
+    the time of the call, but if they are, they must be of the
+    following types: 
+\begin{description}
+\item[{\tt Precedence}] must be an integer in the range from 1 to 1200.  
+\item[{\tt Specifier}] must be one of the atoms: 
+\begin{verbatim} 
+xfx xfy yfx fx fy hx hy xf yf 
+\end{verbatim} 
+\item[{\tt Name}] it must be an atom.
+\end{description}
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Precedence} is neither a variable nor an integer in the
+range from 1 to 1200. 
+\bi
+\item 	{\tt domain\_error(operator\_priority,Precedence)}
+\ei
+\item 	{\tt Specifier} is neither a variable nor an operator
+specifier of the types above.
+\bi
+\item 	{\tt domain\_error(operator\_specifier,Specifier)}
+\ei
+\item 	{\tt Name} is neither a variable nor an atom.
+\bi
+\item 	{\tt domain\_error(atom\_or\_variable,Name)}
+\ei
+\ei
+
+\standarditem{hilog\_op(?Precedence, ?Type, ?Name)}{hilog\_op/3}
+    This predicate has exactly the same behaviour as {\tt current\_op/3}
+    with the only difference that {\tt Type} can only have the values
+    {\tt hx} and {\tt hy}.
+\end{description}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual1"
+%%% End: 
+
+%======================================================
+
+\section{Execution State}\label{environmental}
+
+\begin{description}
+
+\standarditem{break}{break/0}
+%
+Causes the current execution to be suspended at the beginning of the
+next call.  The interpreter then suspends the current computation,
+enters break level 1 and is ready to accept input as if it were at top
+level.  If another call to {\tt break/0} is encountered, it moves down
+to break level 2, and so on.  As long as the current computation
+occurs at break level $n>0$ the prompt changes to {\tt $n$: ?-}.  
+
+To close a break level and resume the suspended execution, the user
+can type the the atom {\tt end\_of\_file} or the end-of-file character
+applicable on the system (usually {\tt CTRL-d} on UNIX systems).
+Predicate {\tt break/0} then succeeds (note in the following example
+that the calls to {\tt break/0} do not succeed), and the execution of
+the interrupted program is resumed.  Alternatively, the suspended
+execution can be abandoned by calling the standard predicate {\tt
+  abort/0}, which causes a return to the top level~\footnote{If only
+  the break-level computation should be aborted, the predicate {\tt
+    abort\_level/[0,1]} can be called.  This should rarely be needed,
+  except if a specialized intepreter is written using XSB.}.
+
+    An example of {\tt break/0} 's use is the following:
+
+    \stuff{
+        \>   \>     | ?- break. \\
+        \>   \>     [ Break (level 1) ] \\
+        \>   \>     1: ?- break. \\
+        \>   \>     [ Break (level 2) ] \\
+        \>   \>     2: ?- end\_of\_file. \\
+        \>   \>     [ End break (level 2) ] \\
+        \\
+        \>   \>     yes \\
+        \>   \>     1: ?-
+    }
+
+It is important to note that when XSB is interrupted via a ctrl-C, the
+current computation is suspended, and a new break level is entered.
+Any incomplete tables in the suspended computation can be examined,
+making break levels useful for for analyzing tabled computations under
+execution, as described in Section~\ref{sec:suspend-analyze}.
+However, it is also important to note that executing a tabled
+predicate during a break point throws an exception if there are
+incomplete tables that are suspended.
+
+
+%    Entering a break closes all incomplete tables (those which may not have a 
+%    complete set of answers).  Closed tables are unaffected, even if 
+%    the tables were created during the computation for which the break was
+%    entered.
+
+\isoitem{halt}{ISO}{halt/0}
+%
+    Exits the XSB session regardless of the break level.  On exiting
+    the system cpu and elapsed time information is displayed.
+
+\isoitem{halt(Code)}{ISO}{halt/1}
+%
+Exits the XSB session regardless of the break level, sending the
+integer {\tt Code} to the parent process.  Normally {\tt 0} is
+considered to indicate normal termination, while other exit codes are
+used to report various degrees of abnormality.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Code} is not an integer
+\bi
+\item 	{\tt type\_error(Integer,Code)}
+\ei
+\ei
+
+\standarditem{prompt(+NewPrompt, ?OldPrompt)}{prompt/2}
+    Sets the prompt of the top level interpreter to {\tt NewPrompt} and 
+    returns the old prompt in {\tt OldPrompt}.
+
+    An example of {\tt prompt/2} 's use is the following:
+
+    \stuff{
+        \>   \>     | ?- prompt('Yes master > ', P). \\
+        \\
+        \>   \>     P = | ?- ; \\
+        \\
+        \>   \>     no \\
+        \>   \>     Yes master > fail. \\
+        \\
+        \>   \>     no \\
+        \>   \>     Yes master >
+    }
+
+\ourmoditem{trimcore}{trimcore/0}{machine}
+%
+A call to {\tt trimcore/0} reallocates an XSB thread's execution
+stacks (and some tabling stacks) to their initial allocation size, the
+action affecting only the memory areas for the calling thread.  When
+XSB is called in standalone or server mode, {\tt trimcore/0} is
+automatically called when the top interpreter level is reached.  When
+XSB is embedded in a process, {\tt trimcore/0} is called at the top
+interpreter level for any thread created through
+{\ xsb\_ccall\_thread\_create()} (see Volume 2, Chapter 3 {\em
+  Embedding XSB in a Process}).
+
+\standarditem{gc\_heap}{gc\_heap/0}
+\index{garbage collection!heap}
+\index{Prolog flags!{\tt heap\_garbage\_collection}}
+%
+Explicitly invokes the garbage collector for a thread's heap. By
+default, heap garbage collection is called automatically for each
+thread upon stack expansion, unless the Prolog flag {\tt
+  heap\_garbage\_collection} is set to {\tt none}.  Automatic heap
+garbage collection should rarely need to be turned off, and should
+rarely need to be invoked manually.
+
+\comment{
+%\standarditem{garbage\_collection(+Option)}{garbage\_collection/1}
+%Sets the system so that subsequent heap garbage collecting will be
+%done according to the specified {\tt Option}.  {\tt Option} may be the
+%atom \verb|none| indicating that heap garbage collection is turned
+%off; it may be the atom \verb|sliding| indicating that sliding garbage
+%collection will be done; the atom \verb|copying| indicating that the
+%copying garbage collector will be used; or it may be the atom
+%\verb|indirection| indicating that the indirect-sliding garbage
+%collector will be used.
+}
+
+\index{tabling!call subsumption}
+\index{tabling!call variance}
+\index{tabling!incremental}
+\standarditem{statistics}{statistics/0}
+%
+Outputs time and memory usage information to the current output
+stream.  This information is fairly detailed so the best way to
+explain is through an example.  Figure~\ref{fig:statistics} shows the
+output during a large and heavily tabled program written by XSB users.
+
+%The following printout shows how the {\tt statistics/0}
+%output looks if it is invoked with the {\tt '-s'} option (without it
+%the {\tt Maximum stack used}, and {\tt Maximum table space used} lines
+%are not shown).  Information about the allocation size is provided
+%since the sizes can be changed through emulator options (see
+%Section~\ref{sec:EmuOptions}).
+
+Statistics first displays information about memory, then information
+about tabling operations as well as time.
+\begin{itemize} 
+\item The first subsection of memory statistics, {\tt
+  permanent\_space}, summarizes information about certain kinds of
+  memory  that is not generally under user control and is generally
+  process-level tather than thread-specific.  Allocated memory is
+  broken into different classes including the following.
+\begin{itemize}
+\item {\tt atoms} Space used to maintain information about all
+  predicates and structures. 
+%
+\item {\tt string} Space used to maintain information about all atomic
+  constants in XSB.
+%
+\item {\tt asserted} Space allocated for dynamic code.
+%
+\item {\tt static} Space allocated for static code.
+%
+\item {\tt foreign} Space allocated for foreign predicates.
+%
+%\item {\tt table} Space allocated for XSB's tables.
+%
+\item {\tt findall} Space allocated for buffers to support {\tt
+  findall/3} and similar predicates.
+%
+\item {\tt profiling} Space used to maintain profiling information, if
+  XSB is called with profiling on.  (Not shown in
+  Figure~\ref{fig:statistics}.)
+%
+\item {\tt mt-private} Private space used by threads.  (Only for the
+  MT engine and not shown in Figure~\ref{fig:statistics}.)
+%
+\item {\tt buffer} Space used for buffers used by forest logging,
+  message queues and other libraries.  (Not shown in
+  Figure~\ref{fig:statistics}.)
+%
+%\item {\tt gc temp} Temporary space for used for heap garbage
+%  collector. (Rarely shown, and not shown in
+%  Figure~\ref{fig:statistics}.)
+%
+\item {\tt hash} Space used for hash-tables not otherwise classified,
+  such as the storage library.  (Not shown in
+  Figure~\ref{fig:statistics}.)
+
+\item {\tt interprolog} space allocated for the InterProlog XSB/Java
+  interface. (Not shown in Figure~\ref{fig:statistics}.)
+%
+\item {\tt thread} In the MT engine, space allocated for the 
+  thread table, mutex array, and other global structures. (Not shown in
+  Figure~\ref{fig:statistics}.)
+%
+\item {\tt other} Other unclassified memory (usually this is a small
+  amount).
+
+%\item the space occupied by subgoal and answer tables (in the form of
+%  tries) \cite{RRSSW98,CuSW99b,TST99}.  In the multi-threaded
+%  configuration process level table space includes shared tables but
+%  not private tables.
+\end{itemize}
+
+\begin{figure}[p] \label{fig:statistics}
+    {\footnotesize
+     \begin{verbatim}
+| ?- statistics.
+ Memory (total)        10674384280 bytes:     10543481920 in use,       130902360 free
+   permanent space        58486184 bytes:        58486184 in use,               0 free
+     atom                                          383976
+     string                                       1736104
+     asserted                                    53237408
+     compiled                                     1267816
+     findall                                      1060560
+     buffer                                        787008
+     other                                          13312
+   glob/loc space        268435456 bytes:       141921760 in use,       126513696 free
+     global                                     140607272
+     local                                        1314488
+   trail/cp space          8388608 bytes:         4631208 in use,         3757400 free
+     trail                                         303176
+     choice point                                 4328032
+   SLG unific. space        131072 bytes:               0 in use,          131072 free
+   SLG completion           262144 bytes:               0 in use,          262144 free
+   SLG table space     10338680816 bytes:     10338442512 in use,          238304 free
+   Incr table space                           620778800 in use
+
+ Tabling Operations
+   0 subsumptive call check/insert ops: 0 producers, 0 variants,
+   0 properly subsumed (0 table entries), 0 used completed table.
+   0 relevant answer ident ops.  0 consumptions via answer list.
+   1251821353 variant call check/insert ops: 979496 producers, 1250841857 variants.
+   11570194 answer check/insert ops: 97921 unique inserts, 11472273 redundant.
+        4 DEs in the tables (space: 98312 bytes allocated,   200 in use)
+        4 DLs in the tables (space: 49160 bytes allocated,   104 in use)
+
+ Total number of incremental subgoals created: 1089296
+ Currently 799432 incremental subgoals, 11240813 dependency edges
+
+6 heap (6 string) garbage collections by sliding: collected 1202735 cells in 0.539478 secs
+
+\end{verbatim}} 
+\caption{Statistics output from a large and heavily tabled program}
+\end{figure}
+
+\item The next section summarizes information about XSB's main stacks.
+  In the MT-engine this information is specific to the calling thread.
+
+\begin{itemize} 
+\item Global stack (heap) and local (environment) stack (see e.g.
+  \cite{AitK90}) for the calling thread. Memory for these two WAM
+ stacks is allocated as a single unit (per thread) so that each stack
+ grows together; information is provided on the current allocation for
+ the stacks as well as on the stack sizes themselves.  (See
+ Section~\ref{sec:memory-flags} for initialization details.)
+%
+\item Trail and choice point stack (see e.g. \cite{AitK90}) for the
+ calling thread.  Memory for these two WAM stacks is allocated as a
+ single unit (per thread) so that each stack grows together;
+ information is provided on the current allocation for the stacks as
+ well as on the stack sizes themselves.  (See
+ Section~\ref{sec:memory-flags} for initialization details.)
+%
+\item SLG unification stack for the calling thread. This stack is used
+  as a space to copy terms from the execution stacks into table space,
+  or back out.  This stack is not be reallocated unless extremely
+  large terms are tabled.
+%
+\item SLG completion stack for the calling thread.  The completion
+  stack is used to perform incremental completion for sets of mutually
+  dependent tabled subgoals.  One completion stack frame is allocated
+  per tabled subgoal \cite{SaSw98} but the size of these frames is
+  version-dependent.
+%
+\item Overall space used for tabling, followed by the amout of that
+ overall space used for incremental tabling.  (Generally speaking,
+ this is the space that is used to contruct the IDG.)
+\end{itemize}
+%In XSB's single-threaded configuration, maximum space used by each of
+%will be output if the {\tt '-s'} command-line option is used
+
+\item Information about the number of tabling operations performed in
+ the session by any thread.  Global counts (per-thread) are given
+ first, followed by a few breakdowns of these counts by different
+ types of tables.
+
+\begin{itemize}
+\item The global information starts with the total number of calls to
+ tabled predicates.  Next is the total number or answer check/insert
+ operations, followed by a breakdown into the number of unique answers
+ generated, and the number of answers that were redundant when they
+ were generated.  Finally comes information about conditional answers,
+ including the number of delay lists, and the total number delay
+ elements: i.e., literals contained in delay lists.  (See
+ Section~\ref{sec:conditional-answers} for a general discussion of
+ delay representation.)
+
+\item Next comes a breakdown of the global numbers according to
+ whether call subsumption or call variance is used. 
+\begin{itemize}
+\item Call Variance Subgoal Operations.  For call variance the number
+of subgoal check/insert operations is given along with the unique
+number of subgoals encountered ({\tt producers}) and the number of
+redundant consumer encountered ({\tt variants}).
+%
+\item Call Subsumption Subgoal Operations.  The total number calls to
+ predicates that use call subsumption is given first.  It is followed
+ by the number of {\tt producers} -- that is, the number of distinct
+ tables that have been created for these predicates.  Next is {\tt
+ variants}, the number of repeated non-subsumed calls to these tables
+ while the tables are non-completed and completed.
+%
+\item Call Subsumption Answer Consumption.  In call subsumptive
+ tabling, answer lists are copied from producer subgoals to subsumed
+ consumer subgoals (this operation is not required in variant
+ tabling).  The number of {\tt answer ident} operations represents the
+ number of times this copy is done.  In addition, the number of
+ consumptions performed by all consuming subsumptive table entries is
+ also given.  Note that these counts indicate the number of times an
+ answer is consumed by a call subsumption table, while the overall
+ count of answers produced is provided above.
+%
+\end{itemize}
+\item Finally, if incremental tabling is used, the total number of
+ producers subgoals for incremental tables is given.  This is followed
+ by a measure of the incremental dependency graph (IDG) in its current
+ state.  The number of nodes in the IDG (incremental subgoals) is
+ given, followed by the number of dependency edges.
+\end{itemize}
+
+\item Garbage Collection Information.  Time spent garbage collecting
+  by the calling thread and number of heap cells collected.
+
+\item Information about process CPU and clock time, as well as the
+  number of active threads.
+\end{itemize}
+
+%As mentioned above, if XSB is configured with the single-threaded
+%engine and is invoked with the {\tt '-s'} option (see
+%Section~\ref{sec:EmuOptions}), additional information is printed out
+%about maximum use of each execution stack and table space.  space.
+
+%===================
+
+\standarditem{statistics(+Key)}{statistics/1}
+%
+{\tt statistics/1} allows the user to output detailed statistical
+information about the atom and symbol tables, as well as about table
+space.  The following calls to {\tt statistics/1} are supported:
+%
+\begin{itemize}
+\item {\tt statistics(reset)}  Resets the CPU time as well as counts
+for various tabling operations. 
+%
+\item {\tt statistics(atom)} Outputs statistics about both the atom
+and symbol tables.  An example is: 
+%
+{\footnotesize
+\begin{verbatim}
+| ?- statistics(atom).
+
+Symbol table statistics:
+------------------------
+Table Size:	8191
+Total Symbols:	1188
+            used buckets:              1088  (range: [0, 8174])
+            unused buckets:            7103
+            maximum bucket size:       3  (#: 18)
+
+String table statistics:
+------------------------
+Table Size:	16381
+Total Strings:	1702
+            used buckets:              1598  (range: [0, 16373])
+            unused buckets:            14783
+            maximum bucket size:       3  (#: 2318)
+\end{verbatim}}
+%
+\item {\tt statistics(table)} Outputs {\em very} detailed statistics
+  about table space, including breakdowns into variant and subsumptive
+  call- and answer- trie nodes and hash tables; answer return list
+  nodes, and structures for conditional answers (cf. \cite{SaSw98,
+    RRSSW98, TST99, CuSW99a}).  In the multi-threaded engine, these
+  data structures are reported both for shared tables and for private
+  tables of the calling thread.
+
+  While this option is intended primarily for developers, it can also
+  provide valuable information for the serious user of tabling.
+\end{itemize}
+
+{\bf Error Cases}
+\bi
+\item {\tt Key} not a valid atom for input to {\tt statistics/1} 
+\bi
+\item 	{\tt domain\_error(statisticsInputDomain,Key))}
+\ei
+\ei
+
+\standarditem{statistics(?Key,-Result)}{statistics/2}
+%
+{\tt statistics/2} allows a user to determine information about
+resources used by XSB.  Currently {\tt statistics/2} unifies {\tt Key}
+with
+\bi
+\item {\tt runtime}, which instantiates {\tt Result} to the structure
+  {\tt [TotalCPU,IncrCPU]} where {\tt TotalCPU} is the total
+  (process-level) CPU time at the time of call, and {\tt IncrCPU} is
+  the CPU time taken since the last call to {\tt statistics/2}.  Times
+  are measured in seconds.  The process-level CPU time includes time
+  taken for system calls, as well as time taken for garbage collection
+  and stack-shifting.  Note that in the multi-threaded engine,
+  {\tt statistics/2} measures the time for all threads.
+%
+\item {\tt walltime}, which instantiates {\tt Result} to the list {\tt
+ [TotalTime,IncrTime]} where {\tt TotalTime} is the total elapsed time
+ at the time of call, and {\tt IncrTime} is the elapsed time taken
+ since the last call to {\tt statistics/2}.  Times are measured in
+ seconds.
+%
+\item {\tt total\_memory} which instantiates {\tt Result} to the list
+ {\tt [Alloc,Used]}.  In the single-threaded engine, {\tt Alloc} is
+ the total table space allocated and {\tt Used} is the total table
+ space used, both in bytes.  In the multi-threaded engine, both refer
+ to table space {\em private} to the calling thread.
+%
+\item {\tt tablespace} which instantiates {\tt Result} to the list {\tt
+ [Alloc,Used]}.  In the single-threaded engine, {\tt Alloc} is the
+ total table space allocated and {\tt Used} is the total table space
+ used, both in bytes.  In the multi-threaded engine, both refer to
+ table space {\em private} to the calling thread.
+%
+\item {\tt shared\_tablespace} which instantiates {\tt Result} to the
+ list {\tt [Alloc,Used]}.  In the multi-threaded engine, {\tt Alloc}
+ is the total space allocated for {\em shared} tables and {\tt Used}
+ is the total table space used, both in bytes.  An error is thrown if
+ this option is called by the single-threaded engine.
+%
+\item {\tt trie\_assert} which instantiates {\tt Result} to the list
+ {\tt [Alloc,Used]}.  In the single-threaded engine, {\tt Alloc} is
+ the total space allocated for trie-asserted facts and interned tries;
+ {\tt Used} is the total space used for these purposes, both in bytes.
+%
+%\item {\tt gl} which instantiates {\tt Result} to the list {\tt
+% [Alloc,Used]}, where {\tt Alloc} is the total number of bytes
+% allocated for XSB's combined heap and local (environment) stack,
+% while {\tt Used} is the approximate number of bytes used by both of
+% these stacks.  In the multi-threaded engine, these numbers refer only
+% to the stacks of the calling thread.
+%
+%\item {\tt tc} which instantiates {\tt Result} to the list {\tt
+% [Alloc,Used]}, where {\tt Alloc} is the total number of bytes
+% allocated for XSB's combined trail and choice point stack while {\tt
+% Used} is the number of bytes used by both of these stacks.  In the
+%% multi-threaded engine, these numbers refer only to the stacks of the
+% calling thread.
+%
+\item {\tt heap} which instantiates {\tt Result} to the total number
+ of bytes used by XSB's heap.  In the multi-threaded engine, the
+ number refers only to the heap of the calling thread.
+%
+\item {\tt local} which instantiates {\tt Result} to the total number
+ of bytes used by XSB's local (environment) stack.  In the
+ multi-threaded engine, the number refers only to the local stack of
+ the calling thread.
+%
+\item {\tt trail} which instantiates {\tt Result} to the total number
+ of bytes used by XSB's trail stack.  In the multi-threaded engine,
+ the number refers only to the trail stack of the calling thread.
+%
+\item {\tt choice\_point} which instantiates {\tt Result} to the total
+ number of bytes used by XSB's choice point stack.  In the
+ multi-threaded engine, the number refers only to the choice point
+ stack of the calling thread.
+%
+\index{tabled subgoals!incomplete}
+\item {\tt incomplete\_tables} which instantiates {\tt Result} to a
+ list containing the following elements (in order):-
+\bi
+\item The number of incomplete tables in XSB's completion stack, i.e.,
+ the number of subgoals currently under evaluation.
+%
+\item The number of SCCs currently under evaluation in XSB's
+ completion stack.  
+\ei 
+In the multi-threaded engine, both of these numbers refer to the
+ completion stack of the calling thread, which may contain both
+ thread-private and thread-shared tables.
+%
+\item {\tt atoms} which instantiates {\tt Result} to the number of
+ bytes taken by atoms in the atom table.
+%
+\index{Incremental Dependency Graph (IDG)}
+\item {\tt idg} which instantiates {\tt Result} to a a list containing
+ (in order) the number of nodes and the number of edges currently in
+ the incremental dependency graph (IDG).
+%
+\item {\tt table\_ops} which instantiates {\tt Result} to a list
+ containing the following elements (in order):
+\begin{itemize}
+\item The total number of calls to subgoals that are tabled using call
+ subsumption.
+
+\item The total number of distinct tables created using call
+ subsumption (i.e., the total number of distinct calls to subgoals
+ that are tabled using call subsumption).
+
+\item The total number of calls to subgoals that are
+ tabled using call variance.
+
+\item The total number of distinct tables created using call
+ variance (i.e., the total number of distinct calls to subgoals
+ that are tabled using call variance).
+
+\item The total number of check/insert operations for all answers
+ (whether they are in subsumptive or variant tables).
+
+\item The number of distinct answers added (whether they are in
+ subsumptive or variant tables).
+\end{itemize}
+%
+\ei
+
+{\bf Example}
+An example of using {\tt statistics/2} to check CPU time is as follows:
+
+\begin{verbatim}
+?- statistics(runtime,[BeforeCumu,BeforeIncr]),spin(100000000),
+   statistics(runtime,[AfterCumu,AfterIncr]).
+
+BeforeCumu = 5.0167
+BeforeIncr = 5.0167
+AfterCumu = 9.6498
+AfterIncr = 4.6331
+\end{verbatim}
+Note that {\tt statistics/2} can provide either cumulative or
+ incremental times; here
+\[
+ AfterCumu - BeforeCumu = AfterIncr
+\]
+Checking wall time is done similarly.
+\begin{verbatim}
+?- statistics(walltime,Before),sleep(1),statistics(walltime,After).
+
+Before = [35.0651,35.0651]
+After = [36.0652,1.0001]
+\end{verbatim}
+
+{\bf Error Cases}
+\bi
+\item {\tt Key} not a valid atom for input to {\tt statistics/1} 
+\bi
+\item 	{\tt domain\_error(statisticsInputDomain,Key))}
+\ei
+\ei
+\comment{ 
+\standarditem{cputime(-CPU\_Time)}{cputime/1}
+%
+\standarditem{walltime(-Time)}{cputime/1}
+%
+Returns the \texttt{Time}, in seconds, since execution started, or
+since the last call to \texttt{statistics(0)} by any thread.
+
+Returns the (process-level) {\tt CPU\_Time} at the time of the call in
+seconds.  The difference between results of successive calls to this
+predicate can measure the time spent in specific predicates.  Note
+that in the multi-threaded engine, {cputime/1} measures the time for
+all threads.
+
+\standarditem{walltime(-Time)}{cputime/1}
+%
+Returns the \texttt{Time}, in seconds, since execution started, or
+since the last call to \texttt{statistics(0)} by any thread.
+}
+
+\standarditem{time(+Goal)}{time/1}
+\index{Prologs!SWI}
+\index{Prologs!YAP}
+%
+Prints both the CPU time and wall time taken by the execution of \texttt{Goal}.
+Any choice-points of \texttt{Goal} are discarded. The definition of predicate is based 
+on the SWI-Prolog definition (minus reporting the number of inferences, which XSB does 
+not currently support). This predicate is also found on other Prolog compilers such as YAP.
+
+\end{description}
+
+%need op (just so we dont forget ???
+
+
+%=====================================================================
+
+

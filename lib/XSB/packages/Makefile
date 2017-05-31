@@ -34,7 +34,7 @@ ALL = 	slx${OBJEXT} gap${OBJEXT} \
 # Perlmatch, libwww - deprecated. Use PCRE, CURL
 #	perlmatch${OBJEXT} libwww${OBJEXT}
 
-SUBDIR = flora2 slx gap regmatch wildmatch xasp \
+SUBDIR = slx gap regmatch wildmatch xasp \
 	 xsbdoc xmc justify clpqr curl pcre
 # Deprecated
 #	perlmatch libwww
@@ -81,8 +81,6 @@ slx::
 	@echo ""
 	cd slx; make
 
-flora2::
-	@echo ""
 
 #Add interprolog
 iprolog::

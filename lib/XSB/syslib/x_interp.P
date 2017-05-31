@@ -1,5 +1,5 @@
 /* File:      x_interp.P
-** Author(s): David S. Warren, Terrance Swift,
+** Author(s): David S. Warren, Theresa Swift,
 **    	      Ernie Johnson, Jiyang Xu, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -147,16 +147,31 @@ interpreter_readloop(_) :-
 		process_query(X, Vars)
 	).
 
+/* TES 2016/09: I factored out a separate read_in_stop for break
+interpreters to ensure ctrl-d exits the break, rather than halts the
+process.  I'm not absolutely sure that file_clearerr/1 needs to be
+called, but the web indicates its a generally good idea after stderr.*/
+
 read_in_stop(halt) :-          %% quit XSB, regardless of break level
+        call_xsb_hook(xsb_exit_hook(_),all),
+        halt.
+read_in_stop(end_of_file) :-   %% pop a break level, out if at top
+        %% if we previously pushed an input stream onto cmd_line_argument stack
+        %% then pop it back and make this stream current
+        (pop_stdin(cmd_line_argument) ->  fail
+        ; call_xsb_hook(xsb_exit_hook(_),all)
+        ).
+
+
+:- import file_clearerr/1 from file_io.
+bp_read_in_stop(halt) :-          %% quit XSB, regardless of break level
 	call_xsb_hook(xsb_exit_hook(_),all),
 	halt.
-read_in_stop(end_of_file) :-   %% pop a break level, out if at top
+bp_read_in_stop(end_of_file) :-   %% pop a break level, out if at top
+        file_clearerr(STDIN),
 	%% if we previously pushed an input stream onto cmd_line_argument stack
 	%% then pop it back and make this stream current
-	(pop_stdin(cmd_line_argument) ->  fail
-	; call_xsb_hook(xsb_exit_hook(_),all)
-	).
-
+	(pop_stdin(cmd_line_argument) ; true),!.
 
 process_query(end_of_file,_) :- !, file_nl(STDFDBK), fail.
 process_query(X, Vars) :-
@@ -250,23 +265,23 @@ print_answer([vv(Name,Val)|Tail]) :-
 
 /*********************
 % moved to xsb_writ.P
-
-:- import get_attributes/2 from machine.
-portray_attributes(Var):- 
-	get_attributes(Var,Atts),
-	portray_attributes_1(Atts).
-
-:- import attribute_portray_hook/3 from machine.
-portray_attributes_1([]).
-portray_attributes_1([Mod,Attr|T]):- 
-	(attribute_portray_hook(Mod,Attr,Handler) -> 
-	    file_write(STDFDBK,' { '),
-	    file_write(STDFDBK,Mod),
-	    file_write(STDFDBK,' : '),
-	    call(Handler),
-	    file_write(STDFDBK,' } ')
-	 ; true),
-	 portray_attributes_1(T).
+%
+%:- import get_attributes/2 from machine.
+%portray_attributes(Var):- 
+%	get_attributes(Var,Atts),
+%	portray_attributes_1(Atts).
+%
+%:- import attribute_portray_hook/3 from machine.
+%portray_attributes_1([]).
+%portray_attributes_1([Mod,Attr|T]):- 
+%	(attribute_portray_hook(Mod,Attr,Handler) -> 
+%	    file_write(STDFDBK,' { '),
+%	    file_write(STDFDBK,Mod),
+%	    file_write(STDFDBK,' : '),
+%	    call(Handler),
+%	    file_write(STDFDBK,' } ')
+%	 ; true),
+%	 portray_attributes_1(T).
 ***********************/
 
 :- import constraint_portray_hook/4 from machine.
@@ -382,16 +397,33 @@ readl_brklp1(_) :-
 	file_write(STDFDBK, ': ?- '), file_flush(STDFDBK, _),
 	stat_flag(CURRENT_INPUT, FileIn),
 	file_read(FileIn, X, Vars),
-	(   nonvar(X), read_in_stop(X), !
+	(   nonvar(X), bp_read_in_stop(X), !
 	%% end read loop; pop a break level, out if X=halt.
 	;   process_query(X, Vars)
 	).
 
 /* === interrupt handlers ============================================== */
+:- import token_type/2 from xsb_read.
+:- import misc_error/2 from error_handler.
+
+/* TES 2016/09: modified ctrl-c interrupt so that ctrl-c/ctrl-d works
+   properly if ctrl-c occurs when waiting to read a command.  In this
+   case, the continuation is token_type(10,_), and the action is to
+   abort the read, which will fail back to a new read.  The original 
+   interrupt code is below. */
 
 '_$keyboard_int'(Call,_Code) :- 
 	is_xwammode(Flag),
-	( Flag =:= 1 -> abort ; break, call_c(Call) ).
+	(Flag =:= 1 -> 
+	   abort
+	 ; break, 
+	   (Call = token_type(10,_) -> misc_error('_$silent_abort',0) ; call_c(Call)) ).
+
+/*
+'_$keyboard_int'(Call,_Code) :-
+        is_xwammode(Flag),
+        ( Flag =:= 1 -> abort ; break, call_c(Call) ).
+*/
 
 :- import thread_get_signal/1 from mutex_xsb.
 :- import thread_peek_signal/1 from mutex_xsb.

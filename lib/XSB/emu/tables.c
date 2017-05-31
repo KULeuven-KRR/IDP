@@ -142,16 +142,19 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo,unsigned int is_n
    subg_tif_ptr(pNewSF) = TableInfo;					    
    subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); 
    subg_leaf_ptr(pNewSF) = Leaf;					    
-   CallTrieLeaf_SetSF(Leaf,pNewSF);					    
+   CallTrieLeaf_SetSF(Leaf,pNewSF);
+   
    subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		     
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    
    INIT_SUBGOAL_CALLSTO_NUMBER(pNewSF);
-   ((VariantSF) pNewSF)->visited = 0;
+//   ((VariantSF) pNewSF)->visited = 0;
+//   ((VariantSF) pNewSF)->is_reclaimed = 0;
+//   subg_tag(pNewSF) = 0;
    subg_negative_initial_call(pNewSF) = (unsigned int) is_negative_call;
 /* incremental evaluation start */
 if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
   //  sfPrintGoal(stdout,pNewSF,NO);printf(" is marked incr\n");
-  subg_callnode_ptr(pNewSF) = makecallnode(pNewSF);                        
+  subg_callnode_ptr(pNewSF) = makecallnode(CTXTc pNewSF);   
  } else{
   //sfPrintGoal(stdout,pNewSF,NO);printf(" is marked NON-incr %s/%d:%d:%u\n",get_name(TIF_PSC(TableInfo)),get_arity(TIF_PSC(TableInfo)),get_incr(TIF_PSC(TableInfo)),TIF_PSC(TableInfo));
   subg_callnode_ptr(pNewSF) = NULL;
@@ -187,7 +190,6 @@ inline static  BTNptr newCallTrie(CTXTdeclc Psc predicate) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- * used in tabletrysinglenoanswers 
  * Note that the call trie of the TIF is not allocated until the first
  * call is entered.  Upon exit, CallLUR_AnsTempl(*results) points to
  * the size of the answer template on the CPS.  See slginsts_xsb_i.h
@@ -199,7 +201,7 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
  		       CallLookupResults *results) {
   TIFptr tif;
 
-#ifndef MULTI_THREAD
+  //#ifndef MULTI_THREAD
   /* for incremental evaluation begin */ 
   int call_found_flag;
   callnodeptr c;
@@ -207,7 +209,7 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
   ALNptr pALN;
   BTNptr leaf,Paren;  
   /* for incremental evaluation end */     
-#endif
+  //#endif
 
 #ifdef CALL_ABSTRACTION
   CallAbsStk_ResetTOS; 
@@ -218,11 +220,15 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
     TIF_CallTrie(tif) = newCallTrie(CTXTc TIF_PSC(tif));
   if ( IsVariantPredicate(tif) ){
     // Return value for term-depth check.
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
+    var_subg_chk_ins_gl++;
+    //    printf("var_subg_chk_ins\n");
+#endif
     if (variant_call_search(CTXTc call_info,results) == XSB_FAILURE) {
       return XSB_FAILURE;
     }
     
-#ifndef MULTI_THREAD
+    //#ifndef MULTI_THREAD
     /* incremental evaluation: checking whether falsecount is zero */
     /*
       In call check insert if a call is reinserted and was already
@@ -236,31 +242,42 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
     call_found_flag=CallLUR_VariantFound(*results);
     Paren=CallLUR_Leaf(*results);
 
-    if(call_found_flag!=0){
+    if(call_found_flag!=0){  // the next few lines are executed whether incr or non-oncr.
+      //      printf("cff = 0\n");
+      //      var_subg_inserts_gl++;
       old_call_gl=NULL;
       old_answer_table_gl=NULL;
       
       sf=CallTrieLeaf_GetSF(Paren);
       c=sf->callnode;
-
-      /* TLS: if falsecount == 0 && call_found_flag, we know that call
+      //      if (IsNonNULL(c))  {
+      //	printf("        checking the incremental goal flscnt %d ",c->falsecount);print_subgoal(stddbg,sf);printf("\n");
+      //      }
+      /* TES: if falsecount == 0 && call_found_flag, we know that call
          is complete.  Otherwise, dfs_outedges would have aborted */
 
       if(IsNonNULL(c) && (c->falsecount!=0)){
-	//	 	  printf("   recomputing (rcomputable = %d) ",c->recomputable);
-	//  print_subgoal(stddbg,sf);printf("\n");
+	//	printf("           recomputing (rcomputable = %d) ",c->recomputable);
+	//	print_subgoal(stddbg,sf);printf(" (sf %p)\n",sf);
 	if (c->recomputable == COMPUTE_DEPENDENCIES_FIRST) {
-	  lazy_affected = empty_calllist();
+	  //	  printf("computing dependencies = 0\n");
+	  lazy_affected = empty_calllist(CTXT);
 	  if ( !dfs_inedges(CTXTc c,  &lazy_affected, CALL_LIST_EVAL) ) {
 	    CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
+	    //	    printf("        using recompleted table\n");
 	    return XSB_SPECIAL_RETURN;
 	  } /* otherwise if dfs_inedges, treat as falsecount = 0, use completed table */
 	}
 	else {    /* COMPUTE_DIRECTLY */
+	  //	  printf("recomputing = 0\n");
+#if  !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
+	  incr_table_recomputations_gl++;
+#endif
+          subg_ans_ctr(sf) = 0;  // Reset answer counter for incremental recomputation
 	  old_call_gl=c;      
 	  call_found_flag=0;  /* treat as a new call */
 	  if ( has_answers(sf) ) {
-	    pALN = subg_answers(sf);
+	    pALN = subg_answers(sf); 
 	    do {
 	      leaf=ALN_Answer(pALN);
 
@@ -276,14 +293,18 @@ int table_call_search(CTXTdeclc TabledCallInfo *call_info,
 	  old_answer_table_gl=sf->ans_root_ptr;
 	  //reclaim_incomplete_table_structs(sf);
 	  CallTrieLeaf_SetSF(Paren,NULL);            
-	}
-      }
+	} // Compute dependencies
+      }  // Recomputation
+    } // call_found_flag != 0
+    else {
+      var_subg_inserts_gl++;
     }
+      
       CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
       CallLUR_VariantFound(*results) = call_found_flag;
       /* incremental evaluation: end */
-#endif /* not MULTI_THREAD (incremental evaluation) */
-  }
+      //#endif /* not MULTI_THREAD (incremental evaluation) */
+  }  //IsVariantPredicate
   else
     subsumptive_call_search(CTXTc call_info,results);
   {
@@ -392,15 +413,21 @@ int table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
   if ( IsNULL(TIF_CallTrie(tif)) )
     TIF_CallTrie(tif) = newCallTrie(CTXTc TIF_PSC(tif));
 
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
+    var_subg_chk_ins_gl++;
+#endif
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
+    dyn_incr_chk_ins_gl++;
+#endif
   if ( IsVariantPredicate(tif) ){
     if (variant_call_search(CTXTc call_info,results) == XSB_FAILURE) {
       return XSB_FAILURE;
     }
 
     leaf=CallLUR_Leaf(*results);
-    if (CallLUR_VariantFound(*results)==0){
-      /* new call */      
-      cn = makecallnode(NULL); 
+    if (CallLUR_VariantFound(*results)==0){      /* new call */      
+      dyn_incr_inserts_gl++;
+      cn = makecallnode(CTXTc NULL); 
       BTN_Child(leaf) = (BTNptr)cn;
       callnode_tif_ptr(cn) = tif;
       callnode_leaf_ptr(cn) = leaf;
@@ -487,11 +514,10 @@ int table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
  ***********************************************************************/
 
 BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
-			   CPtr templ, xsbBool *is_new) {
+			   CPtr templ, xsbBool *rederived_flag,xsbBool *is_new) {
 
   void *answer;
-  xsbBool wasFound = TRUE;
-  xsbBool hasASI = TRUE;
+  xsbBool wasFound = TRUE; xsbBool hasASI = TRUE; xsbBool rederived_flag_loc = TRUE;
 
   if ( IsSubsumptiveProducer(producer) ) {
 
@@ -522,21 +548,21 @@ BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
     
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
 
-    if (NULL != (answer = variant_answer_search(CTXTc size,attv_num,templ,producer,&wasFound,
-						&hasASI))) {
+    if (NULL != (answer = variant_answer_search(CTXTc size,attv_num,templ,producer,&rederived_flag_loc,&wasFound,&hasASI))) {
+      // TES: I dont see why these two cases need to be made distinct
       if (!IsIncrSF(producer)) {
 	//	printf("wasFound %d delay %p\n",wasFound,delayreg);
 	do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
 	*is_new = ! wasFound;
       }
       else {
-	//	printf("hasASI %d delay %p\n",hasASI,delayreg);
+	//	printf("hasASI %d found %d delay %p\n",hasASI,delayreg,wasFound);
 	do_delay_stuff(CTXTc (NODEptr)answer, producer, (hasASI & wasFound));
 	*is_new = ! wasFound;
       }
     }
-
     *is_new = ! wasFound;
+    *rederived_flag = rederived_flag_loc;
     undo_answer_bindings;
 
   }
@@ -714,8 +740,8 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
      If a new call is complete we should compare whether its answer
      set is equal to the previous answer set. If no_of_answer is > 0
      we know that not all answers are rederived so the extension has
-     changed.  However, if a new answer was added the callnodepointer
-     is already marked as changed (see tries.c:
+     changed.  However, if a new answer was added the previous 
+     callnodepointer is already marked as changed (see tries.c:
      variant_answer_search). Otherwise, the call is unchanged i.e it
      produced the same set of answers. This information has to be
      propagated to the calls dependent on this call whose falsecount
@@ -724,6 +750,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
      call.
   */
   if(IsIncrSF(producerSF)){
+    //    printf("        incr compl  ");print_subgoal(stddbg,producerSF);printf("\n");
     callnodeptr pc;  int fewer_true_answers = FALSE;
     producerSF->callnode->recomputable = COMPUTE_DEPENDENCIES_FIRST;
     pc = producerSF->callnode->prev_call;
@@ -732,37 +759,43 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
       //      printf("has prev call ");print_subgoal(stddbg,producerSF);
       //      printf(" visitors %ld / %p",producerSF->visitors,producerSF);printf("\n");
       
+      //      printf("          incr compl has prev call ");print_subgoal(stddbg,producerSF);printf("\n");
       if ( has_answers(producerSF) ) {
+	//	printf("          ");print_subgoal(stddbg,producerSF);printf("   has answers at incr compl\n");
 	pALN = pc->aln;
 	while(IsNonNULL(pALN)) {
 	  if (is_conditional_answer(ALN_Answer(pALN)) 
 	      && BTN_IncrMarking(ALN_Answer(pALN)) == PREVIOUSLY_UNCONDITIONAL)
 	    fewer_true_answers = TRUE;
 	  BTN_IncrMarking(ALN_Answer(pALN)) = 0;
-	  if (IsDeletedNode(ALN_Answer(pALN)))
+	  if (IsDeletedNode(ALN_Answer(pALN))) {
 	    delete_branch(CTXTc ALN_Answer(pALN),&subg_ans_root_ptr(producerSF),VARIANT_EVAL_METHOD);
+	    //	    printf("        deleting incremental_branch\n");
+	  }
 	  pALN = ALN_Next(pALN);
 	}
       } else {
 	/* There is a memory leak here: I have to delete the answer
 	   table here: iterating delete_branch thru the answer trie
 	   gives error while deleting the last branch */
-	
+	//	printf("          incr compl: removing answer root  ");print_subgoal(stddbg,producerSF);printf("\n");
 	producerSF->ans_root_ptr=NULL; 
       }
 
-      /* old calls */
+      /* Check previous callnodepointer: changed was set to 1 if a new answer was rederived.*/
       if (pc->no_of_answers>0 || fewer_true_answers)    // if some previous answers have not been rederived
 	pc->changed=1;
       if (pc->changed==0){
 	unchanged_call_gl++;
+	//	printf("         propagating no change   nbransr %d fewer_true %d  ",pc->no_of_answers,fewer_true_answers);
+	//	print_subgoal(stddbg,producerSF);printf("\n");
 	propagate_no_change(pc); /* defined in call_graph_xsb.c */
       } //else
 	//add_callnode(&changed_gl,producerSF->callnode);
     
       producerSF->callnode->prev_call=NULL;
     	
-      deallocate_previous_call(pc);
+      deallocate_previous_call(CTXTc pc);
             
     } // else /* newly added calls */
       //      add_callnode(&changed_gl,producerSF->callnode);
@@ -898,8 +931,8 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    if (get_tabled(pPSC)==T_TABLED) {					
      TIF_EvalMethod(pTIF) = (TabledEvalMethod)pflags[TABLING_METHOD];	
      if (TIF_EvalMethod(pTIF) == VARIANT_EVAL_METHOD)			
-       set_tabled(pPSC,T_TABLED_VAR);					
-     else set_tabled(pPSC,T_TABLED_SUB);				
+       psc_set_tabled(pPSC,T_TABLED_VAR);					
+     else psc_set_tabled(pPSC,T_TABLED_SUB);				
    }									
    else if (get_tabled(pPSC)==T_TABLED_VAR) 				
       TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
@@ -911,7 +944,7 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
        xsb_warn(CTXTc "%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
 		get_name(pPSC),get_arity(pPSC));				
       TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
-      set_tabled(pPSC,T_TABLED_VAR);					
+      psc_set_tabled(pPSC,T_TABLED_VAR);					
    }									
    TIF_CallTrie(pTIF) = NULL;						
    TIF_Mark(pTIF) = 0;                                                  

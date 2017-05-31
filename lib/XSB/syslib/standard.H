@@ -44,7 +44,7 @@
 	get_date/6,
 	get_utcdate/6, get_localdate/6,
 	console_write/1, console_writeln/1,
-	error_write/1, error_writeln/1,
+   error_write/1, error_writeln/1,exec_table_option/2,
 	expand_term/2,	file_exists/1,	fail/0,	false/0,	fail_if/1,
 	fileerrors/0,	float/1,	forall/2,	functor/3,
 	gc_dynamic/1,   gc_tables/1,    gc_atoms/0,
@@ -55,7 +55,6 @@
 	(hilog)/1,	hilog_arg/3,	hilog_functor/3,
 	(index)/3,	(index)/2,      (table)/1,
 	(use_incremental_tabling)/1,    (use_incremental_dynamic)/1, 
-   use_incremental_dynamic_internal/1,
 	(use_opaque_tabling)/1, /* incremental */
 	integer/1,	is/2,		is_attv/1,	is_list/1,
 	is_most_general_term/1,		is_number_atom/1,
@@ -72,7 +71,6 @@
 	see/1,		seeing/1,	seen/0,
 	set_input/1,    set_output/1,  
    demand_once/1, check_table_options/3,
-	set_tmp_file/3,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	time/1,	told/0,true/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
@@ -89,7 +87,6 @@
 :- export handle_interrupts/1.
 %:- export timed_call/3.
 %:- export timed_call/4.
-:- export get_timed_call_index/1.
 :- export timer_interrupt_trap/2.
 :- export timed_call/2,timed_call_modify/1.
 :- export current_timed_call/2.
@@ -107,7 +104,8 @@
 :- export
         call_c/1,	
         catch/3,                throw/1,        '$$exception_ball'/2,
-        goal_cut_trans/3,	call_goal_cut_trans/3, goal_cut_untrans/2,
+   goal_cut_trans/3,	call_goal_cut_trans/3, goal_cut_untrans/2,
+   requires_cut_transforming/1,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
    message/1,      messageln/1, message/2, messageln/2,
    warning/1,      warning/2,
@@ -124,6 +122,7 @@
 :- export bounded_call/4.
 :- export bounded_call/3.
 :- export get_interpreter_index/1.
+:- export (do_all)/1, (do_all)/2.
 
 :- import (dynamic)/1, asserta/1, assert0/4, retract/1 from assert.
 :- import member/2,append/3,comma_member/2,memberchk/2 from basics.
@@ -178,14 +177,14 @@
 %:- import numbervars/1 from num_vars.
 :- import numbervars/4 from num_vars.
 :- import calculate_singleton/3 from singlton.
-:- import concat_atom/2  from string.
+:- import concat_atom/2, term_to_atom/3  from string.
 :- import file_read/2, file_read/3 from xsb_read.
 :- import file_write0/2, file_write/2, file_write_prolog/2, l_write/3,
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
 :- import xsb_thread_self/1 from thread.
 :- import (thread_shared)/1, (thread_private)/1 from consult.
-:- import findall/3 from setof.
+:- import findall/3, term_variables/2, sort/2, excess_vars/4 from setof.
 :- import (use_variant_tabling)/1, (use_subsumptive_tabling)/1 from tables.
 
 :- import (:-)/2 from usermod.

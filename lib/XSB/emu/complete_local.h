@@ -1,5 +1,5 @@
 /* File:      complete_local.h
-** Author(s): Juliana Freire, Kostis Sagonas, Terry Swift, Luis Castro
+** Author(s): Juliana Freire, Kostis Sagonas, Teri Swift, Luis Castro
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-2001
@@ -177,7 +177,7 @@ void SpitOutGraph(CPtr cs_ptr)
 #define DeleteCSF(nsf) \
         csf_prevcsf(nsf)
 
-/* TLS: A pass has been made through the CSF chain to remove those
+/* TES: A pass has been made through the CSF chain to remove those
  * whose root subgoal was early completed.  So what we do now is to
  * reset the hreg and breg of each.  Frankly I don't think that this
  * step should be needed if the freeze registers are not unset until
@@ -209,24 +209,6 @@ void SpitOutGraph(CPtr cs_ptr)
   subg_compl_susp_ptr(compl_subg) = NULL; \
 }
 
-/* TLS: alternate form, that does not need to reset the hreg/ebreg.
-define ResumeCSFs()				\
-{ \
-  CPtr nsftmp; \
-  if (!cur_breg) { \
-    cur_breg = cc_tbreg = nsf; \
-  } else { \
-    csf_prevcsf(cur_breg) = nsf; \
-    cur_breg = nsf; \
-  } \
-  for (nsftmp = cur_breg; csf_prevcsf(nsftmp); nsftmp = csf_prevcsf(nsftmp)) {\
-  } \
-  csf_prevcsf(nsftmp) = breg; \
-  cur_breg = nsftmp; \
-  subg_compl_susp_ptr(compl_subg) = NULL; \
-}
-*/
-
 static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
 					   CPtr cs_ptr)
 {
@@ -238,7 +220,7 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
   /* check from leader up to the youngest subgoal */
   while (ComplStkFrame >= openreg) {
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
-    /* TLS: Explanation for the dull-witted (i.e. me).  If compl_subg
+    /* TES: Explanation for the dull-witted (i.e. me).  If compl_subg
      * is early completed, this means it has an unconditional answer.
      * Since a completion suspension is set up only for ground
      * negative calls, this means that the compl suspension will fail,
@@ -288,6 +270,120 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
   return cc_tbreg;
 }
 
+static inline CPtr ProcessCSReturns(CTXTdeclc CPtr cs_ptr) {
+  CPtr ComplStkFrame = cs_ptr;
+  VariantSF compl_subg;
+  int state;
+  CPtr first_sched_cons, last_sched_cons, ccp;
+  first_sched_cons = last_sched_cons = NULL;
+
+  altsem_dbg(("in ProcessCSReturns: ComplStkFrame %p openreg %p breg %p\n",ComplStkFrame,openreg,breg));
+  /* check from leader up to the youngest subgoal */
+  while (ComplStkFrame >= openreg) {
+    altsem_dbg(("in loop: ComplStkFrame %p openreg %p (",ComplStkFrame,openreg));
+    compl_subg = compl_subgoal_ptr(ComplStkFrame);
+    altsem_print_subgoal(compl_subg);altsem_dbg((")\n"));
+
+    if (!is_completed(compl_subg)) { /* not early completed */
+      altsem_dbg(("not ec\n"));
+      if ((ccp = subg_pos_cons(compl_subg)) != NULL) {
+
+	/* check each consumer choice point for appropriate action.
+	 * If it has not already been continued put it on the chain
+	 * o/w skip over it.	 */
+	while (ccp && *nlcp_pcreg(ccp) != check_complete)	  {
+	  altsem_dbg(("Pret:   inner loop ccp %p %x %s\n",ccp,*nlcp_pcreg(ccp),(char *)inst_table[*nlcp_pcreg(ccp)][0]));
+	  get_gfp_state(ccp,state);
+	  altsem_dbg(("state %d\n",state));
+	  if (state != TRUE) {  /* Continuation has already been done for this CCP */
+	    nlcp_pcreg(ccp) = (pb) &continue_consumer_inst;
+	    altsem_dbg(("reset  ccp %p %x %s\n",ccp,*nlcp_pcreg(ccp),(char *)inst_table[*nlcp_pcreg(ccp)][0]));
+	    ScheduleConsumer(ccp,first_sched_cons,last_sched_cons);
+	  }
+	  ccp = nlcp_prevlookup(ccp);
+	}  /* while next ccp */
+      } /* if there are completion suspensions */
+    } /* else if not early completed */
+    ComplStkFrame = next_compl_frame(ComplStkFrame);
+  } /* while - for each subg in compl stack */
+  if( last_sched_cons ) {
+    /* The last node in the scheduling chain points to the leader */
+    nlcp_prevbreg(last_sched_cons) = breg ;
+  } /* While tabled subgoal. */
+
+  altsem_dbg(("finished ProcessCSReturns first_sched_cons: %p\n",first_sched_cons));
+  return first_sched_cons;
+}
+
+xsbBool dl_has_tagged_de(DL dl, VariantSF designated_subgoal) {
+  DE delay_elt =  dl_de_list(dl);
+  //  printf("entering dl_has_tagged_de\n");print_delay_list_from_table(dl);
+
+  while (delay_elt) {
+    //    print_delay_element_table(delay_elt);
+    if (designated_subgoal == de_subgoal(delay_elt)) return TRUE;
+    delay_elt = de_next(delay_elt);
+    } /* while (delay_elt) */
+  return FALSE;
+}
+
+extern xsbBool remove_dl_from_dl_list(CTXTdeclc DL , ASI );
+extern void clean_up_backpointers_to_failed_delay_list(CTXTdeclc DL delayList);
+
+/* Performs a second-stage simplification needed by completion
+   semantics (instead of  answer simplification) */
+
+void PerformCSSimplification(CTXTdeclc CPtr cs_ptr) {
+  CPtr ComplStkFrame = cs_ptr;
+  VariantSF compl_subg,designated_subgoal;
+  ALNptr aln;
+  BTNptr answer_leaf;
+  ASI asi_ptr;
+  Pair undefPair;				      
+  int isNew;
+  DL delay_list,tmp_dl;
+
+  //  undefPair = insert(predicate, 0, pair_psc(insert_module(0,"xsbbrat")), &isNew); 
+  undefPair = insert_psc("cs_undef", 0, pair_psc(insert_module(0,"xsbbrat")), &isNew); 
+  designated_subgoal  = TIF_Subgoals(get_tip(CTXTc pair_psc(undefPair)));				
+
+  altsem_dbg(("in PerformCSSimplification: ComplStkFrame %p openreg %p breg %p\n",ComplStkFrame,openreg,breg));
+  /* check SCC from leader up to the youngest subgoal */
+  while (ComplStkFrame >= openreg) {
+    altsem_dbg(("in loop: ComplStkFrame %p openreg %p (",ComplStkFrame,openreg));
+    compl_subg = compl_subgoal_ptr(ComplStkFrame);
+    altsem_print_subgoal(compl_subg);altsem_dbg((")\n"));
+
+    if (!is_completed(compl_subg)) { /* not early completed */
+      aln = ALN_Next(subg_ans_list_ptr(compl_subg));
+      while (aln != NULL) {
+	//	printf("   ALN %p\n",aln);
+	answer_leaf = ALN_Answer(aln);
+	if (is_conditional_answer(answer_leaf)) {
+	  asi_ptr = (ASI) BTN_Child(answer_leaf);
+	  delay_list = asi_dl_list(asi_ptr);
+	  while (delay_list) {
+	    tmp_dl = dl_next(delay_list);
+	    if (dl_has_tagged_de(delay_list,designated_subgoal)) {
+	      //	      printf("about to remove delay list\n");
+	      clean_up_backpointers_to_failed_delay_list(CTXTc delay_list);
+	      if (!remove_dl_from_dl_list(CTXTc delay_list, asi_ptr)) {
+		delete_branch(CTXTc answer_leaf, &subg_ans_root_ptr(compl_subg),VARIANT_EVAL_METHOD);
+		simplify_pos_unsupported(CTXTc answer_leaf);
+	      }
+	      //		printf("about to handle %p\n",answer_leaf);
+	      //		handle_unsupported_answer_subst(CTXTc answer_leaf);
+	    }
+	    delay_list = tmp_dl;
+	  } /* while dl */
+	}
+	aln = ALN_Next(aln);
+      }  /* while aln */
+    }
+    ComplStkFrame = next_compl_frame(ComplStkFrame);
+  } /* while ComplStkFrame >= openreg */
+}
+
 static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 {
   VariantSF compl_subg;
@@ -302,7 +398,7 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 
   while (ComplStkFrame >= openreg) {
     if (neg_simplif_possible(compl_subgoal_ptr(ComplStkFrame))) {
-      flags[SIMPLIFICATION_DONE] = 1;
+      pflags[SIMPLIFICATION_DONE] = 1; // for answer completion (I think)
       simplification_required = 1;
       break;
     }
@@ -359,15 +455,15 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while */
 
-  /* TLS: placemarker for development.  This function should happen
+  /* TES: placemarker for development.  This function should happen
    *after* simplification and *before* removal of answer lists, which
    *is useful for traversing dependency graphs. */
 
   //  /*  remove_unfounded_set(cs_ptr); */
 
-  // TLS: answer_completion was ifdeffed out, so I'm commenting it out here for now.
+  // TES: answer_completion was ifdeffed out, so I'm commenting it out here for now.
   //  if (flags[ANSWER_COMPLETION]) {
-    // TLS: took out following line as SCC_has_delayed is not otherwise defined.
+    // TES: took out following line as SCC_has_delayed is not otherwise defined.
     // The var is probably part of the heuristics and should be in the thread context
     //	  if ((SCC_has_delayed) || (FALSE) /*  */) {
     //		  answer_completion(CTXTc cs_ptr);
@@ -416,7 +512,7 @@ static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr,
   /* restore_trail_condition_registers - because success path
    * will be followed
    */
-  /* TLS: provisional change for strict_po 9/30/10 */
+  /* TES: provisional change for strict_po 9/30/10 */
   //    ebreg = cp_ebreg(tcp_prevbreg(orig_breg));
   //    hbreg = cp_hreg(tcp_prevbreg(orig_breg));
       ebreg = cp_ebreg(orig_breg);

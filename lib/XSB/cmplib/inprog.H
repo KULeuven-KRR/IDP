@@ -32,5 +32,4 @@
 	  vprag_context/2
      from varproc.
 :- import error/1 from auxlry.
-:- import abort/0 from standard.
 :- import find/3, addkey/4 from varproc.

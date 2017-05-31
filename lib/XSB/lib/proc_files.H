@@ -34,6 +34,7 @@
 :- export load_with_header/2.
 :- export file_header/4.
 :- export read_dsv/3.
+:- export break_into_code_fields/5.
 
 :- import append/3 from basics.
 :- import length/2 from basics.

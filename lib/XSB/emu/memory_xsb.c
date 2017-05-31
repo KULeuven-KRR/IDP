@@ -79,7 +79,7 @@
 extern Integer next_free_code;
 extern unsigned long enc[], dec[];
 
-void inline extend_enc_dec_as_nec(void *lptr, void *hptr) {
+void extend_enc_dec_as_nec(void *lptr, void *hptr) {
     UInteger nibble;
     UInteger lnibble = (UInteger) lptr >> _SHIFT_VALUE;
     UInteger hnibble = (UInteger) hptr >> _SHIFT_VALUE;
@@ -424,7 +424,7 @@ void mem_dealloc(void *addr, size_t size, int category)
       free(addr);
       addr = NULL;
     } else {
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(MULTI_THREAD)
       if (size > 0) xsb_warn("attempt to double-free memory in mem_dealloc (category: %s; size %d) ",pspace_cat[category],size);
 #endif
     }

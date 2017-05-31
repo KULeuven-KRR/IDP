@@ -1,0 +1,52 @@
+This directory contains files used when building Windows 2000/XP GUI 
+installers for XSB using Inno Setup 5.2 (or a later version):
+
+	http://www.jrsoftware.org/isinfo.php
+
+In order to build the installer, perform the following steps:
+
+1. Install (or update if necessary) Inno Setup.
+
+2. Compile XSB, if possible, in 32 bits and 64 bits, single-threaded and
+multi-threaded.
+
+2. Copy the "xsb.iss" file into your Desktop folder and open it (using
+Inno Setup).
+
+3. The "xsb.iss" file assumes that XSB is compiled and available in the
+"C:\XSB" folder. If that's not the case, edit the "xsb.iss" file and
+change the definition of the variable "MyBaseDir" (around line 13) to
+reflect the directory that you're using.
+
+4. Update the XSB release number in the "xsb.iss".
+   Look for the strings "XSBVersion".
+   Also check the XSB copyright information for possible updates.
+
+5. In the Inno Setup Compiler application, run the menu command
+"Build > Compile".
+
+6. Assuming no build errors the generated installer will be found on
+your Desktop inside the "Output" directory (or in Output subdirectory
+of where xsb.iss was run.)
+
+7. Then upload it to xsb.sourceforge.net.  Login and go to "files"
+tab, and then navigate to the desired directory.  And then button
+"add file".
+
+8. Update the downloads page; in XSB/docs/homepage/downloads.html:
+Update to have right filename for windows installer.  Then upload it
+to sf:
+
+In that directory:
+ scp downloads.html dwarren,xsb@web.sourceforge.net:/home/project-web/xsb/htdocs/downloads
+
+Then upload installer: (from C:\Users\warren\Desktop\Output, or admin/windows/Output, if there) 
+First change permissions locally, so copy on SF will have right permissions.
+ chmod 644 xsb-VERSION.exe
+ scp xsb-VERSION.exe dwarren,xsb@web.sourceforge.net:/home/project-web/xsb/htdocs/downloads
+
+If permissions are still wrong on SF, then:
+ ssh -2 -t dwarren,xsb@shell.sf.net create
+ cd /home/project-web/xsb/htdocs
+ chmod 644 xsb-VERSION.exe
+

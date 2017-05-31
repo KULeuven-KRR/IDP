@@ -198,7 +198,7 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_retry_numcon_succ,_trie_retry_numcon_succ) 
 	CPtr tbreg;
 	TRIE_R_LOCK();
-	trie_instr_print(( "trie_retry_numcon_succ"));
+	trie_instr_print(( "trie_retry_numcon_succ\n"));
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
@@ -607,7 +607,7 @@ XSB_Start_Instr(trie_retry_fail,_trie_retry_fail)
 XSB_End_Instr()
 
 /*----------------------------------------------------------------------*/
-/* The following code, that handles hashing in coded tries, has been	*/
+/* The following code, which handles hashing in coded tries, has been	*/
 /* modified for garbage collection.  Choice points for hashes in tries,	*/
 /* besides the usual trie argument registers (see file tr_code.h), also	*/
 /* contain 3 fields with certain information about the hash bucket.	*/
@@ -615,7 +615,7 @@ XSB_End_Instr()
 /* now encoded as such.  The second field contains a malloc-ed address	*/
 /* which is encoded as a STRING (that's how addresses are encoded in	*/
 /* XSB -- see file cell_xsb.h) to prevent garbage collection from       */
-/* treating it as a reference either to a WAM stack or to a CHAT area.	*/
+/* treating it as a reference either to a WAM stack.	                */
 /*----------------------------------------------------------------------*/
 
 /* Structure of the CPF created by hash_opcode:
@@ -722,6 +722,7 @@ XSB_Start_Instr(hash_opcode,_hash_opcode)
 	} 
 XSB_End_Instr()
 
+
 /*
  *  Since this instruction is called immediately after 'hash_opcode' and
  *  is also backtracked to while exploring a bucket chain, a mechanism is
@@ -734,7 +735,7 @@ XSB_Start_Instr(hash_handle,_hash_handle)
     Integer     hash_offset, hashed_hash_offset;
 
     trie_instr_print(("hash_handle\n"));
-    hash_offset = int_val(cell(breg+CP_SIZE));   // This may be number of bucket. */
+    hash_offset = int_val(cell(breg+CP_SIZE));   // number of bucket
     hash_hdr = (BTHTptr) string_val(cell(breg+CP_SIZE+1));
     hash_base = (BTHTptr *) BTHT_BucketArray(hash_hdr);
 if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
@@ -768,7 +769,7 @@ if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
 	    cell(breg + CP_SIZE) = makeint(hashed_hash_offset);  /* Thus backtrack into matching con/sym after backtracking thru vars */
 	  lpcreg = (byte *) *hash_base;
 	}
-      }
+      }  /* end of case FIRST_HASH_NODE */
       else if (hash_offset == hashed_hash_offset) {   /* TLS: probably could opt this "if" away */
 	/* explore hashed-to bucket */
 	lpcreg = (byte *)*(hash_base + hash_offset);
@@ -779,7 +780,7 @@ if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
 		  hash_offset, hashed_hash_offset);
 	xsb_exit( "error_condition in hash_handle\n");
       }
- }
+ } /* end of case HASH_IS_NOT_FREE */
  else {  /* unification of trie with variable term */
    find_next_nonempty_bucket(hash_hdr,hash_base,hash_offset);
    if (hash_offset == NO_MORE_IN_HASH) {
@@ -980,7 +981,10 @@ XSB_End_Instr()
 XSB_Start_Instr(completed_trie_member,_completed_trie_member) 
   Cell listHead, unconditional_flag; int i, ans_sf_length; CPtr this_ret; CPtr ans_sf; CPtr xtemp1;
 
-// printf("\nin completed_trie_member hreg %p hfreg %p\n",hreg,hfreg);  //print_n_registers(stddbg, 6 , 8);printf("\n");
+#ifdef NON_OPT_COMPILE
+  printf("\nin completed_trie_member hreg %p hfreg %p\n",hreg,hfreg);  
+  //print_n_registers(stddbg, 6 , 8);printf("\n");
+#endif
   ans_sf_length = (int)int_val(cell(breg + CP_SIZE));
   //  printf("ans_sf_length %d\n",ans_sf_length);
   listHead = * (breg + CP_SIZE + ans_sf_length+1);

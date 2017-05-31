@@ -1,0 +1,67 @@
+
+    Instructions for Preparing an XSB Release
+    =========================================
+
+NOTE: Instructions for maintenance of the Web site are in
+      docs/homepage/SOURCEFORGE_SITE_MAINTENANCE
+
+NOTE: Autoconf must be installed. 
+      Releases can only be created under a Unix system
+
+1. Windows NT/95/98/2000
+
+       cd build
+       autoconf
+   Windows:
+       ./configure --with-os=windows
+
+   Note: you MUST run configure, or else certain important files
+   (configs.h, configure.P, banner.msg)  won't be created!
+   Windows users cannot run this configure script!
+
+
+   Make whatever is needed to include the XSB documentation.
+
+   Add these directories to the distribution tarball:
+       
+       Windows:
+	   config/x86-pc-windows
+
+
+2. Unix:
+
+   cd build
+   autoconf  (just to make sure that `configure' is up-to-date)
+
+   NOTE: don't run ./configure! Unix users must run it by themselves!
+
+3. ALL:
+
+   Make sure all Prolog files have been compiled:
+
+   cd <top XSB dir>
+   make
+
+
+4. ALL:
+
+   Make whatever is needed to include the XSB documentation.
+
+   Tar up these directories (in addition to those indicated above):
+
+       emu
+       etc
+       lib
+       syslib
+       cmplib
+       packages
+       examples
+       build  	      (not necessary for Windows)
+
+   Add these top level files to the distribution tarball:
+
+       FAQ
+       INSTALL*
+       LICENSE
+       README
+

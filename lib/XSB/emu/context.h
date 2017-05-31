@@ -130,6 +130,7 @@ typedef struct Message_Queue_Cell {
 #include "odbc_def_xsb.h"
 #include "findall.h"
 #include "struct_manager.h"
+#include "xsb_config.h"
 
 //BELOW INCLUDES ARE FOR SQL Interfaces
 #ifdef CYGWIN
@@ -148,20 +149,20 @@ typedef struct Message_Queue_Cell {
 /************************************************************************/
 struct th_context
 {
-/* System & user Flags */
+  /* System & user Flags */
 
   int _call_intercept ;
 
-/* The SLG-WAM data regions
-   ------------------------ */
+  /* The SLG-WAM data regions
+     ------------------------ */
 
   System_Stack	_pdl,           /* PDL                   */
     _glstack,	/* Global + Local Stacks */
     _tcpstack,	/* Trail + CP Stack      */
     _complstack;	/* Completion Stack  */
 
-/* Argument Registers
-   ------------------ */
+  /* Argument Registers
+     ------------------ */
   Cell _reg[MAX_REGS];
 
 
@@ -257,25 +258,25 @@ struct th_context
   int	_AnsVarCtr;
   CPtr	_ans_var_pos_reg;
 
-/* Flag used in the locking of called tries */
+  /* Flag used in the locking of called tries */
   int	trie_locked;
 
   IGRptr _IGRhead;
 
   /* Variables for subsumptive and TST tries.  */
-struct VariantContinuation *_variant_cont;
-struct tstCCPStack_t *_tstCCPStack;
-struct tstCPStack_t *_tstCPStack;
-CPtr *_trail_base;
-CPtr *_orig_trreg;
-CPtr _orig_hreg;
-CPtr _orig_hbreg;
-CPtr _orig_ebreg;
+  struct VariantContinuation *_variant_cont;
+  struct tstCCPStack_t *_tstCCPStack;
+  struct tstCPStack_t *_tstCPStack;
+  CPtr *_trail_base;
+  CPtr *_orig_trreg;
+  CPtr _orig_hreg;
+  CPtr _orig_hbreg;
+  CPtr _orig_ebreg;
 
-DynamicStack  _tstTermStack;
-DynamicStack  _tstTermStackLog;
-DynamicStack  _tstSymbolStack;
-DynamicStack  _tstTrail;
+  DynamicStack  _tstTermStack;
+  DynamicStack  _tstTermStackLog;
+  DynamicStack  _tstSymbolStack;
+  DynamicStack  _tstTrail;
 
   /* Error checking for TST unification */
   BTNptr _gAnsLeaf;
@@ -296,23 +297,24 @@ DynamicStack  _tstTrail;
   Integer _simplify_neg_fails_stack_top;
   int _in_simplify_neg_fails;
 
+  /************ Table Abolishing ************/
+  int _done_tif_stack_top;
+  TIFptr * _done_tif_stack;
+  int _done_tif_stack_size;
+
   /* Variables for table traversal for abolishing tables */
   int _trans_abol_answer_stack_top;
   BTNptr * _trans_abol_answer_stack;
   int _trans_abol_answer_stack_size;
 
-int      _trans_abol_answer_array_top;
-BTNptr * _trans_abol_answer_array;
-int      _trans_abol_answer_array_size;
+  int      _trans_abol_answer_array_top;
+  BTNptr * _trans_abol_answer_array;
+  int      _trans_abol_answer_array_size;
 
   int _ta_done_subgoal_stack_top;
   VariantSF * _ta_done_subgoal_stack;
   int _ta_done_subgoal_stack_size;
   //  int _ta_done_subgoal_stack_current_pos;
-
-  int _done_tif_stack_top;
-  TIFptr * _done_tif_stack;
-  int _done_tif_stack_size;
 
   /********* Variables for array of interned tries *********/
   int _itrie_array_first_free;
@@ -324,30 +326,30 @@ int      _trans_abol_answer_array_size;
   xsbHashTable _bt_storage_hash_table;
 
   /********** variables for findall buffers **********/
-findall_solution_list *_findall_solutions;  /*= NULL;*/
-findall_solution_list *_current_findall;
-int 	_nextfree ; /* nextfree index in findall array */
-CPtr 	_gl_bot, _gl_top ;
-f_tr_chunk *_cur_tr_chunk ;
-CPtr 	*_cur_tr_top ;
-CPtr 	*_cur_tr_limit ;
+  findall_solution_list *_findall_solutions;  /*= NULL;*/
+  findall_solution_list *_current_findall;
+  int 	_nextfree ; /* nextfree index in findall array */
+  CPtr 	_gl_bot, _gl_top ;
+  f_tr_chunk *_cur_tr_chunk ;
+  CPtr 	*_cur_tr_top ;
+  CPtr 	*_cur_tr_limit ;
 
-VarString **_LSBuff; /* 30 buffers for making longstring in ctop_longstring */
+  VarString **_LSBuff; /* 30 buffers for making longstring in ctop_longstring */
 
   /********** Global thread-specific charstring buffers for local use
 	      within io-builtins **********/
 
-VarString *_last_answer;  /* for c-calling-xsb interface */
-VarString *_tsgLBuff1;
-VarString *_tsgLBuff2;
-VarString *_tsgSBuff1;
-VarString *_tsgSBuff2;
-/* read_canonical stacks */
-int _opstk_size;
-int _funstk_size;
-struct funstktype *_funstk;
-struct opstktype *_opstk;
-struct vartype *_rc_vars;
+  VarString *_last_answer;  /* for c-calling-xsb interface */
+  VarString *_tsgLBuff1;
+  VarString *_tsgLBuff2;
+  VarString *_tsgSBuff1;
+  VarString *_tsgSBuff2;
+  /* read_canonical stacks */
+  int _opstk_size;
+  int _funstk_size;
+  struct funstktype *_funstk;
+  struct opstktype *_opstk;
+  struct vartype *_rc_vars;
 
   forestLogBuffer _forest_log_buffer_1;
   forestLogBuffer _forest_log_buffer_2;
@@ -358,34 +360,35 @@ struct vartype *_rc_vars;
   forest_log_buffer_struct _fl_buffer_3;
 
   /********** Global variables for tokenizing **********/
-struct xsb_token_t *_token;
-int     _lastc; // = ' ';    /* previous character */
-byte*   _strbuff; // = NULL;  /* Pointer to token buffer; Will be allocated on first call to GetToken */
-int     _strbuff_len; // = InitStrLen;  /* first allocation size, doubled on subsequent overflows */
-double  _double_v;
-Integer	_rad_int;
-int _token_too_long_warning;
+  struct xsb_token_t *_token;
+  int     _lastc; // = ' ';    /* previous character */
+  byte*   _strbuff; // = NULL;  /* Pointer to token buffer; Will be allocated on first call to GetToken */
+  int     _strbuff_len; // = InitStrLen;  /* first allocation size, doubled on subsequent overflows */
+  double  _double_v;
+  Integer	_rad_int;
+  int _token_too_long_warning;
 
-struct sort_par_spec _par_spec;		/* spec for par_sort */
+  struct sort_par_spec _par_spec;		/* spec for par_sort */
 
   /********** Global variables for assert / retract **********/
   /* used for C-level longjumps in assert */
-jmp_buf _assertcmp_env;
+  jmp_buf _assertcmp_env;
 
-ClRef _retracted_buffer[MAX_RETRACTED_CLAUSES+1];
-ClRef *_OldestCl;
-ClRef *_NewestCl;
-struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
-int    _i_have_dyn_mutex;	/* This thread has dynamic mutex, for asserted code read */
+  ClRef _retracted_buffer[MAX_RETRACTED_CLAUSES+1];
+  ClRef *_OldestCl;
+  ClRef *_NewestCl;
+  struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
+  int    _i_have_dyn_mutex;	/* This thread has dynamic mutex, for asserted code read */
+  
+  struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
 
-struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
+  /*********** private structure managers ***********/
 
   /* Pointers to common structure managers (table vs. assert) */
   struct Structure_Manager *_smBTN;
   struct Structure_Manager *_smBTHT;
 
-  /* private structure managers */
-  /* for tables */
+  /* Tables */
   Structure_Manager *_private_smTableBTN;
   Structure_Manager *_private_smTableBTHT;
   Structure_Manager *_private_smAssertBTN;
@@ -400,10 +403,17 @@ struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num 
   Structure_Manager *_private_smALN;
   Structure_Manager *_private_smASI;
 
-  /* for dynamic code */
   Structure_Manager *_private_smDelCF;
 
+  Structure_Manager *  _private_smCallNode;
+  Structure_Manager *  _private_smCallList;
+  Structure_Manager *  _private_smCall2List;
+  Structure_Manager *  _private_smOutEdge;
+  Structure_Manager *  _private_smKey;
+
   int    _threads_current_sm;
+
+  /* SMs for dynamic code */
 
   char *_private_current_de_block;
   char *_private_current_dl_block;
@@ -477,11 +487,11 @@ ThreadDepList TDL ;
 pthread_cond_t cond_var ;
 #endif
 
+/* Heap realloc and garbage collection stuff */
+
 int _num_gc;
 double _total_time_gc;
 UInteger _total_collected;
-
-/* Heap realloc and garbage collection stuff */
 
 CPtr	_heap_bot;
 CPtr	_heap_top;
@@ -516,6 +526,22 @@ unsigned int	to_be_cancelled :  1 ;
 
 /* allowing blocked threads to be wake up by signals */
 pthread_cond_t * cond_var_ptr ;
+
+  /* Incremental tabling */
+calllistptr _assumption_list_gl; 
+callnodeptr _old_call_gl;              // used to compare new to previous tables.
+BTNptr      _old_answer_table_gl;      // is this needed?  Can we use the root ptr from SF?
+calllistptr _lazy_affected;
+int         _incr_table_update_safe_gl;
+int         _unchanged_call_gl;
+int         _incr_table_recomputations_gl;
+int         _incr_dynamic_calls_gl;
+int         _current_call_edge_count_gl;
+int         _current_call_node_count_gl;
+int         _total_call_node_count_gl;  
+Cell        _incr_heap_cell_array[500];
+struct hashtable * _incr_hashtable_chain;
+
 } ;
 
 typedef struct th_context th_context ;
@@ -720,6 +746,18 @@ typedef struct th_context th_context ;
 
 #define private_smDelCF        (th -> _private_smDelCF)
 
+#define private_smCallNode     (th -> _private_smCallNode)
+#define private_smCallList     (th -> _private_smCallList)
+#define private_smCall2List    (th -> _private_smCall2List)
+#define private_smOutEdge      (th -> _private_smOutEdge)
+#define private_smKey          (th -> _private_smKey)
+
+#define smCallNode     (*private_smCallNode)
+#define smCallList     (*private_smCallList)
+#define smCall2List    (*private_smCall2List)
+#define smOutEdge      (*private_smOutEdge)
+#define smKey          (*private_smKey)
+
 #define subsumptive_smALN       (*private_smALN)
 #define subsumptive_smBTN       (*private_smTableBTN)
 #define subsumptive_smBTHT      (*private_smTableBTHT)
@@ -829,6 +867,20 @@ typedef struct th_context th_context ;
 #define gc_scan			(th->_gc_scan)
 #define gc_next			(th->_gc_next)
 
+// Incremental tabling
+#define assumption_list_gl            (th->_assumption_list_gl)
+#define old_call_gl                   (th->_old_call_gl)
+#define old_answer_table_gl           (th->_old_answer_table_gl)
+#define lazy_affected                 (th->_lazy_affected)
+#define incr_table_update_safe_gl     (th->_incr_table_update_safe_gl)
+#define unchanged_call_gl             (th->_unchanged_call_gl)
+#define current_call_node_count_gl    (th-> _current_call_node_count_gl)
+#define current_call_edge_count_gl    (th-> _current_call_edge_count_gl)
+#define incr_table_recomputations_gl  (th->  _incr_table_recomputations_gl)
+#define incr_dynamic_calls_gl         (th->  _incr_dynamic_calls_gl)
+#define total_call_node_count_gl      (th-> _total_call_node_count_gl) 
+#define incr_heap_cell_array          (th-> _incr_heap_cell_array)
+#define incr_hashtable_chain          (th-> _incr_hashtable_chain)
 
 #define CTXT			th
 #define CTXTc			th ,
@@ -839,7 +891,7 @@ typedef struct th_context th_context ;
 #define CTXTdecltype		th_context *
 #define CTXTdecltypec		th_context *,
 
-#else
+#else  // not multi-thread
 
 #define CTXT
 #define CTXTc

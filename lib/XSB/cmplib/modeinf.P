@@ -47,7 +47,7 @@ modeanalyze(_ModName, _Module, _DeclFile) :-
 modeanalyze(ModName, Module, DeclFile) :-
         message(('[Analyzing ', ModName, ']')), cputime(StartTime),
 	init_for_analysis,
-	Module = module(SymTab, _DcList, ClList, _QrList),
+	Module = module(SymTab, _DcList, ClList, _QrList, _Par),
 	get_init_calls(SymTab),
 	gen_abstract_pgm(ClList, SymTab),
 	list_abstract_pgm(ModName),

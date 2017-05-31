@@ -2676,6 +2676,26 @@ static int really_delete_clause(CTXTdeclc ClRef);
    delcf frame.
 */
 
+int count_dynamic(int *clause_count, int *pred_count) {
+  DelCFptr delcf_ptr = delcf_chain_begin;
+  *clause_count = 0; *pred_count = 0;
+  //  printf("delcf %p\n",delcf_ptr);
+  while (delcf_ptr) {
+    if (DCF_Type(delcf_ptr) == DELETED_PRREF) {
+      (*pred_count)++;
+    } 
+    else {
+      if (DTF_Type(delcf_ptr) == DELETED_CLREF) {
+	//	printf("deleted clref\n");
+	(*clause_count)++;
+      } else 
+	printf("Unknown DTF type %d\n",DTF_Type(delcf_ptr));
+    }
+    delcf_ptr = DCF_NextDCF(delcf_ptr);
+  }
+  return 0;
+}
+
 int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin,Structure_Manager *SM) { 
   DelCFptr next_delcf_ptr, delcf_ptr = *chain_begin; 
   int dcf_cnt = 0;
@@ -3319,6 +3339,7 @@ static inline void allocate_prref_tab_and_tif(CTXTdeclc Psc psc, PrRef *prref, p
       }
       Loc = 0 ;
       if (!get_nonincremental(psc)) { /* incremental evaluation */
+      //      if (get_incr(psc) && get_tabled(psc)) { /* incremental evaluation */
 	//       	printf("%s is incr prref: %p\n",get_name(psc),*prref);
 	dbgen_inst_ppvww(tabletrysinglenoanswers,get_arity(psc),*prref,tip,tp,&Loc);
       } else {
@@ -3344,12 +3365,12 @@ PrRef build_prref( CTXTdeclc Psc psc )
   struct DispBlk_t *dispblk;
 #endif
 
-  set_type(psc, T_DYNA);
-  set_env(psc, T_VISIBLE);
+  psc_set_type(psc, T_DYNA);
+  psc_set_env(psc, T_VISIBLE);
 
   /* set data to point to usermod -- lfcastro */
   if (get_data(psc) == NULL) 
-    set_data(psc,global_mod);
+    psc_set_data(psc,global_mod);
     
 #ifdef MULTI_THREAD
   dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
@@ -3387,7 +3408,7 @@ PrRef build_prref( CTXTdeclc Psc psc )
       dispblk->MaxThread = max_threads_glc;
       *disp_instr_addr = switchonthread;
       *(((CPtr *)disp_instr_addr)+1) = (CPtr)dispblk;
-      set_ep(psc,disp_instr_addr);
+      psc_set_ep(psc,disp_instr_addr);
     } else {
       /* add to dispblock if room, extending if nec */
       dispblk = (struct DispBlk_t *)*((CPtr)get_ep(psc)+1);
@@ -3395,9 +3416,9 @@ PrRef build_prref( CTXTdeclc Psc psc )
     if (dispblk->MaxThread >= xsb_thread_entry) {
       (&(dispblk->Thread0))[xsb_thread_entry] = (CPtr)new_ep;
     } else xsb_exit( "must expand dispatch-block");
-  } else set_ep(psc,new_ep);
+  } else psc_set_ep(psc,new_ep);
 #else
-  set_ep(psc,new_ep);
+  psc_set_ep(psc,new_ep);
 #endif /* MULTI_THREAD */
   return p;
 }
@@ -3752,8 +3773,8 @@ void db_remove_prref_1( CTXTdeclc Psc psc )
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
   if (get_ep(psc) != ((byte *)(&(psc->load_inst)))) {
     free_prref(CTXTc (CPtr *)get_ep(psc),psc);
-    set_type(psc, T_ORDI);
-    set_ep(psc, ((byte *)(&(psc->load_inst))));
+    psc_set_type(psc, T_ORDI);
+    psc_set_ep(psc, ((byte *)(&(psc->load_inst))));
     cell_opcode(&(psc->load_inst)) = load_pred;
     psc->this_psc = psc;
   }
@@ -3966,19 +3987,19 @@ xsbBool dynamic_code_function( CTXTdecl )
   }
 
   case LOCK_TRIE_MUTEX: {
-    int index, type, tid;
+    int index,tid;
 
     tid = iso_ptoc_int(CTXTc 2, "lock_trie_mutex/1");
-    SPLIT_TRIE_ID(tid,index,type);
+    GET_TRIE_INDEX(tid,index);
     pthread_mutex_lock(&(shared_itrie_array[index].trie_mutex));
     break;
   }
 
   case UNLOCK_TRIE_MUTEX: {
-    int index, type, tid;
+    int index, tid;
 
     tid = iso_ptoc_int(CTXTc 2, "unlock_trie_mutex/1");
-    SPLIT_TRIE_ID(tid,index,type);
+    GET_TRIE_INDEX(tid,index);
     pthread_mutex_unlock(&(shared_itrie_array[index].trie_mutex));
     break;
   }

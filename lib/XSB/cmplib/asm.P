@@ -61,30 +61,39 @@
 /*======================================================================*/
 
 /*======================================================================*/
-/*  asm_genheader(+OStr, +ModName, +SymTab, +IsModule).			*/
+/*  asm_genheader(+OStr, +ModName, +ModPars, +SymTab, +IsModule).	*/
 /*	Generates the header and data segment of the byte code file	*/
 /*	(OFile).  When IsModule is 0, the module is assumed to be	*/
 /*	global (No distiction again!).					*/
 /*======================================================================*/
 
-asm_genheader(OStr, ModName, SymTab, IsModule) :-
-	asm_genheader0(OStr, ModName, SymTab, IsModule), 
+asm_genheader(OStr, ModName, ModPars, SymTab, IsModule) :-
+	asm_genheader0(OStr, ModName, ModPars, SymTab, IsModule), 
 	fail.	% reclaim space (remove all choice points left) and undo
 		% the binding of the tail of the hash table part of the
 		% symbol table (caused by the sorting of the symbols).
-asm_genheader(_OStr, _ModName, _SymTab, _IsModule).
+asm_genheader(_OStr, _ModName, _ModPars, _SymTab, _IsModule).
 
-:- import warning/1 from standard.
-:- import conget/2 from gensym.
-asm_genheader0(OStr, ModName, SymTab, IsModule) :-
+asm_genheader0(OStr, ModName, ModPars, SymTab, IsModule) :-
 	(conget(immutable,1) -> 
 	   (IsModule =:= 0 -> 
 	      warning('Cannot make predicates in usermod mutable.  File: '(ModName)),
 	      asm_magic(OStr,7)
 	    ; asm_magic(OStr,10))
 	 ; asm_magic(OStr,7)),	/* use magic number 17-18-19-X */
-	( IsModule =:= 0 -> file_put(OStr,0)
-	; str_len(ModName, L), file_put(OStr,L), write(OStr,ModName)
+	%%standard:writeln(userout,genheader_for(ModName,ModPars)),
+	(IsModule =:= 0
+	 ->	file_put(OStr,0)
+	 ;	(ModPars == []
+		 ->	str_len(ModName,L),
+			file_put(OStr,L),
+			write(OStr,ModName)
+		 ;	PModStr =.. [ModName|ModPars],
+			term_to_atom(PModStr,PModName,[quoted(true)]),
+			str_len(PModName, L),
+			file_put(OStr,L),
+			write(OStr,PModName)
+		)
 	),
 	sym_count(SymTab, Count),
 	write_int(OStr,Count),

@@ -179,7 +179,7 @@ gen_mode_term(Arity,Term,ModeTerm) :-
 	(Arity =< 0
 	 ->	true
 	 ;	arg(Arity,Term,Arg),
-		(ground_term(Arg)
+		(ground(Arg)
 		 ->	arg(Arity,ModeTerm,b)
 		 ;	arg(Arity,ModeTerm,f)
 		),

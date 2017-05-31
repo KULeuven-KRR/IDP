@@ -1,0 +1,234 @@
+\subsection{Tabling Aggregate Predicates}\label{tabling_aggregate_predicates}
+%-------------------------------------------------------------------------
+\index{aggregate predicates!tabling} \index{tabling!aggregate predicates}
+%-------------------------------------------------------------------------
+
+HiLog provides an elegant way to introduce aggregate operations into
+XSB.  HiLog allows a user to define named (and parameterized) sets (or
+bags).  For example, say we have a simple database-like predicate,
+\verb|employee(Name,Dept,Sal)|, which contains a tuple for each
+employee in our concern and contains the employee's name, department,
+and salary.  From this predicate we can construct a set, or bag
+really, that contains all the salaries of employees in the relation:
+\begin{verbatim}
+    :- hilog salaries.
+    salaries(Sal) :- employee(_Name,_Dept,Sal).
+\end{verbatim}
+So \verb|salaries| is the name of a unary predicate that is true of
+all salaries, or rather is the name of a {\em bag} of all salaries.
+It is a bag since it may contain the same salary multiple times.
+XSB provides a predicate \verb|bagSum| which can be used to
+sum up the elements in a named bag.  So given the definition of the
+HiLog predicate \verb|salaries/1| above, we can get the sum of all the
+salaries with:
+\begin{verbatim}
+    :- bagSum(salaries,TotalSals).
+\end{verbatim}
+The first argument to \verb|bagSum| is the name of a bag, and the
+second is bound to the sum of the elements in the bag.
+
+We can also do a ``group by'' to get total salaries within departments
+as follows.  We define a parameterized predicate, \verb|sals(Dept)|,
+to be the bag of salaries of employees in department \verb|Dept|, as
+follows:
+\begin{verbatim}
+    sals(Dept)(Sal) :- employee(_Name,Dept,Sal).
+\end{verbatim}
+This rule says that \verb|Sal| is in the bag named \verb|sals(Dept)|
+if there is an employee with some name who works in department
+\verb|Dept| and has salary \verb|Sal|.
+
+Now with this definition, we can define a predicate,
+\verb|deptPayroll/2|, that associates with each department the sum of
+all the salaries of employees in that department:
+\begin{verbatim}
+    deptPayroll(Dept,Payroll) :- bagSum(sals(Dept),Payroll).
+\end{verbatim}
+
+XSB provides analogous aggregate operators, described below, to
+compute the minimum, maximum, count, and average, of a bag,
+respectively.  These predicates are all defined using a more basic
+predicate \verb|bagReduce/4|.
+
+\begin{description}
+
+\ourrepeatstandarditem{bagReduce(?SetPred,?Arg,+Op,+Id)}{bagReduce/4}{HiLog,Tabling}
+\ourstandarditem{filterReduce(?SetPred,?Arg,+Op,+Id)}{filterReduce/4}{Tabling}
+%
+{\tt SetPred} must be a HiLog set specification, i.e., a unary HiLog
+predicate.  {\tt Op} must be a Hilog operation, i.e., a 3-ary HiLog
+predicate that defines an associative operator.  The predicate must
+define a binary function in which the first two arguments determine
+the third.  {\tt Id} must be the identity of the operator.  {\tt
+bagReduce} returns with {\tt Arg} bound to the ``reduce'' of the
+elements of the bag determined by {\tt SetPred} under the operation
+{\tt Op}.  I.e., {\tt Arg} becomes the result of applying the operator
+to all the elements in the bag that unify with {\tt SetPred}.  See the
+{\tt bagSum} operator below to see an example of {\tt bagReduce}'s
+use.
+
+{\tt filterReduce/4} acts as {\tt bagReduce/4} with two differences.
+First, it does not depend on HiLog, so that {\tt filterReduce/4} will
+be more robust especially when XSB's module system is used.  In
+addition, {\tt filterReduce/4} aggregates solutions to {\tt Pred}
+using a variance rather than unification.  An example of the use of
+{\tt filterReduce/4} is given in Chapter \ref{chap:TablingOverview}.
+
+\ourrepeatstandarditem{bagPO(?SetPred,?Arg,+Order)}{bagPO/3}{HiLog,Tabling}
+\ourstandarditem{filterPO(?SetPred,?Arg,+Order)}{filterPO/3}{Tabling}
+%
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt Order} must be a binary Hilog relation that
+    defines a partial order.  {\tt bagPO} returns nondeterministically
+    with {\tt Arg} bound to the maximal elements, under {\tt Order}, of
+    the bag {\tt SetPred}.  {\tt bagPO/3} can be used with {\tt Order}
+    being subsumption to reduce a set of answers and keep only the most
+    general answers.
+
+    See the {\tt bagMax} operator below to see an example of {\tt
+    bagPO}'s use.
+
+{\tt filterPO/3} acts as {\tt bagPO/3} with the single difference that
+it does not depend on HiLog, so that {\tt filterPO/3} will be more
+robust especially when XSB's module system is used.
+
+\ourstandarditem{filterPO(\#Pred,+Order)}{filterPO/2}{Tabling} 
+%
+{\tt filterPO(\#Pred,+Order)} succeds only for a solution $Pred\theta$
+of {\tt Pred} for which there is no solution $Pred\eta$ to {\tt Pred}
+such that {\tt Order($Pred\eta$,$Pred\theta$)}.
+
+Example:
+
+For the following program
+     \begin{center}
+     {\tt
+     \begin{tabular}{l}
+          :- table p/2.	\\
+          b(1,2).       \\
+          p(1,3).       \\
+          b(1,1).       \\
+\\
+	  prefer(b(X,X),b(X,Y)):- X \== Y. 
+     \end{tabular}
+     }
+     \end{center}
+the query 
+\begin{center}
+{\tt ?- filterPO(b(X,Y)}
+\end{center}
+will succeed only with the binding {\em X = 1,Y = 1}.
+
+\ourstandarditem{bagMax(?SetPred,?Arg)}{bagMax/2}{HiLog,Tabling}
+%
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagMax} returns with {\tt Arg} bound to the
+    maximum element (under the Prolog term ordering) of the set {\tt
+    SetPred}.  To use this predicate, it must be imported from aggregs,
+    and you must give the following definitions in the main module {\tt
+    usermod}:
+\begin{verbatim}
+:- hilog maximum.
+maximum(X,Y,Z) :- X @< Y -> Z=Y ; Z=X.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagMax/2} can be (and
+    is) defined as follows:
+\begin{verbatim}
+bagMax(Call,Var) :- bagReduce(Call,Var,maximum,_).
+\end{verbatim}
+    (Where variables are minimal in the term ordering.)
+
+Another possible definition of {\tt bagMax/2} would be:
+\begin{verbatim}
+:- hilog lt.
+lt(X,Y) :- X @< Y.
+
+bagMax(Call,Var) :- bagPO(Call,Var,lt).
+\end{verbatim}
+This definition would work, but it is slightly less efficient than the
+previous definition since it is known that {\tt bagMax} is
+deterministic.
+
+\ourstandarditem{bagMin(?SetPred,?Arg)}{bagMin/2}{HiLog,Tabling}
+%
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagMin} returns with {\tt Arg} bound to the
+    minimum element (under the Prolog term ordering) of the set {\tt
+    SetPred}.  To use this predicate, it must be imported from aggregs,
+    and you must give the following definitions in the main module {\tt
+    usermod}:
+\begin{verbatim}
+:- hilog minimum.  
+minimum(X,Y,Z) :- X @< Y -> Z=X ; Z=Y.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagMin/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagMin(Call,Var) :- bagReduce(Call,Var,minimum,zz(zz)).
+\end{verbatim}
+    (where structures are the largest elements in the term ordering.)
+
+\ourstandarditem{bagSum(?SetPred,?Arg)}{bagSum/2}{HiLog,Tabling}
+%
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagSum} returns with {\tt Arg} bound to the sum
+    of the elements of the set {\tt SetPred}.  To use this predicate, it
+    must be imported from aggregs, and you must give the following
+    definitions in the main module {\tt usermod}:
+\begin{verbatim}
+:- hilog sum.
+sum(X,Y,Z) :- Z is X+Y.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagSum/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagSum(Call,Var) :- bagReduce(Call,Var,sum,0).
+\end{verbatim}
+
+\ourstandarditem{bagCount(?SetPred,?Arg)}{bagCount/2}{HiLog,Tabling}
+%
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagCount} returns with {\tt Arg} bound to the
+    count (i.e., number) of elements of the set {\tt SetPred}.  To use
+    this predicate, it must be imported from aggregs, and you must give
+    the following definitions in the main module {\tt usermod}:
+\begin{verbatim}
+:- hilog successor.
+successor(X,_Y,Z) :- Z is X+1.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagCount/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagCount(Call,Var) :- bagReduce(Call,Var,successor,0).
+\end{verbatim}
+
+\ourstandarditem{bagAvg(?SetPred,?Arg)}{bagAvg/2}{HiLog,Tabling}
+%
+    {\tt SetPred} must be a HiLog set specification, i.e., a unary
+    HiLog predicate.  {\tt bagAvg} returns with {\tt Arg} bound to the
+    average (i.e., mean) of elements of the set {\tt SetPred}.  To use
+    this predicate, it must be imported from aggregs, and you must give
+    the following definitions in the main module {\tt usermod}:
+\begin{verbatim}
+:- hilog sumcount.
+sumcount([S|C],X,[S1|C1]) :- S1 is S+X, C1 is C+1.
+\end{verbatim}
+    (These decarations are necessary because of a current limitation in
+    how HiLog predicates can be used.  This requirement will be lifted in
+    a future release.)  With this definition, {\tt bagAvg/2} can be (and
+    is) defined as:
+\begin{verbatim}
+bagAvg(Call,Avg) :- 
+    bagReduce(Call,[Sum|Count],sumcount,[0|0]),
+    Avg is Sum/Count.
+\end{verbatim}
+
+\end{description}

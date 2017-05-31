@@ -4,8 +4,11 @@
 :- export term/1, int/1, nnegint/1, flt/1, num/1, atm/1, struct/1,
 	 gnd/1, constant/1, operator_specifier/1, list/1, list/2,
 	 sequence/2, sequence_or_list/2, character_code/1, string/1,
-	 predname/1, atm_or_atm_list/1, compat/2, iso/1,
-	 not_further_inst/2, (regtype)/1.
+	 predname/1, atm_or_atm_list/1, compat/2.
+/* these are not defined in this file, so dsw changed to not export.
+   If soneone knows a reason to export them, put them back and let me know:
+	 iso/1,
+	 not_further_inst/2, (regtype)/1. */
 
 :- import call/1, =.. /2, float/1,
 	functor/3, arg/3 from usermod. 

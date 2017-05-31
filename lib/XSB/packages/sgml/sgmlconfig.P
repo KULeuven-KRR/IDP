@@ -2,7 +2,7 @@
 ** Author(s): Rohan Shirwaikar
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 2004
+** Copyright (C) The Research Foundation of SUNY, 2004-2017
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -18,8 +18,6 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id: sgmlconfig.P,v 1.16 2013-05-06 21:10:26 dwarren Exp $
-** 
 */
 
 
@@ -75,6 +73,15 @@
     xsb_configuration(config_dir, ConfigDir),
     xsb_configuration(compiler_flags, CCflags),
     xsb_configuration(config_bindir, ConfigBinDir),
+
+    (xsb_running_under(windows64) -> PkgDlls = bin64
+    ; PkgDlls = bin
+    ),
+    fmt_write_string(WindSgmlDlls,
+		     '%s%scc%s%s%s*.dll', f(SgmlDir,Slash,Slash,PkgDlls,Slash)),
+    fmt_write_string(WindSgmlLibs,
+		     '%s%scc%s%s%s*.lib', f(SgmlDir,Slash,Slash,PkgDlls,Slash)),
+
     fmt_write_string(Module, '%s%scc%s%s', f(SgmlDir,Slash,Slash,Basename)),
     fmt_write_string(LibObjFile,
 		     '%s%s%s%s',
@@ -101,18 +108,23 @@
 	path_sysop(newerthan,ModuleO,ModuleSourceFile),
 	path_sysop(newerthan,ConfigSharedMod,ModuleSourceFile)
     %% module compiled and is current, so just load
-    -> consult(Basename)
-
+    -> [Basename]
+    
     %% If Module isn't compiled or is old --- recompile
     ;
 	'_$_make_sgmlH'(CC, CC_opts),
 	(xsb_running_under(windows) ->
+	    shell(['copy /B /Y ', '"', WindSgmlDlls, '"', ' ', '"', ConfigBinDir, '"']),
+	    shell(['copy /B /Y ', '"', WindSgmlLibs, '"', ' ', '"', ConfigBinDir, '"']),
 	    [Basename],
 	    (path_sysop(exists,Objfile) -> force_rename_file(Objfile, LibObjFile)
 	    ; true
 	    )
 
 	; xsb_running_under(cygwin) ->
+	    shell(['copy /B /Y ', '"', WindSgmlDlls, '"', ' ', '"', ConfigBinDir, '"']),
+	    shell(['copy /B /Y ', '"', WindSgmlLibs, '"', ' ', '"', ConfigBinDir, '"']),
+
 	    str_cat(Module, '.dll', SharedLib),
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	    force_rename_file(SharedLib, ConfigSharedMod),
@@ -132,12 +144,9 @@
 
 	; xsb_running_under(darwin) ->  %% MacOS
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
-	    writeln(finished_consult),
 	    force_rename_file(Objfile, LibObjFile),
-	    writeln(renaming(Objfile,LibObjFile)),
 	    str_cat(Module, '.dylib', SharedLib),
-	    force_rename_file(SharedLib,ConfigSharedMod),
-	    writeln(rename(SharedLib,ConfigSharedMod))
+	    force_rename_file(SharedLib,ConfigSharedMod)
 	; %% Other Unices
 	    consult(Module, [cc(CC), cc_opts(CC_opts)]),
 	    force_rename_file(Objfile, LibObjFile),

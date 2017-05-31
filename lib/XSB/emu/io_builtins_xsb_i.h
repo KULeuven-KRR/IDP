@@ -567,8 +567,8 @@ inline static xsbBool file_function(CTXTdecl)
     XSB_STREAM_UNLOCK(io_port);
 
     if (fptr) {
-      struct stat stat_buff;
-      if (!stat(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
+      struct stat_buff_type stat_buff; // dsw: optional stat64 on 64bit windows (see auxlry.h)
+      if (!stat_function(addr, &stat_buff) && !S_ISDIR(stat_buff.st_mode))
 	/* file exists and isn't a dir */
 	ctop_int(CTXTc 5, 0);
       else {
@@ -1055,6 +1055,24 @@ inline static xsbBool file_function(CTXTdecl)
     } else {
       xsb_type_error(CTXTc "atom",term,"atom_length/2",1);
     }
+    break;
+  }
+
+  case FILE_SET_CHARACTER_SET: {
+    char *charset_str;
+    int charset;
+    charset_str = ptoc_string(CTXTc 3);
+    if (!strcmp(charset_str,"LATIN_1")) charset = LATIN_1;
+    else if (!strcmp(charset_str,"latin_1")) charset = LATIN_1;
+    else if (!strcmp(charset_str,"UTF_8")) charset = UTF_8;
+    else if (!strcmp(charset_str,"utf_8")) charset = UTF_8;
+    else if (!strcmp(charset_str,"CP1252")) charset = CP1252;
+    else if (!strcmp(charset_str,"cp1252")) charset = CP1252;
+    else xsb_abort("[FILE_FUNCTION]: file_set_character set, invalid character set, %s\n",
+		   ptoc_int(CTXTc 3));
+    io_port = (int)ptoc_int(CTXTc 2);
+    //printf("Setting port %d to charset %d\n",io_port,charset);
+    open_files[io_port].charset = charset;
     break;
   }
 

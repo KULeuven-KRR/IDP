@@ -61,7 +61,7 @@
    log_forest/1, log_forest/2,
    morph_dep_graph/3,
    print_incomplete_tables/0,print_incomplete_tables/1,
-print_ls/0, print_tr/0, print_heap/2, print_cp/1, print_regs/0,	print_all_stacks/0, 
+   /*print_ls/0, print_tr/0, print_heap/2, print_cp/1, print_regs/0,	print_all_stacks/0, */
            retract_table/1,          /* abolish/1 */
    sdg_scc_info/2, 
    sk_not/1,
@@ -81,7 +81,6 @@ print_ls/0, print_tr/0, print_heap/2, print_cp/1, print_regs/0,	print_all_stacks
    (use_variant_tabling)/1,
    variant_get_residual/2.
 :- export not_exists(Goal).
-:- export floundered_undefined/0.
 :- export answer_completion/2.
 :- export dump_table_counts/0, table_counts/5.
 :- export print_sdg_info/0,print_sdg_info_modes/0, print_sdg_info_functor/0, print_sdg_info/1, 
@@ -90,13 +89,16 @@ print_ls/0, print_tr/0, print_heap/2, print_cp/1, print_regs/0,	print_all_stacks
 :- export get_residual_sccs/3.
 :- export get_residual_sccs/5.
 
+:- export add_alt_semantics/2.
+:- export truth_value/2.
+
 % Obsolete
 :- export    abolish_table_call/1,       abolish_table_call/2.
 
 /****** Experimental ********/
 :- export find_components/1,
 	find_forward_dependencies/1,
-	%%%find_backward_dependencies/1,
+	%%find_backward_dependencies/1,
 	find_answers/1.
 :- export early_complete_on_nth/2.
 :- export early_complete_on_delta/4.
@@ -117,7 +119,8 @@ print_ls/0, print_tr/0, print_heap/2, print_cp/1, print_regs/0,	print_all_stacks
 	retract/1, retract_nr/1, retractall/1,
 	system_retract_fact/1,
 	t_assert/2,
-	t_assert_2/2
+	t_assert_2/2,
+	dynamic_pred_has_clauses/2
    from assert.
 
 :- import clause/2 from assert.
@@ -146,7 +149,7 @@ print_ls/0, print_tr/0, print_heap/2, print_cp/1, print_regs/0,	print_all_stacks
 
 :- import abolish_table_info/0, delete_attributes/1, 
    ground_and_acyclic/1,
-   psc_set_incr/2, psc_set_tabled/2, psc_tabled/2, psc_type/2,
+   psc_set_incr/2, psc_set_tabled/2, psc_tabled/2, psc_type/2,psc_set_alt_semantics/2,
    table_inspection_function/5, table_inspection_function/7,table_inspection_function/8,table_inspection_function/9,
    term_psc/2, term_new/2, stat_flag/2
    from machine.

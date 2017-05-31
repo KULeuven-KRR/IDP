@@ -307,7 +307,7 @@ Integer ts_array_len = 0;
 prolog_term intern_term(CTXTdeclc prolog_term term) {
   Integer ti = 0;
   Cell arg, newterm, interned_term, orig_term;
-  int subterm_index;
+  unsigned int subterm_index;
 
   XSB_Deref(term);
   if (!(islist(term) || isconstr(term))) {return term;}

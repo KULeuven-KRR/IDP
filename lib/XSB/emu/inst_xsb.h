@@ -328,6 +328,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define switchon3bound	0xb4
 #define switchonthread  0xb5
 
+#define continue_consumer  0xb6
+
 /* Instructions to compile body ors	*/
 
 #define trymeorelse		0xb7

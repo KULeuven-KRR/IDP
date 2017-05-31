@@ -8,6 +8,13 @@
 
 /* This file provides the implementation for the native methods of NativeEngine.java, 
 as well as the XSB Prolog built-in used by InterProlog */
+
+#include "xsb_config.h"
+#if (defined(CYGWIN) && defined(BITS64))
+#include <inttypes.h>
+typedef int64_t __int64;
+#endif
+
 #include <jni.h>
 #include "com_xsb_interprolog_NativeEngine.h"
 #include <stdio.h>

@@ -24,7 +24,7 @@
 */
 
 
-:- export asm_genheader/4, asm_PIL/5, asm_magic/2, force_asm_loaded/0.
+:- export asm_genheader/5, asm_PIL/5, asm_magic/2, force_asm_loaded/0.
 
 :- import insert/2 from listutil.
 :- import asm_opt/5 from asm_opt.
@@ -37,4 +37,8 @@
 :- import asm_gendata/2, asm_genindex/3, asm_gentext/3, asm_putlength/2
      from asmpass2.
 :- import sym_name/3, sym_count/2, sym_propin/2, sort_by_index/2 from symtab.
+:- import warning/1 from standard.
+:- import (=..)/2 from standard.
+:- import conget/2 from gensym.
+:- import term_to_atom/3 from string.
 

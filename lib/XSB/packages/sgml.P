@@ -1,6 +1,6 @@
 :- import bootstrap_package/2 from packaging.
 
-:-import pl_new_sgml_parser/2, 
+:- import pl_new_sgml_parser/2, 
 	pl_sgml_parse/2, 
 	pl_set_sgml_parser/2, 
 	pl_open_dtd/2, 
@@ -12,7 +12,8 @@
 	pl_xml_quote_attribute/2,
 	pl_xml_quote_cdata/2,
 	pl_xml_name/1,
-	pl_finalize_warn/1 from sgml2pl.
+	pl_finalize_warn/1
+   from sgml2pl.
 
 :- import dtd_struct/2 from usermod.
 :- import slash/1 from machine.

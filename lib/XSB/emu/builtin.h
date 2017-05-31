@@ -128,6 +128,7 @@
 #define GET_DATE                 80
 #define STAT_WALLTIME            81
 
+#define PSC_FIND		 97
 #define PSC_INIT_INFO		 98
 #define PSC_GET_SET_ENV_BYTE	 99
 #define PSC_ENV		        100

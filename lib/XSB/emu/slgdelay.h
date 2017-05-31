@@ -1,5 +1,5 @@
 /* File:      slgdelay.h
-** Author(s): Kostis Sagonas, Juliana Freire, Baoqiu Cui
+** Author(s): Kostis Sagonas, Juliana Freire, Baoqiu Cui, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -107,7 +107,7 @@ typedef struct AS_info ASI_Node;
 
 /*--------------------------------------------------------------------*/
 
-/* TLS: delay_elements may have some unnecessary information.
+/* TES: delay_elements may have some unnecessary information.
    Abolishing uses subs_fact, but not subs_fact_leaf, while other
    routines such as get_residual() use subs_fact_leaf, but not
    subs_fact. */
@@ -189,6 +189,25 @@ to functions in slgdelay.c
 */
 
 /*
+ * TES: AS info had been using malloc directly, so I changed it to use
+ * the structure managers that are more common to the rest of the
+ * system, rather than the new_entry/release_entry methods.
+ *
+ * Allocate shared structure is not needed, as shared structures will be
+ * protected by the lock in do_delay_stuff to MUTEX_DELAY
+ */
+
+#define create_asi_info(ST_MAN,ANS, SUBG)			\
+  {								\
+    SM_AllocateStruct(ST_MAN,( asi));				\
+    Child(ANS) = (NODEptr) asi;					\
+    asi_pdes(asi) = NULL;					\
+    asi_subgoal(asi) = SUBG;					\
+    asi_dl_list(asi) = NULL;					\
+    asi_scratchpad(asi) = 0;					\
+  }
+
+/*
  * mark_conditional_answer(ANS, SUBG, NEW_DL) will add a new delay list,
  * NEW_DL, into the list of DLs for answer ANS, which is the answer
  * substitution leaf in answer trie.  If ANS does not have a Delay Info
@@ -197,16 +216,18 @@ to functions in slgdelay.c
  * a pointer to the list of DLs for ANS.
  */
 
-#define mark_conditional_answer(ANS, SUBG, NEW_DL,STRUCT_MGR)		\
-  if (Child(ANS) == NULL || hasALNtag(ANS)) {				\
-    create_asi_info(STRUCT_MGR,ANS, SUBG);				\
+#define mark_conditional_answer(ANS, SUBG, NEW_DL,STRUCT_MGR) {		\
+    ASI	asi;								\
+    if (Child(ANS) == NULL || hasALNtag(ANS)) {				\
+      create_asi_info(STRUCT_MGR,ANS, SUBG);				\
+    }									\
+    else {								\
+      asi = Delay(ANS);							\
   }									\
-  else {								\
-    asi = Delay(ANS);							\
-  }									\
-  dl_next(NEW_DL) = asi_dl_list(asi);					\
-  asi_dl_list(asi) = NEW_DL;						\
-  dl_asl(NEW_DL) = ANS
+    dl_next(NEW_DL) = asi_dl_list(asi);					\
+    asi_dl_list(asi) = NEW_DL;						\
+    dl_asl(NEW_DL) = ANS;						\
+  }
 
 #define unmark_conditional_answer(ANS) /*-- NEEDS CHANGE --*/		\
     Child(ANS) = (NODEptr) ((word) (Child(ANS)) | UNCONDITIONAL_MARK)
@@ -243,7 +264,7 @@ extern xsbBool neg_delay;
  * Procedures used in other parts of the system.
  */
 
-/* TLS: because of include dependencies (context -> tab_structs.h ->
+/* TES: because of include dependencies (context -> tab_structs.h ->
    slgdelay), context.h cannot be included until the code is
    refactored.  Therefore, the CTXT-style declarations cannot yet be
    used. */
@@ -316,7 +337,6 @@ extern DL released_dls_gl;	/* the list of released DLs */
     }								\
     release_entry(PNDE_ITEM, PNDE_FREELIST, pnde_next);		\
   }
-
 
 /*---------------------- end of file slgdelay.h ------------------------*/
 

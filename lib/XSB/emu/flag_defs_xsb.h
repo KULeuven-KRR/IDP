@@ -49,6 +49,8 @@
 #define TABLING_METHOD	13      /* Default method used to evaluate tabled */
 #define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off */
 #define WRITE_ATTRIBUTES 15       /* Action to take when writing an attv     */
+#define SIMPLIFICATION_DONE	 16  /* set when simplification done during completion.*/
+#define ANSWER_COMPLETION      17   /* amp: Incremental Answer Completion switch */   
 
 /* Flags 15-24 are open to use for thread-private flags*/
 
@@ -132,7 +134,7 @@ interrupt flag
 #define PRIVSHAR_DEFAULT          80   /* Default for shared or private predicates */
 #define WARNING_ACTION            81   /* Action to take on warnings: print,silent,exception */
 #define HEAP_GC_MARGIN            82   /* Size of heap overflow margin */
-#define ANSWER_COMPLETION         83   /* amp: Incremental Answer Completion switch */   
+//#define ANSWER_COMPLETION         83   /* amp: Incremental Answer Completion switch */   
 #define MAX_TABLE_SUBGOAL_SIZE    84   /* maximum size for terms in a tabled subgoal */
 #define MAX_TABLE_SUBGOAL_ACTION  85   /* abort/fail/abstract (abstract not yet impld.)*/
 #define MAX_ANSWERS_FOR_SUBGOAL   86
@@ -155,7 +157,7 @@ interrupt flag
 #define EXCEPTION_ACTION         100
 #define CHARACTER_SET            101
 #define ERRORS_WITH_POSITION     102
-#define SIMPLIFICATION_DONE	 103  /* set when simplification done during completion.*/
+//#define SIMPLIFICATION_DONE	 103  /* set when simplification done during completion.*/
 #define MAX_INCOMPLETE_SUBGOALS  104
 #define MAX_INCOMPLETE_SUBGOALS_ACTION  105
 #define MAX_SCC_SUBGOALS                106
@@ -164,6 +166,7 @@ interrupt flag
 #define MAX_TABLE_SUBGOAL_VAR_NUM       109
 #define MAX_TABLE_ANSWER_VAR_NUM        110
 #define MAX_MEMORY_ACTION               111
+#define ALTERNATE_SEMANTICS             112
 
 #define MAX_FLAGS		 120
 
@@ -203,3 +206,9 @@ interrupt flag
 #define XSB_ABSTRACT         4
 #define XSB_BRAT             5
 #define XSB_SUSPEND          6
+
+/* for ALTERNATE_SEMANTICS */
+#define WFS_SEMANTICS        0
+#define GFP_SEMANTICS        1
+#define NAF_CS               2
+#define WEAK_CS              3

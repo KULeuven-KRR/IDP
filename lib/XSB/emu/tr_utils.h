@@ -70,6 +70,9 @@ typedef struct shared_interned_trie_t *ShrTrieTabPtr;
 #define SPLIT_TRIE_ID(TID,IND,TYPE)     {				\
     ((TYPE) = ((TID) & TRIE_ID_TYPE_MASK) >> 20);				\
     ((IND) = ((TID) &TRIE_ID_ID_MASK)); }
+// the following exists to quiet the linux compiler
+#define GET_TRIE_INDEX(TID,IND)     {				\
+    ((IND) = ((TID) &TRIE_ID_ID_MASK)); }
 
 extern VariantSF get_subgoal_frame_for_answer_trie_cp(CTXTdeclc BTNptr,CPtr);
 extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
@@ -132,7 +135,7 @@ extern void delete_delay_trie(CTXTdeclc BTNptr root);
 extern void release_all_tabling_resources(CTXTdecl);
 
 // Perhaps this should be in hashtable.h?
-extern void hashtable1_destroy_all(int);
+extern void hashtable1_destroy_all(CTXTdeclc int);
 
 // from sub_delete.c
 extern void delete_subsumptive_call(CTXTdeclc SubProdSF);

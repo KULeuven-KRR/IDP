@@ -206,3 +206,5 @@ sys_fileappend(Source,Dest,Res)  :-  sys_syscall(SYS_fileappend, Res, Source, De
 sys_create(Name,Res)      :-  sys_syscall(SYS_create, Res, Name, _).
 
 sys_main_memory(Memory_size):- sys_syscall(SYS_main_memory_size,_,Memory_size,_).
+sys_file_readlink(InPath,OutPath,Res) :- sys_syscall(SYS_readlink,Res,InPath,OutPath).
+sys_file_realpath(InPath,OutPath,Res) :- sys_syscall(SYS_realpath,Res,InPath,OutPath).

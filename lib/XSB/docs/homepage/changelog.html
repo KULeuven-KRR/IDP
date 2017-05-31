@@ -1,0 +1,608 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<link type="text/css" rel="stylesheet" href="xsb.css">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+<title>Release Notes</title>
+</head>
+
+<body>
+<div class="xsb-menu">
+<p>
+<a href="index.html" >Home</a>
+<a href="research.html" >Research</a>
+<a href="xsbsystem.html" >XSB System</a>
+<a href="contactus.html" >Contact Us</a>
+</p>
+</div>
+
+<h1>ChangeLog</h1>
+
+<h2> Version 3.7 (Clan MacGregor)</h2> 
+
+<ul>
+<li><b> Enhancements </b></li>
+<ul>
+<li> XSB now supports a novel set of related debugging techniques that
+allow dynamic inspection of a logical derivation.<ul>
+<li> A derivation may be suspended and inspected via its table state,
+its subgoal dependency graph, its incremental dependency graph, and
+its residual dependency graph.  The graph views may also be abstracted
+using homomorphisms.  Each of these views displays aspects of a
+computation that can be useful for different purposes.</li>
+<li> A derivation may be suspended using
+dynamically-modifiable <i>tripwires</i> which are activiated when a
+derivation takes more time or space than expected or allowed. Tripwire
+conditions include derivation time, amount of memory used, size of
+goal, size of answer, number of non-completed tabled calls, and
+recursive component size.  Tripwires are quite general, and can also
+be used to apply abstraction to a subgoal or answer, or simply to
+throw an error.</li>
+<li> During a debugging session a derivation can also be suspended
+via <tt>ctrl-c</tt>, and then inspected in the same manner.</li>
+<li> XSB's handling of break levels has been extended to safely
+support inspection of suspended tabled derivations.</li>
+</ul></li>
+<li> XSB's computation of the well-founded semantics (WFS) now
+automatically performs the answer completion operation, which makes
+XSB's resolution method complete for WFS.  (This is currently
+available in the single-threaded engine only.)</li>
+<li> Answer Subsumption now works correctly and efficiently with
+undefined answers.  (Also, miscellaneous bugs in declarations for
+answer subsumption have been fixed.)  </li>
+<li> There is now better support for 64-bit Cygwin as well as better
+support for XSB's packages under Windows.</li>
+<li> Performance improvements for tabling with call subsumption are
+available using a new <tt>table_index</tt> directive to specify
+alternate indexing of tables.</li>
+<li> XSB's <tt>timed_call/1</tt> is now more powerful and supports a
+mixture of co-routining capabilities.  These capabilities can be
+modified or cancelled during the course of inspecting a suspended
+derivation.</li>
+<li> A new predicate, <tt>crypto_hash/3</tt> encrypts atoms according
+to the <tt>md5</tt> or <tt>ssh1</tt> algorithms.
+</ul>
+
+<li><b> Bug fixes and minor changes </b></li>
+<ul>
+<li>Numerous fixes and enhancements for abstracting tabled subgoals
+and answers as well as for checking their size.  
+<ul><li>Enhancements were also made to tabling routines to handle very
+large subgoal or answer terms.  Term sizes in the tens of thousands
+with many thousands of variables are now supported for
+subgoals, and sizes in the hundred thousands with tens of thousands of
+variables are supported for answers.</li>
+<li>  Such sizes may indicate errors in many applications, so
+these sizes may be restricted via tripwires.</li></ul></li>
+<li> Various fixes for obscure but important errors in heap garbage
+collection, in <tt>get_residual/2</tt>; in repeatedly asserting and
+retracting the same dynamic clauses; and in compiler register
+allocation.  In addition, various memrory problems uncovered by Valgrind were fixed.</li>
+<li> <tt>statistics/0</tt> now displays better consistency for various
+categories of memory usage. For <tt>statistics/2</tt>,
+a <tt>table_ops</tt> key has been added, and <tt>statistics/2</tt> now
+includes an SCC count for the <tt>incomplete_tables</tt> key.</li>
+<li> Various packages have been made more robust.  ODBC now closes
+cursors on abort.  Socket handling has been improved in several ways,
+such as when XSB catches signals.</li>
+<li> Minor improvements to forest logging including stream flushing
+and better designation of incomplete tables closed due to a
+throw.</li>
+<li> Structures for tabled subgoals now require less space.</li> 
+ <li> Handling has been improved for terms of the form functor() by
+system predicates.</li>
+</ul>
+</ul>
+
+
+
+<h2> Version 3.6 (Gazpatcho)</h2> 
+
+<ul>
+<li><b> Enhancements </b></li>
+<ul>
+<li>
+A number of changes have been made to make XSB more ISO-compliant.
+<ul>
+<li> Error balls thrown by XSB are now of the ISO-compliant
+form <tt>error/2</tt> rather than <tt>error/3</tt> as previously.</li>
+<li> The action of <tt>write/1</tt> has been fixed so various
+operators are now displayed in a more ISO-compliant manner.  Reading
+and writing escape characters is also more ISO-compliant now.</li>
+<li> The conditions under which arithmetic errors are thrown and the
+types of errors that are thrown are now much more ISO-compliant.
+Similar changes were made to errors thrown by file handling, 
+I/O-related predicates and other classes of predicates.</li>
+<li>When possible, XSB's table error balls now represent the actual
+goal that caused the error, rather than simply the functor and arity
+of the goal. </li>
+</ul>
+</li>
+<li>
+A number of improvements have been made to incremental tabling, with
+the result that lazy incremental tabling is now the only incremental
+tabling strategy supported in XSB.  Lazy incremental tabling fully
+replaces eager incremental tabling, as the lazy version is both more
+robust and more efficient.  In addition
+<ul>
+<li>A new predicate <tt>abolish_nonincremental_tables/0</tt> safely
+abolishes all non-incremental tables, even when incremental and
+non-incremental tables may depend on one another. </li>
+<li> Other new predicates have been added to allow introspection data
+structures and state related to incremental tabling.
+<tt>incr_is_invalid/1</tt> allows inspection of the state of an
+incremental subgoal, and <tt>incr_invalid_subgoals/1</tt> returns a
+list of incrementally tabled subgoals that are currently invalid.  A
+new option for <tt>statistics/2</tt> returns the number of subgoals
+and dependency edges in the incremental dependency graph.</li>
+</ul>
+</li>
+<li>An addition has been made to forest logging to allow logging to be
+turned off on a per-predicate basis.</li>
+<li>The predicate <tt>copy_term_nat/2</tt> has been added, which acts
+as <tt>copy_term/2</tt> except that it does not copy the attributes of
+variables.  (This predicate acts as a similar predicate in SWI Prolog.)
+</li>
+<li>The library <tt>storage.P</tt> is now based on lazy incremental
+tabling</li>
+</ul>
+<li><b> Bug fixes and minor changes </b></li>
+<ul>
+<li>Numerous bugs were fixed for table abolishes, particularly for the
+following.  Table garbage collection, which sometimes core dumped when
+reclaiming space, has been made more robust.  Transitive table
+abolishes have also been made much more robust.
+</li>
+<li>Numerous obscure bugs were fixed in incremental tabling,
+particularly when incremental tabling is used with table abolishes
+(and when exceptions are thrown over incremental tabling).
+Incremental tabling was also made more efficient in certain
+cases. <tt>abolish_all_tables/0</tt> now properly reclaims all
+incremental tabling data structures.  Table garbage collection also
+now properly reclaims incremental table space.</li>
+<li>The predicate <tt>term_variables/2</tt> is now implemented in C.
+<li>Two new predicates have been
+added, <tt>abolish_table_subgoals/[1,2]</tt>
+and <tt>abolish_table_subgoal/[1,2]</tt>, which differ in whether they
+abolish all tabled subgoals that unify with an input term, or only
+abolish a tabled subgoal that is a variant of the input
+term.  <tt>abolish_table_subgoals/[1,2]</tt> acts in exactly the same
+manner as <tt>abolish_table_call/[1,2]</tt>, but is the preferred
+name.
+</ul>
+</ul>
+
+
+<h2> Version 3.5 (Maotai)</h2> 
+
+<h3> Version 3.5</h3> 
+<ul>
+<li><b> Enhancements </b></li>
+<ul>
+<li> XSB's character-level I/O has been significantly rewritten and
+expanded.  It now supports as encodings UTF-8, CP-1252, and LATIN-1;
+with UTF-8 as the default encoding on UNIX-style systems, and CP-1252
+as the default encoding on Windows systems.  Various ISO predicates
+regarding encodings are also supported such
+as <tt>character_set/1</tt>.  Finally, other character-based I/O
+predicates such as <tt>get_XXX</tt>, <tt>peek_XXX</tt>,
+and <tt>put_XXX</tt> have been thoroughly rewritten and should be both
+ISO-compliant and more efficient.
+<li> XSB now has an alternative means of tabling ground structures
+called "hash-consing" or "interning".  This feature can greatly
+improve performance when tabling is used for structural
+recursion.</li>
+<li> XSB now cleanly compiles under the latest version of Mac OS X
+which uses LLVM's clang compiler.</li>
+<li> XSB's incremental tabling now fully supports view consistency for
+tables that have been updated.  Incremental tabling has also been
+extended to allow abstraction of dynamic predicates in the call graph.
+Finally, a number of bugs in incremental tabling have been fixed.</li>
+<li>XSB's compiler has been extended so that XSB can be used as a
+preprocessor extending GPP</li>
+<li>Various predicates have been added: a platform-independent
+built-in predicate <tt>epoch_seconds/1</tt>,
+and <tt>module_of_term/2.</tt>  XSB's <tt>concat_atom/2</tt>, a
+generalization of the ISO <tt>atom_concat/2</tt> now also can be used
+to split atoms.</li>
+<li>A new library, <tt>prolog_db</tt> supports efficient meta-programming.</li>
+<li> Radial restraint is now available when XSB is embedded into a process.</li>
+</ul>
+<li><b> Bug fixes </b></li>
+<ul>
+<li> XSB now handles file paths that include spaces on Unix.</li>
+<li> Various fixes have made answer subsumption more robust.</li>
+<li> <tt>thread_sleep/1</tt> now accepts seconds as per draft
+standardization proposal.  The <tt>at_exit/1</tt> thread handler has
+been changed so that its success, failure, or error doesn't affect the
+thread exit status. Finally, a bug in handling exceptions resulting from
+thread cancellation using a <tt>throw/1</tt> signal has been fixed.</li>
+<li> Made XSB's use of gpp safe for cyclic <tt>#include</tt> statements.</li>
+<li> Various fixes for Prolog-based conditional compilation.</li>
+<li> Better indexing when loading forest logs.  A new
+option, <i>partial logging</i> is now also supported.</li>
+<li> <tt>format/[2,3]</tt> changed to better handle escaped characters.</li>
+</ul>
+</ul>
+
+<h2> Version 3.4 (Soy mILK)</h2> 
+
+<h3> Version 3.4</h3> 
+<ul>
+<li><b> Enhancements </b></li>
+<ul>
+<li> A new approach to bounded rationality within tabling,
+termed <i>radial restraint</i>, can be used to ensure sound (with
+respect to the well-founded semantics) termination of programs even
+when they contain function symbols and have infinite models.  Radial
+restraint works by abstracting answers that exceed a given depth and
+making the truth value for these answers <i>undefined</i>, and can be
+declared on a per-predicate basis.  </li>
+<li>A new builtin, <tt>u_not/1</tt> assigns the
+truth-value <i>undefined</i> to non-ground negative subgoals, rather
+than throwing an exception.  In various other cases, such as with
+arithmetic computation errors, a goal can optionally be set
+to <i>undefined</i> rather than throwing an exception.
+</li>
+<li> New builtins support better inspection of the state of tables,
+even while these tables are being computed.
+<ul><li>  <tt>get_incr_sccs_with_deps/[2,3]</tt> produces a Prolog
+representation of the dependency graph of incrementally tabled
+subgoals, including strongly connected components information and
+dependencies among these components.  </li>
+<li>A similar predicate, <tt>get_residual_sccs/[3,5]</tt> provides an
+analogous view of atoms of the residual program whose truth value
+is <i>undefined</i> under the well-founded semantics.  In addition,
+the predicate <tt>explain_u_val/2</tt> can be used to explain why an
+atom is undefined: because of negative loops, radial restraint, or
+some other reason.
+</li></li></ul>
+<li>Subgoal abstraction is now supported on a per-predicate basis. </li>
+<li>Added ISO predicate <tt>halt/1</tt></li>
+<li>XSB's ODBC interface now has a predicate to return all available drivers.</li>
+</ul>
+
+<li><b> Bug fixes </b></li>
+<ul>
+<li> A bug was fixed that prevented XSB from properly initializing
+when configured with a long path name under Windows.  XSB also
+requires less space to start up under Windows than it did
+previously.</li>
+<li> Various fixes for bugs that occurred when copying into or out of
+a table either large answers, or answers with a large number of
+variables, or answers with large delay lists.</li>
+<li> Various bugs involving attributed variables were fixed: when
+delaying the evaluation of tabled predicates via the <i>when</i>
+library, and in certain cases where attributed variables occurred in
+dynamic code.  Finally, listing now prints out attributed variables
+correctly. </li>
+<li> Various bugs were fixed that occurred in error handling during
+heavily tabled computations, such as when throwing a "maximum subgoal
+depth exceeded" exception on very large subgoals, or when throwing
+over incomplete incrementally tabled subgoals. Also error handling was
+improved when a term to be interned exceeds a maximal user-defined
+depth.</li>
+<li> Various small bugs were fixed for forest logging. Forest logging
+now can print much larger terms than previously, and prints error
+terms more concisely. </li>
+<li> Several small bugs were fixed for answer subsumption.</li>
+<li> XSB's tracing now uses <tt>writeq/2</tt> for easier copy and paste while
+tracing; also, a bug was .  fixed when consult (<tt>[]/2</tt>) is
+called within XSB's tracing. </li>
+<li> Bugs were fixed in <tt>abolish/1</tt>
+in <tt>atom_chars/2</tt>, <tt>atom_codes/2</tt> and
+in <tt>load_dyn/[1,2]</tt> </li>
+</ul>
+
+
+<h3> Version 3.3.7</h3> 
+<ul>
+<li><b> Enhancements </b></li>
+<ul>
+<li>The incremental tabling subsystem have been improved in various
+ways.  The subsystem now fully supports handling of conditional
+answers (i.e., answers that are undefined in WFS).  Updates of
+incremental tables can now be done lazily whenever a tabled subgoal is
+re-called: an explicit call to a table update routine is no longer
+necessary.  In addition, the XSB API has been restructured to be more
+consistent, and several of the API routines have been moved into
+C.</li>
+
+<li> XSB's profiler now supports detection of calls that do not
+properly use a predicate's indexing.</li>
+
+<li> XSB's forest logging now profiles tabled negation, including
+delaying and simplification.  In addition, several new routines have
+been implemented that provide in-depth analysis of the logs.
+
+<li>A new XSB flag allows information about incomplete tabled subgoals
+and their SCCs to be written to a file upon throwing an exception,
+which can aid in debugging.</li>
+
+<li> Several new built-ins have been added.  
+<ul>
+<li>  <tt>ground_and_acyclic/1</tt> is now available.  
+<li>  <tt>check_variant/1</tt> can efficiently check whether the
+variant of a goal exists in trie-indexed dynamic predicates.
+<li> <tt>find_n/4</tt> acts as <tt>findall/3</tt> but returns only the
+first <i>n</i> solutions to a goal.
+</ul>
+
+<li> XSB's <tt>table_dump</tt> library now distinguishes between
+answers whose truth value is "true" and those whose truth value is
+"undefined".
+
+<li>Error handling routines have been improved, especially when
+printing out cyclic or large terms.</li>
+
+<li>XSB's configuration now supports compilation with cilk.
+</ul>
+
+<li><b> Bug fixes </b></li>
+<ul>
+<li> On Windows, XSB is automatically configured so that Windows
+allocates a larger default call stack, removing a class of
+Windows-specific errors.</li>
+
+<li>
+A number of bugs have been fixed that together make XSB more robust
+for very large and heavily tabled computations.  Among these, XSB
+better manages when an exception is thrown over the point of creation
+of an incomplete table: previously this could cause a core dump under
+certain situations, while now all such situations are detected and
+handled properly.  </li>
+
+<li>XSB handles updates to an incremental table that has active choice
+points without core-dumping, as it sometimes did in previous
+versions.  </li>
+
+<li> <tt>call_cleanup/3</tt> is now properly called when an
+exception is thrown over a goal to be cleaned up, or when early
+completing a tabled subgoal. </li>
+
+<li>Bugs in cyclic term handling that were present on 32-bit Linux are
+now fixed.</li>
+
+<li> Other bug fixes include the following.  There were various fixes
+to small bugs in answer subsumption, particularly relating to
+compilation.  A fix was made to tabled negation when all conditional
+answers to a goal have been removed by simplification.  Handling of
+floats by <tt>number_codes/chars</tt> was improved.  A bug
+in <tt>get_residual</tt> was fixed, which arose when displaying a
+conditional answer with a large number of variables in its delay list.
+Finally, a number of small bugs in handling large (boxed) integers have
+been fixed.</li>
+
+</ul>
+
+
+</ul>
+
+<h3> Version 3.3.6</h3> 
+<ul>
+<li><b>New features</b></li>
+<ul>
+<li> Call Abstraction is now fully implemented for fixed-order
+stratified programs.  The use of call abstraction can ensure
+termination for <i>all</i> programs with finite models.</li>
+
+<li> A new flag <tt>unify_with_occurs_check</tt> can be set so that
+XSB's core engine performs full unification for all resolution
+operations (including tabling).
+
+<li> A new predicate, <tt>timed_call/3</tt>, allows a goal to be
+executed and repeatedly interrupted every <i>n</i> milliseconds with a
+handler.  During a long computation <tt>timed_call/3</tt> can be used
+to repeatedly report on the system state, to dynamically alter
+heuristics, or to enforce resource limits (a more specialized
+predicate, <tt>bounded_call/[3,4]</tt> is also available.)
+</li>
+
+<li> New predicates and evaluable functions have been added to support
+the draft ISO core revision including <tt>^/2</tt>,<tt>div/2</tt>,
+<tt>xor/2</tt>, <tt>acyclic_term/1</tt>
+and <tt>subsumes_term/2</tt>. (XSB already had most, but not all, of
+these predicates and functions under non-ISO names.)</li>
+
+<li> Another new flag can be used to limit XSB's memory consumption to
+a preset amount.  Using an internally set memory limit, rather than
+the system memory limit, can be important when XSB is used with Java
+through InterProlog or is embedded into a C or Java program.
+
+<li> Various other new predicates have been added to
+XSB.  <tt>print_incomplete_tables/[0,1]</tt> can be used to aid
+debugging.  <tt>term_size/2</tt> and <tt>term_size_limit/2</tt>
+efficiently determine the size of a term..  The various forms of
+the <tt>table_dump</tt> predicate now display the number of calls to a
+tabled subgoal along with SCC information for non-completed
+subgoals.</li>
+</ul>
+
+<li><b> Important bug fixes and enhancements </b></li>
+<ul>
+<li> Fixed issue where XSB was not being configured correctly for Linux kernels 3.*
+</li>
+<li> XSB now performs unification of cyclic terms.  In addition, <tt>
+tnot/1</tt>, <tt>sk_not/1</tt>, <tt>
+abolish_table_call/1</tt>, <tt>atom_chars/2</tt>,
+and <tt>atom_codes/2</tt> are now cycle safe.  The
+predicate <tt>ground_or_cyclic/1</tt> provides a cycle-safe groundness
+check.
+</li>
+<li> Improved compilation time for files with very large numbers of
+predicates.  Improved performance times
+for <tt>tnot/1</tt>, <tt>is_<a>cyclic/1</tt>,
+and <tt>subsumes_term/2</tt>.
+</li>
+<li> Added optional depth check for interned tries.  Improved
+robustness of exception handling for depth-checks in tables and tries
+and for memory-overflow exceptions.  Made exception handling for
+several ISO predicates more consistent with ISO specifications.
+
+<li> Profiling is now enabled for 64-bit Windows.
+</ul>
+
+</ul>
+
+<h3> Version 3.3.5</h3> 
+<ul>
+<li> The port of XSB to 64-bit Windows has been hardened so that XSB
+can call external C functions, and its configuration process has been
+improved.
+</li>
+<li> The initial version of a new tracing facility for computations,
+called <i>forest logging</i> is now available for use.
+</li>
+<li> A new predicate, called <tt>table_dump/[1,2,3]</tt> allows easy
+introspection of XSB's tables.  In addition, new builtins 
+<tt>is_cyclic/1</tt> and <tt>term_depth/2</tt> are now available.
+</li> 
+<li> Configuration of the latest version of XSB on the latest version
+of Cygwin is now working again.
+</li>
+<li> Numerous bug fixes and specialized enhancements, the most
+  widespread of which were: Improving the module inferencing used by
+  XSB's compiler; improving XSB's exception handling when large
+  computations use all available memory; improved messages for term
+  depth exceptions; improved compilation times for files/modules with
+  a large number of predicates.
+</li>
+</ul>
+
+<h3> Version 3.3.4</h3> 
+<ul>
+<li> XSB now includes a Java-based installer for Windows 32- and
+64-bits, and for several varieties of Linux.
+</li> 
+<li> XSB now allows a compiler option indicating that the input file is
+canonical, which can improve the speed of compilation of files in
+canonical form by 10-20\%.
+</li> 
+<li> New flags allow users to automatically fail, warn, or throw an
+error whenever trying to add to a table an answer whose depth is above
+a given threshold.  Separate flags are provided for lists and non-lists.
+</li>
+<li> Garbage collection time for abolishing tables is now maintained
+for statistics.</li>
+<li> <tt>load_dyn/[1,2]</tt> can now dynamically load a file into a
+module.</li>
+<li> Several bug fixes, including the following.  An obscure bug in
+handling unsafe variables.  A bug that sometimes occurred when adding
+conditional answers with answers in the head but not in the delay
+lists.  Arrays used in interning an answer or trie term with a very
+large number of variables, are now expanded when necessary. </li>
+<li> Minor changes were made to make errors that have to do with
+tabling show the actual call that generated the error, rather than
+just the predicate.</li>
+</li> 
+
+
+</ul>
+
+<h3> Version 3.3.3</h3> 
+<ul>
+<li>
+XSB is now supported on 64-bit Windows platform, either in 64-bit or
+in 32-bit mode under MSVC compilation.  Similar support has been
+available for Linux and Mac OS X for several years.  During the
+porting process to Windows, several small bugs were fixed for all
+64-bit platforms.
+</li>
+<li>
+A new table inspection
+predicate <tt>variant_get_residual(Call,DelayList)</tt> can be used to
+return (possibly conditional) answers for a table that is a variant
+of <tt>Call</tt>
+</li>
+<li>
+Prolog commons libraries are now included with the distribution.
+</li>
+</ul>
+
+<h3> Version 3.3.2</h3> 
+<ul>
+<li>
+XSB and its packages are now significantly easier to compile on
+Windows using the MSVC compiler.
+</li>
+<li>
+Fix to allow XSB to be compiled on the Mac with very recent changes to
+ Apple's xcode.  These xcode changes broke backwards compatibility!
+</li>
+<li> Fix for recently introduced bug that broke XSB embedability into
+C programs on Linux.  In addition a fix allows XSB to exit cleanly in
+32-bit Linux when tagged address space has been exceeded.
+</li>
+<li>
+<tt> url_encode/2 </tt> and <tt> url_decode/2</tt> are now standard predicates.
+</li>
+<li>A queryable trace log facility is now available do aid debugging.
+<li>
+Minor bug fixes and enhancements: 
+<ul>
+<li>Fixed core dump that arose from poor error handling when
+univ was called using a list whose length was greater
+than <tt>MAX_ARITY.</tt>
+</li>
+<li>
+Simplification stack is now dynamically expandable (this should only
+affect programs that make extremely heavy use of well-founded
+negation).
+</li>
+<li><tt>pretty_print/2</tt> now implemented to pretty print to a stream.</li>
+</li>
+<li>
+XSB now treats <tt>0'\s</tt> as a space to improve compatibility with
+some other Prologs.
+</li>
+<li>
+Patch level added into the Prolog commons flag <tt> version_data</tt>;
+patch date is now a part of the XSB banner.
+</li>
+</ul>
+</ul>
+
+<h3> Version 3.3.1</h3> 
+<ul>
+<li>
+Bug fixes for incremental tabling that arose when explicitly
+ abolishing invalidated incremental tables.  Inclusion of information
+ about incremental tables in statistics when relevant.
+</li>
+</ul>
+
+<h3> Version 3.3.0</h3> 
+<ul>
+<li>
+Bug fixe for incremental tabling when evaluating programs with tabled
+negation.
+</li>
+<li>
+Fix for bug under 32-bit Linuxes when allocating very large chunks of
+memory.
+</li>
+<li>
+Inclusion of number of SCCs of non-completed tabled subgoals into
+XSB's statistics.
+</li>
+<li>
+Fix in proc_files library for loading csv files into Prolog predicates.
+</li>
+<li>
+Fixes for various bugs when using CLP(R) with tabling.  Update of
+CLP(R) package to include newest changes from SWI repository.  Changes
+to CLP(R) package to allow a smaller, and user-defined epsilon.
+</li>
+<li>
+Changes to attribute API to make this XSB's API similar to that of SWI
+and YAP (and perhaps others).  Made term_variables/2 standard as it is
+in other Prologs.
+</li>
+</ul>
+
+
+
+<hr>
+<address>Email: <a href="mailto:xsb-users@lists.sourceforge.net" >xsb-users@lists.sourceforge.net</a></address>
+<!-- hhmts start -->Last modified: $Id: changelog.html,v 1.13 2013-05-02 20:29:45 tswift Exp $ <!-- hhmts end -->
+</body> </html>

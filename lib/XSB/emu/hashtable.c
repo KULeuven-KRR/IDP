@@ -8,11 +8,17 @@
 #include <string.h>
 #include <math.h>
 
+#include "context.h"
 #include "hashtable.h"
 #include "hashtable_private.h"
 
 #include "auxlry.h"
 #include "memory_xsb.h"
+
+#include "struct_manager.h"
+#ifndef MULTI_THREAD
+extern Structure_Manager smKey;
+#endif
 
 //#define HASHTABLE_DEBUG
 #ifdef HASHTABLE_DEBUG
@@ -38,17 +44,19 @@ const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
 const double max_load_factor = 0.65;
 
 /* maintain chain of all hashtables in incr, for use when deleting all tables */
-static struct hashtable *hashtable_chain = NULL;
+#ifndef MULTI_THREAD
+struct hashtable *incr_hashtable_chain = NULL;
+#endif
 
 /*****************************************************************************/
 struct hashtable *
-create_hashtable1(unsigned int minsize,
+create_hashtable1(CTXTdeclc unsigned int minsize,
                  unsigned int (*hashf) (void*),
                  int (*eqf) (void*,void*))
 {
     struct hashtable *h;
     unsigned int pindex, size = primes[0];
-  hashtable_debug(("create_hashtable1 hashtable_chain %p\n",hashtable_chain));
+  hashtable_debug(("create_hashtable1 incr_hashtable_chain %p\n",incr_hashtable_chain));
     /* Check requested hashtable isn't too large */
     if (minsize > (1u << 30)) return NULL;
     /* Enforce size as prime */
@@ -67,10 +75,10 @@ create_hashtable1(unsigned int minsize,
     h->eqfn         = eqf;
     h->loadlimit    = (unsigned int) ceil(size * max_load_factor);
     h->prev         = NULL;
-    h->next         = hashtable_chain;
-    hashtable_chain = h;
+    h->next         = incr_hashtable_chain;
+    incr_hashtable_chain = h;
     if (h->next) (h->next)->prev = h;
-    hashtable_debug(("create_hashtable2 h %p hashtable_chain %p next %p\n",h,hashtable_chain,h->next));
+    hashtable_debug(("create_hashtable2 h %p incr_hashtable_chain %p next %p\n",h,incr_hashtable_chain,h->next));
     return h;
 }
 
@@ -201,7 +209,8 @@ hashtable1_search(struct hashtable *h, void *k)
 
 /*****************************************************************************/
 void * /* returns value associated with key */
-hashtable1_remove(struct hashtable *h, void *k)
+//hashtable1_remove(CTXTdeclc struct hashtable *h, void *k)
+hashtable1_remove(CTXTdeclc struct hashtable *h, void *k)
 {
     /* TODO: consider compacting the table when the load factor drops enough,
      *       or provide a 'compact' method. */
@@ -223,7 +232,10 @@ hashtable1_remove(struct hashtable *h, void *k)
             *pE = e->next;
             h->entrycount--;
             v = e->v;
+	    // for now, this leaves a memory leak in the MT engine.
+	    SM_DeallocateSmallStruct(smKey, e->k);      
             //freekey(e->k);
+	    //	    SM_DeallocateStruct(smCallList,k);      
             mem_dealloc(e,sizeof(struct entry),INCR_TABLE_SPACE);
             return v;
         }
@@ -236,7 +248,7 @@ hashtable1_remove(struct hashtable *h, void *k)
 /*****************************************************************************/
 /* destroy */
 void
-hashtable1_destroy(struct hashtable *h, int free_values)
+hashtable1_destroy(CTXTdeclc struct hashtable *h, int free_values)
 {
     unsigned int i;
     struct entry *e, *f;
@@ -268,7 +280,7 @@ hashtable1_destroy(struct hashtable *h, int free_values)
         }
     }
     hashtable_debug(("here0 prev %p\n",h->prev));
-    if (h->prev != NULL) (h->prev)->next = h->next; else hashtable_chain = h->next;
+    if (h->prev != NULL) (h->prev)->next = h->next; else incr_hashtable_chain = h->next;
     hashtable_debug(("here1 %p\n",(h->next)));
     if (h->next != NULL) (h->next)->prev = h->prev;
     hashtable_debug(("here2 %p %p\n",h->table,h->table +h->tablelength*sizeof(struct entry *)));
@@ -277,9 +289,9 @@ hashtable1_destroy(struct hashtable *h, int free_values)
 }
 
 void
-hashtable1_destroy_all(int free_values) {
-  while (hashtable_chain != NULL) {
-    hashtable1_destroy(hashtable_chain,free_values);
+hashtable1_destroy_all(CTXTdeclc int free_values) {
+  while (incr_hashtable_chain != NULL) {
+    hashtable1_destroy(CTXTc incr_hashtable_chain,free_values);
   }
 }
 

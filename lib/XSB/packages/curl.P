@@ -60,14 +60,8 @@
 
 
 %% load_page(+Source,+Options,-Properties,-Document,-Warnings)
-load_page(_Source, _Options, _Props, _Document, _Warn) :- 
-	catch(\+ curl_info:curl_info(support,yes),
-	      _,
-	      throw(error(existence_error, 'Error: open(url(...), ..., ...) - the XSB package Curl has not been configured - see the XSB manual, volume 2'))),
-	!,
-	throw(error(existence_error, 'Error: open(url(...), ..., ...) - the package Curl has not been configured - see the XSB manual, volume 2')).
-
 load_page(Source, Options, [DirEnc, FileBase, Suffix, Size, Time], Document, Warn) :- 
+        check_installation,
 	load_page_warn(Source, Options, [Size, Time], Document, Warn),
 	encode_url(Source, [DirEnc, FileBase, Suffix]), 
 	curl_finalize_warn(Warn).
@@ -308,3 +302,14 @@ delete_us_pair(Atom, Mode, Stream) :-
 delete_us_pair(_, _, _).
 
 %-------------------------------------------------
+
+check_installation :-
+	catch(\+ curl_info:curl_info(support,yes),
+	      _,
+	      throw(error(existence_error(package,curl),
+                    context('Error: open(url(...), ..., ...) - the XSB package Curl has not been configured - see the XSB manual, volume 2',_)))),
+	!,
+	throw(error(existence_error(package,curl),
+                    context('Error: open(url(...), ..., ...) - the package Curl has not been configured - see the XSB manual, volume 2',_))).
+check_installation :- !.
+

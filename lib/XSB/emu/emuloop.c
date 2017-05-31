@@ -87,6 +87,8 @@
 #include "ptoc_tag_xsb_i.h"
 #include "cell_xsb_i.h"
 #include "tables_i.h"
+#include "slgdelay.h"
+#include "table_inspection_defs.h"
 
 #ifndef MULTI_THREAD
 BTNptr NodePtr, Last_Nod_Sav;
@@ -143,6 +145,15 @@ int wam_initialized = FALSE ;
 
 #include "tr_delay.h"
 #include "tr_code_xsb_i.h"
+
+//#define DEBUG_ALT_SEMANTICS 1
+#ifdef DEBUG_ALT_SEMANTICS
+#define altsem_dbg(X) printf X
+#define altsem_print_subgoal(X) print_subgoal(stdout,X)
+#else
+#define altsem_dbg(X) 
+#define altsem_print_subgoal(X)
+#endif
 
 /*----------------------------------------------------------------------*/
 /* indirect threading-related stuff                                     */
@@ -2964,16 +2975,16 @@ argument positions.
   /** when we reach here, we are falling through a switch on bound
    * instruction and should build an index using the new DI scheme **/
   XSB_Start_Instr(sob_jump_out, _sob_jump_out) /* PPL */
-    if (flags[LOG_UNINDEXED]) {
+    if (xsb_profiling_enabled && flags[LOG_UNINDEXED]) {
       Integer chainlen;
       if (flags[LOG_UNINDEXED] == 1) *lpcreg = jump; // change inst so unindex test is done only once
       chainlen = length_dyntry_chain(*(((byte **)(lpcreg))+1));
       if (chainlen > 20) {  /* only if chain is > 20 long */
 	if (xsb_profiling_enabled) {
-	  int i;
+	  unsigned int i;
 	  Psc psc = psc_from_code_addr(lpcreg);
-	  fprintf(stdout,"%s/%d searched %"Intfmt" unindexed clauses\n",get_name(psc),get_arity(psc),chainlen);
-	  fprintf(stdout,"  %s(",get_name(psc));
+	  fprintf(stdout,"%s/%d searched %"Intfmt" unindexed clauses for goal: ",get_name(psc),get_arity(psc),chainlen);
+	  fprintf(stdout,"%s(",get_name(psc));
 	  for (i=1; i<=get_arity(psc); i++) {
 	    if (isref(reg[i])) {
 	      fprintf(stdout,"_");  // dont care what vars
@@ -3106,7 +3117,7 @@ extern pthread_mutexattr_t attr_rec_gl ;
 	magic_num = read_magic(fd);
 	fclose(fd);
 	if (magic_num == 0x11121307  || magic_num == 0x11121305 || magic_num == 0x1112130a) {
-	  inst_begin_gl = loader(CTXTc startup_file,0);
+	  inst_begin_gl = loader(CTXTc startup_file,0,makenil);
 	}
 	else 
 	  xsb_initialization_exit("Incorrect startup file format");

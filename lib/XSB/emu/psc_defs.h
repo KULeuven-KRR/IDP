@@ -25,6 +25,11 @@
 #ifndef _PSC_DEFS_
 #define _PSC_DEFS_
 
+/* Visibility: lowest 2 bits
+   Tabled: bits 3-4
+   Shared: 5-6
+   Spy: 7-8
+*/
 #define T_VISIBLE	0
 #define T_HIDDEN	1
 #define T_UNLOADED	2

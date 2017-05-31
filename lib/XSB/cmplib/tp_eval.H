@@ -29,7 +29,7 @@
 :- export geninline_isindeed/8.
 
 :- import sym_name/3 from symtab.
-:- import error/1, message/1 from auxlry.
+:- import error/1 from auxlry.
 :- import builtin_function/3 from builtin.
 :- import vprag_type/2, vprag_loc/2, vprag_occ/2 from varproc.
 :- import release/3, hold/3, release_if_done0/5, getreg/2, alloc_reg/3,

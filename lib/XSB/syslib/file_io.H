@@ -40,10 +40,16 @@
 
 %%%:- import gensym/2 from gensym.
 
-:- import is_plain_file/1, is_directory/1, rename/2, rm/1, rmdir_rec/1, cwd/1,
+:- import
+        is_plain_file/1, is_directory/1,
+        rename/2, rm/1, rmdir_rec/1, cwd/1,
 	sys_filecopy/3, sys_fileappend/3,
-	cd/1, sys_link/3, sys_mkdir/2, sys_rmdir/2, sys_access/3
-      from shell.
+        sys_file_readlink/3,
+        sys_file_realpath/3,
+	cd/1, sys_link/3,
+        sys_mkdir/2, sys_rmdir/2,
+        sys_access/3
+   from shell.
 
 :- import file_write/2 from xsb_writ.
 
@@ -81,7 +87,8 @@
    is_valid_stream/2, peek_code/1, peek_code/2, peek_char/1, peek_char/2,peek_byte/1, peek_byte/2,
    at_end_of_stream/1, at_end_of_stream/0, set_stream_position/2,
    url_encode/2, url_decode/2,
-   xsb_stream_lock/1,xsb_stream_unlock/1.   
+   xsb_stream_lock/1,xsb_stream_unlock/1,
+   file_set_character_set/2.
 
 % ISO predicates (sometimes rewrites of earlier predicates w. more checking).
 :- export stream_property/2, flush_output/1, flush_output/0.

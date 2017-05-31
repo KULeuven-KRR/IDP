@@ -61,6 +61,7 @@
 #include "loader_xsb.h" /* for XOOM_FACTOR */
 #include "struct_intern.h"
 #include "residual.h"
+#include "slgdelay.h"
 
 extern Integer intern_term_size(CTXTdeclc Cell);
 extern xsbBool is_cyclic(CTXTdeclc Cell);
@@ -71,8 +72,10 @@ extern xsbBool is_cyclic(CTXTdeclc Cell);
 /* The following variables are used in other parts of the system        */
 /*----------------------------------------------------------------------*/
 
-// TLS ans_deletes may be taken out.
-counter subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts, ans_deletes; /* statistics */
+// For statistics: (TES ans_deletes may be taken out)
+counter var_subg_chk_ins_gl, var_subg_inserts_gl, ans_chk_ins, ans_inserts, ans_deletes; 
+// Stats for leaves in the IDG
+counter dyn_incr_chk_ins_gl, dyn_incr_inserts_gl;
 
 #ifndef MULTI_THREAD
 int  num_heap_term_vars;
@@ -115,7 +118,7 @@ char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
 /*----------------------------------------------------------------------*/
 /*****************Addr Stack************* 
 
- TLS 08/05: The addr_stack and term_stack (below) are used by
+ TES 08/05: The addr_stack and term_stack (below) are used by
  answer_return to copy information out of a trie and into a ret/n
  structure.  Its also used by table predicates to get delay lists.
  */
@@ -271,7 +274,7 @@ void init_trie_aux_areas(CTXTdecl)
 {
   int i;
 
-  /* TLS: commented these out to catch private/shared bugs more
+  /* TES: commented these out to catch private/shared bugs more
      quickly */
 #ifndef MULTI_THREAD
   smBTN = &smTableBTN;
@@ -424,7 +427,7 @@ BTNptr newBasicTrie(CTXTdeclc Cell symbol, int trie_type) {
 
 /*-------------------------------------------------------------------------*/
 
-/* TLS: took out single use, 11/09
+/* TES: took out single use, 11/09
  * Creates a root node for a given type of trie.  Differs from above in that
  * the parent is intended to be set to the subgoal frame.
  * 
@@ -553,7 +556,7 @@ void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
 
   ht = New_BTHT(CTXTc smBTHT, trieType);
   children = BTN_Child(parent);
-  BTN_SetHashHdr(parent,ht);
+  BTN_SetHashHdr(parent,ht);        // child is now ht
   tablebase = BTHT_BucketArray(ht);
   hashseed = BTHT_GetHashSeed(ht);
   for (btn = children;  IsNonNULL(btn);  btn = children) {
@@ -905,7 +908,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
  * In principle, a check could be made to determine whether these
  * variables need to be copied.
  * 
- * TLS 1/11: I can't see any need for this copy in the recvariant
+ * TES 1/11: I can't see any need for this copy in the recvariant
  * form, as this is only called if we have encountered a list,
  * structure, or attv.  So any variables in one of these has to be in
  * the heap any way.  On the other hand, if I take out the copy,
@@ -954,15 +957,15 @@ static int *depth_stack;
     struct Table_Info_Frame * Utip;		      \
     						      \
     psc = get_str_psc(xtemp1);						\
-    item = makecs(psc);							\
-    one_btn_chk_ins(flag, item, CZero, BASIC_ANSWER_TRIE_TT);		\
+    trie_symbol = makecs(psc);							\
+    one_btn_chk_ins(flag, trie_symbol, CZero, BASIC_ANSWER_TRIE_TT);		\
     for (j = get_arity(psc); j>=1 ; j--) {				\
       bld_free(hreg);      xtemp1 = hreg++;				\
-      StandardizeAndTrailVariable(xtemp1,ctr);				\
+      StandardizeAndTrailVariable(xtemp1,varIndexCtr);				\
       /*    printf("standardizing VET_T %p\n",VarEnumerator_trail_top);	*/ \
-      one_btn_chk_ins(flag,EncodeNewTrieVar(ctr), CZero,BASIC_ANSWER_TRIE_TT);	\
+      one_btn_chk_ins(flag,EncodeNewTrieVar(varIndexCtr), CZero,BASIC_ANSWER_TRIE_TT);	\
       /* printf("standardized VET_T %p\n",VarEnumerator_trail_top);*/	\
-      ctr++;								\
+      varIndexCtr++;								\
       /*      depth_stack_pop;						*/ \
     /*    pdlreg++;	*/						\
   }									\
@@ -981,11 +984,11 @@ static int *depth_stack;
     						      \
     one_btn_chk_ins(found_flag, EncodeTrieList(xtemp1), CZero, BASIC_ANSWER_TRIE_TT); \
     bld_free(hreg);    xtemp1 = hreg++;							\
-    StandardizeAndTrailVariable(xtemp1,ctr);				\
-    one_btn_chk_ins(flag,EncodeNewTrieVar(ctr), CZero,BASIC_ANSWER_TRIE_TT); ctr++;\
+    StandardizeAndTrailVariable(xtemp1,varIndexCtr);				\
+    one_btn_chk_ins(flag,EncodeNewTrieVar(varIndexCtr), CZero,BASIC_ANSWER_TRIE_TT); varIndexCtr++;\
     bld_free(hreg);    xtemp1 = hreg++;							\
-    StandardizeAndTrailVariable(xtemp1,ctr);				\
-    one_btn_chk_ins(flag,EncodeNewTrieVar(ctr), CZero,BASIC_ANSWER_TRIE_TT); ctr++;\
+    StandardizeAndTrailVariable(xtemp1,varIndexCtr);				\
+    one_btn_chk_ins(flag,EncodeNewTrieVar(varIndexCtr), CZero,BASIC_ANSWER_TRIE_TT); varIndexCtr++;\
     if (!bratted) {							\
       undefPair = insert("brat_undefined", 0, pair_psc(insert_module(0,"xsbbrat")), &isNew); \
       Utip = get_tip(CTXTc pair_psc(undefPair));			\
@@ -997,8 +1000,8 @@ static int *depth_stack;
 #define ADD_STRUCTURE_TO_ANSWER_TRIE {					\
 	psc = get_str_psc(xtemp1);					\
 	depth_stack_push(get_arity(psc));				\
-	item = makecs(psc);						\
-	one_btn_chk_ins(found_flag, item, CZero, BASIC_ANSWER_TRIE_TT);	\
+	trie_symbol = makecs(psc);						\
+	one_btn_chk_ins(found_flag, trie_symbol, CZero, BASIC_ANSWER_TRIE_TT);	\
 	for (j = get_arity(psc); j>=1 ; j--) {				\
 	  pdlpush(get_str_arg(xtemp1,j));				\
 	}								\
@@ -1049,7 +1052,7 @@ static int *depth_stack;
     else { /* error */							\
 	sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr))); \
 	safe_delete_branch(Paren);					\
-	if (is_cyclic(CTXTc (Cell) (cptr -i))) {			\
+	if (is_cyclic(CTXTc (Cell) (ans_sf_ptr -i))) {			\
 	  xsb_abort("Cyclic term in arg %d of tabled answer %s\n",i+1,forest_log_buffer_1->fl_buffer); \
 	}								\
 	else								\
@@ -1062,7 +1065,7 @@ static int *depth_stack;
 #define CHECK_ANSWER_TERM_METRIC {				\
   if (answer_depth_ctr >= working_answer_depth_limit) {		\
     if (working_answer_depth_limit == flags[CYCLIC_CHECK_SIZE]) {	\
-	if (is_cyclic(CTXTc (Cell) (cptr -i))) {			\
+	if (is_cyclic(CTXTc (Cell) (ans_sf_ptr -i))) {			\
 	  sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr))); \
 	  safe_delete_branch(Paren);					\
 	  xsb_abort("Cyclic term in arg %d of tabled answer %s\n",i+1,forest_log_buffer_1->fl_buffer); \
@@ -1085,7 +1088,7 @@ static int *depth_stack;
   if (++answer_depth_ctr >= working_answer_depth_limit) {		\
     if (working_answer_depth_limit == flags[CYCLIC_CHECK_SIZE]) {	\
       /*      printf("about to cyclecheck adc %lu wadl %lu\n",answer_depth_ctr,working_answer_depth_limit);*/ \
-      if (is_cyclic(CTXTc (Cell) (cptr -i))) {				\
+      if (is_cyclic(CTXTc (Cell) (ans_sf_ptr -i))) {				\
 	  sprintCyclicRegisters(CTXTc forest_log_buffer_1,TIF_PSC(subg_tif_ptr(subgoal_ptr))); \
 	  safe_delete_branch(Paren);					\
 	  xsb_abort("Cyclic term in arg %lu of tabled answer %s\n",i+1,forest_log_buffer_1->fl_buffer); \
@@ -1118,16 +1121,16 @@ static int *depth_stack;
     case XSB_FREE:							\
     case XSB_REF1:							\
       depth_stack_pop;							\
-      /*      printf("ctr %d xtemp1 %p\n",ctr,xtemp1);		*/	\
+      /*      printf("varIndexCtr %d xtemp1 %p\n",varIndexCtr,xtemp1);		*/	\
       if (! IsStandardizedVariable(xtemp1)){				\
 	bld_free(hreg);							\
 	bind_ref(xtemp1, hreg);						\
 	xtemp1 = hreg++;						\
-	StandardizeAndTrailVariable(xtemp1,ctr);			\
+	StandardizeAndTrailVariable(xtemp1,varIndexCtr);			\
 	/*	printf("standardizing VET_T %p\n",VarEnumerator_trail_top);*/ \
-	one_btn_chk_ins(flag,EncodeNewTrieVar(ctr), CZero,TrieType);	\
+	one_btn_chk_ins(flag,EncodeNewTrieVar(varIndexCtr), CZero,TrieType);	\
 	/*	printf("standardized VET_T %p\n",VarEnumerator_trail_top);	*/ \
-	ctr++;								\
+	varIndexCtr++;								\
       } else {								\
 	/*	printf("already standardized\n");		*/	\
 	one_btn_chk_ins(flag,						\
@@ -1151,9 +1154,9 @@ static int *depth_stack;
       /* Now xtemp1 can only be the first occurrence of an attv */	\
       /* *(hreg++) = (Cell) xtemp1;	*/				\
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
-      StandardizeAndTrailVariable(xtemp1, ctr);				\
-      one_btn_chk_ins(flag, EncodeNewTrieAttv(ctr), CZero, TrieType);		\
-      attv_ctr++; ctr++;						\
+      StandardizeAndTrailVariable(xtemp1, varIndexCtr);				\
+      one_btn_chk_ins(flag, EncodeNewTrieAttv(varIndexCtr), CZero, TrieType);		\
+      attv_ctr++; varIndexCtr++;						\
       pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */		\
       break;								\
     default:								\
@@ -1167,14 +1170,12 @@ static int *depth_stack;
 #include "ptoc_tag_xsb_i.h"
 extern void abolish_release_all_dls(CTXTdeclc ASI);
 
-static inline void handle_incrementally_rederived_answer(CTXTdeclc VariantSF subgoal_ptr,BTNptr Paren,
-						  int tag,
-						  xsbBool found_flag,xsbBool * uncond_or_hasASI) {
-
+static inline int handle_incrementally_rederived_answer(CTXTdeclc VariantSF subgoal_ptr,BTNptr Paren,int tag,
+							 xsbBool found_flag,int ans_subst_size,xsbBool * uncond_or_hasASI) {
+  xsbBool rederived_flag = FALSE;
   byte choicepttype;  /* for incremental evaluation */ 
   byte typeofinstr;   /* for incremental evaluation */ 
   ALNptr answer_node;
-
   /* If a new answer is inserted, the call is changed */
     if((IsNonNULL(subgoal_ptr->callnode->prev_call))&&(found_flag==0)){
       subgoal_ptr->callnode->prev_call->changed=1;
@@ -1190,7 +1191,6 @@ static inline void handle_incrementally_rederived_answer(CTXTdeclc VariantSF sub
        paths, adding delay lists and/or simplifying
     */
     if((found_flag==1) && (IsDeletedNode(Paren))){
-      
       if (is_conditional_answer(Paren) && delayreg) {
 	abolish_release_all_dls(CTXTc Delay(Paren));
 	//	print_pdes(asi_pdes(Delay(Paren)));
@@ -1213,7 +1213,7 @@ static inline void handle_incrementally_rederived_answer(CTXTdeclc VariantSF sub
       
       New_ALN(subgoal_ptr,answer_node,Paren,NULL);
       SF_AppendNewAnswer(subgoal_ptr,answer_node);	
-      
+      rederived_flag  = TRUE;
     } else
       if ( found_flag == 0 ) {
 	MakeTSTNLeafNode(Paren);
@@ -1224,13 +1224,14 @@ static inline void handle_incrementally_rederived_answer(CTXTdeclc VariantSF sub
 	New_ALN(subgoal_ptr,answer_node,Paren,NULL);
 	SF_AppendNewAnswer(subgoal_ptr,answer_node);
       }
+    return rederived_flag;
 }
     
 
 /*
  * Called in SLG instruction `new_answer_dealloc', variant_answer_search()
  * checks if the answer has been returned before and, if not, inserts it
- * into the answer trie.  Here, `sf_size' is the number of variables in the
+ * into the answer trie.  Here, `ans_sf_size' is the number of variables in the
  * substitution factor of the called subgoal, `attv_num' is the number of
  * attributed variables in the call, `cptr' is the pointer to the
  * substitution factor, and `subgoal_ptr' is the subgoal frame of the
@@ -1240,16 +1241,17 @@ static inline void handle_incrementally_rederived_answer(CTXTdeclc VariantSF sub
  * The returned value of this function is the leaf of the answer trie.
  */
 
-BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
-			     VariantSF subgoal_ptr, xsbBool *flagptr,
+BTNptr variant_answer_search(CTXTdeclc int ans_sf_size, int attv_num, CPtr ans_sf_ptr,
+			     VariantSF subgoal_ptr, xsbBool *rederived_ptr, xsbBool *flagptr,
 			     xsbBool *uncond_or_hasASI) {
 
+  xsbBool rederived_flag = FALSE;
   Psc   psc;
   CPtr  xtemp1;
   int   i, j, found_flag = 1, tag = XSB_FREE;
-  Cell  item, tmp_var;
+  Cell  trie_symbol, tmp_var;
   ALNptr answer_node;
-  int ctr, attv_ctr;
+  int varIndexCtr, attv_ctr;
   BTNptr Paren, *ChildPtrOfParen;
   Cell answer_depth_ctr;
   UInteger answer_depth_limit,working_answer_depth_limit;
@@ -1274,11 +1276,11 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   VarEnumerator_trail_top = ((CPtr *)(& VarEnumerator_trail[0])) - 1;
   //  printf(">>>>VAS VET %p\n",  VarEnumerator_trail_top);
   AnsVarCtr = 0;
-  ctr = 0;
+  varIndexCtr = 0;
   if ( IsNULL(subg_ans_root_ptr(subgoal_ptr)) ) {
     Cell retSymbol;
-    if ( sf_size > 0 )
-      retSymbol = EncodeTriePSC(get_ret_psc(sf_size));
+    if ( ans_sf_size > 0 )
+      retSymbol = EncodeTriePSC(get_ret_psc(ans_sf_size));
     else
       retSymbol = EncodeTrieConstant(makestring(get_ret_string()));
     subg_ans_root_ptr(subgoal_ptr) =
@@ -1287,7 +1289,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   Paren = subg_ans_root_ptr(subgoal_ptr);
   ChildPtrOfParen = &BTN_Child(Paren);
 
-  /* Documentation rewritten by TLS: 
+  /* Documentation rewritten by TES: 
    * To properly generate instructions for attributed variables, you
    * need to know which attributed variables are identical to those in
    * the call, and which represent new bindings to attributed or vanilla
@@ -1311,30 +1313,27 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
    * the call (attv_num > 0).  ¹
    */
   if (attv_num > 0) {
-    for (i = 0; i < sf_size; i++) {
-      tmp_var = cell(cptr - i);
+    for (i = 0; i < ans_sf_size; i++) {
+      tmp_var = cell(ans_sf_ptr - i);
       if (isattv(tmp_var)) {
 	xtemp1 = clref_val(tmp_var); /* the VAR part */
 	if (xtemp1 == (CPtr) cell(xtemp1)) { /* this attv is not changed */
-	  StandardizeAndTrailVariable(xtemp1, ctr);
+	  StandardizeAndTrailVariable(xtemp1, varIndexCtr);
 	}
-	ctr++;
+	varIndexCtr++;
       }
     }
-    /* now ctr should be equal to attv_num */
+    /* now varIndexCtr should be equal to attv_num */
   }
   attv_ctr = attv_num;
 
-  //  printf("\n");
-  for (i = 0; i < sf_size; i++) {
-    //    printf("starting again i %d\n",i);
+  for (i = 0; i < ans_sf_size; i++) {
     if (flags[CYCLIC_CHECK_SIZE] < answer_depth_limit) working_answer_depth_limit = flags[CYCLIC_CHECK_SIZE];
     else working_answer_depth_limit = answer_depth_limit;
     answer_depth_ctr = 0;  
-    xtemp1 = (CPtr) (cptr - i); /* One element of VarsInCall.  It might
-				 * have been bound in the answer for
-				 * the call.
-				 */
+    xtemp1 = (CPtr) (ans_sf_ptr - i); /* One element of VarsInCall.  It might
+				       * have been bound in the answer for the call.
+				       */
     //    printf("VAS-for %p\n",VarEnumerator_trail_top);
     XSB_CptrDeref(xtemp1);
     tag = cell_tag(xtemp1);
@@ -1350,9 +1349,9 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 	 * full SLG-WAM trailing.  Thus, if this is the first
 	 * occurrence of this variable, then: 
 	 *
-	 * 	StandardizeAndTrailVariable(xtemp1, ctr)
+	 * 	StandardizeAndTrailVariable(xtemp1, varIndexCtr)
 	 * 			||
-	 * 	bld_ref(xtemp1, VarEnumerator[ctr]);
+	 * 	bld_ref(xtemp1, VarEnumerator[varIndexCtr]);
 	 * 	*(++VarEnumerator_trail_top) = xtemp1
 	 *
 	 * By doing this, all the variables appearing in the answer
@@ -1372,27 +1371,23 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 	bind_ref(xtemp1, hreg);
 	xtemp1 = hreg++;
 #endif
-	//	printf("VAS abt to std %p\n",VarEnumerator_trail_top);
-	StandardizeAndTrailVariable(xtemp1,ctr);
-	//	printf("VAS just std %p\n",VarEnumerator_trail_top);
-	item = EncodeNewTrieVar(ctr);
-	one_btn_chk_ins(found_flag, item, CZero, BASIC_ANSWER_TRIE_TT);
-	ctr++;
+	StandardizeAndTrailVariable(xtemp1,varIndexCtr);
+	trie_symbol = EncodeNewTrieVar(varIndexCtr);
+	one_btn_chk_ins(found_flag, trie_symbol, CZero, BASIC_ANSWER_TRIE_TT);
+	varIndexCtr++;
       } else {
-	item = IndexOfStdVar(xtemp1);
-	item = EncodeTrieVar(item);
-	one_btn_chk_ins(found_flag, item, CZero, BASIC_ANSWER_TRIE_TT);
+	trie_symbol = IndexOfStdVar(xtemp1);
+	trie_symbol = EncodeTrieVar(trie_symbol);
+	one_btn_chk_ins(found_flag, trie_symbol, CZero, BASIC_ANSWER_TRIE_TT);
       }
       break;
     case XSB_STRING: 
     case XSB_INT:
     case XSB_FLOAT:
-      //printf("ret obci con %X\n",EncodeTrieConstant(xtemp1));
       one_btn_chk_ins(found_flag, EncodeTrieConstant(xtemp1), CZero,
 		      BASIC_ANSWER_TRIE_TT);
       break;
     case XSB_LIST:
-      //      printf("VAS List \n");
       if (interning_terms) { 
 	XSB_CptrDeref(xtemp1);
 	if (!isinternstr(xtemp1)) {
@@ -1403,7 +1398,6 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 	}
       }
       if (interning_terms && isinternstr(xtemp1)) {
-	//printf("ret obci 2 %X, %X\n",EncodeTrieList(xtemp1), (Cell)xtemp1);
 	one_btn_chk_ins(found_flag, EncodeTrieList(xtemp1), (Cell)xtemp1, BASIC_ANSWER_TRIE_TT);
       } else {
 	one_btn_chk_ins(found_flag, EncodeTrieList(xtemp1), CZero, BASIC_ANSWER_TRIE_TT);
@@ -1414,7 +1408,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
       break;
     case XSB_STRUCT:
       psc = get_str_psc(xtemp1);
-      item = makecs(psc);
+      trie_symbol = makecs(psc);
       depth_stack_push(get_arity(psc));;
       if (interning_terms) { 
 	XSB_CptrDeref(xtemp1);
@@ -1426,9 +1420,9 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 	}
       }
       if (interning_terms && isinternstr(xtemp1)) {
-	one_btn_chk_ins(found_flag, item, (Cell)xtemp1, BASIC_ANSWER_TRIE_TT);
+	one_btn_chk_ins(found_flag, trie_symbol, (Cell)xtemp1, BASIC_ANSWER_TRIE_TT);
       } else {
-	one_btn_chk_ins(found_flag, item, CZero, BASIC_ANSWER_TRIE_TT);
+	one_btn_chk_ins(found_flag, trie_symbol, CZero, BASIC_ANSWER_TRIE_TT);
 	for (j = get_arity(psc); j >= 1 ; j--) {
 	  pdlpush(get_str_arg(xtemp1,j));
 	}
@@ -1440,13 +1434,13 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
       //      *(hreg++) = (Cell) xtemp1;
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
       /*
-       * Bind the VAR part of this attv to VarEnumerator[ctr], so all the
+       * Bind the VAR part of this attv to VarEnumerator[varIndexCtr], so all the
        * later occurrences of this attv will look like a regular variable
        * (after dereferencing).
        */
-      StandardizeAndTrailVariable(xtemp1, ctr);	
-      one_btn_chk_ins(found_flag, EncodeNewTrieAttv(ctr), CZero, BASIC_ANSWER_TRIE_TT);
-      attv_ctr++; ctr++;
+      StandardizeAndTrailVariable(xtemp1, varIndexCtr);	
+      one_btn_chk_ins(found_flag, EncodeNewTrieAttv(varIndexCtr), CZero, BASIC_ANSWER_TRIE_TT);
+      attv_ctr++; varIndexCtr++;
       pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */
       recvariant_trie_ans_subsf(found_flag, BASIC_ANSWER_TRIE_TT);
       //recvariant_trie_no_ans_subsf(found_flag, BASIC_ANSWER_TRIE_TT);
@@ -1458,7 +1452,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   resetpdl;                                                   
 
   /* Put the substitution factor of the answer into a term ret/n (if 
-   * the sf_size of the substitution factor is 0, then put integer 0
+   * the ans_sf_size of the substitution factor is 0, then put integer 0
    * into cell ans_var_pos_reg).
    *
    * Notice that undo_answer_bindings in pre-1.9 version of XSB
@@ -1468,16 +1462,15 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
    * and head variable numbers must be used in body.
    */
 
-  if (ctr == 0)
+  if (varIndexCtr == 0)
     bld_int(ans_var_pos_reg, 0);
   else	
-    bld_functor(ans_var_pos_reg, get_ret_psc(ctr));
+    bld_functor(ans_var_pos_reg, get_ret_psc(varIndexCtr));
 
-  /* Save the number of variables in the answer, i.e. the sf_size of
+  /* Save the number of variables in the answer, i.e. the ans_sf_size of
    * the substitution factor of the answer, into `AnsVarCtr'.
    */
-  AnsVarCtr = ctr;		
-
+  AnsVarCtr = varIndexCtr;		
 
   /* TES: Added check for adding into a table an answer with a large number
      of variables.  The problem is that the variables get trailed, so
@@ -1494,17 +1487,16 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 			  "Exceeded max number of variables (%d) allowed in an answer to the subgoal  %s\n", 
 			    flags[MAX_TABLE_ANSWER_VAR_NUM],forest_log_buffer_1->fl_buffer); 
   }
-
   
   /* if there is no term to insert, an ESCAPE node has to be created/found */
-  if (sf_size == 0) {
+  if (ans_sf_size == 0) {
     one_btn_chk_ins(found_flag, ESCAPE_NODE_SYMBOL, CZero, BASIC_ANSWER_TRIE_TT);
     Instr(Paren) = trie_proceed;
   }
  
   if(IsIncrSF(subgoal_ptr)){
-    handle_incrementally_rederived_answer(CTXTc subgoal_ptr,Paren,tag,found_flag,
-					  uncond_or_hasASI);
+    rederived_flag = handle_incrementally_rederived_answer(CTXTc subgoal_ptr,Paren,tag,found_flag,ans_sf_size,uncond_or_hasASI);
+    
   } else
   /*  If an insertion was performed, do some maintenance on the new leaf,
    *  and place the answer handle onto the answer list.
@@ -1518,8 +1510,9 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
     New_ALN(subgoal_ptr,answer_node,Paren,NULL);
     SF_AppendNewAnswer(subgoal_ptr,answer_node);
   }
-
+  //  printf("vas: found flag %d rederived flag %d\n",found_flag,rederived_flag);
   *flagptr = found_flag;	
+  *rederived_ptr = rederived_flag;
   return Paren;
 }
 
@@ -1675,6 +1668,60 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
     return Paren;
 }
 
+/* TES: this should be used only when we want to positively delay for
+   restraint, Luk3, etc.  It makes an assumption that the first
+   subgoal of predicate is the one we want, as well as the leftmost
+   answer of that subgoal. */
+void add_positive_delay(CTXTdeclc char * predicate ) {
+  int isNew;
+  BTNptr LocNodePtr;  // NodePtr is a global and redefined in MT, so need a different name.
+  Pair undefPair;				      
+  struct Table_Info_Frame * Utip;		      
+
+  undefPair = insert(predicate, 0, pair_psc(insert_module(0,"xsbbrat")), &isNew); 
+  Utip = get_tip(CTXTc pair_psc(undefPair));				
+  /* Find answer so we can point to it.*/
+  LocNodePtr = subg_ans_root_ptr(TIF_Subgoals(Utip));
+  while (!IsLeafNode(LocNodePtr)) {
+    LocNodePtr = Child(LocNodePtr);
+  }
+  delay_positively(TIF_Subgoals(Utip),LocNodePtr,makestring(get_ret_string()));
+}
+
+void add_empty_conditional_answer (CTXTdeclc int ans_subst_size,VariantSF subgoal_ptr) {
+  int   i, found_flag = 1, tag = XSB_FREE, varIndexCtr;
+  BTNptr Paren, *ChildPtrOfParen;
+  Cell  trie_symbol;                ALNptr answer_node;
+  xsbBool  uncond_or_hasASI; 
+  //  printf("adding empty conditional answer\n");
+  VarEnumerator_trail_top = ((CPtr *)(& VarEnumerator_trail[0])) - 1;
+  varIndexCtr = 0;
+  Paren = subg_ans_root_ptr(subgoal_ptr);
+  ChildPtrOfParen = &BTN_Child(Paren);
+  for (i = 0; i < ans_subst_size; i++) {
+    trie_symbol = EncodeNewTrieVar(varIndexCtr);
+    one_btn_chk_ins(found_flag, trie_symbol, CZero, BASIC_ANSWER_TRIE_TT);
+    varIndexCtr++;
+  }
+  schedule_ec(subgoal_ptr); 
+
+  if(IsIncrSF(subgoal_ptr)){
+    handle_incrementally_rederived_answer(CTXTc subgoal_ptr,Paren,tag,found_flag,ans_subst_size,&uncond_or_hasASI);
+  } else {
+  /*  If an insertion was performed, do some maintenance on the new
+   *  leaf, and place the answer handle onto the answer list. (Also
+   *  done in handle_incr_rederived_answer) */
+    MakeLeafNode(Paren);
+    TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
+    //#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
+    //    ans_inserts++;
+    New_ALN(subgoal_ptr,answer_node,Paren,NULL);
+    SF_AppendNewAnswer(subgoal_ptr,answer_node);
+  }
+    add_positive_delay(CTXTc "restraint_number_of_answers");
+    do_delay_stuff(CTXTc Paren, subgoal_ptr, FALSE);
+}
+
 /*----------------------------------------------------------------------*/
 /* for each variable in call, builds its binding on the heap.		*/
 /*----------------------------------------------------------------------*/
@@ -1812,7 +1859,7 @@ static void bottomupunify(CTXTdeclc Cell term, BTNptr Leaf)
  *  Used with tries created via the builtin trie_intern, to access a
  *  trie from a leaf.  Not yet extended to shared tries.
  * 
- *  TLS 1/11 This actually looks a little wierd.  bottom_up_unify()
+ *  TES 1/11 This actually looks a little wierd.  bottom_up_unify()
  *  assumes that the trie stackes are loaded to the right thing, then
  *  calls macro_make_heap_term to load the stacks into the heap.
  *  There seem to be no checks on the prolog code to avoid improper
@@ -2194,7 +2241,7 @@ int vcs_tnot_call = 0;
 
 /*----------------------------------------------------------------------*/
 
-/* TLS gloss: 
+/* TES gloss: 
  * 
  * To me it seems this function is written in an overly general way.
  * I dont see a real need to encapsulate all of its input and output
@@ -2269,9 +2316,6 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   Integer termsize;
   int second_checking_phase = FALSE;
 
-#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
-  subg_chk_ins++;
-#endif
   interning_terms = TIF_Interning(CallInfo_TableInfo(*call_info));
   Paren = TIF_CallTrie(CallInfo_TableInfo(*call_info));
   ChildPtrOfParen = &BTN_Child(Paren);
@@ -2439,9 +2483,9 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
    *  If an insertion was performed, do some maintenance on the new leaf.
    */
   if ( flag == 0 ) {
-#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
-    subg_inserts++;
-#endif
+    //#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
+    //    subg_inserts++;
+    //#endif
     MakeLeafNode(Paren);
     TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
   }
@@ -2597,7 +2641,7 @@ int variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   resetpdl;								\
 }
 
-// TLS: not checking for max_table_answer_action, because if the size
+// TES: not checking for max_table_answer_action, because if the size
 // limit is set, we'll simply throw an error: no suspend or abstract in this case.
 //
 #define CHECK_TRIE_INTERN_DEPTH {					\
@@ -2955,7 +2999,7 @@ byte * trie_get_calls(CTXTdecl)
    if ((psc_ptr = term_psc(call_term)) != NULL) {
      tip_ptr = get_tip(CTXTc psc_ptr);
      if (tip_ptr == NULL) {
-       /* TLS: added the !get_tabled() to handle cases where the
+       /* TES: added the !get_tabled() to handle cases where the
 	  predicate has been tabled but a tip has not yet been created
 	  (e.g clauses for a dynamic tabled predicate have not yet
 	  been defined */
@@ -3135,7 +3179,7 @@ void copy_abstractions_to_AT(CTXTdeclc CPtr abstr_templ_ptr,int abstr_num) {
 /* Global variables -- should really be made local ones...              */
 /*----------------------------------------------------------------------*/
 
-/* TLS: 08/05 documentation of trieinstr_unif_stk and trieinstr_vars.
+/* TES: 08/05 documentation of trieinstr_unif_stk and trieinstr_vars.
  * 
  * trieinstr_unif_stk is a stack used for unificiation by trie
  * instructions from a completed table and asserted tries.  In the

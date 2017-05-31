@@ -1,4 +1,4 @@
-/* File:      call_graph_xsb.c
+/* File: call_graph_xsb.c
 ** Author(s): Diptikalyan Saha, C. R. Ramakrishnan, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -32,11 +32,11 @@
 
 /* Special debug includes */
 /* Remove the includes that are unncessary !!*/
+#include "context.h"   
 #include "hashtable.h"
 #include "hashtable_itr.h"
 #include "debugs/debug_tries.h"
 #include "auxlry.h"
-#include "context.h"   
 #include "cell_xsb.h"   
 #include "inst_xsb.h"
 #include "psc_xsb.h"
@@ -64,6 +64,7 @@
 #include "tries.h"
 //#include "tr_utils.h"
 #include "debug_xsb.h"
+#include "tr_code_xsb_i.h"
 
 //#define INCR_DEBUG
 //#define INCR_DEBUG1
@@ -71,10 +72,13 @@
 
 extern int prolog_call0(CTXTdeclc Cell);
 extern int prolog_code_call(CTXTdeclc Cell, int);
+extern BTNptr TrieNodeFromCP(CPtr);
+extern ALNptr traverse_variant_answer_trie( VariantSF, CPtr, CPtr) ;
+extern Cell list_of_answers_from_answer_list(VariantSF,int,int,ALNptr);
 
 /* 
-Terminology: outedge -- pointer to calls that depend on call
-             inedge  -- pointer to calls on which call depends
+Terminology: outedge -- pointer to calls that depend on call: affects
+             inedge  -- pointer to calls on which call depends: depends
 */
 
 #define ISO_INCR_TABLING 1
@@ -83,29 +87,26 @@ Terminology: outedge -- pointer to calls that depend on call
 
 // affected_gl drives create_call_list and eager updates
 //calllistptr affected_gl=NULL;
-calllistptr lazy_affected= NULL;
-
-int incr_table_update_safe_gl = TRUE;
-
 // derives return_changed_call_list which reports those calls changed in last update
 //calllistptr changed_gl=NULL;
 
-// used to compare new to previous tables.
-callnodeptr old_call_gl=NULL;
-// is this needed?  Can we use the root ptr from SF?
-BTNptr old_answer_table_gl=NULL;
+#ifndef MULTI_THREAD
 
 calllistptr assumption_list_gl=NULL;  /* required for abolishing incremental calls */ 
-
-// current number of incremental subgoals / edges
-int current_call_node_count_gl=0,current_call_edge_count_gl=0;
-// total number of incremental subgoals in session.
-int  total_call_node_count_gl=0;  
-// not used much -- for statistics
+callnodeptr old_call_gl=NULL;         // used to compare new to previous tables.
+BTNptr old_answer_table_gl=NULL;      // is this needed?  Can we use the root ptr from SF?
+calllistptr lazy_affected= NULL;
+int incr_table_update_safe_gl = TRUE;
 int unchanged_call_gl=0;
 
-// This array does not need to be resized -- just needs to be > max_arity
-static Cell cell_array1[500];
+// current number of incremental subgoals / edges
+int current_call_node_count_gl=0;
+int current_call_edge_count_gl=0;
+// total number of incremental subgoals in session.
+int total_call_node_count_gl=0;  
+
+// This array does not need to be resized -- just needs to be > max_arity (TES: ... maybe ...) 
+static Cell incr_heap_cell_array[500];
 
 /* These seem to be safely within the bounds of regular (non-small) structures) */
 Structure_Manager smCallNode  =  SM_InitDecl(CALL_NODE,CALLNODE_PER_BLOCK,"CallNode");
@@ -118,13 +119,44 @@ Structure_Manager smKey	      =  SM_InitDecl(KEY,KEY_PER_BLOCK,"HashKey");
 /* appears to be minimal size for regular (non-small) structure */
 Structure_Manager smOutEdge   =  SM_InitDecl(OUTEDGE,OUTEDGE_PER_BLOCK,"Outedge");
 
+#endif
+
+#ifndef MULTI_THREAD
+int incr_table_recomputations_gl=0;
+int incr_dynamic_calls_gl = 0;
+#endif
+
+
 DEFINE_HASHTABLE_INSERT(insert_some, KEY, CALL_NODE);
-DEFINE_HASHTABLE_SEARCH(search_some, KEY, callnodeptr);
 DEFINE_HASHTABLE_REMOVE(remove_some, KEY, callnodeptr);
+DEFINE_HASHTABLE_SEARCH(search_some, KEY, callnodeptr);
 DEFINE_HASHTABLE_ITERATOR_SEARCH(search_itr_some, KEY);
 
 /*****************************************************************************/
 /* Debugging */
+
+void print_trieinsts_in_cpstack(CTXTdecl) {
+  CPtr cp_outer_iter,bottom_of_cpstack;
+  byte cp_inst;  BTNptr trieNode;
+  VariantSF subgoal;                                                                                                  
+  cp_outer_iter = breg ;                                                                                             
+  bottom_of_cpstack = (CPtr)(tcpstack.high) - CP_SIZE;                                                                
+  printf("-------- CPstack top\n");                                                                                    while ( cp_outer_iter < bottom_of_cpstack ) {                                                                      
+    cp_inst = *(byte *)*cp_outer_iter;                                                                               
+    if ( is_trie_instruction(cp_inst) ) {
+      trieNode = TrieNodeFromCP(cp_outer_iter);
+      if (IsInAnswerTrie(trieNode)) {
+        subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode,cp_outer_iter);
+        printf("AnsTrie: breg %p node %p instr %x subgoal %p\n",cp_outer_iter,trieNode,cp_inst,subgoal);
+      }
+      else printf("Trie: breg %p node %p instr %x\n",cp_outer_iter,trieNode,cp_inst);
+    }
+    else printf("NonTrie: breg %p \n",cp_outer_iter);
+    cp_outer_iter = cp_prevtop(cp_outer_iter);
+  }
+  printf("-------- CPstack bottom\n");
+}
+
 
 void print_call_list(CTXTdeclc calllistptr affected_ptr,char * string) {
 
@@ -175,7 +207,7 @@ static int equalkeys(void *k1, void *k2)
 
 
 /* Creates a call node */
-callnodeptr makecallnode(VariantSF sf){
+callnodeptr makecallnode(CTXTdeclc VariantSF sf){
   
   callnodeptr cn;
 
@@ -262,9 +294,10 @@ void deleteinedges(CTXTdeclc callnodeptr callnode){
       print_outedges(in->inedge_node->callnode);
 #endif
       //    printf("remove some callnode %x / ownkey %d\n",callnode,ownkey);
-      if (remove_some(hasht,ownkey) == NULL) {
+      if (remove_some(CTXTc hasht,ownkey) == NULL) {
 	xsb_abort("BUG: key not found for removal (deleteinedges)\n");
       }
+      //printf("remove_some called from deleteinedges\n");
       current_call_edge_count_gl--;
       in->inedge_node->callnode->outcount--;
       SM_DeallocateStruct(smCallList, in);      
@@ -368,11 +401,11 @@ void deleteoutedges(CTXTdeclc callnodeptr callnode){
 //---------------------------------------------------------------------------
 
 /* used for abolishes -- its known that outcount is 0 */
-void deletecallnode(callnodeptr callnode){
+void deletecallnode(CTXTdeclc callnodeptr callnode){
   current_call_node_count_gl--;
  
   if(callnode->outcount==0){
-    hashtable1_destroy(callnode->outedges->hasht,0);
+    hashtable1_destroy(CTXTc callnode->outedges->hasht,0);
     SM_DeallocateStruct(smOutEdge, callnode->outedges);      
     SM_DeallocateStruct(smCallNode, callnode);        
   }else {
@@ -384,7 +417,7 @@ void deletecallnode(callnodeptr callnode){
 }
 
 
-void deallocate_previous_call(callnodeptr callnode){
+void deallocate_previous_call(CTXTdeclc callnodeptr callnode){
   
   calllistptr tmpin,in;
   
@@ -393,14 +426,15 @@ void deallocate_previous_call(callnodeptr callnode){
   struct hashtable* hasht;
   SM_AllocateStruct(smKey, ownkey);
   ownkey->goal=callnode->id;	
+  //  printf("dpc key: %p/%d \n",ownkey,ownkey->goal);
 	
   in = callnode->inedges;
   current_call_node_count_gl--;
-  
+
   while(IsNonNULL(in)){
     tmpin = in->next;
     hasht = in->inedge_node->hasht;
-    if (remove_some(hasht,ownkey) == NULL) {
+    if (remove_some(CTXTc hasht,ownkey) == NULL) {
       /*
       prevnode=in->prevnode->callnode;
       if(IsNonNULL(prevnode->goal)){
@@ -412,6 +446,7 @@ void deallocate_previous_call(callnodeptr callnode){
       */
       xsb_abort("BUG: key not found for removal (deallocate previous call)\n");
     }
+    //    printf("remove_some called from dealloc prev call\n");
     in->inedge_node->callnode->outcount--;
     current_call_edge_count_gl--;
     SM_DeallocateStruct(smCallList, in);      
@@ -426,13 +461,13 @@ void initoutedges(CTXTdeclc callnodeptr cn){
   outedgeptr out;
 
 #ifdef INCR_DEBUG
-  printf("Initoutedges for ");  print_callnode(CTXTc stddbg, cn);  printf(" (id %d) \n",cn->id);
+  printf("Initaffectsedges for ");  print_callnode(CTXTc stddbg, cn);  printf(" (id %d) \n",cn->id);
 #endif
 
   SM_AllocateStruct(smOutEdge,out);
   cn->outedges = out;
   out->callnode = cn; 	  
-  out->hasht =create_hashtable1(HASH_TABLE_SIZE, hashfromkey, equalkeys);
+  out->hasht =create_hashtable1(CTXTc HASH_TABLE_SIZE, hashfromkey, equalkeys);
   return;
 }
 
@@ -479,7 +514,7 @@ void propagate_no_change(callnodeptr c){
 }
 
 /* Enter a call to calllist */
-static void inline add_callnode_sub(calllistptr *list, callnodeptr item){
+static void inline add_callnode_sub(CTXTdeclc calllistptr *list, callnodeptr item){
   calllistptr  temp;
   SM_AllocateStruct(smCallList,temp);
   temp->item=item;
@@ -489,7 +524,7 @@ static void inline add_callnode_sub(calllistptr *list, callnodeptr item){
 }
 
 /* used in addcalledge */
-static void inline addcalledge_1(calllistptr *list, outedgeptr item){
+static void inline addcalledge_1(CTXTdeclc calllistptr *list, outedgeptr item){
   calllistptr  temp;
   SM_AllocateStruct(smCallList,temp);
   temp->inedge_node=item;
@@ -497,14 +532,10 @@ static void inline addcalledge_1(calllistptr *list, outedgeptr item){
   *list=temp;  
 }
 
-void addcalledge(callnodeptr fromcn, callnodeptr tocn){
+void addcalledge(CTXTdeclc callnodeptr fromcn, callnodeptr tocn){
   KEY *k1;
   SM_AllocateStruct(smKey, k1);
   k1->goal = tocn->id;
-  
-  // #ifdef INCR_DEBUG
-  //  printf("%d-->%d",fromcn->id,tocn->id);	
-  // #endif
   
   if (NULL == search_some(fromcn->outedges->hasht,k1)) {
     insert_some(fromcn->outedges->hasht,k1,tocn);
@@ -515,26 +546,24 @@ void addcalledge(callnodeptr fromcn, callnodeptr tocn){
     print_outedges(fromcn);
 #endif
     
-    addcalledge_1(&(tocn->inedges),fromcn->outedges);      
+    addcalledge_1(CTXTc &(tocn->inedges),fromcn->outedges);      
     current_call_edge_count_gl++;
     fromcn->outcount++;
     
 #ifdef INCR_DEBUG		
     if(IsNonNULL(fromcn->goal)){
       sfPrintGoal(stdout,(VariantSF)fromcn->goal,NO);printf("(%d)",fromcn->id);
-    }else
-      printf("--------------- addcalledge after  (%d)",fromcn->id);
+    }else      printf("--------------- addcalledge after  (%d)",fromcn->id);
     
     if(IsNonNULL(tocn->goal)){
       printf("-->");	
       sfPrintGoal(stdout,(VariantSF)tocn->goal,NO);printf("(%d)",tocn->id);
-    }
-    printf("\n");	
+    }    printf("\n");	
 #endif
-    
-    
   }
-
+  else {
+    SM_DeallocateSmallStruct(smKey, k1);      
+  }
 #ifdef INCR_DEBUG	
     printf("--------------------------------- addcalledge after \n");
     print_inedges(tocn);
@@ -544,7 +573,7 @@ void addcalledge(callnodeptr fromcn, callnodeptr tocn){
 #define EMPTY NULL
 
 //calllistptr eneetq(){ 
-calllistptr empty_calllist(){ 
+calllistptr empty_calllist(CTXTdecl){ 
   
   calllistptr  temp;
   SM_AllocateStruct(smCallList,temp);
@@ -555,8 +584,8 @@ calllistptr empty_calllist(){
 }
 
 
-void add_callnode(calllistptr *cl,callnodeptr c){
-  add_callnode_sub(cl,c);
+void add_callnode(CTXTdeclc calllistptr *cl,callnodeptr c){
+  add_callnode_sub(CTXTc cl,c);
 }
 
 callnodeptr delete_calllist_elt(CTXTdeclc calllistptr *cl){   
@@ -565,7 +594,7 @@ callnodeptr delete_calllist_elt(CTXTdeclc calllistptr *cl){
   callnodeptr c;
 
   #ifdef INCR_DEBUG1
-    printf(" in deallocate call list elt %p *%p\n",cl,*cl);
+    printf(" in delete_calllist_elt %p *%p\n",cl,*cl);
   #endif
   c = (*cl)->item;
   tmp = *cl;
@@ -733,24 +762,25 @@ static void dfs_outedges(CTXTdeclc callnodeptr call1,xsbBool inval_context){
  *  add_callnode(&affected_gl,call1);		
  * }
  * */
-// TLS: factored out this warning because dfs_inedges is recursive and
+// TES: factored out this warning because dfs_inedges is recursive and
 // this makes the stack frames too big. 
-void dfs_inedges_warning(CTXTdeclc callnodeptr call1,calllistptr *lazy_affected) {
-  deallocate_call_list(CTXTc *lazy_affected);
+void dfs_inedges_warning(CTXTdeclc callnodeptr call1,calllistptr *lazy_affected_ptr) {
+  deallocate_call_list(CTXTc *lazy_affected_ptr);
   sprint_subgoal(CTXTc forest_log_buffer_1,0,call1->goal);
     xsb_warn(CTXTc "%d Choice point(s) exist to the table for %s -- cannot incrementally update (dfs_inedges)\n",
 	     subg_visitors(call1->goal),forest_log_buffer_1->fl_buffer);
   }
 
-extern BTNptr TrieNodeFromCP(CPtr);
-extern ALNptr traverse_variant_answer_trie( VariantSF, CPtr, CPtr) ;
-extern Cell list_of_answers_from_answer_list(VariantSF,int,int,ALNptr);
 
-//extern int instr_flag;
-extern CPtr hreg_pos;
+/*
+   (1) the inner iteration checks for a trie_fail instruction, as this                                  
+   instruction is setup for incremental tries in order to decrement                                     
+   its visitors field when backtracking from the last answer in the                                     
+   trie.                                                                                                
+*/
 
 void find_the_visitors(CTXTdeclc VariantSF subgoal) {
-  CPtr cp_top1,cp_bot1 ; CPtr cp_root; 
+  CPtr cp_outer_iter,bottom_of_cpstack ; CPtr cp_root; 
   #ifdef INCR_DEBUG1
   CPtr cp_first;
   #endif
@@ -760,77 +790,115 @@ void find_the_visitors(CTXTdeclc VariantSF subgoal) {
   ALNptr ALNlist;
 
 #ifdef NON_OPT_COMPILE
-  printf("find the visitors: subg %p trie root %p\n",subgoal,subg_ans_root_ptr(subgoal));
+  printf("find the visitors: subg %p trie root %p breg %p prevp %p\n",
+	 subgoal,subg_ans_root_ptr(subgoal),breg,cp_prevbreg(breg));
 #endif
 
-  cp_top1 = breg ;				 
-  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_outer_iter = breg ;				 
+  bottom_of_cpstack = (CPtr)(tcpstack.high) - CP_SIZE;
   if (xwammode && hreg < hfreg) {
-    printf("uh-oh! hreg was less than hfreg in in find the visitors\n");
+    xsb_warn(CTXTc "find_the_visitors: hreg was less than hfreg at start of function.  Trouble may arise.\n");
     hreg = hfreg;
   }
-  while ( cp_top1 < cp_bot1 ) {
-    //    printf("1 cp_top1 %p cp_bot1 %p prev %p\n",cp_top1,cp_bot1,cp_prevtop(cp_top1));
-    cp_inst = *(byte *)*cp_top1;
-    // Want trie insts, but need to distinguish from asserted and interned tries
+  if (xwammode && breg > bfreg) {
+    xsb_warn(CTXTc "find_the_visitors: breg was less than bfreg at start of function.  Trouble may arise.\n");
+  }
+  while ( cp_outer_iter < bottom_of_cpstack ) { 
+    //    printf("1 cp_outer_iter %p bottom_of_cpstack %p prev %p\n",cp_outer_iter,bottom_of_cpstack,cp_prevtop(cp_outer_iter));
+    cp_inst = *(byte *)*cp_outer_iter;
+    // Want trie insts, but need to distinguish between asserted and interned tries
     //    printf("cp_inst %x\n",cp_inst);
     if ( is_trie_instruction(cp_inst) ) {
       //      printf("found trie instr\n");
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      trieNode = TrieNodeFromCP(cp_top1);
+      trieNode = TrieNodeFromCP(cp_outer_iter);
       if (IsInAnswerTrie(trieNode)) {
 	//	printf("in answer trie\n");
-	if (subgoal == get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode,cp_top1))  {
-	  //	  	  printf("found top of run %p ",cp_top1);
-	  //	  	  print_subgoal(CTXTc stdout, subgoal); printf("\n");
-	  cp_root = cp_top1; 
-	  #ifdef INCR_DEBUG1
-	  cp_first = cp_top1;
-	  #endif
-	  while (*cp_pcreg(cp_root) != trie_fail) {
+	if (subgoal == get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode,cp_outer_iter))  {
+#ifdef INCR_DEBUG1
+	  printf("   found top of run %p b-offset %u %x \n",
+		 cp_outer_iter, (CPtr)(tcpstack.high) - cp_outer_iter,cp_inst);
+	  print_subgoal(CTXTc stdout, subgoal); printf("\n");
+	  if (cp_inst == hash_handle) print_hash_handle(cp_outer_iter);
+#endif
+	   cp_root = cp_outer_iter; 
+#ifdef INCR_DEBUG1
+	  cp_first = cp_outer_iter;
+#endif
+	  while (*cp_pcreg(cp_root) != trie_fail) { /* see (1) above */
 	  #ifdef INCR_DEBUG1
 	    cp_first = cp_root;
 	  #endif
 	    cp_root = cp_prevbreg(cp_root);
-	    if (*cp_pcreg(cp_root) != trie_fail && 
-		subgoal != get_subgoal_frame_for_answer_trie_cp(CTXTc TrieNodeFromCP(cp_root),cp_top1))
-	      printf(" couldn't find incr trie root -- whoa, whu? (%p\n",cp_root);
-	  }
-	  ALNlist = traverse_variant_answer_trie(subgoal, cp_root,cp_top1);
+   	  }
+	  //	    if (*cp_pcreg(cp_root) != trie_fail && 
+	  //		subgoal != get_subgoal_frame_for_answer_trie_cp(CTXTc TrieNodeFromCP(cp_root),cp_root))
+	  //	      xsb_warn(CTXTc "find_the_visitors: couldn't find incr trie root -- trouble may arise (%p)\n",cp_root);
+	  if (subgoal != get_subgoal_frame_for_answer_trie_cp(CTXTc TrieNodeFromCP(cp_root),cp_root))
+	    xsb_warn(CTXTc "find_the_visitors 3: different subgoal %p %p\n",
+		     cp_root,get_subgoal_frame_for_answer_trie_cp(CTXTc TrieNodeFromCP(cp_root),cp_root));
+	  ALNlist = traverse_variant_answer_trie(subgoal, cp_root,cp_outer_iter);
 	  ans_subst_num = (int)int_val(cell(cp_root + CP_SIZE + 1)) ;  // account for sf ptr of trie root cp
-	  attv_num = (int)int_val(cell(breg+CP_SIZE+1+ans_subst_num)) + 1;;
-	  #ifdef INCR_DEBUG1
-	  printf("found root %p first %p top %p ans_subst_num %d & %p attv_num %d\n",cp_root,cp_first,cp_top1,ans_subst_num,breg+CP_SIZE, attv_num); 
-	  #endif
+	  //	  attv_num = (int)int_val(cell(breg+CP_SIZE+1+ans_subst_num)) + 1;;
+	  attv_num = 0;   // TES: FIX!
+#ifdef INCR_DEBUG1
+	  printf("   found root %p first %p top %p ans_subst_num %d & %p attv_num %d cp_hreg offset %u\n",
+		 cp_root,cp_first,cp_outer_iter,ans_subst_num,breg+CP_SIZE, 
+		 attv_num,cp_hreg(cp_root) - (CPtr)(glstack.low)); 
+#endif
 	  listHead = list_of_answers_from_answer_list(subgoal,ans_subst_num,attv_num,ALNlist);
-	  // Free ALNlist;
-	  cp_pcreg(cp_top1) = (byte *) &completed_trie_member_inst;
-       	  cp_ebreg(cp_top1) = cp_ebreg(cp_root);
-	  cp_hreg(cp_top1) = hreg;	  
-	  cp_ereg(cp_top1) = cp_ereg(cp_root);
-	  cp_trreg(cp_top1) = cp_trreg(cp_root);
-	  cp_prevbreg(cp_top1) = cp_prevbreg(cp_root);	  cp_prevtop(cp_top1) = cp_prevtop(cp_root);
-	  // cpreg, ereg, pdreg, ptcpreg should not need to be reset (prob not ebreg?)
-	  //	  printf("sf %p\n",* (cp_root + CP_SIZE + 2));
-	  * (cp_top1 + CP_SIZE) = makeint(ans_subst_num);
-	  for (i = 0;i < ans_subst_num ;i++) {                              // Use registers for root of trie, not leaf (top)
-	    * (cp_top1 + CP_SIZE + 1 + i) =  * (cp_root + CP_SIZE + 2 +i);  // account for sf ptr or root
+	  if (listHead) { 
+	    // Free ALNlist;
+	    cp_pcreg(cp_outer_iter) = (byte *) &completed_trie_member_inst;
+	    cp_ebreg(cp_outer_iter) = cp_ebreg(cp_root);
+	    cp_hreg(cp_outer_iter) = hreg;	  
+	    cp_ereg(cp_outer_iter) = cp_ereg(cp_root);
+	    cp_trreg(cp_outer_iter) = cp_trreg(cp_root);
+	    cp_prevbreg(cp_outer_iter) = cp_prevbreg(cp_root);	  cp_prevtop(cp_outer_iter) = cp_prevtop(cp_root);
+	    // cpreg, ereg, pdreg, ptcpreg should not need to be reset (prob not ebreg?)
+	    //	  printf("sf %p\n",* (cp_root + CP_SIZE + 2));
+	    if (cp_prevbreg(cp_root) < (cp_outer_iter + 2 + CP_SIZE + ans_subst_num)) // TES fix!!     
+	      printf("not enough room for coalesced choice point\n");
+	    * (cp_outer_iter + CP_SIZE) = makeint(ans_subst_num);
+	    for (i = 0;i < ans_subst_num ;i++) {   
+	      // Use registers for root of trie, not leaf (top)
+	      * (cp_outer_iter + CP_SIZE + 1 + i) =  * (cp_root + CP_SIZE + 2 +i);  // account for sf ptr or root
+	    }
+	    * (cp_outer_iter + CP_SIZE + 1+ ans_subst_num) = listHead;
+	    * (cp_outer_iter + CP_SIZE + 2+ ans_subst_num) = (Cell)hfreg;
+	    //	  printf("constructed listhead hreg %x\n",hreg);
+	    //	  cp_outer_iter = cp_root;  // next iteration
+	    //	  printf("cp_outer_iter %p bottom_of_cpstack %p prev %p\n",
+	    //           cp_outer_iter,bottom_of_cpstack,cp_prevtop(cp_outer_iter));
+	    // printf("  done with coalescing cp_hreg-offset %ld\n",
+	    //	   cp_hreg(cp_outer_iter) - (CPtr)(glstack.low));
+	    { 
+	      CPtr breg_for_run = breg;
+	      //	      printf("  cp_outer_iter %p breg %p prev-b %p\n",cp_outer_iter,breg,cp_prevbreg(breg));
+	      while (breg_for_run != cp_outer_iter && breg_for_run != bottom_of_cpstack) {
+	        if (cp_hreg(breg_for_run) < hreg) {
+		  cp_hreg(breg_for_run) = hreg;
+		  //		  printf("setting hreg for cp %p\n",breg_for_run);
+		}
+		breg_for_run = cp_prevbreg(breg_for_run);
+	      }
+	    }
 	  }
-	  * (cp_top1 + CP_SIZE + 1+ ans_subst_num) = listHead;
-	  * (cp_top1 + CP_SIZE + 2+ ans_subst_num) = (Cell)hfreg;
-	  //	  printf("4 cp_root %p prev %p\n",cp_root,cp_prevtop(cp_root));
-	  //	  printf("constructed listhead hreg %x\n",hreg);
-	  //	  cp_top1 = cp_root;  // next iteration
-	  //	  printf("7 cp_top1 %p cp_bot1 %p prev %p\n",cp_top1,cp_bot1,cp_prevtop(cp_top1));
 	}
       }
     }
-    cp_top1 = cp_prevtop(cp_top1);
+    cp_outer_iter = cp_prevtop(cp_outer_iter);
   }
-  if (xwammode) hfreg = hreg;
-  //  printf("constructed listhead hreg %x hfreg %x\n",hreg,hfreg);
+  //  printf("abt to construct listhead hreg %x hfreg %x\n",hreg,hfreg);
+
+  /* TES 12/2016.  Took out the following line, which on retrospect
+     doesn't seem correct.  In fact it fixes a core-dump, which may
+     have aided my retrospection, so I want to make note of it. */
+
+  //  if (xwammode) hfreg = hreg;
   subg_visitors(subgoal) = 0;
   //  instr_flag = 1;  printf("setting instr_flag\n");  hreg_pos = hreg;
+  //  printf("done with ftv\n");
 }
 
 void throw_dfs_inedges_error(CTXTdeclc callnodeptr call1) {
@@ -844,7 +912,7 @@ void throw_dfs_inedges_error(CTXTdeclc callnodeptr call1) {
 
 /* If ret != 0 (= CANNOT_UPDATE) then we'll use the old table, and we
    wont lazily update at all. */
-int dfs_inedges(CTXTdeclc callnodeptr call1, calllistptr * lazy_affected, int flag ){
+int dfs_inedges(CTXTdeclc callnodeptr call1, calllistptr * lazy_affected_ptr, int flag ){
   calllistptr inedge_list;
   VariantSF subgoal;
   int ret = 0;
@@ -852,7 +920,7 @@ int dfs_inedges(CTXTdeclc callnodeptr call1, calllistptr * lazy_affected, int fl
   if(IsNonNULL(call1->goal)) {
     if (!subg_is_completed((VariantSF)call1->goal)){
 
-      deallocate_call_list(CTXTc *lazy_affected);
+      deallocate_call_list(CTXTc *lazy_affected_ptr);
       throw_dfs_inedges_error(CTXTc call1);
 
     }
@@ -860,12 +928,12 @@ int dfs_inedges(CTXTdeclc callnodeptr call1, calllistptr * lazy_affected, int fl
       #ifdef ISO_INCR_TABLING
       find_the_visitors(CTXTc call1->goal);
       #else
-      dfs_inedges_warning(CTXTc call1,lazy_affected);
+      dfs_inedges_warning(CTXTc call1,lazy_affected_ptr);
       return CANNOT_UPDATE;
       #endif
     }
   }
-  // TLS: handles dags&cycles -- no need to traverse more than once.
+  // TES: handles dags&cycles -- no need to traverse more than once.
   if (call1 -> recomputable == COMPUTE_DEPENDENCIES_FIRST)
     call1 -> recomputable = COMPUTE_DIRECTLY;
   else {     //    printf("found directly computable call \n");
@@ -878,7 +946,7 @@ int dfs_inedges(CTXTdeclc callnodeptr call1, calllistptr * lazy_affected, int fl
     if(IsNonNULL(subgoal)){ /* fact check */
       //      count++;
       if (inedge_list->inedge_node->callnode->falsecount > 0)  {
-	ret = ret | dfs_inedges(CTXTc inedge_list->inedge_node->callnode, lazy_affected,flag);
+	ret = ret | dfs_inedges(CTXTc inedge_list->inedge_node->callnode, lazy_affected_ptr,flag);
       }
       else {
 	; //	printf(" dfs_i non_affected "); print_subgoal(stddbg,subgoal);printf("\n");
@@ -888,7 +956,7 @@ int dfs_inedges(CTXTdeclc callnodeptr call1, calllistptr * lazy_affected, int fl
   }
   if(IsNonNULL(call1->goal) & !ret){ /* fact check */
     //    printf(" dfs_i adding "); print_subgoal(stddbg,call1->goal);printf("\n");
-    add_callnode(lazy_affected,call1);		
+    add_callnode(CTXTc lazy_affected_ptr,call1);		
   }
   return ret;
 }
@@ -964,11 +1032,11 @@ int return_lazy_call_list(CTXTdeclc  callnodeptr call1){
       new_heap_functor(sreg, psc);
       for (j = 1; j <= arity; j++) {
 	new_heap_free(sreg);
-	cell_array1[arity-j] = cell(sreg-1);
+	incr_heap_cell_array[arity-j] = cell(sreg-1);
       }
-      //      build_subgoal_args(arity,cell_array1,subgoal);		
+      //      build_subgoal_args(arity,incr_heap_incr_heap_cell_array,subgoal);		
       /* Need to do separate heapcheck above to protect regs 1-6 */
-      load_solution_trie_no_heapcheck(CTXTc arity, 0, &cell_array1[arity-1], subg_leaf_ptr(subgoal));
+      load_solution_trie_no_heapcheck(CTXTc arity, 0, &incr_heap_cell_array[arity-1], subg_leaf_ptr(subgoal));
     } else {
       follow(oldhreg++) = makestring(get_name(psc));
     }
@@ -1058,10 +1126,10 @@ int immediate_outedges_list(CTXTdeclc callnodeptr call1){
 	    new_heap_functor(sreg, psc);
 	    for (j = 1; j <= arity; j++) {
 	      new_heap_free(sreg);
-	      cell_array1[arity-j] = cell(sreg-1);
+	      incr_heap_cell_array[arity-j] = cell(sreg-1);
 	    }
-	    load_solution_trie_no_heapcheck(CTXTc arity, 0, &cell_array1[arity-1], subg_leaf_ptr(subgoal));
-	    //    build_subgoal_args(arity,cell_array1,subgoal);		
+	    load_solution_trie_no_heapcheck(CTXTc arity, 0, &incr_heap_cell_array[arity-1], subg_leaf_ptr(subgoal));
+	    //    build_subgoal_args(arity,incr_heap_cell_array,subgoal);		
 	  }else{
 	    follow(oldhreg++) = makestring(get_name(psc));
 	  }
@@ -1206,10 +1274,10 @@ int immediate_inedges_list(CTXTdeclc callnodeptr call1){
 	  new_heap_functor(sreg, psc);
 	  for (j = 1; j <= arity; j++) {
 	    new_heap_free(sreg);
-	    cell_array1[arity-j] = cell(sreg-1);
+	    incr_heap_cell_array[arity-j] = cell(sreg-1);
 	  }		
-	  load_solution_trie_no_heapcheck(CTXTc arity, 0, &cell_array1[arity-1], subg_leaf_ptr(subgoal));
-	  //	  build_subgoal_args(arity,cell_array1,subgoal);		
+	  load_solution_trie_no_heapcheck(CTXTc arity, 0, &incr_heap_cell_array[arity-1], subg_leaf_ptr(subgoal));
+	  //	  build_subgoal_args(arity,incr_heap_cell_array,subgoal);		
 	}else{
 	  follow(oldhreg++) = makestring(get_name(psc));
 	}
@@ -1258,28 +1326,27 @@ which should not be deleted.
 
 void mark_for_incr_abol(CTXTdeclc callnodeptr);
 void check_assumption_list(CTXTdecl);
-call2listptr create_cdbllist(void);
+//call2listptr create_cdbllist(CTXTdecl);
 
 /* Double Linked List functions */
+//call2listptr create_cdbllist(CTXTdecl){
+//  call2listptr l;
+//  SM_AllocateStruct(smCall2List,l);
+//  l->next=l->prev=l;
+//  l->item=NULL;
+//  return l;    
+//}
 
-call2listptr create_cdbllist(void){
-  call2listptr l;
-  SM_AllocateStruct(smCall2List,l);
-  l->next=l->prev=l;
-  l->item=NULL;
-  return l;    
-}
-
-call2listptr insert_cdbllist(call2listptr cl,callnodeptr n){
-  call2listptr l;
-  SM_AllocateStruct(smCall2List,l);
-  l->next=cl->next;
-  l->prev=cl;
-  l->item=n;    
-  cl->next=l;
-  l->next->prev=l;  
-  return l;
-}
+//acall2listptr insert_cdbllist(CTXTdeclc call2listptr cl,callnodeptr n){
+//  call2listptr l;
+//  SM_AllocateStruct(smCall2List,l);
+//  l->next=cl->next;
+//  l->prev=cl;
+//  l->item=n;    
+//  cl->next=l;
+//  l->next->prev=l;  
+//  return l;
+//}
 
 void remove_callnode_from_list(call2listptr n){
   n->next->prev=n->prev;
@@ -1362,7 +1429,7 @@ int  get_incr_sccs(CTXTdeclc Cell listterm) {
     SCCNode * nodes;
     struct hashtable_itr *itr;     struct hashtable* hasht; 
     XSB_Deref(listterm);
-    hasht = create_hashtable1(HASH_TABLE_SIZE, hashid, equalkeys);
+    hasht = create_hashtable1(CTXTc HASH_TABLE_SIZE, hashid, equalkeys);
     orig_listterm = listterm;
     intterm = get_list_head(listterm);
     XSB_Deref(intterm);
@@ -1425,7 +1492,7 @@ int  get_incr_sccs(CTXTdeclc Cell listterm) {
       //      printf("++component for node %d is %d (high %d)\n",i,nodes[i].component,component);
     }
     ret = return_scc_list(CTXTc  nodes, node_num);
-    hashtable1_destroy(hasht,0);
+    hashtable1_destroy(CTXTc hasht,0);
     mem_dealloc(nodes,node_num*sizeof(SCCNode),OTHER_SPACE); 
     mem_dealloc(dfn_stack,node_num*sizeof(int),OTHER_SPACE); 
     return ret;
@@ -1509,10 +1576,10 @@ int return_scc_list(CTXTdeclc SCCNode * nodes, Integer num_nodes){
       hreg += arity + 1;
       for (j = 1; j <= arity; j++) {
 	new_heap_free(sreg);
-	cell_array1[arity-j] = cell(sreg-1);
+	incr_heap_cell_array[arity-j] = cell(sreg-1);
       }
-      load_solution_trie_no_heapcheck(CTXTc arity, 0, &cell_array1[arity-1], subg_leaf_ptr(subgoal));
-      //      build_subgoal_args(arity,cell_array1,subgoal);		
+      load_solution_trie_no_heapcheck(CTXTc arity, 0, &incr_heap_cell_array[arity-1], subg_leaf_ptr(subgoal));
+      //      build_subgoal_args(arity,incr_heap_cell_array,subgoal);		
     } else{
       follow(oldhreg++) = makestring(get_name(psc));
     }
@@ -1718,9 +1785,9 @@ int return_scc_list(CTXTdeclc SCCNode * nodes, Integer num_nodes){
 %%%      new_heap_functor(sreg, psc);
 %%%      for (j = 1; j <= arity; j++) {
 %%%	new_heap_free(sreg);
-%%%	cell_array1[arity-j] = cell(sreg-1);
+%%%	incr_heap_cell_array[arity-j] = cell(sreg-1);
 %%%      }
-%%%      build_subgoal_args(arity,cell_array1,subgoal);		
+%%%      build_subgoal_args(arity,incr_heap_cell_array,subgoal);		
 %%%    }else{
 %%%      follow(oldhreg++) = makestring(get_name(psc));
 %%%    }
@@ -1786,9 +1853,9 @@ int return_scc_list(CTXTdeclc SCCNode * nodes, Integer num_nodes){
 // 	new_heap_functor(sreg, psc);
 // 	for (j = 1; j <= arity; j++) {
 // 	  new_heap_free(sreg);
-// 	  cell_array1[arity-j] = cell(sreg-1);
+// 	  incr_heap_cell_array[arity-j] = cell(sreg-1);
 // 	}
-// 	build_subgoal_args(arity,cell_array1,subgoal);		
+// 	build_subgoal_args(arity,incr_heap_cell_array,subgoal);		
 //       }else{
 // 	follow(oldhreg++) = makestring(get_name(psc));
 //       }
@@ -1846,9 +1913,9 @@ int return_scc_list(CTXTdeclc SCCNode * nodes, Integer num_nodes){
 //      new_heap_functor(sreg, psc);
 //      for (j = 1; j <= arity; j++) {
 //	new_heap_free(sreg);
-//	cell_array1[arity-j] = cell(sreg-1);
+//	incr_heap_cell_array[arity-j] = cell(sreg-1);
 //      }
-//      build_subgoal_args(arity,cell_array1,subgoal);		
+//      build_subgoal_args(arity,incr_heap_cell_array,subgoal);		
 //    }else{
 //      follow(oldhreg++) = makestring(get_name(psc));
 //    }

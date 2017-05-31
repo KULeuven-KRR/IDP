@@ -29,8 +29,8 @@
 :- export db_show_schema/1, db_get_schema/2, user_tables/1, db_get_schema/2.
 :- export db_record/2, db_create_table/2, db_create_index/3, db_delete_table/1.
 :- export db_delete_view/1, db_delete_index/1, db_add_record/2, delete_record/2.
-:- export db_error_message/3, connect/0.
-:- export '$ora_err$'/1, '$show_query$'/1, '$cursor_table$'/1.
+:- export db_error_message/3. %, connect/0.
+:- export '$ora_err$'/1, '$show_query$'/1. %, '$cursor_table$'/1.
 
 :- import table_arity/2, ','/2, (:-)/2 from usermod.
 :- import str_cat/3, oracle_query/7 from machine.

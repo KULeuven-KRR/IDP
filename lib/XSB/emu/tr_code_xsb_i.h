@@ -32,6 +32,26 @@
 #define HASH_IS_FREE	 -3
 #define HASH_IS_NOT_FREE -4
 
+#define  print_hash_handle(TBREG)  {					\
+  Integer hash_offset = int_val(cell(TBREG+CP_SIZE));			\
+  Integer hash_type_ind = int_val(cell(TBREG + CP_SIZE + 2));		\
+  printf("Hash header instruction: hash offset: %ld %s ; ",hash_offset,	\
+	 (hash_offset == FIRST_HASH_NODE ? "FIRST_HASH_NODE"		\
+	  :(hash_offset == NO_MORE_IN_HASH ? "NO_MORE_IN_HASH":"")));	\
+  printf("hash_type_ind: %ld %s ; ",hash_type_ind,(hash_type_ind == HASH_IS_FREE ? "HASH IS FREE" \
+						 :(hash_type_ind == HASH_IS_NOT_FREE ? "HASH IS NOT FREE" \
+						   : "UNEXPECTED VAL FOR HASH_TYP_IND"))); \
+  if (hash_type_ind == HASH_IS_FREE) {					\
+    BTHTptr hash_hdr;							\
+    BTHTptr *hash_base;							\
+    hash_hdr = (BTHTptr) string_val(cell(TBREG+CP_SIZE+1));		\
+    hash_base = (BTHTptr *) BTHT_BucketArray(hash_hdr);			\
+    find_next_nonempty_bucket(hash_hdr, hash_base, hash_offset);	\
+    printf("next bucket is %ld %s\n",hash_offset,(hash_offset == NO_MORE_IN_HASH ? "NO_MORE_IN_HASH":"a")); \
+  }									\
+  else printf("\n");							\
+}
+
 /*----------------------------------------------------------------------*/
 
 /* These are used only in instruction "hash_handle"

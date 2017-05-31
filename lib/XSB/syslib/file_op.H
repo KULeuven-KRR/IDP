@@ -27,17 +27,20 @@
 :- export '_$op'/3, add_ops/3, op_priority/1, op_specifier/1, op_type/2.
 :- export add_index/3, retract_index/1, add_trie_index/1, retract_trie_index/1, 
   '_$index'/3 , '_$trie_asserted'/1.
-:- export add_table/1, retract_table/1.   %%, '_$table'/1.
-:- export add_incr_table/1, add_opaque/1. %% incremental evaluation 
 :- export mpa_to_skel/2.
 :- export force_file_op_loaded/0.
 
 :- import default_assert_size/1 from config.
 :- import integer/1, functor/3, atom/1 from standard.
 :- import /*incremental evaluation */ assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
+:- import system_retractall/1 from assert.
 
 :- import conpsc/2, psc_type/2, term_new/2, psc_insert/4 from machine.
 :- import instantiation_error/2 from error_handler.
+:- import dynamic_pred_has_clauses/2 from assert.
+:- import term_psc/2 from machine.
+:- import warning/1 from standard.
+
 
 :- index '_$op1'/3-3.
 

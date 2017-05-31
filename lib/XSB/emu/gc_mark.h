@@ -788,10 +788,15 @@ static int mark_hreg_from_choicepoints(CTXTdecl)
   UNUSED(bprev);
 
   m = 0;
-    while(1)
-     {
+  // T
+  while(1)
+    { // TES: leaving some scaffolding commented, as an overflow of heap_marks could happen again
+      //       if (cp_pcreg(b) ==  (byte *) &completed_trie_member_inst) 
+      //	 printf("completed trie member found in cp traversal %p offset %u\n",b,(CPtr)(tcpstack.high) - b);
       h = cp_hreg(b) ;
       i = h - heap_bot ;
+      //       if ( i > heap_marks_size || i < 0) printf("heap_marks_size %u i %u breg %p instr %x\n",
+      //					 heap_marks_size,i,b,*(byte *) cp_pcreg(b));
       if (! h_marked(i)) /* h from choicepoint should point to something that
 			    is marked; if not, mark it now and set it
 			    to something reasonable - int(666) is ok
@@ -1045,7 +1050,6 @@ void mark_atom_and_code_strings(CTXTdecl) {
   ClRef clref;
   CPtr code_beg, code_end;
 
-  //  printf("marking atom and code strings\n");
   //  printf("marking atoms in usermod\n");
   for (i = 0; i < symbol_table.size; i++) {
     if (symbol_table.table[i] != NULL) {
@@ -1053,12 +1057,12 @@ void mark_atom_and_code_strings(CTXTdecl) {
 	   pair_ptr = pair_next(pair_ptr)) {
 	char *string = get_name(pair_psc(pair_ptr));
 	mark_string(string,"usermod atom");
-	if (get_type(pair_psc(pair_ptr)) == T_PRED && isstring(get_data(pair_psc(pair_ptr)))) {
+	if (get_type(pair_psc(pair_ptr)) != T_ORDI && isstring(get_data(pair_psc(pair_ptr)))) {
 	  string = string_val((get_data((pair_psc(pair_ptr)))));
 	  mark_string(string,"filename");
 	}
 	if (get_type(pair_psc(pair_ptr)) == T_DYNA) {
-	  //	  printf("mark dc for usermod:%s/%d\n",string,get_arity(pair_psc(pair_ptr)));
+	  //printf("mark dc for usermod:%s/%d\n",string,get_arity(pair_psc(pair_ptr)));
 	  prref = dynpredep_to_prref(CTXTc get_ep(pair_psc(pair_ptr))); // fix for multi-threading to handle dispatch for privates 
 	  if (prref) {
 	    clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
@@ -1081,11 +1085,10 @@ void mark_atom_and_code_strings(CTXTdecl) {
 	char *string = get_name(pair_psc(pair_ptr));
 	mark_string(string,"mod atom");
 	if (get_type(pair_psc(pair_ptr)) == T_DYNA) {
-	  //	  if (strcmp(get_name(pair_psc(pair_ptr)),"ipObjectSpec_T")==0) printf("mark dc for %s:%s/%d\n",get_name(pair_psc(mod_pair_ptr)),string,get_arity(pair_psc(pair_ptr)));
+	  //if (strcmp(get_name(pair_psc(pair_ptr)),"ipObjectSpec_T")==0) printf("mark dc for %s:%s/%d\n",get_name(pair_psc(mod_pair_ptr)),string,get_arity(pair_psc(pair_ptr)));
 	  prref = dynpredep_to_prref(CTXTc get_ep(pair_psc(pair_ptr)));
 	  clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
 	  while (clref) {
-	    //	    printf("  mark code from %s/%d(%s), %p\n", string, get_arity(pair_psc(pair_ptr)), get_name(pair_psc(mod_pair_ptr)), clref);
 	    mark_code_strings(CTXTc 0,code_beg,code_end);
 	    clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
 	  }
@@ -1094,7 +1097,6 @@ void mark_atom_and_code_strings(CTXTdecl) {
       }
     }
   }
-  //  printf("marked atom and code strings\n");
 }
 
 void mark_nonheap_strings(CTXTdecl) {

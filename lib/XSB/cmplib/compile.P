@@ -33,7 +33,8 @@
 mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 
 /*======================================================================*/
-/* compile(+ModName, +BaseName, +CompilerOptions, -ExportedPredicates)	*/
+/* compile(+ModName, +BaseName, +Extensions, +CompilerOptions,          */
+/*                                               -ExportedPredicates)	*/
 /*	Compiles a module with the compiler options specified and	*/
 /*	returns the list of exported predicates.			*/
 /*======================================================================*/
@@ -54,10 +55,12 @@ handle_compile_error(Basename,IStr,OStr):-
 	stat_flag(CURRENT_INPUT, CurStr),
 	(IStr \== CurStr -> close(CurStr) ; true),
 	str_cat(Basename,XSB_OBJ_EXTENSION_ATOM,OFile),
-	sys_unlink(OFile,_), 
+	sys_unlink(OFile,_Ret0), 
+	str_cat(Basename,XSB_LCK_EXTENSION_ATOM,LFile),
+	sys_unlink(LFile,_Ret1), 
 	see(IStr),tell(OStr).
 
-:- import console_writeln/1 from standard.
+%%:- import console_writeln/1 from standard.
 compile_internal(Modname, Basename, Extension,Options, ExportList) :-
 	file_names(Basename, Extension,PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, _OptFile),
@@ -72,7 +75,6 @@ compile_internal(Modname, Basename, Extension,Options, ExportList) :-
 	cputime(TimeStart),
 	retractall(current_compiled_module(_)),
 	assert(current_compiled_module(Basename)),
-%	db_preprocess(PFile, HFile, OptFile, SourceFile),
 	parse(Modname, PFile, HFile, Module_0),
 	( option(profile) -> 
 	    time_message(TimeStart, 'Parse finita'), cputime(TimeParse)
@@ -86,11 +88,11 @@ compile_internal(Modname, Basename, Extension,Options, ExportList) :-
 	specialise(Module_0, Module0, SpecFile),
 	table_process(Module0, Module, TableFile),
 	hack_self_compile,
-	get_symtab(Module, SymTab),
+	Module = module(SymTab,_,_,_,ModPars),
 	( option(profile) -> 
 	    time_message(TimeUse, 'Other finita')
 	; true ),
-	compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule),
+	compile1(Modname, Module, ModPars, SymTab, AFile, OFile, TIFile, IsModule),
 	check_possible_hilog_conflict(SymTab),
 	dispose_symtab( SymTab ),
 	( option(compile_off) -> print_result(Module) ; true ),
@@ -202,38 +204,65 @@ modeinfer(ModName, Module, SymTab) :-
 /*======================================================================*/
 /*======================================================================*/
 
-compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
+compile1(Modname, Module, ModPars, SymTab, AFile, OFile, TIFile, IsModule) :-
       ( option(compile_off) ->		%  generate *.A file
-	  open(AFile,write,AStr),write_asmheader(AStr, Modname, SymTab, IsModule), close(AStr)
+	      open(AFile,write,AStr),
+	      write_asmheader(AStr, Modname, ModPars, SymTab, IsModule),
+	      close(AStr)
 %      ; conget('error occurred', 1) ->
 %	  error(('Aborting compilation of module ',Modname,' due to errors')),
 %	  abort_quietly
       ; option(asm_dump) -> 
 	  open(AFile,write,AStr),
-	  write_asmheader(AStr,Modname,SymTab, IsModule), % generate .A header
+	  write_asmheader(AStr,Modname,ModPars,SymTab, IsModule), % generate .A header
 	  open(OFile,write,OStr),
-	  asm_genheader(OStr, Modname, SymTab, IsModule), % generate OBJ header
+	  asm_genheader(OStr, Modname, ModPars, SymTab, IsModule), % generate OBJ header
 	  compile0(Module, 1, AStr, OStr, TIFile, IsModule),
 	  close(AStr),
 	  close(OStr)
-      ; stat_flag(101,OldCS), % old charset
-	stat_set_flag(101,2), % set utf-8
-        open(OFile,write,OStr),
-	stat_set_flag(101,OldCS), % reset old charset
-%	  console_writeln(asm_genheader(Modname,IsModule,SymTab)),
-	asm_genheader(OStr, Modname, SymTab, IsModule), % generate OBJ header
-	compile0(Module, 0, dummy, OStr, TIFile, IsModule),
-	close(OStr)
+       ; lockfile_name(OFile,LFile),
+	      (create_lockfile(LFile)
+	       ->     stat_flag(101,OldCS), % old charset
+		      stat_set_flag(101,2), % set utf-8
+		      open(OFile,write,OStr),
+		      stat_set_flag(101,OldCS), % reset old charset
+%	  console_writeln(asm_genheader(Modname,ModPars,IsModule,SymTab)),
+		      asm_genheader(OStr, Modname, ModPars, SymTab, IsModule), % generate OBJ header
+		      compile0(Module, 0, dummy, OStr, TIFile, IsModule),
+		      close(OStr),
+		      sys_unlink(LFile,_)
+	       ;      wait_on_lockfile(LFile,0)
+	      )
       ).
+
+wait_on_lockfile(LFile,Cnt) :-
+	(Cnt mod 10 =:= 0
+	 ->	console_writeln('Waiting for compilation of file '(LFile))
+	 ;	true
+	),
+	sleep(1),
+	(machine_file_exists(LFile)
+	 ->	Cnt1 is Cnt+1,
+		wait_on_lockfile(LFile,Cnt1)
+	 ;	true
+	).
+
+lockfile_name(OFile,LFile) :-
+	concat_atom([BaseFile,XSB_OBJ_EXTENSION_ATOM],OFile),
+	concat_atom([BaseFile,XSB_LCK_EXTENSION_ATOM],LFile).
+
 
 /*======================================================================*/
 /* compile0(+Module, +GenAsm, +AStr, +OStr, +IsModule)		*/
 /*	Compiles a module in the internal form.				*/
 /*======================================================================*/
 
-compile0(module(SymTab,_,ClList,[MainPred]),GenAsm,AStr,OStr,TIFile,M) :-
+compile0(module(SymTab,_,ClList,[MainPred],_Par),GenAsm,AStr,OStr,TIFile,M) :-
 	member(PredBlk, [MainPred|ClList]),
-	compile_predicate(PredBlk, GenAsm, AStr, OStr, TIFile, M, SymTab),
+	catch(compile_predicate(PredBlk, GenAsm, AStr, OStr, TIFile, M, SymTab),
+	      Error,
+	      (close(OStr),throw(Error))
+	     ),
 	fail.	/* just reclaim space */
 compile0(_, _, _, _, _, _).
 
@@ -270,7 +299,7 @@ compile_check_ok(Sym) :-
 	 ;	(standard_symbol(P, N, _)
 		 ->	(option(allow_redefinition)
 			 ->	permission_warning(redefine,'standard predicate',P/N,'',compile/1)
-		         ;      permission_error(redefine,'standard predicate',P/N,compile/1)
+		         ;	permission_error(redefine,'standard predicate',P/N,compile/1)
 			)
 		 ;	true
 		)

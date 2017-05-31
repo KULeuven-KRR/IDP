@@ -63,7 +63,8 @@ char *user_home_gl;    	     	     	/* the user $HOME dir or install dir,
 
 
 extern xsbBool is_absolute_filename(char *);
-DllExport extern char * call_conv strip_names_from_path(char*, int);
+DllExport extern char *call_conv strip_names_from_path(char*, int);
+extern char *expand_filename(char*);
 
 static void check_create_dir(CTXTdeclc char *);
 
@@ -253,6 +254,7 @@ void set_install_dir(void) {
   /* strip 4 levels, since executable is always of this form:
      install_dir/config/<arch>/bin/xsb */
   install_dir_gl = strip_names_from_path(executable_path_gl, 4);
+  install_dir_gl = expand_filename(install_dir_gl); // important for windows
   if (install_dir_gl == NULL) {
     if (xsb_mode != C_CALLING_XSB) {
       fprintf(stderr,

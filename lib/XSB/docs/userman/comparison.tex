@@ -1,0 +1,427 @@
+\section{Unification and Comparison of Terms} \label{Comparison}
+\index{terms!comparison of}
+\index{terms!unification of}
+
+The predicates described in this section allow unification and
+comparison of terms~\footnote{Arithmetic comparison predicates that
+may evaluate terms before comparing them are described in
+Section~\ref{sec:arith-eval}.}.
+
+\index{occurs check}
+\index{terms!cyclic}
+\index{Prolog flags!{\tt unify\_with\_occurs\_check}}
+Like most Prologs, default unification in XSB does not perform a
+so-called {\em occurs check} --- it does not handle situations where a
+variable {\tt X} may be bound to a structure containing {\tt X} as a
+proper subterm.  For instance, in the goal
+
+{\tt X = f(X)}    {\em \% incorrect!}
+
+{\tt X} is bound to {\tt f(X)} creating a term that is either cyclic
+or infinite, depending on one's point of view.  Prologs in general
+perform unification without occurs check since without occurs check
+unification is linear in the size of the largest term to be unified,
+while unification with occurs check may be exponential in the size of
+the largest term to be unified.  Most Prolog programmers will rarely,
+need to concern themselves with cyclic terms or unification with
+occurs check.  However, unification with occurs check can be important
+for certain applications, in particular when Prolog is used to
+implement theorem provers or sophisticated constraint handlers.  As a
+result XSB provides an ISO-style implementation of the predicate {\tt
+  unify\_with\_occurs\_check/2} described below, as well as a Prolog
+flag {\tt unify\_with\_occurs\_check} that changes the behavior of
+unification in XSB's engine.
+
+As opposed to unification predicates, term comparison predicates
+described below take into account a standard total ordering of terms,
+which has as follows:
+%
+\[ 
+variables \ {\tt @<} \ floating \ point \ numbers \ {\tt @<} \ integers \ {\tt @<} \ atoms \ {\tt @<} \ compound \ terms 
+\] 
+%
+Within each one of the categories, the ordering is as follows:
+\begin{itemize}
+\item ordering of variables is based on their address within the
+  SLG-WAM --- the order is {\em not\/} related to the names of
+  variables.  Thus note that two variables are identical only if they
+  share the same address -- only if they have been unified or are the
+  same variable to begin with.  As a corollary, note that two
+  anonymous variables will not have the same address and so will not
+  be considered identical terms.  As with most WAM-based Prologs, the
+  order of variables may change as variables become bound to one
+  another.  If the order is expected to be invariant across variable
+  bindings, other mechanisms, such as attributed variables, should be
+  used.
+\item floating point numbers and integers are put in numeric order,
+  from $-\infty$ to $+\infty$.  Note that a floating point number is
+  always less than an integer, regardless of their numerical values.
+  If comparison is needed, a conversion should be performed
+  (e.g. through {\tt float/1}).
+\item	atoms are put in alphabetical (i.e. UTF-8) order;
+\item	compound terms are ordered first by arity, then by the name of their
+	principal functor and then by their arguments (in a left-to-right 
+	order).
+\item	lists are compared as ordinary compound terms having arity 2 and 
+	functor {\tt '.'}.
+\end{itemize}
+
+For example, here is a list of terms sorted in increasing standard order:
+\begin{center}
+	{\tt [ X, 3.14, -9, fie, foe, fum(X), [X], X = Y, fie(0,2), fie(1,1) ]}
+\end{center}
+The basic predicates for unification and comparison of arbitrary terms are:
+\begin{description}
+
+\isoitem{X = Y}{=/2}
+    Unifies {\tt X} and {\tt Y} without occur check.
+
+\standarditem{unify\_with\_occurs\_check(One,Two)}{unify\_with\_occurs\_check/2}
+%
+Unifies {\tt One} and {\tt Two} using an occur check, and failing if
+{\tt One} is a proper subterm of {\tt Two} or if {\tt Two} is a proper
+subterm of {\tt One}.  
+
+{\bf Example:}
+    {\footnotesize
+     \begin{verbatim}
+                | ?- unify_with_occurs_check(f(1,X),f(1,a(X))).
+
+                no
+                | ?- unify_with_occurs_check(f(1,X),f(1,a(Y))).
+
+                X = a(_h165)
+                Y = _h165
+
+                yes
+                | ?- unify_with_occurs_check(f(1,a(X)),f(1,a(X))).
+
+                X = _h165
+
+                yes
+  \end{verbatim}}
+
+\isoitem{T1 == T2}{==/2}
+%
+    Tests if the terms currently instantiating {\tt T1} and {\tt T2}
+    are literally identical (in particular, variables in equivalent positions
+    in the two terms must be identical).
+    For example, the goal:
+
+    \demo{$|$ ?- X == Y.}
+
+    \noindent
+    fails (answers no) because {\tt X} and {\tt Y} are distinct variables.
+    However, the question
+
+    \demo{$|$ ?- X = Y, X == Y.}
+
+    \noindent
+    succeeds because the first goal unifies the two variables.
+
+\ournewitem{X $\backslash$\,= Y}{ISO}\index{$\backslash$\texttt{=/2}}
+\index[pred]{$\backslash$\texttt{=/2}}
+    Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
+    fails if~{\tt X} and~{\tt Y} are unifiable.
+    It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
+
+\ournewitem{T1 {$\backslash$==} T2}{ISO} \index{$\backslash$\texttt{==/2}} 
+\index[pred]{$\backslash$\texttt{==/2}}
+    Succeeds if the terms currently instantiating {\tt T1} and {\tt T2}
+    are not literally identical.
+
+\standarditem{Term1 ?= Term2}{?=/2}
+%
+Succeeds if the equality of {\tt Term1} and {\tt Term2} can be
+compared safely, i.e. whether the result of {\tt Term1 = Term2} can
+change due to further instantiation of either term. It is specified as
+by {\tt ?=(A,B) :- (A==B ; A \= B).} 
+
+\ourmoditem{unifiable(X, Y, -Unifier)}{unifiable/3}{constraintLib}
+%
+If {\tt X} and {\tt Y} can unify, succeeds unifying {\tt Unifier} with
+a list of terms of the form {\tt Var = Value} representing a most
+general unifier of {\tt X} and {\tt Y}.\  {\tt unifiable/3} can handle
+cyclic terms. Attributed variables are handles as normal
+variables. Associated hooks are not executed~\footnote{In \version ,
+  {\tt unifiable/3} is written as a Prolog predicate and so is slower
+  than many of the predicates in this section.}.
+
+\isoitem{T1 @$<$ T2}{"@$<$/2}
+    Succeeds if term {\tt T1} is before term {\tt T2} in the standard order.
+
+\isoitem{T1 @$>$ T2}{"@$>$/2}
+    Succeeds if term {\tt T1} is after term {\tt T2} in the standard order.
+
+\isoitem{T1 @$=<$ T2}{"@$=</2$}
+    Succeeds if term {\tt T1} is not after term {\tt T2} in the standard order.
+
+\isoitem{T1 @$>=$ T2}{"@$>=/2$}
+    Succeeds if term {\tt T1} is not before term {\tt T2} in the standard order.
+
+\standarditem{T1 @$=$ T2}{"@$=/2$}
+    Succeeds if {\tt T1} and {\tt T2} are identical variables, or if
+    the main structure symbols of {\tt T1} and {\tt T2} are identical.
+
+\isoitem{compare(?Op, +T1, +T2)}{compare/3}
+    Succeeds if the result of comparing terms {\tt T1} and {\tt T2} 
+    is {\tt Op}, where the possible values for {\tt Op} are:
+    \begin{description}
+    \item[`='] if {\tt T1} is identical to {\tt T2},
+    \item[`$<$'] if {\tt T1} is before {\tt T2} in the standard order,
+    \item[`$>$'] if {\tt T1} is after {\tt T2} in the standard order.
+    \end{description}
+    Thus {\tt compare(=, T1, T2)} is equivalent to {\tt T1==T2}.
+    Predicate {\tt compare/3} has no associated error conditions.
+
+\index{terms!cyclic}
+\isoitem{ground(+X)}{ground/1}
+%
+Succeeds if {\tt X} is currently instantiated to a term that is
+completely bound (has no uninstantiated variables in it); otherwise it
+fails.  While {\tt ground/1} has no associated error conditions, it is
+not safe for cyclic terms: if cyclic terms may be an issue use {\tt
+  ground\_or\_cyclic/1}.
+
+\repeatstandarditem{ground\_and\_acyclic(+X)}{ground\_and\_acyclic/1} 
+\standarditem{ground\_or\_cyclic(+X)}{ground\_or\_cyclic/1} 
+%
+{\tt ground\_or\_cyclic/1} succeeds if {\tt X} is currently
+instantiated to a term that is completely bound (has no uninstantiated
+variables in it) {\em or} is a cyclic term; otherwise it fails.
+Alternately, {\tt ground\_and\_acyclic/1} succeeds if {\tt X} is
+currently instantiated to an acyclic term that is completely bound
+(has no uninstantiated variables in it).  Neither predicate has no
+associated error conditions.
+
+Both predicates are written to be as efficient as possible, and each
+requres a single traversal of a term, regardless of whether the term
+is ground, nonground or cyclic.  However, due to the nature of
+checking for cyclicity, these predicates are somewhat slower than the
+unsafe {\tt ground/1}.
+
+\ourmoditem{subsumes(?Term1, +Term2)}{subsumes/2}{subsumes}
+%\predindex{subsumes/2~(L)}
+    Term subsumption is a sort of one-way unification.  Term {\tt Term1}
+    and {\tt Term2} unify if they have a common instance, and unification
+    in Prolog instantiates both terms to that (most general) common instance.
+    {\tt Term1} subsumes {\tt Term2} if {\tt Term2} is already an instance of
+    {\tt Term1}.  For our purposes, {\tt Term2} is an instance of {\tt Term1}
+    if there is a substitution that leaves {\tt Term2} unchanged and makes
+    {\tt Term1} identical to {\tt Term2}.  Predicate {\tt subsumes/2} does
+    not work as described if {\tt Term1} and {\tt Term2} share common
+    variables.
+
+\ourrepeatmoditem{subsumes\_chk(+Term1, +Term2)}{subsumes\_chk/2}{subsumes}%
+\isoitem{subsumes\_term(+Term1, +Term2)}{subsumes\_term/2}
+%
+    The {\tt subsumes\_chk/2} predicate is true when {\tt Term1} subsumes 
+    {\tt Term2}; that is, when {\tt Term2} is already an instance of
+    {\tt Term1}.  This predicate simply checks for subsumption and 
+    does not bind any variables either in {\tt Term1} or in {\tt Term2}.
+    {\tt Term1} and {\tt Term2} should not share any variables.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+            | ?- subsumes_chk(a(X,f,Y,X),a(U,V,b,S)).
+
+            no
+            | ?- subsumes_chk(a(X,Y,X),a(b,b,b)).
+
+            X = _595884
+            Y = _595624
+     \end{verbatim}}
+
+\ourmoditem{variant(?Term1, ?Term2)}{variant/2}{subsumes}
+%\predindex{variant/2~(L)}
+    This predicate is true when {\tt Term1} and {\tt Term2} are 
+    alphabetic variants.  That is, you could imagine that {\tt variant/2}
+    as being defined like:
+    \begin{center}
+    \begin{minipage}{3.5in}
+    \begin{verbatim}
+        variant(Term1, Term2) :-
+             subsumes_chk(Term1, Term2),
+             subsumes_chk(Term2, Term1).
+    \end{verbatim}
+    \end{minipage}
+    \end{center}
+    but the actual implementation of {\tt variant/2} is considerably more
+    efficient.  However, in general, it does not work for terms that share
+    variables; an assumption that holds for most (reasonable) uses of
+    {\tt variant/2}.
+
+\ourrepeatmoditem{check\_variant(?Term1)}{check\_variant/1}{tables}
+\ourmoditem{check\_variant(+Term1,+DontCares)}{check\_variant/2}{tables}
+%
+ {\tt check\_variant/[1,2]} provide efficient means of checking
+ whether the variant of a term has been asserted to a trie indexed
+ predicate.  A call {\tt ?- check\_variant(Term)} thus succeeds if a
+ variant of {\tt Term} has been trie indexed and asseerted, and fails
+ otherwise; the check performs no unification, and no backtracking is
+ possible.
+
+{\tt check\_variant/2} allows the user to specify that the last $n$
+arguments of {\tt Term} are not to be checked for variance.  This {\tt
+  check\_variant(Term,N)} succeeds of there is a trie indexed term
+whose first $arity - n$ arguments are variants of those in term.
+
+These predicates exploit the trie data structure to obtain their
+efficiency; as a result our implementation does not allow don't care
+arguments apart from the final $n$ arguments.  {\bf {\em More
+    importantly, for efficiency, no check is made to determine whether
+    a predicate has been trie-indexed.}}  If unsure, the user should
+call {\tt current\_index/2}.
+%
+\begin{example}
+\begin{small}
+\begin{verbatim}
+ ?- import check_variant/1 from tables.
+
+yes
+ ?- index(cmp/3, trie).
+
+yes
+| ?- assert(cmp(a,b,c)),assertcmp(d,e,f)).
+
+yes
+| ?- check_variant(cmp(a,b,c)).
+
+yes
+| ?- check_variant(cmp(a,b,1)).
+
+no
+| ?- check_variant(cmp(a,b,X)).
+
+no
+| ?- check_variant(cmp(a,b,X),1).
+
+X = _h183
+\end{verbatim}
+\end{small}
+\end{example}
+
+{\bf Error Cases}
+     \begin{description}
+     \item[{\tt type\_error}]
+	Argument 1 of {\tt check\_variant/[1,2]} is not a callable structure.
+     \item[{\tt type\_error}]
+	Argument 2 of {\tt check\_variant/[2]} is not an integer
+     \end{description}
+
+\end{description}
+
+\subsection{Sorting of Terms}
+
+Sorting routines compare and order terms without instantiating them.
+Users should be careful when comparing the value of uninstantiated
+variables.  The actual order of uninstantiated variables may change in
+the course of program evaluation due to variable aliasing, garbage
+collection, or other reasons.
+
+\begin{description}
+\isoitem{sort(+L1, ?L2)}{sort/2}
+    The elements of the list {\tt L1} are sorted into the standard order,
+    and any identical (i.e.\ `==') elements are merged, yielding the 
+    list~{\tt L2}.  The time to perform the sorting is $O(n log n)$ where 
+    $n$ is the length of list {\tt L1}.  
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- sort([3.14,X,a(X),a,2,a,X,a], L).
+
+                L = [X,3.14,2,a,a(X)];
+
+                no
+     \end{verbatim}}
+    Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}]
+	Argument 1 of {\tt sort/2} is a variable or is not a proper list.
+    \item[{\tt type\_error}]
+	Argument 1 of {\tt sort/2} is a non-variable, non-list term.
+    \end{description}
+
+\isoitem{keysort(+L1, ?L2)}{keysort/2} 
+%
+The list {\tt L1} must consist of elements of the form
+\verb'Key-Value'.  These elements are sorted into order according to
+the value of {\tt Key}, yielding the list~{\tt L2}.  The elements of
+list {\tt L1} are scanned from left to right.  Unlike {\tt sort/2}, in
+{\tt keysort/2} no merging of multiple occurring elements takes place.
+The time to perform the sorting is ${\cal O}(n \log n)$ where $n$ is the
+length of list {\tt L1}.  Note that the elements of {\tt L1} are
+sorted only according to the value of {\tt Key}, not according to the
+value of {\tt Value}.  The sorting of elements in {\tt L1} is not
+guaranteed to be stable in the presence of uninstantiated variables..
+
+{\bf    Example:}
+    {\footnotesize
+     \begin{verbatim}
+                | ?- keysort([3-a,1-b,2-c,1-a,3-a], L).
+
+                L = [1-b,1-a,2-c,3-a,3-a]
+
+                yes
+     \end{verbatim}}
+{\bf Error Cases:}
+\begin{description} 
+\item[{\tt instantiation\_error}]
+     {\tt L1} is a variable or is not a proper
+     list.  
+\item[{\tt type\_error}]
+     {\tt L1} is a non-variable, non-list term.
+\item[{\tt domain\_error(key\_value\_pair,Element)}] {\tt
+     L1} contains an element {\tt Element} that is not of the
+     form \verb'Key-Value'.  
+\end{description}
+
+\ourmoditem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{parsort/4}{machine}
+%
+    {\tt parsort/4} is a very general sorting routine.  The list {\tt
+    L1} may consist of elements of any form.  {\tt SortSpec} is the
+    atom {\tt asc}, the atom {\tt desc}, or a list of terms of the
+    form {\tt asc(I)} or {\tt desc(I)} where {\tt I} is an integer
+    indicating a sort argument position.  The elements of list {\tt
+    L1} are sorted into order according to the sort specification.
+    {\tt asc} indicates ascending order based on the entire term; {\tt
+    desc} indicates descending order.  For a sort specification that
+    is a list, the individual elements indicate subfields of the
+    source terms on which to sort.  For example, a specification of
+    {\tt [asc(1)]} sorts the list in ascending order on the first
+    subfields of the terms in the list.  {\tt [desc(1),asc(2)]} sorts
+    into descending order on the first subfield and within equal first
+    subfields into ascending order on the second subfield.  The order
+    is determined by the standard predicate {\tt compare}.  If {\tt
+    ElimDupl} is nonzero, merging of multiple occurring elements takes
+    place (i.e., duplicate (whole) terms are eliminated in the
+    output).  If {\tt ElimDupl} is zero, then no merging takes place.
+    A {\tt SortSpec} of {\tt []} is equivalent to ``asc''.  The time
+    to perform the sorting is $O(n log n)$ where $n$ is the length of
+    list {\tt L1}.  The sorting of elements in {\tt L1} is not
+    guaranteed to be stable. {\tt parsort/4} must be imported from
+    module {\tt machine}.
+
+{\bf     Example:}
+    {\footnotesize
+     \begin{verbatim}
+            | ?- parsort([f(3,1),f(3,2),f(2,1),f(2,2),f(1,3),f(1,4),f(3,1)],
+                 [asc(1),desc(2)],1,L). 
+
+            L = [f(1,4),f(1,3),f(2,2),f(2,1),f(3,2),f(3,1)];
+
+            no \end{verbatim}}
+
+{\bf Error Cases:}
+\begin{description} 
+\item[{\tt instantiation\_error}]
+     {\tt L1} is a variable or not a proper list.  
+% TLS: not sure how to make sense of this...
+%\item[{\tt type\_error}] The elements of {\tt L1} are not terms with at
+%     least as many arguments as required by {\tt SortSpec}, or {\tt
+%     SortSpec} is not of an allowed form.  
+\end{description}
+\end{description}
+

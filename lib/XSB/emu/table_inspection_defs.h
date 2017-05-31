@@ -88,3 +88,7 @@
 
 #define SHOULDNT_COND_WARN     0
 #define SHOULD_COND_WARN       1
+
+#define FL_FULL                3
+#define FL_PARTIAL             2
+#define FL_CALLS               1

@@ -111,6 +111,11 @@ deactivate_op(T, S) :-
 '_$op1'(1150,fx,(dynamic)).
 '_$op1'(1150,fx,(multifile)).
 '_$op1'(1150,fx,meta_predicate).
+
+'_$op1'(1150,xfy,(do_all)).
+'_$op1'(1150,fx,(do_all)).
+'_$op1'(1150,xfy,(if_none)).
+
 '_$op1'(1100,xfy,';').
 '_$op1'(1100,fx,(table)).	% Added for tabling
 '_$op1'(1100,fx,(use_variant_tabling)).		% Added for tabling
@@ -262,7 +267,6 @@ assert_trie_index(Pcall) :-
 	retract_index(Pcall),
 	assert('_$trie_asserted1'(Pcall)).
 
-:- import system_retractall/1 from assert.
 retract_trie_index(Pcall) :-
 	system_retractall('_$trie_asserted1'(Pcall)).
 
@@ -281,11 +285,32 @@ add_index(Pred,Arg,Size) :-
 	 ; '_$index'(Pcall,Oarg,Osize)
 	 ->	(Targ==Oarg, Hsize=:=Osize
 		 ->	true
-		 ;	retractall('_$index1'(Pcall,_,_)),
+		 ;	(Targ \== Oarg % changing Hsize OK
+			 ->	warn_if_existing_clauses(Pcall,Oarg,Targ)
+			 ;	true
+			),
+			retractall('_$index1'(Pcall,_,_)),
 			assertai('_$index1'(Pcall,Targ,Hsize),1)
 		)
-	 ;	assertai('_$index1'(Pcall,Targ,Hsize),1)
+	 ;	(Targ \== 1	% default, not changing
+		 ->	warn_if_existing_clauses(Pcall,1,Targ)
+		 ;	true
+		),
+		assertai('_$index1'(Pcall,Targ,Hsize),1)
 	).			
+
+warn_if_existing_clauses(Pcall,From,To) :-
+	term_psc(Pcall,Psc),
+	psc_type(Psc,Type),
+	(Type =:= T_DYNA
+	 ->	dynamic_pred_has_clauses(Pcall,Has_Clauses),
+		(Has_Clauses =:= 1
+		 ->	warning(('Changing indexing of dynamic predicate ',Pcall,
+				 ' from ',From,' to ',To,' after it already has clauses.'))
+		 ;	true
+		)
+	 ;      true	% assume OK if static
+	).
 
 retract_index(Pred) :-
 	(Pred = P/Arity
@@ -346,7 +371,12 @@ mpa_to_skel(Mod:P/A,Skel) :-
 	term_new(PSC,Skel).
 mpa_to_skel(P/A,Skel) :- 
 	atom(P),integer(A),!,
-	functor(Skel,P,A).
+	psc_insert(P,A,PSC,usermod), % to construct psc record for 0-ary
+	term_new(PSC,Skel).
+mpa_to_skel(Atom,Skel) :-	% treat atom as atom/0
+	atom(Atom), !,
+	psc_insert(Atom,0,PSC,usermod), % to construct psc record for 0-ary
+	term_new(PSC,Skel).
 mpa_to_skel(Skel,Skel) :- nonvar(Skel),!.
 mpa_to_skel(_,_):- 
 	instantiation_error(mpa_to_skel/1,1).

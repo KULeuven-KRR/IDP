@@ -100,6 +100,7 @@ Pair list_pscPair;
 
 Psc list_psc, comma_psc, true_psc, if_psc, colon_psc, caret_psc, ccall_mod_psc, c_callloop_psc, dollar_var_psc;
 Psc tnot_psc, delay_psc, cond_psc, cut_psc, load_undef_psc, setof_psc, bagof_psc;
+Psc forall2_psc, forall3_psc, forall4_psc;
 Psc box_psc, visited_psc, answer_completion_psc;
 /*
  * Ret PSC's are used to store substitution factors for subgoal calls
@@ -269,10 +270,10 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if ((Psc)OP2 == box_psc) {					\
     Cell ignore_addr;							\
-    if (isfloat(OP1)) 							\
-      bld_boxedfloat(CTXTc &ignore_addr, float_val(OP1));		\
-    else if (isointeger(OP1)) 						\
-      {bld_oint(&ignore_addr, oint_val(OP1));}				\
+    if (isofloat(OP1) && isofloat(OP2))					\
+      bld_boxedfloat(CTXTc &ignore_addr, ofloat_val(OP1));		\
+    else if (isointeger(OP1) && isointeger(OP2))			\
+      {bld_boxedint(&ignore_addr, oint_val(OP1));}			\
     else Fail1;								\
     flag = READFLAG;							\
     sreg = hreg - 3;							\
@@ -443,7 +444,7 @@ do {								\
   ereg = (CPtr)op11; 						\
   *((byte **)((CPtr)ereg-1)) = cpreg;				\
   *((byte **)((CPtr)ereg-2)) = lpcreg;	/* return here */	\
-  psc11 = pair_psc(insert("ret",(byte)numregs,(Psc)flags[CURRENT_MODULE],&new11)); \
+  psc11 = pair_psc(insert_psc("ret",numregs,(Psc)flags[CURRENT_MODULE],&new11)); \
   term11 = (CPtr)build_call(CTXTc psc11);			\
   bld_cs((ereg-3),((Cell)term11));				\
   lpcreg = check_interrupts_restore_insts_addr;			\

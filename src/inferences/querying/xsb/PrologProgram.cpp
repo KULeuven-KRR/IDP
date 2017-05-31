@@ -63,7 +63,9 @@ string PrologProgram::getCode() {
 		_all_predicates.insert(predname);
 	}
 	stringstream s;
-	s <<":- set_prolog_flag(unknown, fail).\n";
+	s <<":- set_prolog_flag(unknown, fail)." << endl;
+// disable compiler specification (because otherwise stuff is printed to the log stream
+	s << ":- compiler_options([spec_off])." << endl;
 	s << *this << endl;
 	return s.str();
 }

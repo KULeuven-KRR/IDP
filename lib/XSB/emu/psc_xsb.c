@@ -1,5 +1,5 @@
 /* File:      psc_xsb.c
-** Author(s): Xu, Sagonas, Swift
+** Author(s): Xu, Warren, Sagonas, Swift
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -109,6 +109,8 @@ exit_string_find:
   return str0;
 }
 
+// TES: seems to be a poor name: this just finds the string if its
+// there, but wont update the string table.  Also its not thread-safe.
 char *string_find_safe(char *str) {
 
   char *ptr, *str0;
@@ -126,12 +128,12 @@ char *string_find_safe(char *str) {
 
 /* === PSC and PSC-PAIR structure creation/initialization =============== */
 void init_psc_ep_info(Psc psc) {
-  set_type(psc, 0);
+  psc_set_type(psc, 0);
   psc->env = 0;
-  set_incr(psc,0);
-  set_intern(psc,0);
-  set_data(psc, 0);
-  set_ep(psc,(byte *)&(psc->load_inst));
+  psc_set_incr(psc,0);
+  psc_set_intern(psc,0);
+  psc_set_data(psc, 0);
+  psc_set_ep(psc,(byte *)&(psc->load_inst));
   cell_opcode(&(psc->load_inst)) = load_pred;
   psc->this_psc = psc;
 }
@@ -139,7 +141,8 @@ void init_psc_ep_info(Psc psc) {
 /*
  *  Create a PSC record and initialize its fields.
  */
-static Psc make_psc_rec(char *name, char arity) {
+//static Psc make_psc_rec(char *name, char arity) {
+static Psc make_psc_rec(char *name, int arity) {
   Psc temp;
   
   temp = (Psc)mem_alloc(sizeof(struct psc_rec),ATOM_SPACE);
@@ -147,8 +150,8 @@ static Psc make_psc_rec(char *name, char arity) {
   //  set_spy(temp, 0);
   //  set_shared(temp, 0);
   //  set_tabled(temp, 0);
-  set_name(temp, string_find(name, 1));
-  set_arity(temp, arity);
+  psc_set_name(temp, string_find(name, 1));
+  psc_set_arity(temp, arity);
   init_psc_ep_info(temp);
   return temp;
 }
@@ -161,9 +164,9 @@ void set_psc_ep_to_psc(CTXTdeclc Psc psc_to_set, Psc target_psc) {
 	     get_ep(psc_to_set) != (byte *)&(target_psc->load_inst)) {
     xsb_warn(CTXTc "[IMPORT AS] Redefining entry to import-as predicate: %s/%d\n",
 	    get_name(psc_to_set),get_arity(psc_to_set));
-    set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
+    psc_set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
   } else {
-    set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
+    psc_set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
   }
 }
 
@@ -233,15 +236,15 @@ TIFptr *get_tip_or_tdisp(Psc temp)
    multithreaded, it must go through the dispatch table to get the
    tip. 
 
-TLS: Added a few lines below to return NULL if the psc is non-tabled.
+TES: Added a few lines below to return NULL if the psc is non-tabled.
 Calling routines can then report the appropriate error.  */
 
 TIFptr get_tip(CTXTdeclc Psc psc) {
   TIFptr *tip = get_tip_or_tdisp(psc);
+  //  printf("get tip %s/%d tip %p\n",get_name(psc),get_arity(psc),tip);
 #ifndef MULTI_THREAD
   return tip?(*tip):NULL;
 #else
-  //  printf("get tip %s/%d tip %p\n",get_name(psc),get_arity(psc),tip);
   if (!tip) { /* get it out of dispatch table */
     CPtr temp1 = (CPtr) get_ep(psc);
     if ((get_type(psc) == T_DYNA) &&
@@ -250,13 +253,14 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
       if (temp1 && ( (*(pb)temp1 == tabletrysingle) || (*(pb)temp1 == tabletrysinglenoanswers)))
 	return *(TIFptr *)(temp1+2);
       else return (TIFptr) NULL;
-    } else {
-      if (get_tabled(psc)) {
-	xsb_error("Internal Error in table dispatch\n");
-      } else { return NULL; }
-    }
+    } 
+    // TES: commented out error notification 09/16.  To make the MT engine work in
+    //the case of an executed tabling directive with no code, we need
+    //to return NULL
+    //    else { if (get_tabled(psc)) { xsb_error("Internal Error in table dispatch\n"); }
+    else { return NULL; }
   }
-  if (TIF_EvalMethod(*tip) != DISPATCH_BLOCK) return *tip;
+  if (tip && TIF_EvalMethod(*tip) != DISPATCH_BLOCK) return *tip;
   /* *tip points to 3rd word in TDispBlk, so get addr of TDispBlk */
   { struct TDispBlk_t *tdispblk = (struct TDispBlk_t *) (*tip);
     TIFptr rtip = (TIFptr)((&(tdispblk->Thread0))[xsb_thread_entry]);
@@ -292,7 +296,7 @@ static int is_globalmod(Psc mod_psc)
  *  Returns a pointer to the PSC-PAIR structure which points to the
  *  PSC record of the desired symbol.
  */
-static Pair search(int arity, char *name, Pair *search_ptr)
+Pair search_psc_in_module(int arity, char *name, Pair *search_ptr)
 {
     Psc psc_ptr;
     /*    Pair *init_search_ptr = search_ptr; */
@@ -313,16 +317,17 @@ Pair search_in_usermod(int arity, char *name) {
   Pair *search_ptr;
   search_ptr = (Pair *)(symbol_table.table +
 			hash(name, arity, symbol_table.size));
-  return search(arity,name,search_ptr);
+  return search_psc_in_module(arity,name,search_ptr);
 }
 
-/* === insert0: search/insert to a given chain ========================	*/
+/* === search_insert_psc_1: search/insert to a given chain ========================	*/
 
-static Pair insert0(char *name, byte arity, Pair *search_ptr, int *is_new)
+//static Pair search_insert_psc_1(char *name, byte arity, Pair *search_ptr, int *is_new)
+static Pair search_insert_psc_1(char *name, int arity, Pair *search_ptr, int *is_new)
 {
     Pair pair;
     
-    pair = search(arity, name, search_ptr);
+    pair = search_psc_in_module(arity, name, search_ptr);
     if (pair==NULL) {
       *is_new = 1;
       pair = make_psc_pair(make_psc_rec(name,arity), search_ptr);
@@ -330,13 +335,12 @@ static Pair insert0(char *name, byte arity, Pair *search_ptr, int *is_new)
     else
       *is_new = 0;
     return pair;
-} /* insert0 */
+} /* search_insert_psc_1 */
 
 
-/* === insert: search/insert to a given module ========================	*/
+/* === search/insert psc to a module, or module to global chain ======================== */
 
-Pair insert(char *name, byte arity, Psc mod_psc, int *is_new)
-{
+Pair insert_psc(char *name, int arity, Psc mod_psc, int *is_new) {
     Pair *search_ptr, temp;
 
     SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
@@ -344,18 +348,37 @@ Pair insert(char *name, byte arity, Psc mod_psc, int *is_new)
     if (is_globalmod(mod_psc)) {
       search_ptr = (Pair *)(symbol_table.table +
 	           hash(name, arity, symbol_table.size));
-      temp = insert0(name, arity, search_ptr, is_new);
+      temp = search_insert_psc_1(name, arity, search_ptr, is_new);
       if (*is_new)
 	symbol_table_increment_and_check_for_overflow;
     }
     else {
       search_ptr = (Pair *)&(get_data(mod_psc));
-      temp = insert0(name, arity, search_ptr, is_new);
+      temp = search_insert_psc_1(name, arity, search_ptr, is_new);
     }
     SYS_MUTEX_UNLOCK_NOERROR( MUTEX_SYMBOL ) ;
     return temp ;
 } /* insert */
 
+Pair insert(char *name, int arity, Psc mod_psc, int *is_new) {
+    Pair *search_ptr, temp;
+
+    SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
+
+    if (is_globalmod(mod_psc)) {
+      search_ptr = (Pair *)(symbol_table.table +
+	           hash(name, arity, symbol_table.size));
+      temp = search_insert_psc_1(name, arity, search_ptr, is_new);
+      if (*is_new)
+	symbol_table_increment_and_check_for_overflow;
+    }
+    else {
+      search_ptr = (Pair *)&(get_data(mod_psc));
+      temp = search_insert_psc_1(name, arity, search_ptr, is_new);
+    }
+    SYS_MUTEX_UNLOCK_NOERROR( MUTEX_SYMBOL ) ;
+    return temp ;
+} /* insert */
 
 /* === insert_module: search for/insert a given module ================	*/
 
@@ -365,19 +388,19 @@ Pair insert_module(int type, char *name)
     int is_new;
 
     SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
-    new_pair = insert0(name, 0, (Pair *)&flags[MOD_LIST], &is_new);
+    new_pair = search_insert_psc_1(name, 0, (Pair *)&flags[MOD_LIST], &is_new);
     if (is_new) {
-	set_type(new_pair->psc_ptr, type);
+	psc_set_type(new_pair->psc_ptr, type);
 	new_pair->psc_ptr->env = 0;
 	//	new_pair->psc_ptr->incr = 0;
-	set_incr(new_pair->psc_ptr,0);
-	set_intern(new_pair->psc_ptr,0);
-	set_data(new_pair->psc_ptr,0);
-	set_ep(new_pair->psc_ptr,0);
+	psc_set_incr(new_pair->psc_ptr,0);
+	psc_set_intern(new_pair->psc_ptr,0);
+	psc_set_data(new_pair->psc_ptr,0);
+	psc_set_ep(new_pair->psc_ptr,0);
 	new_pair->psc_ptr->this_psc = 0;
-	set_immutable(new_pair->psc_ptr,0);
+	psc_set_immutable(new_pair->psc_ptr,0);
     } else {	/* set loading bit: T_MODU - loaded; 0 - unloaded */
-      set_type(new_pair->psc_ptr, get_type(new_pair->psc_ptr) | type);
+      psc_set_type(new_pair->psc_ptr, get_type(new_pair->psc_ptr) | type);
     }
     SYS_MUTEX_UNLOCK_NOERROR( MUTEX_SYMBOL ) ;
     return new_pair;
@@ -400,7 +423,7 @@ Pair link_sym(CTXTdeclc Psc psc, Psc mod_psc)
 {
     Pair *search_ptr, found_pair;
     char *name;
-    byte arity, global_flag, type;
+    byte arity, global_flag, umtype, mtype;
 
     SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
     name = get_name(psc);
@@ -410,35 +433,47 @@ Pair link_sym(CTXTdeclc Psc psc, Psc mod_psc)
 	           hash(name, arity, symbol_table.size);
     } else
       search_ptr = (Pair *)&get_data(mod_psc);
-    if ((found_pair = search(arity, name, search_ptr))) {
+    if ((found_pair = search_psc_in_module(arity, name, search_ptr))) {
       if (pair_psc(found_pair) != psc) {
 	/*
 	 *  Invalidate the old name!! It is no longer accessible
 	 *  through the global chain.
 	 */
-	type = get_type(pair_psc(found_pair));
-	if ( type != T_ORDI ) {
+	umtype = get_type(pair_psc(found_pair));
+	mtype = get_type(psc);
+	if ( umtype != T_ORDI && mtype != T_ORDI ) {
 	  char message[220], modmsg[200];
-	  if (type == T_DYNA || type == T_PRED) {
+	  if (umtype == T_DYNA || umtype == T_PRED) {
 	    Psc mod_psc;
 	    mod_psc = (Psc) get_data(pair_psc(found_pair));
 	    if (mod_psc == 0) snprintf(modmsg,200,"%s","usermod");
 	    else if (isstring(mod_psc)) snprintf(modmsg,200,"usermod from file: %s",string_val(mod_psc));
 	    else snprintf(modmsg,200,"module: %s",get_name(mod_psc));
 	    snprintf(message,220,
-		    "%s/%d (type %d) had been defined in %s",
-		     name, arity, type, 
+		    "%s/%d (umtype %d) had been defined in %s; those clauses lost.",
+		     name, arity, umtype, 
 		     modmsg);
 	  } else 
 	    snprintf(message,220,
-		    "%s/%d (type %d) had been defined in another module!",
-		    name, arity, type);
+		    "%s/%d (umtype %d) had been defined in another module. Those clauses lost!",
+		    name, arity, umtype);
 	  xsb_warn(CTXTc message);
+	} else {
+	  if (umtype != T_ORDI) {
+	    psc_set_ep(psc,get_ep(pair_psc(found_pair)));
+	    psc_set_type(psc,get_type(pair_psc(found_pair)));
+	    psc_set_env(psc,get_env(pair_psc(found_pair)));
+	  } else if (mtype != T_ORDI) {
+	    psc_set_ep(pair_psc(found_pair),get_ep(psc));
+	    psc_set_type(pair_psc(found_pair),get_type(psc));
+	    psc_set_env(pair_psc(found_pair),get_env(psc));
+	  } else {
+	    set_psc_ep_to_psc(CTXTc pair_psc(found_pair),psc);
+	  }
 	}
 	pair_psc(found_pair) = psc;
       }
-    }
-    else {
+    } else {
       found_pair = make_psc_pair(psc, search_ptr);
       if (global_flag)
 	symbol_table_increment_and_check_for_overflow;
@@ -457,12 +492,23 @@ Psc get_ret_psc(int n)
   Pair temp;
   int new_indicator;
 
-  if (!ret_psc[n]) {
-    temp = (Pair) insert("ret", (byte) n, global_mod, &new_indicator);
-    ret_psc[n] = pair_psc(temp);
+  if (n > MAX_ARITY) {
+    xsb_abort("Trying to get a ret_psc with too large an arity; too many variables");
+    return NULL;
   }
-  return ret_psc[n];
+  else if (ret_psc[n]) {
+    return ret_psc[n];
+  } else {
+    //    temp = (Pair) insert("ret", (byte) n, global_mod, &new_indicator);
+    temp = (Pair) insert("ret", n, global_mod, &new_indicator);
+    return pair_psc(temp);
+  }
 }
+  //  if (!ret_psc[n]) {
+  //    temp = (Pair) insert("ret", (byte) n, global_mod, &new_indicator);
+  //    ret_psc[n] = pair_psc(temp);
+  //  }
+  //  return ret_psc[n];
 
 
 /*
@@ -486,6 +532,6 @@ void insert_cpred(char * name,int arity,int (*pfunc)(void) ) {
 
     psc = insert(name,arity, global_mod, &dummy_flag)->psc_ptr;
     set_forn(psc,pfunc);
-    set_type(psc,T_FORN);
+    psc_set_type(psc,T_FORN);
 
 }
