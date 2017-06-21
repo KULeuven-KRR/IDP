@@ -119,6 +119,7 @@ MinisatID::Space* createsolver(int nbmodels) {
 	modes.randomseed = getOption(IntType::RANDOMSEED);
 
 	modes.polarity = MinisatID::Polarity::STORED;
+	modes.initactivity = MinisatID::InitActivity::DEFAULT;
 
 	if (getOption(BoolType::STABLESEMANTICS)) {
 		modes.defsem = MinisatID::DEFSEM::DEF_STABLE;
@@ -136,7 +137,10 @@ MinisatID::Space* createsolver(int nbmodels) {
 	if (getOption(BoolType::MXRANDOMPOLARITYCHOICE)) {
 		modes.polarity = MinisatID::Polarity::RAND;
 	}
-
+	if (getOption(BoolType::MXRANDOMINITACTIVITY)) {
+		modes.initactivity = MinisatID::InitActivity::RAND;
+	}
+    
 	switch(getGlobal()->getOptions()->solverHeuristic()){
 	case SolverHeuristic::CLASSIC:
 		modes.heuristic = MinisatID::Heuristic::CLASSIC;

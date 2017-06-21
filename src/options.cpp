@@ -209,6 +209,7 @@ Options::Options(bool verboseOptions): _isVerbosity(verboseOptions) {
 		BoolPol::createOption(BoolType::LONGNAMES, "longnames", boolvalues, false, PrintBehaviour::DONOTPRINT);
 		BoolPol::createOption(BoolType::CREATETRANSLATION, "createtranslation", { false }, false, PrintBehaviour::DONOTPRINT); // TODO bugged: when grounding: write out the information about which string belongs to which cnf number
 		BoolPol::createOption(BoolType::MXRANDOMPOLARITYCHOICE, "randomvaluechoice", boolvalues, false, PrintBehaviour::PRINT);
+		BoolPol::createOption(BoolType::MXRANDOMINITACTIVITY, "randominitactivity", boolvalues, false, PrintBehaviour::PRINT);
 		BoolPol::createOption(BoolType::XSB_SHORT_NAMES, "xsbshortnames", boolvalues, true, PrintBehaviour::DONOTPRINT); // Translation to XSB code does not maintain predicate and atom names, but introduces identifiers to minimize communication overhead with XSB
 		BoolPol::createOption(BoolType::XSB_SUBSUMPTIVE_TABLING, "xsbsubsumptivetabling", boolvalues, false, PrintBehaviour::DONOTPRINT); // Use the XSB setting for "Subsumptive Tabling". Setting this option TRUE is not reccomended, as it might interfere with some of the built-ins used in our xsb_compiler (see XSB's manual for explanation).
 		BoolPol::createOption(BoolType::SHOW_XSB_WARNINGS, "showxsbwarnings", boolvalues, false, PrintBehaviour::DONOTPRINT); // Show XSB warnings
