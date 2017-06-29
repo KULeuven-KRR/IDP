@@ -1,0 +1,12 @@
+vocabulary V{
+	type t isa int
+	P(t)
+}
+
+structure S:V{
+	P = {"3"}
+}
+
+procedure main(){
+	return 1
+}
