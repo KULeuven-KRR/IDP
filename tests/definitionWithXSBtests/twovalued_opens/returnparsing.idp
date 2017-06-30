@@ -1,0 +1,12 @@
+vocabulary V {
+	type t constructed from { C(string), C(int) }
+	P1(t)
+	P2(t)
+}
+
+theory T : V {
+	{ P1(C("3")). }
+	{ P2(C(3)). }
+}
+
+structure S : V {}
