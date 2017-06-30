@@ -59,7 +59,7 @@ public:
 
 	const DomainElement* create(int value);
 	const DomainElement* create(double value, NumType type = NumType::POSSIBLYINT);
-	const DomainElement* create(const std::string& value, bool certnotdouble = true);
+	const DomainElement* create(const std::string& value);
 	const DomainElement* create(const Compound* value);
 	const DomainElement* create(Function*, const ElementTuple&);
 

@@ -182,11 +182,7 @@ string* StringPointer(const string& str) {
  *		- value:			the given value
  *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
  */
-const DomainElement* DomainElementFactory::create(const string& value, bool certnotdouble) {
-	if (not certnotdouble && isDouble(value)) {
-		return create(toDouble(value), NumType::POSSIBLYINT);
-	}
-
+const DomainElement* DomainElementFactory::create(const string& value) {
 	DomainElement* element = NULL;
 	auto sharedstring = StringPointer(value);
 	auto it2 = _stringelements.find(sharedstring);
