@@ -119,7 +119,7 @@ const DomainElement* DomainElementFactory::create(int value) {
  *		- certnotint:	true iff the caller of this method asserts that the value is not an integer
  */
 const DomainElement* DomainElementFactory::create(double value, NumType type) {
-	if (type == NumType::CERTAINLYINT || (type != NumType::CERTAINLYNOTINT and isInt(value))) {
+	if (type == NumType::CERTAINLYINT || isInt(value)) {
 		return create(int(value));
 	}
 

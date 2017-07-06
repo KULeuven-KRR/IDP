@@ -135,7 +135,6 @@ enum class TruthType {
 // NOTE: int and double domain elements are DISJOINT! It is never allowed to create a double domainelement if it in fact refers to an int, so have to check for this
 enum class NumType {
 	CERTAINLYINT,
-	CERTAINLYNOTINT,
 	POSSIBLYINT
 };
 

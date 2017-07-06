@@ -235,10 +235,8 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) 
 		// Create a domain element. Since everything XSB gives back is a string, we inspect the string format as well as the expected Sort
 		if (isXSBIntegerNumber(str)) { // If 
 			ret = createDomElem((int)(toDouble(str)));
-		} else if (SortUtils::isSubsort(sort,get(STDSORT::INTSORT))) {
-			return to_idp_domelem(toIntegerNumberString(str),sort);
 		} else if (isXSBNumber(str)) {
-			ret = createDomElem(toDouble(str), NumType::CERTAINLYNOTINT);
+			ret = createDomElem(toDouble(str));
 		} else { 
 			ret = createDomElem(str);
 		}
