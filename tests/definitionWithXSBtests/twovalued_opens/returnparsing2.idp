@@ -11,7 +11,7 @@ theory T : V {
 	}
 }
 
-structure S1:V{
+structure S:V{
 	Q = { 0.2; 0.34 }
 	P = { U(0.4); U(0.68) }
 }
