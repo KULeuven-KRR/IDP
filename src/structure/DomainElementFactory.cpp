@@ -116,7 +116,6 @@ const DomainElement* DomainElementFactory::create(int value) {
  *
  * PARAMETERS
  *		- value:		the given value
- *		- certnotint:	true iff the caller of this method asserts that the value is not an integer
  */
 const DomainElement* DomainElementFactory::create(double value, NumType type) {
 	if (type == NumType::CERTAINLYINT || isInt(value)) {
@@ -180,7 +179,6 @@ string* StringPointer(const string& str) {
  *
  * PARAMETERS
  *		- value:			the given value
- *		- certnotdouble:	true iff the caller of this method asserts that the value is not a floating point number
  */
 const DomainElement* DomainElementFactory::create(const string& value) {
 	DomainElement* element = NULL;
