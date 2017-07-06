@@ -120,9 +120,16 @@ void XSBToIDPTranslator::add_to_mappings(const PFSymbol* symbol, std::string str
 	_pfsymbols_to_prolog_string.insert({symbol,str});
 }
 
-void XSBToIDPTranslator::add_to_mappings(const DomainElement* domelem, std::string str) {
+
+/**
+ * @param addDomToStringMapping Bool to indicate whether or not the mapping DomainElement*->str should be added to the mappings as well
+ */
+void XSBToIDPTranslator::add_to_mappings(const DomainElement* domelem, std::string str, bool addDomToStringMapping) {
 	Assert(_prolog_string_to_domainels.find(str) == _prolog_string_to_domainels.end());
 	_prolog_string_to_domainels.insert({str,domelem});
+  if (not addDomToStringMapping) {
+    return;
+  }
 #ifdef DEBUG
 	for (auto it = _domainels_to_prolog_string.cbegin(); it != _domainels_to_prolog_string.cend(); ++it) {
 		Assert((*it).second != make_into_prolog_term_name(str)); // Value that this str will map to may not already be mapped to!
@@ -217,15 +224,17 @@ const DomainElement* XSBToIDPTranslator::to_idp_domelem(string str, Sort* sort) 
 		ret = createDomElem(createCompound(f,elemtuple));
 	} else { 
 		// Create a domain element. Since everything XSB gives back is a string, we inspect the string format as well as the expected Sort
-		if (isXSBIntegerNumber(str)) { // If 
-			ret = createDomElem((int)(toDouble(str)));
-		} else if (isXSBNumber(str)) {
+		if (SortUtils::isSubsort(sort,get(STDSORT::STRINGSORT))) {
+			ret = createDomElem(str);
+		} else if (isDouble(str)) {
 			ret = createDomElem(toDouble(str));
-		} else { 
+		} else if (isInt(str)) {
+			ret = createDomElem((int)(toDouble(str)));
+		} else {
 			ret = createDomElem(str);
 		}
 	}
-	add_to_mappings(ret,str);
+	add_to_mappings(ret,str,false);
 	return ret;
 }
 

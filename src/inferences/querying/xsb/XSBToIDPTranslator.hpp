@@ -35,7 +35,7 @@ private:
 
 	std::string make_into_prolog_term_name(std::string);
 	void add_to_mappings(const PFSymbol*, std::string); // Precondition: was not added to the mappings before
-	void add_to_mappings(const DomainElement*, std::string); // Precondition: was not added to the mappings before
+	void add_to_mappings(const DomainElement*, std::string, bool addDomToStringMapping = true); // Precondition: was not added to the mappings before
 
 	unsigned int getNewID() {
 		return ++_predicate_name_counter;
