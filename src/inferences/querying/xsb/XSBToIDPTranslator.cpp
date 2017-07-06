@@ -68,22 +68,6 @@ bool XSBToIDPTranslator::isXSBIntegerNumber(std::string str) {
 	return isNumber;
 }
 
-std::string XSBToIDPTranslator::toIntegerNumberString(std::string str) const {
-	Assert(isDouble(str));
-	std::stringstream ss;
-	auto start = str.begin();
-	if (*start == '-') {
-		ss << *start;
-		start++;
-	}
-	for (auto i = start; i != str.end(); ++i) {
-		if (!isdigit(*i)) {
-			return ss.str();
-		}
-		ss << *i;
-	}
-}
-
 // Note: It is important that each of these strings are present as
 // predicates in data/share/std/xsb_compiler.P, accompanied of the
 // IDPXSB_PREFIX.

@@ -51,7 +51,6 @@ public:
 	bool isoperator(int c);
 	bool isXSBNumber(std::string str);
 	bool isXSBIntegerNumber(std::string str);
-	std::string toIntegerNumberString(std::string) const;
 	bool isXSBBuiltIn(std::string str);
 	bool isXSBCompilerSupported(const PFSymbol* symbol);
 	bool isXSBCompilerSupported(const Sort*);
