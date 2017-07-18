@@ -277,7 +277,20 @@ set(CPACK_SOURCE_IGNORE_FILES
 	"^${PROJECT_SOURCE_DIR}/docs/code"
 	"^${PROJECT_SOURCE_DIR}/docs/technical"
 )
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "idp-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}-${git_hash}")
+set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_PACKAGE_NAME "idp3")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local/")
+set(CPACK_PACKAGE_CONTACT "krr@cs.kuleuven.be")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The IDP3 Knowledge Base System")
+execute_process (COMMAND "dpkg" "--print-architecture"
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+	RESULT_VARIABLE DPKG_ARCHITECTURE_RESULT
+	ERROR_VARIABLE DPKG_ARCHITECTURE_ERROR
+	OUTPUT_VARIABLE DPKG_ARCHITECTURE)
+if (DPKG_ARCHITECTURE_RESULT OR DPKG_ARCHITECTURE_ERROR)
+	set (DPKG_ARCHITECTURE "\"Unable to detect architecture through dpkg --print-architecture.\"")
+	message("WARNING: Unable to detect architecture through dpkg --print-architecture. This prevents package building.")
+endif (DPKG_ARCHITECTURE_RESULT OR DPKG_ARCHITECTURE_ERROR)
 message(STATUS "source package name: ${CPACK_SOURCE_PACKAGE_FILE_NAME}")
 message(STATUS "source package ignores: ${CPACK_SOURCE_IGNORE_FILES}")
 include(CPack)
@@ -285,3 +298,8 @@ include(CPack)
 message(STATUS "make clean cleans the following additional files:")
 message(STATUS "${ADDITIONAL_CLEAN_FILES_TO_CLEAN}")
 SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${ADDITIONAL_CLEAN_FILES_TO_CLEAN}")
+
+#### Set Dependencies of Debian package
+# ATTENTION: hard-coding dependencies. When building package on systems older than Ubuntu 16.04, replace these with the older versions still maintained by the older system version (e.g. 14.04).
+# TODO: add GMP as dependency if GMP is used in build
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.23), libgcc1 (>= 1:6.0.1)") 
