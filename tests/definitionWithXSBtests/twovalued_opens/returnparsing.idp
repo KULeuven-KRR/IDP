@@ -1,0 +1,18 @@
+vocabulary V {
+	type m isa string
+	type n isa int
+	type t constructed from { C(m), C(n) }
+	P1(t)
+	P2(t)
+	P3(t)
+}
+
+theory T : V {
+	{ P1(C("3")). }
+	{ P2(C(2)). }
+}
+
+structure S : V {
+	m = { "1"; "2"; "3" }
+	n = { 1; 2; 3 }
+}

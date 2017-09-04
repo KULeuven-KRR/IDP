@@ -1,0 +1,17 @@
+vocabulary V{
+	type t1 isa float
+	type t2 constructed from { U(float) }
+	Q(t1)
+	P(t2)
+}
+ 
+theory T : V {
+	{
+		P(U(y)) <- Q(x) & y = x * 2.
+	}
+}
+
+structure S:V{
+	Q = { 0.2; 0.34 }
+	P = { U(0.4); U(0.68) }
+}

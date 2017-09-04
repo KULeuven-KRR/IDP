@@ -35,7 +35,7 @@ private:
 
 	std::string make_into_prolog_term_name(std::string);
 	void add_to_mappings(const PFSymbol*, std::string); // Precondition: was not added to the mappings before
-	void add_to_mappings(const DomainElement*, std::string); // Precondition: was not added to the mappings before
+	void add_to_mappings(const DomainElement*, std::string, bool addDomToStringMapping = true); // Precondition: was not added to the mappings before
 
 	unsigned int getNewID() {
 		return ++_predicate_name_counter;
@@ -50,6 +50,7 @@ public:
 //	predefined XSB code for IDP found in data/share/std/xsb_compiler.P
 	bool isoperator(int c);
 	bool isXSBNumber(std::string str);
+	bool isXSBIntegerNumber(std::string str);
 	bool isXSBBuiltIn(std::string str);
 	bool isXSBCompilerSupported(const PFSymbol* symbol);
 	bool isXSBCompilerSupported(const Sort*);
@@ -60,7 +61,6 @@ public:
 	std::string to_prolog_pred_and_arity(const Sort*);
 
 	std::string to_prolog_term(const DomainElement*);
-	const DomainElement* to_idp_domelem(std::string);
 	const DomainElement* to_idp_domelem(std::string, Sort*);
 	ElementTuple to_idp_elementtuple(std::list<std::string>, const PFSymbol*);
 

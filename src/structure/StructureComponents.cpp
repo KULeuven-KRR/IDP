@@ -861,7 +861,7 @@ void StringInternalSortIterator::operator++() {
 }
 
 const DomainElement* StringInternalSortIterator::operator*() const {
-	auto r = GlobalData::getGlobalDomElemFactory()->create(_iter,true);
+	auto r = GlobalData::getGlobalDomElemFactory()->create(_iter);
 	return r;
 }
 
